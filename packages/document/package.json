@@ -1,6 +1,6 @@
 {
   "name": "@inkbrick/document",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Block document model for Inkbrick: schemas, validation, serialization, migrations and export. No React, no DOM.",
   "type": "module",
   "main": "src/index.ts",
