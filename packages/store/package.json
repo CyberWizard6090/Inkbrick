@@ -1,6 +1,6 @@
 {
   "name": "@inkbrick/store",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Inkbrick document store: transactions with rollback, undo/redo history and subscriptions. No React.",
   "type": "module",
   "main": "src/index.ts",

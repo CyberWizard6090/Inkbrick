@@ -1,6 +1,6 @@
 {
   "name": "@inkbrick/styles",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Default Inkbrick styles: design tokens, themes, and CSS layers over stable data-inkbrick-* attributes with zero specificity.",
   "type": "module",
   "sideEffects": [

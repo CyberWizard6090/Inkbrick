@@ -5,6 +5,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
+## 0.1.0-alpha.0
+
+First public alpha, published under the `alpha` dist-tag: `npm install @inkbrick/react@alpha`. The API may change
+between alpha releases.
+
 ### Added
 
 - Coverage thresholds (`pnpm test:coverage`), bundle size budget (`pnpm size`), scaling tests against quadratic
