@@ -1,0 +1,557 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--inkbrick-bg-base);
+  color: var(--inkbrick-text-primary);
+}
+
+.playground-header {
+  margin: 0 0 16px;
+  font-family: Inter, sans-serif;
+  font-size: clamp(20px, 5vw, 24px);
+}
+
+/* Боковые отступы растут вместе с экраном: 16px на телефоне, до 96px на десктопе (там живёт ручка блока). */
+.playground-editor {
+  max-width: 760px;
+  margin: auto;
+  padding: clamp(16px, 6vw, 48px) clamp(16px, 9vw, 96px) 48px;
+  font-family: Inter, sans-serif;
+}
+
+.playground-content {
+  min-height: 60vh;
+  padding: 10px;
+  font-family: Inter, sans-serif;
+  background-color: var(--inkbrick-bg-surface);
+  border-radius: 8px;
+}
+
+.history-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.history-buttons button {
+  padding: 4px 10px;
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.history-buttons button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.debug-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  height: 100vh;
+  font:
+    12px/1.4 ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+  background-color: var(--inkbrick-bg-surface);
+  border-left: 1px solid var(--inkbrick-border-color);
+  color: var(--inkbrick-text-primary);
+}
+
+.debug-panel button,
+.debug-toggle {
+  font: inherit;
+  padding: 2px 8px;
+  color: inherit;
+  background: var(--inkbrick-bg-hover);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.debug-toggle {
+  position: fixed;
+  right: 8px;
+  top: 8px;
+  z-index: 1000;
+}
+
+.debug-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--inkbrick-border-color);
+}
+
+.debug-header > button {
+  margin-left: auto;
+}
+
+.debug-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--inkbrick-border-color);
+}
+
+.debug-tabs .is-active {
+  color: var(--inkbrick-fg-on-brand);
+  background: var(--inkbrick-accent-color);
+  border-color: var(--inkbrick-accent-color);
+}
+
+.debug-body {
+  flex: 1;
+  padding: 8px;
+  overflow: auto;
+}
+
+.debug-pre {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.debug-id,
+.debug-props {
+  color: var(--inkbrick-text-secondary);
+}
+
+.debug-body--fill {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.debug-tree {
+  height: 100%;
+  overflow: auto;
+}
+
+.debug-tree-inner {
+  position: relative;
+}
+
+.debug-node {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding-right: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.debug-node--changed {
+  background: rgba(37, 99, 235, 0.25);
+}
+
+.debug-flavour {
+  color: #7dd3fc;
+}
+
+.debug-text {
+  color: var(--inkbrick-text-heading);
+}
+
+.debug-log {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.debug-log-item {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--inkbrick-border-color);
+}
+
+.debug-log-item--error,
+.debug-error,
+.debug-problems {
+  color: #f87171;
+}
+
+.debug-ok {
+  color: #4ade80;
+}
+
+.sandbox-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--inkbrick-bg-base);
+  border-bottom: 1px solid var(--inkbrick-border-color);
+  font:
+    12px Inter,
+    sans-serif;
+}
+
+.sandbox-nav button {
+  font: inherit;
+  padding: 4px 10px;
+  color: var(--inkbrick-text-primary);
+  background: var(--inkbrick-bg-surface);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sandbox-nav .is-active {
+  color: var(--inkbrick-fg-on-brand);
+  background: var(--inkbrick-accent-color);
+  border-color: var(--inkbrick-accent-color);
+}
+
+.debug-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.debug-row .is-active {
+  color: var(--inkbrick-fg-on-brand);
+  background: var(--inkbrick-accent-color);
+  border-color: var(--inkbrick-accent-color);
+}
+
+.sandbox-nav__group {
+  display: inline-flex;
+  gap: 4px;
+}
+
+@media (max-width: 640px) {
+  .sandbox-nav {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sandbox-nav > * {
+    flex: none;
+  }
+
+  .playground-editor {
+    padding: 16px 12px 32px;
+  }
+
+  .playground-content {
+    padding: 8px;
+  }
+
+  .sandbox-nav button,
+  .history-buttons button {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .debug-panel {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 55vh;
+    border-top: 1px solid var(--inkbrick-border-color);
+    border-left: none;
+  }
+
+  /* Шторка не закрывает конец документа: его можно докрутить выше неё. */
+  .playground-editor:has(.debug-panel) {
+    padding-bottom: 58vh;
+  }
+}
+
+.tools-menu {
+  position: fixed;
+  z-index: 20;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  padding: 4px;
+  background: var(--inkbrick-bg-surface);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+  font:
+    13px Inter,
+    sans-serif;
+}
+
+.tools-menu button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  color: var(--inkbrick-text-primary);
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tools-menu button:hover {
+  background: var(--inkbrick-bg-hover);
+}
+
+.tools-menu small {
+  opacity: 0.65;
+  font-size: 11px;
+}
+
+.tools-menu hr {
+  width: 100%;
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid var(--inkbrick-border-color);
+}
+
+.settings-menu {
+  gap: 10px;
+  padding: 10px;
+}
+
+.settings-menu section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-menu h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+.settings-menu__row {
+  display: flex;
+  gap: 4px;
+}
+
+.settings-menu__row button {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  background: var(--inkbrick-bg-surface);
+  border: 1px solid var(--inkbrick-border-color);
+}
+
+.sandbox-notice {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  z-index: 40;
+  box-sizing: border-box;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 12px 10px 14px;
+  color: var(--inkbrick-text-primary);
+  background: var(--inkbrick-bg-surface);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+  transform: translateX(-50%);
+  font:
+    13px Inter,
+    sans-serif;
+}
+
+.sandbox-notice--error {
+  border-color: #f87171;
+}
+
+.sandbox-notice button {
+  padding: 0 4px;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.shortcuts-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 45%);
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: 100%;
+  color: var(--inkbrick-text-primary);
+  background: var(--inkbrick-bg-surface);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 35%);
+  font:
+    14px Inter,
+    sans-serif;
+  outline: none;
+}
+
+.shortcuts header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--inkbrick-border-color);
+}
+
+.shortcuts h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.shortcuts header button {
+  min-width: 36px;
+  min-height: 36px;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.shortcuts header button:hover {
+  background: var(--inkbrick-bg-hover);
+}
+
+.shortcuts__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 4px 28px;
+  padding: 8px 20px 20px;
+  overflow-y: auto;
+}
+
+.shortcuts h3 {
+  margin: 16px 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.shortcuts dl {
+  margin: 0;
+}
+
+.shortcuts dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+}
+
+.shortcuts dt {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 4px;
+  order: 2;
+}
+
+.shortcuts dd {
+  margin: 0;
+}
+
+.shortcuts kbd {
+  padding: 1px 6px;
+  font:
+    12px ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+  white-space: pre;
+  background: var(--inkbrick-bg-hover);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 4px;
+}
+
+.sandbox-counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 8px;
+}
+
+.sandbox-counter__controls {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.sandbox-counter__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.sandbox-counter[data-focused] {
+  outline: 2px solid var(--inkbrick-stroke-focus-2);
+  outline-offset: 1px;
+}
+
+.sandbox-counter output {
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sandbox-counter button {
+  width: 28px;
+  height: 28px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: var(--inkbrick-bg-hover);
+  border: 1px solid var(--inkbrick-border-color);
+  border-radius: 6px;
+}
+
+.sandbox-counter button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}

@@ -1,0 +1,16 @@
+/*
+ * Стандартные стили Inkbrick.
+ *
+ * Публичный API стилизации — data-атрибуты разметки (см. docs/styling.md): data-inkbrick-block, data-inkbrick-part,
+ * data-inkbrick-ui, data-state, data-level и другие. Классы в разметке остаются только для совместимости,
+ * стили на них не опираются.
+ *
+ * Все правила лежат в слоях @layer inkbrick.* и написаны через :where() (специфичность 0), поэтому любое
+ * ваше правило — вне слоёв или в слое, объявленном позже, — побеждает без !important и без повышения специфичности.
+ */
+@layer inkbrick.tokens, inkbrick.base, inkbrick.blocks, inkbrick.ui;
+
+@import './tokens.css';
+@import './base.css';
+@import './blocks.css';
+@import './ui.css';

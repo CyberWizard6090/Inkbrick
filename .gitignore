@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+.pnp.cjs
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+
+# tests
+coverage/
+test-results/
+playwright-report/
+
+# misc
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+repomix-output.xml
+
+# editor
+.vscode/
+.idea/
+
+# generated API reference
+docs/api/

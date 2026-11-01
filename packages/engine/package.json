@@ -1,0 +1,39 @@
+{
+  "name": "@inkbrick/engine",
+  "version": "0.1.0",
+  "description": "Headless Inkbrick editor: commands, intents and block controllers. Usable on a server.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@inkbrick/document": "workspace:*",
+    "@inkbrick/store": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CyberWizard6090/Inkbrick.git",
+    "directory": "packages/engine"
+  }
+}

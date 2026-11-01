@@ -1,0 +1,93 @@
+/*
+ * База: корень редактора, общие части блоков (текст, плейсхолдер), инлайн-форматирование, иконки.
+ * Селекторы — атрибуты разметки, специфичность нулевая (:where).
+ */
+@layer inkbrick.base {
+  :where([data-inkbrick-root]) {
+    outline: none;
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size);
+    line-height: var(--inkbrick-line-height);
+    caret-color: var(--inkbrick-brand-fg);
+  }
+
+  :where([data-inkbrick-root][data-readonly]) {
+    cursor: text;
+  }
+
+  :where([data-inkbrick-part='content']) {
+    flex: 1;
+    min-width: 0;
+    min-height: 28px;
+    padding: 3px 0;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /*
+   * Подсказка пустого блока. Общая (data-hint): только в пустом блоке, где стоит каретка, — по одной на редактор,
+   * а не своя в каждом блоке. Своя (data-placeholder, если блок её задаёт) показывается, пока блок пуст.
+   * data-composing — клавиатура телефона набирает слово (IME): оно уже на экране, но ещё не в модели.
+   */
+  :where(
+    [data-inkbrick-part='content'][data-empty='true'][data-focused][data-hint]:not(
+        [data-placeholder],
+        [data-composing]
+      )
+  )::before {
+    content: attr(data-hint);
+  }
+
+  :where(
+    [data-inkbrick-part='content'][data-empty='true'][data-placeholder]:not([data-composing])
+  )::before {
+    content: attr(data-placeholder);
+  }
+
+  :where(
+    [data-inkbrick-part='content'][data-empty='true'][data-focused][data-hint]:not(
+        [data-placeholder],
+        [data-composing]
+      ),
+    [data-inkbrick-part='content'][data-empty='true'][data-placeholder]:not([data-composing])
+  )::before {
+    position: absolute;
+    color: var(--inkbrick-fg-4);
+    pointer-events: none;
+    cursor: text;
+  }
+
+  :where([data-inkbrick-part='content'] strong) {
+    font-weight: 700;
+  }
+
+  :where([data-inkbrick-part='content'] code) {
+    padding: 1px 4px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-3);
+    font-family: var(--inkbrick-font-mono);
+    font-size: 0.9em;
+  }
+
+  /* Ссылка подчёркнута всегда: отличать её от текста только цветом недоступно (WCAG 1.4.1) */
+  :where([data-inkbrick-part='content'] a) {
+    color: var(--inkbrick-brand-link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    cursor: text;
+  }
+
+  :where([data-inkbrick-part='content'] a:hover) {
+    text-decoration-thickness: 2px;
+  }
+
+  :where([data-inkbrick-icon]) {
+    flex: none;
+    width: var(--inkbrick-icon-size);
+    height: var(--inkbrick-icon-size);
+  }
+}

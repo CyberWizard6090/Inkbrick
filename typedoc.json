@@ -1,0 +1,17 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Inkbrick",
+  "entryPointStrategy": "resolve",
+  "entryPoints": [
+    "packages/document/src/index.ts",
+    "packages/store/src/index.ts",
+    "packages/engine/src/index.ts",
+    "packages/react/src/index.ts"
+  ],
+  "tsconfig": "tsconfig.json",
+  "out": "docs/api",
+  "readme": "README.md",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "skipErrorChecking": true
+}

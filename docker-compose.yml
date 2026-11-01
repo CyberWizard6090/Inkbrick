@@ -1,0 +1,68 @@
+# Только для разработки.
+# Dev-сервер (hot reload):  docker compose up --watch → http://localhost:5173
+#   код подхватывает Vite (bind-mount), --watch пересобирает образ при смене зависимостей
+# Unit-тесты:               docker compose --profile test run --rm test
+# E2E (Playwright):         docker compose --profile e2e run --rm e2e
+
+services:
+  dev:
+    build:
+      context: .
+      target: dev
+    ports:
+      - '5173:5173'
+    environment:
+      HOST: 0.0.0.0
+      # bind-mount на Windows/macOS не присылает события файловой системы
+      VITE_USE_POLLING: 'true'
+    volumes:
+      - .:/app
+      # node_modules остаются из образа и не затираются папкой хоста
+      - /app/node_modules
+      - /app/apps/sandbox/node_modules
+      - /app/packages/document/node_modules
+      - /app/packages/store/node_modules
+      - /app/packages/engine/node_modules
+      - /app/packages/react/node_modules
+      - /app/packages/styles/node_modules
+    develop:
+      watch:
+        # исходники подхватывает Vite через bind-mount; образ нужен заново только при смене зависимостей
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./pnpm-workspace.yaml
+        - action: rebuild
+          path: ./apps/sandbox/package.json
+        - action: rebuild
+          path: ./packages/document/package.json
+        - action: rebuild
+          path: ./packages/store/package.json
+        - action: rebuild
+          path: ./packages/engine/package.json
+        - action: rebuild
+          path: ./packages/react/package.json
+        - action: rebuild
+          path: ./packages/styles/package.json
+
+  test:
+    profiles: ['test']
+    build:
+      context: .
+      target: test
+
+  e2e:
+    profiles: ['e2e']
+    build:
+      context: .
+      target: e2e
+    environment:
+      E2E_BASE_URL: http://dev:5173
+    depends_on:
+      dev:
+        condition: service_started
+    volumes:
+      - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results

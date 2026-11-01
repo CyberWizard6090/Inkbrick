@@ -1,0 +1,826 @@
+/*
+ * Оболочка редактора: slash-меню, плавающий toolbar, ручка блока, меню блока, индикатор перетаскивания.
+ * Каждый элемент — data-inkbrick-ui="<имя>", части — data-inkbrick-part. Состояния: data-active, data-pressed,
+ * data-disabled, data-danger, data-invalid, data-position.
+ * Вид — всплывающие поверхности Windows 11: рамка 1px, радиус 8px, тень 16, пункты 32px с радиусом 4px.
+ */
+@layer inkbrick.ui {
+  :where(
+    [data-inkbrick-ui='slash-menu'],
+    [data-inkbrick-ui='block-menu'],
+    [data-inkbrick-ui='toolbar']
+  ) {
+    box-sizing: border-box;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='slash-menu']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    width: 320px;
+    max-width: calc(100vw - 16px);
+    max-height: min(320px, 50vh);
+    padding: 4px;
+    overflow-y: auto;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item']) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    color: var(--inkbrick-fg-1);
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item'][data-active]) {
+    background: var(--inkbrick-bg-selected);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item'][data-active])::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--inkbrick-brand-bg);
+    transform: translateY(-50%);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='icon']) {
+    flex: none;
+    display: inline-grid;
+    place-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-2);
+    color: var(--inkbrick-fg-2);
+    font-size: 16px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='body']) {
+    min-width: 0;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='title']) {
+    font-weight: 400;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='description']),
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='empty']) {
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='empty']) {
+    padding: 8px;
+  }
+
+  :where([data-inkbrick-ui='toolbar']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-toolbar);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    padding: 4px;
+    box-shadow: var(--inkbrick-shadow-8);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:active) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button'][data-pressed]) {
+    border-color: var(--inkbrick-stroke-2);
+    background: var(--inkbrick-bg-selected);
+    color: var(--inkbrick-brand-fg);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='separator']) {
+    align-self: stretch;
+    width: 1px;
+    margin: 4px 2px;
+    background: var(--inkbrick-stroke-2);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='link-form']) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='input']) {
+    box-sizing: border-box;
+    width: 240px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-bottom-color: var(--inkbrick-stroke-accessible);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='input']:focus) {
+    outline: none;
+    border-bottom-color: var(--inkbrick-brand-bg);
+    box-shadow: 0 1px 0 var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='input'][data-invalid]) {
+    border-color: var(--inkbrick-status-danger-fg);
+    box-shadow: 0 1px 0 var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='block-handle']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-handle);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 28px;
+  }
+
+  /* Узкий экран: слева от текста нет полосы, ручка лежит поверх текста — нужна подложка */
+  :where([data-inkbrick-ui='block-handle'][data-compact]) {
+    padding: 0 2px;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-8);
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='button']),
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='grip']) {
+    display: inline-grid;
+    place-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-3);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='grip']) {
+    cursor: grab;
+    /* Долгое нажатие пальцем переносит блок: без прокрутки, выделения и системного меню. */
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='block-handle']
+      > :is([data-inkbrick-part='button'], [data-inkbrick-part='grip']):hover:not(:disabled)
+  ) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='grip'][data-active]) {
+    background: var(--inkbrick-bg-selected);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where(
+    [data-inkbrick-ui='block-handle']
+      > :is([data-inkbrick-part='button'], [data-inkbrick-part='grip']):focus-visible
+  ) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > :disabled) {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='block-menu']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-menu);
+    box-sizing: border-box;
+    min-width: 220px;
+    max-width: calc(100vw - 16px);
+    max-height: 60vh;
+    padding: 4px;
+    overflow-y: auto;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    outline: none;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']:hover:not([data-disabled])),
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']:focus-visible) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']:active:not([data-disabled])
+  ) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item'][data-disabled]) {
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item'][data-danger]:not([data-disabled])
+  ) {
+    color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='icon']) {
+    display: inline-grid;
+    place-content: center;
+    width: 20px;
+    color: var(--inkbrick-fg-2);
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu']
+      > [data-inkbrick-part='item'][data-danger]
+      [data-inkbrick-part='icon']
+  ) {
+    color: inherit;
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu']
+      > [data-inkbrick-part='item'][data-disabled]
+      [data-inkbrick-part='icon']
+  ) {
+    color: inherit;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='label']) {
+    padding: 8px 8px 4px;
+    border-top: 1px solid var(--inkbrick-stroke-3);
+    margin-top: 4px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+  }
+
+  :where([data-inkbrick-ui='drop-indicator']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-drop);
+    height: 2px;
+    border-radius: 1px;
+    background: var(--inkbrick-brand-bg);
+    pointer-events: none;
+  }
+
+  :where(body[data-inkbrick-dragging], body[data-inkbrick-dragging] *) {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']) {
+    position: relative;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='indicator']) {
+    position: absolute;
+    right: 8px;
+    bottom: 3px;
+    left: 8px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  /* Базовый вид образца стоит до цветовых правил: при нулевой специфичности :where() побеждает тот, кто ниже */
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-color='']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-pressed]) {
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='gray']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-gray);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='gray']
+  ) {
+    color: var(--inkbrick-color-gray);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='gray']
+  ) {
+    background: var(--inkbrick-highlight-gray);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='black']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-black);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='black']
+  ) {
+    color: var(--inkbrick-color-black);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='black']
+  ) {
+    background: var(--inkbrick-highlight-black);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='white']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-white);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='white']
+  ) {
+    color: var(--inkbrick-color-white);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='white']
+  ) {
+    background: var(--inkbrick-highlight-white);
+  }
+
+  /* Образцы чёрного и белого стоят на светлой/тёмной плашке: иначе «A» сливается с фоном панели в одной из тем */
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='black']
+  ) {
+    background: #d4d4d4;
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='white']
+  ) {
+    background: #3d3d3d;
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='brown']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-brown);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='brown']
+  ) {
+    color: var(--inkbrick-color-brown);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='brown']
+  ) {
+    background: var(--inkbrick-highlight-brown);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='orange']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-orange);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='orange']
+  ) {
+    color: var(--inkbrick-color-orange);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='orange']
+  ) {
+    background: var(--inkbrick-highlight-orange);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='yellow']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-yellow);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='yellow']
+  ) {
+    color: var(--inkbrick-color-yellow);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='yellow']
+  ) {
+    background: var(--inkbrick-highlight-yellow);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='green']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-green);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='green']
+  ) {
+    color: var(--inkbrick-color-green);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='green']
+  ) {
+    background: var(--inkbrick-highlight-green);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='blue']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-blue);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='blue']
+  ) {
+    color: var(--inkbrick-color-blue);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='blue']
+  ) {
+    background: var(--inkbrick-highlight-blue);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='purple']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-purple);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='purple']
+  ) {
+    color: var(--inkbrick-color-purple);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='purple']
+  ) {
+    background: var(--inkbrick-highlight-purple);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='pink']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-pink);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='pink']
+  ) {
+    color: var(--inkbrick-color-pink);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='pink']
+  ) {
+    background: var(--inkbrick-highlight-pink);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='red']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-red);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='red']
+  ) {
+    color: var(--inkbrick-color-red);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='red']
+  ) {
+    background: var(--inkbrick-highlight-red);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {
+    position: absolute;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 32px);
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  /* Панель уходит от выделения: над toolbar, если он над текстом, и под ним, если под текстом */
+  :where([data-inkbrick-ui='toolbar'][data-placement='above'] > [data-inkbrick-part='panel']) {
+    bottom: calc(100% + 6px);
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='below'] > [data-inkbrick-part='panel']) {
+    top: calc(100% + 6px);
+  }
+
+  :where([data-inkbrick-ui='formula-popover']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-source']) {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-bottom-color: var(--inkbrick-stroke-accessible);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font-family: var(--inkbrick-font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-source']:focus) {
+    outline: none;
+    border-bottom-color: var(--inkbrick-brand-bg);
+    box-shadow: 0 1px 0 var(--inkbrick-brand-bg);
+  }
+
+  :where(
+    [data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-source'][aria-invalid='true']
+  ) {
+    border-color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-preview']) {
+    min-height: 32px;
+    padding: 8px;
+    overflow-x: auto;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-2);
+    text-align: center;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-actions']) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] .formula-popover__spacer) {
+    flex: 1;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:active:not(:disabled)) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button'][data-primary]) {
+    border-color: var(--inkbrick-brand-bg);
+    background: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-on-brand);
+  }
+
+  :where(
+    [data-inkbrick-ui='formula-popover']
+      [data-inkbrick-part='button'][data-primary]:hover:not(:disabled)
+  ) {
+    border-color: var(--inkbrick-brand-bg-hover);
+    background: var(--inkbrick-brand-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button'][data-danger]) {
+    padding: 0 8px;
+    color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:disabled) {
+    border-color: var(--inkbrick-stroke-2);
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  @media (pointer: coarse) {
+    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']),
+    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
+      min-width: 40px;
+      height: 40px;
+    }
+
+    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
+      width: 40px;
+    }
+
+    :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {
+      grid-template-columns: repeat(6, 40px);
+    }
+
+    :where([data-inkbrick-part='formula-symbol']) {
+      height: 38px;
+    }
+  }
+}

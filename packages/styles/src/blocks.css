@@ -1,0 +1,899 @@
+/*
+ * Блоки. Каждый блок — элемент с data-inkbrick-block="<тип>", его части — data-inkbrick-part="<часть>".
+ * Состояния и параметры: data-selected, data-level, data-list-type, data-checked, data-tone, data-align,
+ * data-language, data-state, data-pressed, data-invalid.
+ */
+@layer inkbrick.blocks {
+  :where([data-inkbrick-block='note']) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--inkbrick-space-block);
+  }
+
+  :where(
+    [data-inkbrick-block='paragraph'],
+    [data-inkbrick-block='heading'],
+    [data-inkbrick-block='quote'],
+    [data-inkbrick-block='code'],
+    [data-inkbrick-block='callout'],
+    [data-inkbrick-block='unknown']
+  ) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    min-height: 32px;
+    border-radius: var(--inkbrick-radius-control);
+  }
+
+  :where([data-inkbrick-block='heading']) {
+    width: 100%;
+    color: var(--inkbrick-fg-1);
+    font-weight: var(--inkbrick-font-weight-semibold);
+  }
+
+  :where([data-inkbrick-block='heading'][data-level='1']) {
+    font-size: 32px;
+    line-height: 40px;
+  }
+
+  :where([data-inkbrick-block='heading'][data-level='2']) {
+    font-size: 28px;
+    line-height: 36px;
+  }
+
+  :where([data-inkbrick-block='heading'][data-level='3']) {
+    font-size: 24px;
+    line-height: 32px;
+  }
+
+  :where([data-inkbrick-block='heading'][data-level='4']) {
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+  :where([data-inkbrick-block='heading'][data-level='5']) {
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  :where([data-inkbrick-block='heading'][data-level='6']) {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  :where([data-inkbrick-block='list'] > [data-inkbrick-part='row']) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    min-height: 32px;
+  }
+
+  :where([data-inkbrick-block='list'] [data-inkbrick-part='marker']) {
+    flex: none;
+    min-width: 1.5em;
+    padding-top: 3px;
+    color: var(--inkbrick-fg-2);
+    text-align: right;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-block='list'] > [data-inkbrick-part='children']) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--inkbrick-space-block);
+    margin-inline-start: 32px;
+  }
+
+  :where([data-inkbrick-part='checkbox']) {
+    flex: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    margin: 7px 0 0;
+    border: 1px solid var(--inkbrick-stroke-accessible);
+    border-radius: 2px;
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-on-brand);
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition:
+      background-color var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      border-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='checkbox']:hover) {
+    border-color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-part='checkbox']:checked) {
+    border-color: var(--inkbrick-brand-bg);
+    background: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='checkbox']:checked:hover) {
+    border-color: var(--inkbrick-brand-bg-hover);
+    background: var(--inkbrick-brand-bg-hover);
+  }
+
+  :where([data-inkbrick-part='checkbox']:checked)::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  :where([data-inkbrick-part='checkbox']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='checkbox']:disabled) {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  :where(
+    [data-inkbrick-block='list'][data-checked='true']
+      > [data-inkbrick-part='row']
+      [data-inkbrick-part='content']
+  ) {
+    color: var(--inkbrick-fg-3);
+    text-decoration: line-through;
+  }
+
+  :where([data-inkbrick-block='quote']) {
+    display: block;
+    margin: 0;
+    padding-inline-start: 16px;
+    border-inline-start: 3px solid var(--inkbrick-stroke-1);
+    border-radius: 0;
+    color: var(--inkbrick-fg-2);
+  }
+
+  :where([data-inkbrick-block='code']) {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 4px 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-block='code'] > [data-inkbrick-part='toolbar']) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 6px 4px 8px;
+    border-bottom: 1px solid var(--inkbrick-stroke-3);
+    background: var(--inkbrick-bg-2);
+  }
+
+  :where([data-inkbrick-block='code'] [data-inkbrick-part='content']) {
+    display: block;
+    padding: 10px 14px 12px;
+    overflow-x: auto;
+    font-family: var(--inkbrick-font-mono);
+    font-size: 0.9em;
+    line-height: 1.55;
+    tab-size: 2;
+    white-space: pre;
+  }
+
+  :where([data-inkbrick-part='language']) {
+    height: 26px;
+    padding: 0 4px;
+    border: 1px solid transparent;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    font-size: var(--inkbrick-font-size-caption);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='language']:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-part='language']:disabled) {
+    cursor: default;
+  }
+
+  :where([data-inkbrick-part='language']:focus-visible),
+  :where([data-inkbrick-part='copy']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='copy']) {
+    display: inline-grid;
+    place-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-3);
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='copy']:hover) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-part='copy']:active) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-part='copy'][data-state='copied']) {
+    color: var(--inkbrick-status-success-fg);
+  }
+
+  :where([data-inkbrick-token='keyword']) {
+    color: var(--inkbrick-syntax-keyword);
+  }
+
+  :where([data-inkbrick-token='string']) {
+    color: var(--inkbrick-syntax-string);
+  }
+
+  :where([data-inkbrick-token='comment']) {
+    color: var(--inkbrick-syntax-comment);
+    font-style: italic;
+  }
+
+  :where([data-inkbrick-token='number']) {
+    color: var(--inkbrick-syntax-number);
+  }
+
+  :where([data-inkbrick-token='function']) {
+    color: var(--inkbrick-syntax-function);
+  }
+
+  :where([data-inkbrick-token='type']) {
+    color: var(--inkbrick-syntax-type);
+  }
+
+  :where([data-inkbrick-token='constant']) {
+    color: var(--inkbrick-syntax-constant);
+  }
+
+  :where([data-inkbrick-token='builtin']) {
+    color: var(--inkbrick-syntax-builtin);
+  }
+
+  :where([data-inkbrick-token='variable']) {
+    color: var(--inkbrick-syntax-variable);
+  }
+
+  :where([data-inkbrick-token='property']) {
+    color: var(--inkbrick-syntax-property);
+  }
+
+  :where([data-inkbrick-token='tag']) {
+    color: var(--inkbrick-syntax-tag);
+  }
+
+  :where([data-inkbrick-token='attribute']) {
+    color: var(--inkbrick-syntax-attribute);
+  }
+
+  :where([data-inkbrick-token='meta']) {
+    color: var(--inkbrick-syntax-meta);
+  }
+
+  :where([data-inkbrick-token='regex']) {
+    color: var(--inkbrick-syntax-regex);
+  }
+
+  :where([data-inkbrick-block='divider']) {
+    display: block;
+    padding: 10px 0;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-block='divider'] > [data-inkbrick-part='rule']) {
+    margin: 0;
+    border: none;
+    border-top: 1px solid var(--inkbrick-stroke-2);
+  }
+
+  :where([data-inkbrick-block='callout']) {
+    --callout-fg: var(--inkbrick-status-info-fg);
+    --callout-bg: var(--inkbrick-status-info-bg);
+    --callout-border: var(--inkbrick-status-info-border);
+
+    gap: 10px;
+    margin: 4px 0;
+    padding: 8px 12px;
+    border: 1px solid var(--callout-border);
+    background: var(--callout-bg);
+  }
+
+  :where([data-inkbrick-block='callout'][data-tone='warning']) {
+    --callout-fg: var(--inkbrick-status-warning-fg);
+    --callout-bg: var(--inkbrick-status-warning-bg);
+    --callout-border: var(--inkbrick-status-warning-border);
+  }
+
+  :where([data-inkbrick-block='callout'][data-tone='success']) {
+    --callout-fg: var(--inkbrick-status-success-fg);
+    --callout-bg: var(--inkbrick-status-success-bg);
+    --callout-border: var(--inkbrick-status-success-border);
+  }
+
+  :where([data-inkbrick-block='callout'][data-tone='danger']) {
+    --callout-fg: var(--inkbrick-status-danger-fg);
+    --callout-bg: var(--inkbrick-status-danger-bg);
+    --callout-border: var(--inkbrick-status-danger-border);
+  }
+
+  :where([data-inkbrick-block='callout'] > [data-inkbrick-part='icon']) {
+    flex: none;
+    display: inline-grid;
+    place-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--callout-fg);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-block='callout'] > [data-inkbrick-part='icon']:hover:not(:disabled)) {
+    background: color-mix(in srgb, var(--callout-fg) 12%, transparent);
+  }
+
+  :where([data-inkbrick-block='callout'] > [data-inkbrick-part='icon']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-block='callout'] > [data-inkbrick-part='icon']:disabled) {
+    cursor: default;
+  }
+
+  :where([data-inkbrick-block='unknown']) {
+    flex-wrap: wrap;
+    margin: 4px 0;
+    padding: 8px 12px;
+    border: 1px dashed var(--inkbrick-stroke-1);
+    color: var(--inkbrick-fg-3);
+    font-size: 13px;
+  }
+
+  :where([data-inkbrick-block='image']) {
+    display: block;
+    margin: 6px 0;
+  }
+
+  :where([data-inkbrick-part='figure']) {
+    position: relative;
+    margin: 0;
+  }
+
+  :where([data-inkbrick-part='figure'][data-align='center']) {
+    margin-inline: auto;
+  }
+
+  :where([data-inkbrick-part='figure'][data-align='right']) {
+    margin-inline-start: auto;
+  }
+
+  :where([data-inkbrick-part='image']) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--inkbrick-radius-surface);
+  }
+
+  :where([data-inkbrick-part='caption']) {
+    margin-top: 6px;
+    color: var(--inkbrick-fg-3);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  :where(input[data-inkbrick-part='caption']) {
+    display: block;
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    outline: none;
+  }
+
+  :where([data-inkbrick-part='tools']) {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: none;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-8);
+  }
+
+  :where([data-inkbrick-part='figure']:hover > [data-inkbrick-part='tools']),
+  :where([data-inkbrick-part='figure']:focus-within > [data-inkbrick-part='tools']) {
+    display: flex;
+  }
+
+  :where([data-inkbrick-part='tool']),
+  :where([data-inkbrick-part='width']),
+  :where([data-inkbrick-part='alt']),
+  :where([data-inkbrick-part='picker-input']),
+  :where([data-inkbrick-part='picker-button']) {
+    box-sizing: border-box;
+    height: 28px;
+    border: 1px solid transparent;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    font-size: var(--inkbrick-font-size-ui);
+  }
+
+  :where([data-inkbrick-part='tool']),
+  :where([data-inkbrick-part='picker-button']) {
+    display: inline-grid;
+    place-content: center;
+    min-width: 28px;
+    padding: 0 8px;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='tool']:hover),
+  :where([data-inkbrick-part='picker-button']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-part='tool']:active),
+  :where([data-inkbrick-part='picker-button']:active) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-part='tool'][data-pressed]) {
+    background: var(--inkbrick-bg-selected);
+    color: var(--inkbrick-brand-fg);
+  }
+
+  :where([data-inkbrick-part='tool']:focus-visible),
+  :where([data-inkbrick-part='picker-button']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='picker-button']) {
+    border-color: var(--inkbrick-stroke-1);
+    background: var(--inkbrick-bg-1);
+  }
+
+  :where([data-inkbrick-part='alt']),
+  :where([data-inkbrick-part='picker-input']) {
+    padding: 0 8px;
+    border-color: var(--inkbrick-stroke-1);
+    border-bottom-color: var(--inkbrick-stroke-accessible);
+    background: var(--inkbrick-bg-1);
+  }
+
+  :where([data-inkbrick-part='alt']) {
+    width: 110px;
+  }
+
+  :where([data-inkbrick-part='alt']:focus),
+  :where([data-inkbrick-part='picker-input']:focus) {
+    outline: none;
+    border-bottom-color: var(--inkbrick-brand-bg);
+    box-shadow: 0 1px 0 var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='picker-input']) {
+    flex: 1;
+  }
+
+  :where([data-inkbrick-part='picker-input'][aria-invalid='true']) {
+    border-color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-part='picker']) {
+    padding: 14px;
+    border: 1px dashed var(--inkbrick-stroke-1);
+    border-radius: var(--inkbrick-radius-surface);
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where([data-inkbrick-part='picker-row']) {
+    display: flex;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-part='picker-error']) {
+    margin-top: 6px;
+    color: var(--inkbrick-status-danger-fg);
+    font-size: 13px;
+  }
+
+  :where([data-inkbrick-part='status']) {
+    padding: 18px;
+    border: 1px dashed var(--inkbrick-stroke-1);
+    border-radius: var(--inkbrick-radius-surface);
+    color: var(--inkbrick-fg-3);
+    text-align: center;
+  }
+
+  :where([data-inkbrick-part='status'][data-state='error']) {
+    border-color: var(--inkbrick-status-danger-border);
+    background: var(--inkbrick-status-danger-bg);
+    color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-block='image'][data-selected='true']),
+  :where([data-inkbrick-block='divider'][data-selected='true']),
+  :where([data-inkbrick-block='formula'][data-selected='true']) {
+    border-radius: var(--inkbrick-radius-control);
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 2px;
+  }
+
+  :where([data-inkbrick-root] [data-inkbrick-dragging='true']) {
+    opacity: 0.4;
+  }
+
+  /* ---- Выравнивание текста: data-align на блоке, действует на его собственный текст (не на вложенные блоки) ---- */
+  :where(
+    [data-align='center'] > [data-inkbrick-part='content'],
+    [data-align='center'] > [data-inkbrick-part='row'] > [data-inkbrick-part='content']
+  ) {
+    text-align: center;
+  }
+
+  :where(
+    [data-align='right'] > [data-inkbrick-part='content'],
+    [data-align='right'] > [data-inkbrick-part='row'] > [data-inkbrick-part='content']
+  ) {
+    text-align: right;
+  }
+
+  :where(
+    [data-align='justify'] > [data-inkbrick-part='content'],
+    [data-align='justify'] > [data-inkbrick-part='row'] > [data-inkbrick-part='content']
+  ) {
+    text-align: justify;
+  }
+
+  :where([data-inkbrick-bg]) {
+    border-radius: 3px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  :where([data-inkbrick-color='gray']) {
+    color: var(--inkbrick-color-gray);
+  }
+
+  :where([data-inkbrick-bg='gray']) {
+    background-color: var(--inkbrick-highlight-gray);
+  }
+
+  :where([data-inkbrick-color='black']) {
+    color: var(--inkbrick-color-black);
+  }
+
+  :where([data-inkbrick-bg='black']) {
+    background-color: var(--inkbrick-highlight-black);
+  }
+
+  :where([data-inkbrick-color='white']) {
+    color: var(--inkbrick-color-white);
+  }
+
+  :where([data-inkbrick-bg='white']) {
+    background-color: var(--inkbrick-highlight-white);
+  }
+
+  :where([data-inkbrick-color='brown']) {
+    color: var(--inkbrick-color-brown);
+  }
+
+  :where([data-inkbrick-bg='brown']) {
+    background-color: var(--inkbrick-highlight-brown);
+  }
+
+  :where([data-inkbrick-color='orange']) {
+    color: var(--inkbrick-color-orange);
+  }
+
+  :where([data-inkbrick-bg='orange']) {
+    background-color: var(--inkbrick-highlight-orange);
+  }
+
+  :where([data-inkbrick-color='yellow']) {
+    color: var(--inkbrick-color-yellow);
+  }
+
+  :where([data-inkbrick-bg='yellow']) {
+    background-color: var(--inkbrick-highlight-yellow);
+  }
+
+  :where([data-inkbrick-color='green']) {
+    color: var(--inkbrick-color-green);
+  }
+
+  :where([data-inkbrick-bg='green']) {
+    background-color: var(--inkbrick-highlight-green);
+  }
+
+  :where([data-inkbrick-color='blue']) {
+    color: var(--inkbrick-color-blue);
+  }
+
+  :where([data-inkbrick-bg='blue']) {
+    background-color: var(--inkbrick-highlight-blue);
+  }
+
+  :where([data-inkbrick-color='purple']) {
+    color: var(--inkbrick-color-purple);
+  }
+
+  :where([data-inkbrick-bg='purple']) {
+    background-color: var(--inkbrick-highlight-purple);
+  }
+
+  :where([data-inkbrick-color='pink']) {
+    color: var(--inkbrick-color-pink);
+  }
+
+  :where([data-inkbrick-bg='pink']) {
+    background-color: var(--inkbrick-highlight-pink);
+  }
+
+  :where([data-inkbrick-color='red']) {
+    color: var(--inkbrick-color-red);
+  }
+
+  :where([data-inkbrick-bg='red']) {
+    background-color: var(--inkbrick-highlight-red);
+  }
+
+  :where([data-inkbrick-formula]) {
+    display: inline-block;
+    padding: 0 2px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-formula]:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-formula][data-state='error']) {
+    color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-formula][data-state='loading'])::part(math) {
+    font-family: var(--inkbrick-font-mono);
+    font-size: 0.9em;
+    opacity: 0.6;
+  }
+
+  /* Без теневого DOM исходный код показывает CSS: смещения курсора это не меняет */
+  :where([data-inkbrick-formula][data-state='fallback'])::after {
+    content: attr(data-latex);
+    font-family: var(--inkbrick-font-mono);
+    font-size: 0.9em;
+  }
+
+  :where([data-inkbrick-block='formula']) {
+    display: block;
+    margin: 4px 0;
+    border-radius: var(--inkbrick-radius-control);
+  }
+
+  :where([data-inkbrick-part='formula-display']) {
+    display: block;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border-radius: var(--inkbrick-radius-control);
+    text-align: center;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='formula-display']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-part='formula-display']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='formula-render'][data-display]) {
+    display: block;
+  }
+
+  :where([data-inkbrick-part='formula-render'][data-state='error']) {
+    color: var(--inkbrick-status-danger-fg);
+    font-family: var(--inkbrick-font-mono);
+    font-size: 0.9em;
+    white-space: pre-wrap;
+  }
+
+  :where([data-inkbrick-part='formula-error']) {
+    display: block;
+    margin-top: 4px;
+    color: var(--inkbrick-status-danger-fg);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+    text-align: left;
+  }
+
+  :where([data-inkbrick-part='formula-empty']) {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 14px;
+    border: 1px dashed var(--inkbrick-stroke-1);
+    border-radius: var(--inkbrick-radius-surface);
+    background: transparent;
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='formula-empty']:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-part='formula-empty']:disabled) {
+    cursor: default;
+  }
+
+  :where([data-inkbrick-part='formula-editor']) {
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-2);
+  }
+
+  :where([data-inkbrick-part='formula-source']) {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-bottom-color: var(--inkbrick-stroke-accessible);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-mono);
+    font-size: 0.9em;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  :where([data-inkbrick-part='formula-source']:focus) {
+    outline: none;
+    border-bottom-color: var(--inkbrick-brand-bg);
+    box-shadow: 0 1px 0 var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='formula-source'][aria-invalid='true']) {
+    border-color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-part='formula-preview']) {
+    min-height: 32px;
+    padding: 8px;
+    overflow-x: auto;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    text-align: center;
+  }
+
+  :where([data-inkbrick-part='formula-hint']) {
+    color: var(--inkbrick-fg-4);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-part='formula-palette']) {
+    display: grid;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-part='formula-palette-tabs']) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+
+  :where([data-inkbrick-part='formula-palette-tab']) {
+    min-width: 32px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-3);
+    font-family: 'Cambria Math', 'Segoe UI Symbol', 'Segoe UI', serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='formula-palette-tab']:hover) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-part='formula-palette-tab'][data-active]) {
+    border-color: var(--inkbrick-stroke-2);
+    background: var(--inkbrick-bg-selected);
+    color: var(--inkbrick-brand-fg);
+  }
+
+  :where([data-inkbrick-part='formula-palette-grid']) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 3px;
+    max-height: 132px;
+    overflow-y: auto;
+    padding: 2px;
+  }
+
+  :where([data-inkbrick-part='formula-symbol']) {
+    min-width: 0;
+    height: 30px;
+    padding: 0 4px;
+    overflow: hidden;
+    border: 1px solid var(--inkbrick-stroke-3);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: 'Cambria Math', 'Segoe UI Symbol', 'Segoe UI', serif;
+    font-size: 15px;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='formula-symbol']:hover) {
+    border-color: var(--inkbrick-stroke-2);
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-part='formula-symbol']:active) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-part='formula-palette-tab']:focus-visible),
+  :where([data-inkbrick-part='formula-symbol']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+}

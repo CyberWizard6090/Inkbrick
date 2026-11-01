@@ -1,0 +1,29 @@
+{
+  "name": "@inkbrick/styles",
+  "version": "0.1.0",
+  "description": "Default Inkbrick styles: design tokens, themes, and CSS layers over stable data-inkbrick-* attributes with zero specificity.",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "style": "src/index.css",
+  "exports": {
+    ".": "./src/index.css",
+    "./tokens.css": "./src/tokens.css",
+    "./base.css": "./src/base.css",
+    "./blocks.css": "./src/blocks.css",
+    "./ui.css": "./src/ui.css"
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CyberWizard6090/Inkbrick.git",
+    "directory": "packages/styles"
+  }
+}

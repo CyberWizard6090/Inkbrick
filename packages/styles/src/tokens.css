@@ -1,0 +1,326 @@
+/*
+ * Токены. Значения палитры, радиусов, теней и движения взяты из Fluent 2 (Windows 11): светлая и тёмная темы.
+ *
+ * Тема выбирается так:
+ *   - по умолчанию — по prefers-color-scheme;
+ *   - [data-inkbrick-theme='light'] / [data-inkbrick-theme='dark'] на любом элементе (в том числе на <html>) включает тему
+ *     принудительно для всего вложенного.
+ * Любой токен можно переопределить обычным CSS: он просто переменная.
+ */
+@layer inkbrick.tokens {
+  :where(:root, [data-inkbrick-theme]) {
+    --inkbrick-color-black: #000000;
+    --inkbrick-color-white: #ffffff;
+    --inkbrick-highlight-black: #000000;
+    --inkbrick-highlight-white: #ffffff;
+    --inkbrick-font-family:
+      'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto,
+      'Helvetica Neue', sans-serif;
+    --inkbrick-font-mono: 'Cascadia Code', 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+    --inkbrick-font-size: 16px; /* текст документа */
+    --inkbrick-line-height: 1.5;
+    --inkbrick-font-size-ui: 14px; /* меню, кнопки, поля */
+    --inkbrick-font-size-caption: 12px;
+    --inkbrick-font-weight-semibold: 600;
+
+    --inkbrick-radius-control: 4px; /* кнопки, поля, пункты меню */
+    --inkbrick-radius-surface: 8px; /* меню, панели, блоки-карточки */
+
+    --inkbrick-space-block: 2px; /* промежуток между блоками */
+    --inkbrick-icon-size: 16px;
+
+    --inkbrick-duration-fast: 100ms;
+    --inkbrick-duration-normal: 150ms;
+    --inkbrick-curve: cubic-bezier(0.33, 0, 0.67, 1);
+
+    --inkbrick-z-handle: 9990;
+    --inkbrick-z-menu: 9995;
+    --inkbrick-z-drop: 9996;
+    --inkbrick-z-toolbar: 9998;
+    --inkbrick-z-popup: 9999;
+  }
+
+  :where(:root, [data-inkbrick-theme='light']) {
+    color-scheme: light;
+
+    --inkbrick-fg-1: #242424;
+    --inkbrick-fg-2: #424242;
+    --inkbrick-fg-3: #616161;
+    --inkbrick-fg-4: #707070;
+    --inkbrick-fg-disabled: #bdbdbd;
+    --inkbrick-fg-on-brand: #ffffff;
+
+    --inkbrick-bg-1: #ffffff; /* поверхности: документ, меню, панели */
+    --inkbrick-bg-2: #fafafa;
+    --inkbrick-bg-3: #f5f5f5; /* фон приложения, код */
+    --inkbrick-bg-4: #f0f0f0;
+    --inkbrick-bg-hover: #f5f5f5;
+    --inkbrick-bg-pressed: #e0e0e0;
+    --inkbrick-bg-selected: #ebebeb;
+
+    --inkbrick-stroke-1: #d1d1d1;
+    --inkbrick-stroke-2: #e0e0e0;
+    --inkbrick-stroke-3: #f0f0f0;
+    --inkbrick-stroke-accessible: #616161;
+    --inkbrick-stroke-focus-1: #ffffff;
+    --inkbrick-stroke-focus-2: #000000;
+
+    --inkbrick-brand-bg: #0078d4;
+    --inkbrick-brand-bg-hover: #106ebe;
+    --inkbrick-brand-bg-pressed: #004578;
+    --inkbrick-brand-fg: #0f6cbd;
+    --inkbrick-brand-link: #106ebe;
+    --inkbrick-brand-tint: #eff6fc;
+
+    --inkbrick-status-info-fg: #106ebe;
+    --inkbrick-status-info-bg: #eff6fc;
+    --inkbrick-status-warning-fg: #bc4b09;
+    --inkbrick-status-warning-bg: #fff9f5;
+    --inkbrick-status-success-fg: #107c10;
+    --inkbrick-status-success-bg: #f1faf1;
+    --inkbrick-status-danger-fg: #b10e1c;
+    --inkbrick-status-danger-bg: #fdf3f4;
+
+    --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.12);
+    --inkbrick-shadow-key: rgba(0, 0, 0, 0.14);
+
+    --inkbrick-syntax-keyword: #0000ff;
+    --inkbrick-syntax-string: #a31515;
+    --inkbrick-syntax-comment: #008000;
+    --inkbrick-syntax-number: #098658;
+    --inkbrick-syntax-function: #795e26;
+    --inkbrick-syntax-type: #267f99;
+    --inkbrick-syntax-constant: #0070c1;
+    --inkbrick-syntax-builtin: #795e26;
+    --inkbrick-syntax-variable: #001080;
+    --inkbrick-syntax-property: #001080;
+    --inkbrick-syntax-tag: #800000;
+    --inkbrick-syntax-attribute: #e50000;
+    --inkbrick-syntax-meta: #af00db;
+    --inkbrick-syntax-regex: #811f3f;
+
+    --inkbrick-color-gray: #6b6b6b;
+    --inkbrick-color-brown: #a0592a;
+    --inkbrick-color-orange: #f26a00;
+    --inkbrick-color-yellow: #d49b00;
+    --inkbrick-color-green: #1ea01e;
+    --inkbrick-color-blue: #1473e6;
+    --inkbrick-color-purple: #8b3fe0;
+    --inkbrick-color-pink: #e5249b;
+    --inkbrick-color-red: #e5192b;
+    --inkbrick-highlight-gray: #d6d6d6;
+    --inkbrick-highlight-brown: #e3bf99;
+    --inkbrick-highlight-orange: #ffc58f;
+    --inkbrick-highlight-yellow: #ffe74a;
+    --inkbrick-highlight-green: #96e396;
+    --inkbrick-highlight-blue: #94c8ff;
+    --inkbrick-highlight-purple: #d0b4ff;
+    --inkbrick-highlight-pink: #ffb0e4;
+    --inkbrick-highlight-red: #ff9aa3;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :where(:root:not([data-inkbrick-theme='light'])) {
+      color-scheme: dark;
+
+      --inkbrick-fg-1: #ffffff;
+      --inkbrick-fg-2: #d6d6d6;
+      --inkbrick-fg-3: #adadad;
+      --inkbrick-fg-4: #999999;
+      --inkbrick-fg-disabled: #5c5c5c;
+      --inkbrick-fg-on-brand: #ffffff;
+
+      --inkbrick-bg-1: #292929;
+      --inkbrick-bg-2: #1f1f1f;
+      --inkbrick-bg-3: #141414;
+      --inkbrick-bg-4: #0a0a0a;
+      --inkbrick-bg-hover: #3d3d3d;
+      --inkbrick-bg-pressed: #1f1f1f;
+      --inkbrick-bg-selected: #383838;
+
+      --inkbrick-stroke-1: #666666;
+      --inkbrick-stroke-2: #525252;
+      --inkbrick-stroke-3: #3d3d3d;
+      --inkbrick-stroke-accessible: #adadad;
+      --inkbrick-stroke-focus-1: #000000;
+      --inkbrick-stroke-focus-2: #ffffff;
+
+      --inkbrick-brand-bg: #106ebe;
+      --inkbrick-brand-bg-hover: #0078d4;
+      --inkbrick-brand-bg-pressed: #004578;
+      --inkbrick-brand-fg: #479ef5;
+      --inkbrick-brand-link: #2899f5;
+      --inkbrick-brand-tint: #002848;
+
+      --inkbrick-status-info-fg: #3aa0f3;
+      --inkbrick-status-info-bg: #002848;
+      --inkbrick-status-warning-fg: #f7630c;
+      --inkbrick-status-warning-bg: #411200;
+      --inkbrick-status-success-fg: #54b054;
+      --inkbrick-status-success-bg: #052505;
+      --inkbrick-status-danger-fg: #dc626d;
+      --inkbrick-status-danger-bg: #3f1011;
+
+      --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.24);
+      --inkbrick-shadow-key: rgba(0, 0, 0, 0.28);
+
+      --inkbrick-syntax-keyword: #569cd6;
+      --inkbrick-syntax-string: #ce9178;
+      --inkbrick-syntax-comment: #6a9955;
+      --inkbrick-syntax-number: #b5cea8;
+      --inkbrick-syntax-function: #dcdcaa;
+      --inkbrick-syntax-type: #4ec9b0;
+      --inkbrick-syntax-constant: #4fc1ff;
+      --inkbrick-syntax-builtin: #dcdcaa;
+      --inkbrick-syntax-variable: #9cdcfe;
+      --inkbrick-syntax-property: #9cdcfe;
+      --inkbrick-syntax-tag: #569cd6;
+      --inkbrick-syntax-attribute: #9cdcfe;
+      --inkbrick-syntax-meta: #c586c0;
+      --inkbrick-syntax-regex: #d16969;
+
+      --inkbrick-color-gray: #b8b8b8;
+      --inkbrick-color-brown: #e08f55;
+      --inkbrick-color-orange: #ff8a3d;
+      --inkbrick-color-yellow: #ffd21f;
+      --inkbrick-color-green: #4ade4a;
+      --inkbrick-color-blue: #4aa3ff;
+      --inkbrick-color-purple: #b57dff;
+      --inkbrick-color-pink: #ff6bd1;
+      --inkbrick-color-red: #ff5a67;
+      --inkbrick-highlight-gray: #5c5c5c;
+      --inkbrick-highlight-brown: #7d4a28;
+      --inkbrick-highlight-orange: #b0480a;
+      --inkbrick-highlight-yellow: #947700;
+      --inkbrick-highlight-green: #1f7d1f;
+      --inkbrick-highlight-blue: #1c62bd;
+      --inkbrick-highlight-purple: #6c36bb;
+      --inkbrick-highlight-pink: #ab2781;
+      --inkbrick-highlight-red: #b52b37;
+    }
+  }
+
+  :where([data-inkbrick-theme='dark']) {
+    color-scheme: dark;
+
+    --inkbrick-fg-1: #ffffff;
+    --inkbrick-fg-2: #d6d6d6;
+    --inkbrick-fg-3: #adadad;
+    --inkbrick-fg-4: #999999;
+    --inkbrick-fg-disabled: #5c5c5c;
+    --inkbrick-fg-on-brand: #ffffff;
+
+    --inkbrick-bg-1: #292929;
+    --inkbrick-bg-2: #1f1f1f;
+    --inkbrick-bg-3: #141414;
+    --inkbrick-bg-4: #0a0a0a;
+    --inkbrick-bg-hover: #3d3d3d;
+    --inkbrick-bg-pressed: #1f1f1f;
+    --inkbrick-bg-selected: #383838;
+
+    --inkbrick-stroke-1: #666666;
+    --inkbrick-stroke-2: #525252;
+    --inkbrick-stroke-3: #3d3d3d;
+    --inkbrick-stroke-accessible: #adadad;
+    --inkbrick-stroke-focus-1: #000000;
+    --inkbrick-stroke-focus-2: #ffffff;
+
+    --inkbrick-brand-bg: #106ebe;
+    --inkbrick-brand-bg-hover: #0078d4;
+    --inkbrick-brand-bg-pressed: #004578;
+    --inkbrick-brand-fg: #479ef5;
+    --inkbrick-brand-link: #2899f5;
+    --inkbrick-brand-tint: #002848;
+
+    --inkbrick-status-info-fg: #3aa0f3;
+    --inkbrick-status-info-bg: #002848;
+    --inkbrick-status-warning-fg: #f7630c;
+    --inkbrick-status-warning-bg: #411200;
+    --inkbrick-status-success-fg: #54b054;
+    --inkbrick-status-success-bg: #052505;
+    --inkbrick-status-danger-fg: #dc626d;
+    --inkbrick-status-danger-bg: #3f1011;
+
+    --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.24);
+    --inkbrick-shadow-key: rgba(0, 0, 0, 0.28);
+
+    --inkbrick-syntax-keyword: #569cd6;
+    --inkbrick-syntax-string: #ce9178;
+    --inkbrick-syntax-comment: #6a9955;
+    --inkbrick-syntax-number: #b5cea8;
+    --inkbrick-syntax-function: #dcdcaa;
+    --inkbrick-syntax-type: #4ec9b0;
+    --inkbrick-syntax-constant: #4fc1ff;
+    --inkbrick-syntax-builtin: #dcdcaa;
+    --inkbrick-syntax-variable: #9cdcfe;
+    --inkbrick-syntax-property: #9cdcfe;
+    --inkbrick-syntax-tag: #569cd6;
+    --inkbrick-syntax-attribute: #9cdcfe;
+    --inkbrick-syntax-meta: #c586c0;
+    --inkbrick-syntax-regex: #d16969;
+
+    --inkbrick-color-gray: #b8b8b8;
+    --inkbrick-color-brown: #e08f55;
+    --inkbrick-color-orange: #ff8a3d;
+    --inkbrick-color-yellow: #ffd21f;
+    --inkbrick-color-green: #4ade4a;
+    --inkbrick-color-blue: #4aa3ff;
+    --inkbrick-color-purple: #b57dff;
+    --inkbrick-color-pink: #ff6bd1;
+    --inkbrick-color-red: #ff5a67;
+    --inkbrick-highlight-gray: #5c5c5c;
+    --inkbrick-highlight-brown: #7d4a28;
+    --inkbrick-highlight-orange: #b0480a;
+    --inkbrick-highlight-yellow: #947700;
+    --inkbrick-highlight-green: #1f7d1f;
+    --inkbrick-highlight-blue: #1c62bd;
+    --inkbrick-highlight-purple: #6c36bb;
+    --inkbrick-highlight-pink: #ab2781;
+    --inkbrick-highlight-red: #b52b37;
+  }
+
+  :where(:root, [data-inkbrick-theme]) {
+    --inkbrick-shadow-4:
+      0 0 2px var(--inkbrick-shadow-ambient), 0 2px 4px var(--inkbrick-shadow-key);
+    --inkbrick-shadow-8:
+      0 0 2px var(--inkbrick-shadow-ambient), 0 4px 8px var(--inkbrick-shadow-key);
+    --inkbrick-shadow-16:
+      0 0 2px var(--inkbrick-shadow-ambient), 0 8px 16px var(--inkbrick-shadow-key);
+
+    --inkbrick-status-info-border: color-mix(
+      in srgb,
+      var(--inkbrick-status-info-fg) 30%,
+      var(--inkbrick-status-info-bg)
+    );
+    --inkbrick-status-warning-border: color-mix(
+      in srgb,
+      var(--inkbrick-status-warning-fg) 30%,
+      var(--inkbrick-status-warning-bg)
+    );
+    --inkbrick-status-success-border: color-mix(
+      in srgb,
+      var(--inkbrick-status-success-fg) 30%,
+      var(--inkbrick-status-success-bg)
+    );
+    --inkbrick-status-danger-border: color-mix(
+      in srgb,
+      var(--inkbrick-status-danger-fg) 30%,
+      var(--inkbrick-status-danger-bg)
+    );
+
+    /* Прежние имена токенов (до перехода на Fluent) остаются рабочими. */
+    --inkbrick-bg-base: var(--inkbrick-bg-3);
+    --inkbrick-bg-surface: var(--inkbrick-bg-1);
+    --inkbrick-bg-hover-light: var(--inkbrick-bg-hover);
+    --inkbrick-bg-code: var(--inkbrick-bg-3);
+    --inkbrick-text-primary: var(--inkbrick-fg-1);
+    --inkbrick-text-secondary: var(--inkbrick-fg-3);
+    --inkbrick-text-heading: var(--inkbrick-fg-1);
+    --inkbrick-text-inverse: var(--inkbrick-fg-on-brand);
+    --inkbrick-border-color: var(--inkbrick-stroke-2);
+    --inkbrick-shadow-color: var(--inkbrick-shadow-key);
+    --inkbrick-accent-color: var(--inkbrick-brand-bg);
+    --inkbrick-accent-hover: var(--inkbrick-brand-bg-hover);
+  }
+}
