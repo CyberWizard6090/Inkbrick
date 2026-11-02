@@ -15,6 +15,7 @@ import { createInputActions } from '../editing/inputActions';
 import { readDocSelection, type DocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { hasExternalImages, rehostExternalImages } from '../images/external';
 import { insertImageFiles } from '../images/insertImages';
 import { isAcceptedImage } from '../images/upload';
 import { setLinkInSelection } from '../toolbar/formatting';
@@ -168,6 +169,19 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       return true;
     };
 
+    // Вставка ждёт, пока `images.rehost` ответит для чужих картинок: до этого запросов к чужим серверам нет.
+    const pasteRehosted = async (fragment: Fragment, selection: DocSelection, text: string) => {
+      const resolved = await rehostExternalImages(fragment, images.rehost!);
+      const target =
+        readDocSelection(root) ??
+        (editor.store.getBlock(selection.from.blockId) ? selection : null);
+
+      if (!target || editor.readOnly) return;
+
+      if (resolved.blocks.length > 0 && pasteFragment(resolved, target)) return;
+      if (text) pastePlain(text, target);
+    };
+
     const onPaste = (event: ClipboardEvent) => {
       if (isForeignControl(event.target)) return;
 
@@ -203,9 +217,14 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
         const json = data.getData(FRAGMENT_MIME);
         const html = data.getData('text/html');
 
-        const fragment =
-          (json ? sanitizeFragment(parseJson(json)) : null) ??
-          (html ? (embeddedFragment(html) ?? htmlToFragment(html)) : null);
+        // Свой формат буфера — копия из этого же редактора; HTML может прийти откуда угодно, и его картинки чужие.
+        const own = json ? sanitizeFragment(parseJson(json)) : null;
+        const fragment = own ?? (html ? (embeddedFragment(html) ?? htmlToFragment(html)) : null);
+
+        if (fragment && !own && images.rehost && hasExternalImages(fragment)) {
+          void pasteRehosted(fragment, selection, text);
+          return;
+        }
 
         if (fragment && pasteFragment(fragment, selection)) return;
       }
