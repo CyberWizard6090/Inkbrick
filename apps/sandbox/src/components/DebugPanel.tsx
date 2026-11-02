@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { useEditor, useReadOnly } from '@inkbrick/react';
 import {
   exportDocument,
-  serializeDocument,
   validateSnapshot,
   type BaseBlock,
   type Document,
@@ -156,7 +155,7 @@ function useCommandLog(editor: Editor) {
 }
 
 function validate(document: Document, editor: Editor, t: SandboxI18n['t']): string[] {
-  const problems = validateSnapshot(serializeDocument(document), editor.schema);
+  const problems = validateSnapshot(editor.serialize(), editor.schema);
   const blocks = document.dump();
   const reachable = new Set<string>();
   // Обход итеративный: рекурсия на длинной цепочке вложенности переполнила бы стек.

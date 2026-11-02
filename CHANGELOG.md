@@ -13,6 +13,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- **Breaking:** `serializeDocument(document, schema)` requires the schema registry. Without it the snapshot had no `schemaVersions`, and
+  props of a block whose schema version later increased were migrated twice on load. Pass `editor.schema` or use the
+  new `editor.serialize()`.
+- Snapshots carry a `version` (the format of the snapshot itself, currently `1`); `validateSnapshot` rejects a newer one.
+  Snapshots without `version` still load.
 - The code language and the image width use a styled dropdown (`data-inkbrick-ui="select"`) with keyboard
   navigation instead of the native `<select>`.
 - The replace-image button uses a cleaner icon (`refresh-cw`).

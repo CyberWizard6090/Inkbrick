@@ -74,7 +74,9 @@ describe('scaling (no quadratic algorithms)', () => {
   });
 
   it('deserialize + serialize', () => {
-    expect(ratio((s) => serializeDocument(deserializeDocument(s, { schema })))).toBeLessThan(30);
+    expect(
+      ratio((s) => serializeDocument(deserializeDocument(s, { schema }), schema)),
+    ).toBeLessThan(30);
   });
 
   it('repairSnapshot', () => {

@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  createSchemaRegistry,
-  deserializeDocument,
-  serializeDocument,
-  z,
-  type BlockSchema,
-} from '@inkbrick/document';
+import { createSchemaRegistry, deserializeDocument, z, type BlockSchema } from '@inkbrick/document';
 
 import { Editor, type CaretResult } from '../src';
 
@@ -54,10 +48,10 @@ describe('custom block types', () => {
     });
 
     const schema = createSchemaRegistry([WidgetSchema]);
-    const snapshot = serializeDocument(editor.document);
+    const snapshot = editor.serialize();
     const restored = new Editor({ schema, document: deserializeDocument(snapshot, { schema }) });
 
-    expect(serializeDocument(restored.document)).toEqual(snapshot);
+    expect(restored.serialize()).toEqual(snapshot);
     expect(restored.document.getBlock(block.id)!.props).toEqual({ tone: 'warn' });
   });
 
@@ -97,7 +91,7 @@ describe('custom block types', () => {
 describe('unknown blocks', () => {
   function withUnknown() {
     const source = new Editor();
-    const snapshot = serializeDocument(source.document);
+    const snapshot = source.serialize();
     const note = snapshot.blocks[snapshot.rootId].children[0];
     const first = snapshot.blocks[note].children[0];
 
@@ -120,7 +114,7 @@ describe('unknown blocks', () => {
   it('survive a load/save cycle unchanged', () => {
     const { editor, snapshot } = withUnknown();
 
-    expect(serializeDocument(editor.document)).toEqual(snapshot);
+    expect(editor.serialize()).toEqual(snapshot);
   });
 
   it('cannot be edited, merged into or morphed by commands', () => {
@@ -166,5 +160,18 @@ describe('unknown blocks', () => {
     editor.execute('delete-block', { id: 'u1' });
 
     expect(editor.document.getBlock('u1')).toBeUndefined();
+  });
+});
+
+describe('Editor.serialize', () => {
+  it('records the format and schema versions and round-trips through deserializeDocument', () => {
+    const editor = new Editor();
+    const snapshot = editor.serialize();
+
+    expect(snapshot.version).toBe(1);
+    expect(snapshot.schemaVersions).toMatchObject({ 'block:paragraph': 1 });
+    expect(deserializeDocument(snapshot, { schema: editor.schema }).rootId).toBe(
+      editor.document.rootId,
+    );
   });
 });

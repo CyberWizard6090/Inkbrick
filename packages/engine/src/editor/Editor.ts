@@ -1,8 +1,10 @@
 import {
   createDocument,
   createSchemaRegistry,
+  serializeDocument,
   type BlockSchema,
   type Document,
+  type DocumentSnapshot,
   type SchemaRegistry,
 } from '@inkbrick/document';
 import {
@@ -95,6 +97,11 @@ export class Editor {
 
   dispatch(intent: EditorIntent): unknown {
     return this.dispatcher.dispatch(intent);
+  }
+
+  /** JSON-снимок документа с версиями формата и схем: его можно сохранить и позже загрузить через `deserializeDocument`. */
+  serialize(): DocumentSnapshot {
+    return serializeDocument(this.document, this.schema);
   }
 
   private readonly readOnlyListeners = new Set<() => void>();

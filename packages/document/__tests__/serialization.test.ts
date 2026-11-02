@@ -24,7 +24,7 @@ const WidgetSchema: BlockSchema = {
 
 function snapshotWithWidget(props: Record<string, unknown> = { tone: 'warn' }) {
   const schema = createSchemaRegistry([WidgetSchema]);
-  const snapshot = serializeDocument(createDocument({ schema }));
+  const snapshot = serializeDocument(createDocument({ schema }), schema);
   const note = snapshot.blocks[snapshot.rootId].children[0];
 
   snapshot.blocks['c1'] = {
@@ -36,6 +36,7 @@ function snapshotWithWidget(props: Record<string, unknown> = { tone: 'warn' }) {
     props,
   };
   snapshot.blocks[note].children.push('c1');
+  snapshot.schemaVersions = { ...snapshot.schemaVersions, 'block:widget': 1 };
 
   return { snapshot, schema };
 }
@@ -46,7 +47,7 @@ describe('serialization', () => {
 
     const restored = deserializeDocument(snapshot, { schema });
 
-    expect(serializeDocument(restored)).toEqual(snapshot);
+    expect(serializeDocument(restored, schema)).toEqual(snapshot);
   });
 
   it('produces plain JSON (no functions, components or class instances)', () => {
@@ -56,14 +57,14 @@ describe('serialization', () => {
   });
 
   it('keeps blocks of an unregistered flavour intact', () => {
-    const { snapshot } = snapshotWithWidget();
+    const { snapshot, schema } = snapshotWithWidget();
     const withoutWidget = createSchemaRegistry();
 
     expect(validateSnapshot(snapshot, withoutWidget)).toEqual([]);
 
     const restored = deserializeDocument(snapshot, { schema: withoutWidget });
 
-    expect(serializeDocument(restored)).toEqual(snapshot);
+    expect(serializeDocument(restored, schema)).toEqual(snapshot);
   });
 
   it('rejects invalid props of a known flavour', () => {
