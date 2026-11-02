@@ -52,14 +52,14 @@ export function MyEditor() {
 Save and load documents as plain JSON:
 
 ```ts
-import { createSchemaRegistry, deserializeDocument, serializeDocument } from '@inkbrick/document';
+import { deserializeDocument } from '@inkbrick/document';
 
-const schema = createSchemaRegistry();
-const json = JSON.stringify(serializeDocument(editor.document, schema));
+// The snapshot carries the format and schema versions, so later migrations run exactly once.
+const json = JSON.stringify(editor.serialize());
 
 const restored = new Editor({
-  schema,
-  document: deserializeDocument(JSON.parse(json), { schema }),
+  schema: editor.schema,
+  document: deserializeDocument(JSON.parse(json), { schema: editor.schema }),
 });
 ```
 

@@ -6,7 +6,7 @@ import {
   virtualRenderer,
   type ImageOptions,
 } from '@inkbrick/react';
-import { serializeDocument, type DocumentSnapshot, type TextAttributes } from '@inkbrick/document';
+import { type DocumentSnapshot, type TextAttributes } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 import { InsertChildChange, SetBlockChange } from '@inkbrick/store';
 
@@ -261,7 +261,7 @@ window.__counterEvents = counterEvents;
 export const publish = (editor: Editor) => {
   (window.__inkbrick ??= {}).main = {
     editor,
-    snapshot: () => serializeDocument(editor.document),
+    snapshot: () => editor.serialize(),
   };
 };
 

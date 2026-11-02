@@ -1,12 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  createSchemaRegistry,
-  deserializeDocument,
-  serializeDocument,
-  z,
-  type BlockSchema,
-} from '@inkbrick/document';
+import { createSchemaRegistry, deserializeDocument, z, type BlockSchema } from '@inkbrick/document';
 
 import {
   Editor,
@@ -204,7 +198,7 @@ describe('block controllers', () => {
     const { editor, insertCounter } = setup();
     const id = insertCounter();
     const schema = createSchemaRegistry([CounterSchema]);
-    const document = deserializeDocument(serializeDocument(editor.document), { schema });
+    const document = deserializeDocument(editor.serialize(), { schema });
     const onCreate = vi.fn();
     const onInsert = vi.fn();
 

@@ -1,4 +1,3 @@
-import { serializeDocument } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import type { SandboxMessage } from './i18n';
@@ -80,7 +79,7 @@ const removeStoredDocument = () => run('readwrite', (store) => store.delete(DOCU
 export async function saveDocument(editor: Editor): Promise<void> {
   if (disabled || !persistenceEnabled()) return;
 
-  await writeStoredDocument(serializeDocument(editor.document, editor.schema));
+  await writeStoredDocument(editor.serialize());
 }
 
 export interface RestoredEditor {
@@ -181,7 +180,7 @@ export async function clearSandboxStorage(): Promise<void> {
 }
 
 export function downloadDocument(editor: Editor): void {
-  const json = JSON.stringify(serializeDocument(editor.document, editor.schema), null, 2);
+  const json = JSON.stringify(editor.serialize(), null, 2);
   const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
   const link = document.createElement('a');
 

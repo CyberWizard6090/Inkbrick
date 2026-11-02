@@ -49,11 +49,13 @@ const Widget: BlockSchema = {
 };
 ```
 
-- `serializeDocument(document, schema)` кладёт в снимок `schemaVersions` (flavour → версия). Без реестра
-  версии не записываются.
-- `deserializeDocument` сначала мигрирует props устаревших блоков (снимок без `schemaVersions` считается версией 1),
+- `serializeDocument(document, schema)` (или `editor.serialize()`) всегда кладёт в снимок `version` (формат снимка) и
+  `schemaVersions` (flavour → версия). Реестр обязателен: снимок без версий читается как версия 1, и после повышения
+  версии блока его props мигрировали бы повторно. Передавайте реестр редактора (`editor.schema`), а не новый
+  `createSchemaRegistry()` без ваших блоков.
+- `deserializeDocument` сначала мигрирует props устаревших блоков (снимок без `schemaVersions`, записанный старой версией библиотеки, считается версией 1),
   затем проверяет результат `propsSchema`. Исключение в `migrate` превращается в `DocumentValidationError`.
-- Снимок, сохранённый **более новой** версией схемы, отклоняется: `saved with schema version 3, newer than supported 2`.
+- Снимок, сохранённый **более новой** версией схемы, отклоняется: `saved with schema version 3, newer than supported 2`. Снимок с `version` новее поддерживаемого форматом отклоняется так же.
 - Входной снимок не изменяется; `migrateSnapshot(snapshot, schema)` доступна отдельно.
 
 ## Метаданные блоков (`meta`)

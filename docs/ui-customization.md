@@ -111,7 +111,7 @@ const editor = new Editor({ schema, document });
 
 ## 5. Сохранение и загрузка
 
-`serializeDocument(document)` возвращает обычный JSON (`{ rootId, blocks }`), `deserializeDocument`
+`editor.serialize()` (или `serializeDocument(document, schema)`) возвращает обычный JSON (`{ version, rootId, blocks, schemaVersions }`), `deserializeDocument`
 проверяет целостность дерева и props известных блоков и бросает `DocumentValidationError`.
 
 ## 6. Неизвестные блоки

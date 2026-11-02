@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  createSchemaRegistry,
-  deserializeDocument,
-  serializeDocument,
-  type BlockId,
-} from '@inkbrick/document';
+import { createSchemaRegistry, deserializeDocument, type BlockId } from '@inkbrick/document';
 
 import {
   Editor,
@@ -563,7 +558,7 @@ describe('pasteFragment', () => {
     expect(dst.flat()).toEqual(['paragraph:note']);
 
     const schema = createSchemaRegistry();
-    const restored = deserializeDocument(serializeDocument(dst.editor.document), { schema });
+    const restored = deserializeDocument(dst.editor.serialize(), { schema });
     expect(restored.getBlock(dst.ids[0])).toBeDefined();
   });
 });
