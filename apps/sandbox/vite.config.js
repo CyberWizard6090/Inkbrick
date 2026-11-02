@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// HOST=0.0.0.0 нужен внутри Docker; VITE_USE_POLLING=true — для bind-mount на Windows/macOS.
+// HOST=0.0.0.0 нужен внутри Docker; allowedHosts — имя сервиса compose, по которому e2e-контейнер ходит на dev-сервер.
 export default defineConfig({
   server: {
     host: process.env.HOST ?? '127.0.0.1',
     port: 5173,
     strictPort: true,
-    watch: process.env.VITE_USE_POLLING === 'true' ? { usePolling: true } : undefined,
+    allowedHosts: ['dev'],
   },
   preview: {
     host: process.env.HOST ?? '127.0.0.1',
