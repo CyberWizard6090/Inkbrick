@@ -43,7 +43,7 @@ interface BlockViewProps {
   readonly editor: Editor; // изменения — только через editor.dispatch(...)
   readonly selected: boolean; // блок затронут непустым выделением
   readonly readOnly: boolean; // режим только чтения: не предлагайте редактирование
-  readonly controller?: BlockController; // контроллер типа блока (раздел 9)
+  readonly controller?: BlockController; // контроллер типа блока (раздел 10)
 }
 ```
 
@@ -54,7 +54,7 @@ interface BlockViewProps {
 - Свои `<input>`, `<textarea>`, `<button>` внутри компонента работают как обычно: редактор не перехватывает их события.
   Для произвольного нередактируемого виджета добавьте `contentEditable={false}` (и `data-inkbrick-ignore-input`, если в нём нужен свой ввод). Обычный `<p>{text}</p>` текст не редактирует.
 - Дочерние блоки выводит `<BlockChildren id={block.id} />`.
-- Поведение блока (свои команды, хуки, пункты меню, клавиши) задаёт контроллер — см. раздел 9.
+- Поведение блока (свои команды, хуки, пункты меню, клавиши) задаёт контроллер — см. раздел 10.
 
 ## 3. Slots (оболочка редактора)
 
@@ -62,8 +62,9 @@ interface BlockViewProps {
 <EditorProvider editor={editor} slots={{ UnknownBlock: MyUnknownBlock }} />
 ```
 
-Сейчас доступны слоты `UnknownBlock` (заглушка неизвестного блока) и `SlashMenu` (см. [slash-меню](slash-menu.md)). Toolbar, меню блока и drag handle появятся в `slots`
-вместе с самими элементами интерфейса (их в редакторе пока нет).
+Доступные слоты: `UnknownBlock` (заглушка неизвестного блока), `SlashMenu` (см. [slash-меню](slash-menu.md)), `Toolbar`,
+`BlockHandle` (ручка слева от блока), `BlockMenu` и `DropIndicator`. `null` для `Toolbar`, `BlockHandle` и `DropIndicator` отключает
+соответствующий элемент.
 
 ## 4. Новый тип блока
 
@@ -75,7 +76,7 @@ import { z, type BlockSchema } from '@inkbrick/document';
 const calloutProps = z.object({ tone: z.enum(['info', 'warn']).default('info') });
 
 export const CalloutSchema: BlockSchema<typeof calloutProps> = {
-  flavour: 'block:callout',
+  flavour: 'app:callout',
   name: 'Callout',
   icon: 'info',
   propsSchema: calloutProps,
@@ -89,11 +90,13 @@ export const CalloutSchema: BlockSchema<typeof calloutProps> = {
 const editor = new Editor({ blocks: [CalloutSchema] });
 editor.dispatch({
   type: 'insertBlock',
-  payload: { flavour: 'block:callout', afterId: someBlockId },
+  payload: { flavour: 'app:callout', afterId: someBlockId },
 });
 
-<EditorProvider editor={editor} components={{ 'block:callout': CalloutView }} />;
+<EditorProvider editor={editor} components={{ 'app:callout': CalloutView }} />;
 ```
+
+Имя `block:callout` занято встроенным блоком (тона `info | warning | success | danger`): для своих типов берите другой префикс, например `app:`. Встроенный блок меняется только своим представлением (раздел 1), а не новой схемой.
 
 `z` экспортируется из `@inkbrick/document` — отдельная зависимость от zod в приложении не нужна.
 Props проверяются схемой при создании и изменении блока; при ошибке транзакция откатывается.
