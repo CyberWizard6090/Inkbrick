@@ -39,6 +39,7 @@ test.describe('Code block: language list', () => {
     await expect(page.locator(code)).toHaveAttribute('data-language', 'yaml');
 
     await page.keyboard.press('ArrowDown');
+    await expect(page.locator(list)).toBeVisible();
     await page.keyboard.press('r');
     await page.keyboard.press('Enter');
 
@@ -141,29 +142,25 @@ test.describe('Image picker', () => {
     const picker = page.getByTestId('image-picker');
     await expect(picker).toBeVisible();
 
-    const dropped = await picker.evaluate(async (element) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 2;
-      canvas.height = 2;
-      const blob = await new Promise<Blob>((resolve) =>
-        canvas.toBlob((b) => resolve(b!), 'image/png'),
-      );
-      const transfer = new DataTransfer();
-      transfer.items.add(new File([blob], 'dot.png', { type: 'image/png' }));
+    const drag = (type: 'dragenter' | 'drop') =>
+      picker.evaluate(async (element, eventType) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 2;
+        canvas.height = 2;
+        const blob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((b) => resolve(b!), 'image/png'),
+        );
+        const transfer = new DataTransfer();
+        transfer.items.add(new File([blob], 'dot.png', { type: 'image/png' }));
 
-      element.dispatchEvent(
-        new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: transfer }),
-      );
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const highlighted = element.hasAttribute('data-dragging');
-      element.dispatchEvent(
-        new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer }),
-      );
+        element.dispatchEvent(
+          new DragEvent(eventType, { bubbles: true, cancelable: true, dataTransfer: transfer }),
+        );
+      }, type);
 
-      return highlighted;
-    });
-
-    expect(dropped).toBe(true);
+    await drag('dragenter');
+    await expect(picker).toHaveAttribute('data-dragging', 'true');
+    await drag('drop');
     await expect(page.locator('[data-inkbrick-block="image"]')).toHaveCount(1);
     await expect(page.locator('[data-inkbrick-block="image"] img')).toHaveAttribute(
       'src',

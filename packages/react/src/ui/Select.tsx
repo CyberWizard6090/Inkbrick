@@ -170,6 +170,7 @@ export function Select({
         break;
       default:
         if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
           const key = event.key.toLowerCase();
           const next = options.findIndex(
             (option, index) => index > active && option.label.toLowerCase().startsWith(key),
@@ -201,7 +202,9 @@ export function Select({
         onKeyDown={(event) => {
           event.stopPropagation();
 
-          if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+          if (open) {
+            onListKeyDown(event);
+          } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             show();
           }
