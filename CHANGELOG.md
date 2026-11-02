@@ -5,10 +5,23 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
-## 0.1.0-alpha.0
+## 0.1.0-alpha.0 — 2026-11-01
 
 First public alpha, published under the `alpha` dist-tag: `npm install @inkbrick/react@alpha`. The API may change
 between alpha releases.
+
+### Features
+
+- Block editor on a single `contenteditable` root: paragraphs, headings, lists (bullet, ordered, tasks, nesting),
+  quotes, code with syntax highlighting, callouts, dividers, images, block and inline formulas.
+- Text formats, links, colors, highlight, alignment; floating toolbar, slash menu, block handles and menu,
+  drag and drop (mouse and touch), keyboard shortcuts (`keymap`).
+- Transactions with undo/redo, read-only mode, clipboard (plain text, HTML, exact Inkbrick fragments; Word and
+  Google Docs markup), export to Markdown, HTML and text.
+- Schemas with roles, nesting rules, versions and migrations; `repairSnapshot` for damaged documents.
+- Customization: `presentation`, `components`, `slots`, custom blocks with controllers (`defineBlock`),
+  data-attribute styling contract with themes, i18n (en, ru, custom dictionaries).
+- Virtual renderer for large documents; mobile input (IME) support.
 
 ### Added
 
@@ -29,18 +42,3 @@ between alpha releases.
 - Backspace at the start and Delete at the end of a block did nothing in Safari (WebKit sends no `beforeinput`
   there).
 - Pasting deeply nested HTML was slow (the block-detection scan walked the whole subtree at every level).
-
-## 0.1.0 — 2026-11-01
-
-First public version.
-
-- Block editor on a single `contenteditable` root: paragraphs, headings, lists (bullet, ordered, tasks, nesting),
-  quotes, code with syntax highlighting, callouts, dividers, images, block and inline formulas.
-- Text formats, links, colors, highlight, alignment; floating toolbar, slash menu, block handles and menu,
-  drag and drop (mouse and touch), keyboard shortcuts (`keymap`).
-- Transactions with undo/redo, read-only mode, clipboard (plain text, HTML, exact Inkbrick fragments; Word and
-  Google Docs markup), export to Markdown, HTML and text.
-- Schemas with roles, nesting rules, versions and migrations; `repairSnapshot` for damaged documents.
-- Customization: `presentation`, `components`, `slots`, custom blocks with controllers (`defineBlock`),
-  data-attribute styling contract with themes, i18n (en, ru, custom dictionaries).
-- Virtual renderer for large documents; mobile input (IME) support.
