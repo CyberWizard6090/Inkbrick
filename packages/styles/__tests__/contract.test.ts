@@ -20,17 +20,21 @@ function selectorsOf(css: string): string[] {
   const selectors: string[] = [];
   let depth = 0;
   let buffer = '';
+  let keyframesDepth = -1;
 
   for (const char of css) {
     if (char === '{') {
       const prelude = buffer.trim();
 
-      if (!prelude.startsWith('@') && depth > 0) selectors.push(prelude);
+      if (prelude.startsWith('@keyframes')) keyframesDepth = depth;
+      else if (!prelude.startsWith('@') && depth > 0 && keyframesDepth === -1)
+        selectors.push(prelude);
 
       depth++;
       buffer = '';
     } else if (char === '}') {
       depth--;
+      if (depth === keyframesDepth) keyframesDepth = -1;
       buffer = '';
     } else if (char === ';') {
       buffer = '';

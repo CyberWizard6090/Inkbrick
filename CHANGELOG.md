@@ -5,6 +5,12 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
+### Added
+
+- Code block: collapse with an animated height (`collapsed` prop) and an optional caption (`caption` prop, exported as
+  `<figure>`/`<figcaption>` in HTML and an italic line in Markdown).
+- Image picker: a drop zone with an upload button; a file dropped on it fills that block.
+
 ### Changed
 
 - **Breaking:** `serializeDocument(document, schema)` requires the schema registry. Without it the snapshot had no `schemaVersions`, and
@@ -12,6 +18,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   new `editor.serialize()`.
 - Snapshots carry a `version` (the format of the snapshot itself, currently `1`); `validateSnapshot` rejects a newer one.
   Snapshots without `version` still load.
+- The code language and the image width use a styled dropdown (`data-inkbrick-ui="select"`) with keyboard
+  navigation instead of the native `<select>`.
+- The replace-image button uses a cleaner icon (`refresh-cw`).
 
 ## 0.1.0-alpha.0 — 2026-11-01
 

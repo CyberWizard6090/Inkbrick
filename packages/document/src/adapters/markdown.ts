@@ -120,7 +120,10 @@ export function toMarkdown(document: Document, options: ExportOptions = {}): str
         const language = stringProp(block, 'language', 'plain');
         const info = language === 'plain' ? '' : language.replace(/[^\w+#.-]/g, '');
 
-        return `${fence}${info}\n${code}\n${fence}`;
+        const caption = escapeText(stringProp(block, 'caption'));
+        const fenced = `${fence}${info}\n${code}\n${fence}`;
+
+        return caption ? `${fenced}\n\n*${caption}*` : fenced;
       }
       case 'block:divider':
         return '---';

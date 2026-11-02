@@ -804,7 +804,95 @@
     outline-offset: 1px;
   }
 
+  :where([data-inkbrick-ui='select']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    max-width: calc(100vw - 16px);
+    max-height: min(320px, 50vh);
+    padding: 4px;
+    overflow-y: auto;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    box-shadow: var(--inkbrick-shadow-16);
+    outline: none;
+    animation: inkbrick-popup-in var(--inkbrick-duration-normal) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='select'][data-side='top']) {
+    animation-name: inkbrick-popup-in-up;
+  }
+
+  :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option']) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 32px;
+    padding: 0 8px 0 12px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option'][data-active]) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option'][aria-selected='true']) {
+    background: var(--inkbrick-bg-selected);
+  }
+
+  :where(
+    [data-inkbrick-ui='select'] > [data-inkbrick-part='option'][aria-selected='true']
+  )::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--inkbrick-brand-bg);
+    transform: translateY(-50%);
+  }
+
+  :where([data-inkbrick-ui='select'] [data-inkbrick-part='option-check']) {
+    color: var(--inkbrick-brand-fg);
+  }
+
+  @keyframes inkbrick-popup-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes inkbrick-popup-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-ui='select']) {
+      animation: none;
+    }
+  }
+
   @media (pointer: coarse) {
+    :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option']) {
+      min-height: 40px;
+    }
+
     :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']),
     :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
       min-width: 40px;
