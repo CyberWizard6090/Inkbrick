@@ -222,6 +222,14 @@ describe('toMarkdown', () => {
     );
   });
 
+  it('puts the code caption under the fence', () => {
+    const document = build([
+      { flavour: 'block:code', content: [text('x')], props: { language: 'ts', caption: 'a *b*' } },
+    ]);
+
+    expect(toMarkdown(document, { title: false })).toBe('```ts\nx\n```\n\n*a \\*b\\**\n');
+  });
+
   it('includes the page title by default', () => {
     expect(toMarkdown(build([paragraph(text('x'))], 'My *doc*'))).toBe('# My \\*doc\\*\n\nx\n');
   });
@@ -245,6 +253,16 @@ describe('toHtml', () => {
         '<p><em><strong>a &amp; b</strong></em></p>',
         '<pre><code class="language-ts">x &lt; 1\ny</code></pre>',
       ].join('\n'),
+    );
+  });
+
+  it('wraps captioned code in a figure and escapes the caption', () => {
+    const document = build([
+      { flavour: 'block:code', content: [text('x')], props: { language: 'ts', caption: '<i>' } },
+    ]);
+
+    expect(toHtml(document, { title: false })).toBe(
+      '<figure><pre><code class="language-ts">x</code></pre><figcaption>&lt;i&gt;</figcaption></figure>',
     );
   });
 

@@ -98,7 +98,12 @@ function renderBlock(block: BaseBlock): string {
       const language = stringProp(block, 'language', 'plain').replace(/[^\w+#.-]/g, '');
       const attribute = language && language !== 'plain' ? ` class="language-${language}"` : '';
 
-      return `<pre><code${attribute}>${inlineToHtml(block.content, true)}</code></pre>`;
+      const pre = `<pre><code${attribute}>${inlineToHtml(block.content, true)}</code></pre>`;
+      const caption = stringProp(block, 'caption');
+
+      return caption
+        ? `<figure>${pre}<figcaption>${escapeHtml(caption)}</figcaption></figure>`
+        : pre;
     }
     case 'block:divider':
       return '<hr>';
