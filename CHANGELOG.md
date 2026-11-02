@@ -5,6 +5,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
+### Changed
+
+- **Breaking:** `serializeDocument(document, schema)` requires the schema registry. Without it the snapshot had no `schemaVersions`, and
+  props of a block whose schema version later increased were migrated twice on load. Pass `editor.schema` or use the
+  new `editor.serialize()`.
+- Snapshots carry a `version` (the format of the snapshot itself, currently `1`); `validateSnapshot` rejects a newer one.
+  Snapshots without `version` still load.
+
 ## 0.1.0-alpha.0 — 2026-11-01
 
 First public alpha, published under the `alpha` dist-tag: `npm install @inkbrick/react@alpha`. The API may change

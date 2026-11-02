@@ -1,26 +1,25 @@
 import { Document } from '../document';
-import type { BaseBlock, DocumentSnapshot } from '../model';
+import { SNAPSHOT_VERSION, type BaseBlock, type DocumentSnapshot } from '../model';
 import type { SchemaRegistry } from '../schema';
 
 /**
  * Снимок документа в виде обычного JSON: никаких компонентов, стилей и функций.
- * С реестром схем в снимок попадают версии схем (`schemaVersions`) — по ним при загрузке запускаются миграции.
+ * В снимок всегда попадают версия формата (`version`) и версии схем (`schemaVersions`): по ним при загрузке
+ * запускаются миграции. Реестр обязателен: без версий после повышения версии блока уже сохранённые props
+ * мигрировались бы повторно. Передавайте `editor.schema` или вызывайте `editor.serialize()`.
  */
-export function serializeDocument(document: Document, schema?: SchemaRegistry): DocumentSnapshot {
+export function serializeDocument(document: Document, schema: SchemaRegistry): DocumentSnapshot {
   const blocks = document.dump();
   const snapshot: DocumentSnapshot = JSON.parse(
-    JSON.stringify({ rootId: document.rootId, blocks }),
+    JSON.stringify({ version: SNAPSHOT_VERSION, rootId: document.rootId, blocks }),
   );
+  const versions: Record<string, number> = {};
 
-  if (schema) {
-    const versions: Record<string, number> = {};
-
-    for (const { flavour } of Object.values(blocks)) {
-      if (schema.hasBlock(flavour)) versions[flavour] = schema.getVersion(flavour);
-    }
-
-    snapshot.schemaVersions = versions;
+  for (const { flavour } of Object.values(blocks)) {
+    if (schema.hasBlock(flavour)) versions[flavour] = schema.getVersion(flavour);
   }
+
+  snapshot.schemaVersions = versions;
 
   return snapshot;
 }
@@ -95,6 +94,16 @@ export function validateSnapshot(snapshot: DocumentSnapshot, schema: SchemaRegis
   // Снимок приходит извне (сервер, файл): сначала проверяем форму, чтобы не упасть на чтении полей.
   if (!isObject(snapshot) || typeof snapshot.rootId !== 'string' || !isObject(snapshot.blocks)) {
     return ['snapshot must be an object with a string "rootId" and an object "blocks"'];
+  }
+
+  if (snapshot.version !== undefined) {
+    if (!Number.isInteger(snapshot.version) || snapshot.version < 1)
+      return [`snapshot has an invalid "version": ${String(snapshot.version)}`];
+
+    if (snapshot.version > SNAPSHOT_VERSION)
+      return [
+        `snapshot format version ${snapshot.version} is newer than supported ${SNAPSHOT_VERSION}`,
+      ];
   }
 
   const blocks = snapshot.blocks as Record<string, unknown>;
