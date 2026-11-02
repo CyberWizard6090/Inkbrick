@@ -239,6 +239,7 @@ export function DefaultToolbar({
           ))}
           {panel && (
             <div
+              key={panel}
               className="inkbrick-toolbar__panel"
               data-inkbrick-part="panel"
               data-kind={panel}
