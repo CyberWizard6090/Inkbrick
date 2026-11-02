@@ -4,7 +4,7 @@
 # Цели (--target):
 #   dev   — Vite dev-сервер с hot reload (порт 5173), цель по умолчанию
 #   test  — unit-тесты (vitest)
-#   e2e   — Playwright + Chromium, тесты идут по E2E_BASE_URL
+#   e2e   — Playwright + Chromium (только он, Firefox и WebKit в образ не ставятся), тесты идут по E2E_BASE_URL
 #
 ARG NODE_VERSION=22
 ARG PNPM_VERSION=9
@@ -42,7 +42,7 @@ ENV CI=true \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # Версия браузера берётся из установленного @playwright/test (из lock-файла).
 RUN pnpm exec playwright install --with-deps chromium
-CMD ["pnpm", "test:e2e"]
+CMD ["pnpm", "test:e2e", "--project=chromium"]
 
 # ---------------------------------------------------------------- dev
 # Последняя стадия: именно она собирается, если --target не указан.

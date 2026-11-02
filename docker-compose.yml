@@ -1,8 +1,11 @@
 # Только для разработки.
 # Dev-сервер (hot reload):  docker compose up --watch → http://localhost:5173
-#   код подхватывает Vite (bind-mount), --watch пересобирает образ при смене зависимостей
+#   исходники синхронизируются в контейнер (develop.watch), образ пересобирается при смене зависимостей
 # Unit-тесты:               docker compose --profile test run --rm test
 # E2E (Playwright):         docker compose --profile e2e run --rm e2e
+#
+# После смены зависимостей: docker compose up --build --watch -V (-V пересоздаёт анонимные тома,
+# иначе контейнер подключит старые node_modules).
 
 services:
   dev:
@@ -13,21 +16,22 @@ services:
       - '5173:5173'
     environment:
       HOST: 0.0.0.0
-      # bind-mount на Windows/macOS не присылает события файловой системы
-      VITE_USE_POLLING: 'true'
-    volumes:
-      - .:/app
-      # node_modules остаются из образа и не затираются папкой хоста
-      - /app/node_modules
-      - /app/apps/sandbox/node_modules
-      - /app/packages/document/node_modules
-      - /app/packages/store/node_modules
-      - /app/packages/engine/node_modules
-      - /app/packages/react/node_modules
-      - /app/packages/styles/node_modules
+    # В slim-образе нет curl, поэтому проверка идёт через node.
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:5173/').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
     develop:
       watch:
-        # исходники подхватывает Vite через bind-mount; образ нужен заново только при смене зависимостей
+        # Образ нужен заново только при смене зависимостей.
         - action: rebuild
           path: ./package.json
         - action: rebuild
@@ -46,6 +50,15 @@ services:
           path: ./packages/react/package.json
         - action: rebuild
           path: ./packages/styles/package.json
+        # Исходники копируются в контейнер: события файловой системы приходят внутри Linux, polling не нужен.
+        - action: sync
+          path: ./apps
+          target: /app/apps
+          ignore: [node_modules/, dist/]
+        - action: sync
+          path: ./packages
+          target: /app/packages
+          ignore: [node_modules/, dist/]
 
   test:
     profiles: ['test']
@@ -62,7 +75,7 @@ services:
       E2E_BASE_URL: http://dev:5173
     depends_on:
       dev:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./playwright-report:/app/playwright-report
       - ./test-results:/app/test-results
