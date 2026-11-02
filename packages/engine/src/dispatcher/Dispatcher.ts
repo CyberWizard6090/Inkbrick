@@ -78,6 +78,15 @@ function caretBefore(type: string, payload: unknown): CaretResult | undefined {
  * Ключ слияния шагов истории: набор текста подряд (по одному символу) и стирание
  * подряд в одном блоке превращаются в один шаг undo.
  */
+/** Явный `mergeKey` в payload: вызывающий код сам связывает правки, и они сливаются независимо от времени между ними. */
+function hasExplicitMergeKey(payload: unknown): boolean {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    typeof (payload as { mergeKey?: unknown }).mergeKey === 'string'
+  );
+}
+
 function mergeKeyOf(type: string, payload: unknown): string | undefined {
   if (typeof payload !== 'object' || payload === null) return undefined;
 
@@ -155,6 +164,7 @@ export class Dispatcher {
       (transaction) => this.run(command, type, payload, transaction),
       {
         mergeKey: mergeKeyOf(type, payload),
+        mergeWindowMs: hasExplicitMergeKey(payload) ? Infinity : undefined,
         describe: (result) => ({
           before: caretBefore(type, payload),
           after: isCaret(result) ? result : undefined,
@@ -203,6 +213,7 @@ export class Dispatcher {
       },
       {
         mergeKey: options.mergeKey,
+        mergeWindowMs: options.mergeKey === undefined ? undefined : Infinity,
         describe: () => ({ before: state?.before, after: state?.after }),
       },
     );

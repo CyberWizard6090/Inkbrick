@@ -78,6 +78,12 @@ describe('uploadImage', () => {
       'Unsupported image type',
     );
   });
+
+  it('caps maxInlineBytes so an embedded image still fits a pasted HTML', async () => {
+    await expect(
+      uploadImage(file('image/png', 2_000_000), { maxInlineBytes: 50_000_000 }),
+    ).rejects.toThrow('larger than 1758 KB');
+  });
 });
 
 describe('UploadTracker', () => {
