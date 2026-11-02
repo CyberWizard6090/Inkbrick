@@ -17,15 +17,15 @@ pnpm dev                # sandbox at http://127.0.0.1:5173
 
 CI runs all of them; please run the relevant ones locally before opening a pull request.
 
-| Command              | What it checks                                                                   |
-| -------------------- | -------------------------------------------------------------------------------- |
-| `pnpm typecheck`     | TypeScript (strict) across all packages, tests and the sandbox                   |
-| `pnpm lint`          | ESLint; Prettier and ESLint also run on staged files in the pre-commit hook      |
-| `pnpm test:coverage` | Unit tests (Vitest) with coverage thresholds — the build fails if coverage drops |
-| `pnpm test:e2e`      | End-to-end tests (Playwright) in Chromium, Firefox and WebKit                    |
-| `pnpm size`          | Bundle size budget (minified + gzip)                                             |
-| `pnpm audit`         | Known vulnerabilities in dependencies — must be zero                             |
-| `pnpm bench`         | Load measurements (not a gate; run when you touch the model, store or rendering) |
+| Command              | What it checks                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| `pnpm typecheck`     | TypeScript (strict) across all packages, tests and the sandbox                           |
+| `pnpm lint`          | ESLint; Prettier and ESLint also run on staged files in the pre-commit hook              |
+| `pnpm test:coverage` | Unit tests (Vitest) with coverage thresholds — the build fails if coverage drops         |
+| `pnpm test:e2e`      | End-to-end tests (Playwright) in Chromium, Firefox and WebKit                            |
+| `pnpm size`          | Bundle size budget (minified + gzip)                                                     |
+| `pnpm audit`         | Known vulnerabilities in dependencies — must be zero; runs daily in CI (not on every PR) |
+| `pnpm bench`         | Load measurements (not a gate; run when you touch the model, store or rendering)         |
 
 ## Architecture
 

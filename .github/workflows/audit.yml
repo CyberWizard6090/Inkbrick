@@ -1,0 +1,47 @@
+name: Dependency audit
+
+# Новый advisory не должен блокировать чужие PR, поэтому `pnpm audit` вынесен из CI: он идёт по расписанию
+# и при находках заводит (или обновляет) issue.
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Audit
+        id: audit
+        continue-on-error: true
+        shell: bash
+        run: pnpm audit 2>&1 | tee audit.txt
+      - name: Open or update the issue
+        if: steps.audit.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Dependency audit found vulnerabilities"
+          body="$(printf 'The scheduled `pnpm audit` failed: %s\n\n```text\n%s\n```\n' "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" "$(head -c 60000 audit.txt)")"
+          gh label create security-audit --color B60205 --description "Reported by the scheduled dependency audit" 2>/dev/null || true
+          number="$(gh issue list --label security-audit --state open --json number --jq '.[0].number')"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$title" --label security-audit --body "$body"
+          fi
+      - name: Fail the run if the audit failed
+        if: steps.audit.outcome == 'failure'
+        run: exit 1

@@ -51,7 +51,7 @@ frame-ancestors 'self';
 
 ## Dependencies
 
-`pnpm audit` runs in CI and must report no known vulnerabilities. The one exception is advisory
+`pnpm audit` runs daily in CI (the "Dependency audit" workflow, not on every pull request, so a new advisory does not block unrelated changes) and opens an issue when it finds something; it must report no known vulnerabilities. The one exception is advisory
 GHSA-g3hv-75wg-m249 (`minimatch` < 11.0.1) for TypeDoc, which needs `minimatch` 10 and only generates the API
 reference from our own sources at build time; everything else is forced to a patched version through
 `pnpm.overrides`. Runtime dependencies are kept minimal:
