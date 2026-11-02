@@ -78,6 +78,17 @@ const highlighter: CodeHighlighter = (code, language) => {
 
 ## Оформление блока и копирование
 
-Над кодом — панель: выбор языка слева и кнопка копирования справа (`data-inkbrick-part="copy"`; после нажатия
-`data-state="copied"`). Строки панели переводятся (`block.code.copy`, `block.code.copied`). Вид блока — токены
+Над кодом — панель: кнопка сворачивания, выбор языка, справа — подпись и копирование (`data-inkbrick-part="copy"`;
+после нажатия `data-state="copied"`). Язык выбирается во всплывающем списке (`data-inkbrick-ui="select"`) — с
+клавиатуры тоже: стрелки, Home/End, первая буква названия, Enter, Esc. Строки панели переводятся (`block.code.*`).
+
+- **Сворачивание** (`collapse`) прячет код с анимацией высоты (`--inkbrick-duration-slow`, отключается при
+  `prefers-reduced-motion`) и пишет в props `collapsed: true`; у блока появляется `data-collapsed`, на панели —
+  число строк (`summary`). Свёрнутый код не редактируется, каретка из него уходит. В режиме чтения сворачивание
+  локальное и документ не меняет.
+- **Подпись** (`caption-toggle`, затем поле `caption`) сохраняется в props `caption` по Enter или потере фокуса
+  одной записью в истории; пустое поле исчезает. В экспорте HTML код с подписью — `<figure>` с `<figcaption>`, в
+  Markdown подпись идёт курсивом после блока.
+
+Оба поля необязательные: у обычного блока props остаются `{ language }`. Вид блока — токены
 `--inkbrick-bg-3`, `--inkbrick-stroke-2`, `--inkbrick-radius-surface`, моноширинный шрифт — `--inkbrick-font-mono`.

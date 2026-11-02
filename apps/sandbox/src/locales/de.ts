@@ -11,6 +11,13 @@ export const de: PartialMessages = {
   'block.code.language': 'Programmiersprache',
   'block.code.copy': 'Code kopieren',
   'block.code.copied': 'Kopiert',
+  'block.code.plain': 'Nur Text',
+  'block.code.collapse': 'Code einklappen',
+  'block.code.expand': 'Code ausklappen',
+  'block.code.lines': 'Zeilen: {count}',
+  'block.code.addCaption': 'Beschriftung hinzufügen',
+  'block.code.caption.label': 'Code-Beschriftung',
+  'block.code.caption.placeholder': 'Beschriftung schreiben…',
 
   'toolbar.label': 'Textformatierung',
   'toolbar.bold.label': 'Fett',

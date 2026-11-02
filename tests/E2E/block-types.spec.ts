@@ -72,7 +72,8 @@ test.describe('Quote, code and divider', () => {
 
   test('the language selector changes the block props through the engine', async ({ page }) => {
     await page.keyboard.type('``` ');
-    await page.locator('.code-language').selectOption('python');
+    await page.locator('.code-language').click();
+    await page.getByRole('option', { name: 'Python' }).click();
 
     await expect(page.locator('.block-code')).toHaveAttribute('data-language', 'python');
 

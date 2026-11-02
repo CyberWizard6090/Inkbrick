@@ -12,12 +12,17 @@ const tokens = (page: Page) =>
       nodes.map((node) => [node.textContent, node.getAttribute('data-inkbrick-token')]),
     );
 
+async function chooseLanguage(page: Page, language: string) {
+  await page.locator(`${code} [data-inkbrick-part="language"]`).click();
+  await page.locator(`[data-inkbrick-ui="select"] [data-value="${language}"]`).click();
+}
+
 async function startCode(page: Page, language: string) {
   await page.goto('/?lang=en');
   await page.locator('.editable').first().click();
   await page.keyboard.type('``` ');
   await expect(page.locator(code)).toHaveCount(1);
-  await page.locator(`${code} select`).selectOption(language);
+  await chooseLanguage(page, language);
   await page.locator(content).click();
 }
 
@@ -74,7 +79,7 @@ test.describe('Code block: syntax highlighting', () => {
 
     expect(await tokens(page)).toEqual([]);
 
-    await page.locator(`${code} select`).selectOption('sql');
+    await chooseLanguage(page, 'sql');
     await expect(page.locator(content)).toHaveText('SELECT 1');
     expect(await tokens(page)).toEqual([
       ['SELECT', 'keyword'],

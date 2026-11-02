@@ -5,6 +5,18 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
+### Added
+
+- Code block: collapse with an animated height (`collapsed` prop) and an optional caption (`caption` prop, exported as
+  `<figure>`/`<figcaption>` in HTML and an italic line in Markdown).
+- Image picker: a drop zone with an upload button; a file dropped on it fills that block.
+
+### Changed
+
+- The code language and the image width use a styled dropdown (`data-inkbrick-ui="select"`) with keyboard
+  navigation instead of the native `<select>`.
+- The replace-image button uses a cleaner icon (`refresh-cw`).
+
 ## 0.1.0-alpha.0 — 2026-11-01
 
 First public alpha, published under the `alpha` dist-tag: `npm install @inkbrick/react@alpha`. The API may change
