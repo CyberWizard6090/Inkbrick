@@ -62,6 +62,33 @@ const block = (flavour: string, text: string, extra: Record<string, unknown> = {
 });
 
 describe('copyFragment', () => {
+  it('never carries block meta (authors, timestamps) into the fragment or its HTML', () => {
+    const editor = new Editor({ meta: { now: () => 1234, user: () => 'alice@example.com' } });
+    const noteId = editor.document.getBlock(editor.document.rootId)!.children[0];
+    const first = editor.document.getBlock(noteId)!.children[0];
+    const second = (
+      editor.dispatch({
+        type: 'insertBlock',
+        payload: { flavour: 'block:paragraph', afterId: first },
+      }) as CaretResult
+    ).blockId;
+
+    editor.dispatch({
+      type: 'replaceText',
+      payload: { blockId: second, from: 0, to: 0, text: 'two' },
+    });
+    expect(editor.document.getBlock(second)!.meta?.createdBy).toBe('alice@example.com');
+
+    const fragment = editor.copyFragment(p(first, 0), p(second, 3));
+    const json = JSON.stringify(fragment);
+
+    expect(fragment.blocks.length).toBeGreaterThan(0);
+    expect(json).not.toContain('alice@example.com');
+    expect(json).not.toContain('meta');
+    expect(json).not.toContain('1234');
+    expect(fragmentToHtml(fragment, json)).not.toContain('alice@example.com');
+  });
+
   it('copies a partial selection inside one block as an incomplete block', () => {
     const { editor, ids } = setup([['block:heading', 'Hello world', { level: 2 }]]);
 
