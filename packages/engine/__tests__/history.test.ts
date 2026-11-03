@@ -261,3 +261,40 @@ describe('Editor history', () => {
     expect(editor.canUndo).toBe(false);
   });
 });
+
+describe('Editor history: explicit merge keys', () => {
+  it('a block inserted in a batch and filled later is one undo step, however long the wait', () => {
+    let time = 0;
+    const editor = new Editor({ history: { now: () => time } });
+    const noteId = editor.document.getBlock(editor.document.rootId)!.children[0];
+    const firstId = editor.document.getBlock(noteId)!.children[0];
+    const blocks = () => editor.document.getBlock(noteId)!.children.length;
+    const before = blocks();
+
+    let id = '';
+
+    editor.batch(
+      () => {
+        id = (
+          editor.dispatch({
+            type: 'insertBlock',
+            payload: { flavour: 'block:image', afterId: firstId, props: { alt: 'a' } },
+          }) as CaretResult
+        ).blockId;
+      },
+      { mergeKey: 'images:1' },
+    );
+
+    time += 30_000; // медленная загрузка: намного дольше окна слияния
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: { blockId: id, props: { src: 'https://example.com/a.png' }, mergeKey: 'images:1' },
+    });
+
+    expect(blocks()).toBe(before + 1);
+    editor.undo();
+    expect(blocks()).toBe(before);
+    expect(editor.canUndo).toBe(false);
+  });
+});

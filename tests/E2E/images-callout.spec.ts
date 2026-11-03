@@ -406,7 +406,8 @@ test.describe('Image: editing', () => {
     await withImage(page);
 
     await page.getByRole('button', { name: 'Align right' }).click();
-    await page.getByLabel('Image width').selectOption('50');
+    await page.getByLabel('Image width').click();
+    await page.getByRole('option', { name: '50%' }).click();
 
     expect((await doc(page))[0].props).toMatchObject({ align: 'right', width: 50 });
     await expect(page.locator('.image-figure')).toHaveAttribute('data-align', 'right');

@@ -32,6 +32,7 @@
 
     --inkbrick-duration-fast: 100ms;
     --inkbrick-duration-normal: 150ms;
+    --inkbrick-duration-slow: 220ms;
     --inkbrick-curve: cubic-bezier(0.33, 0, 0.67, 1);
 
     --inkbrick-z-handle: 9990;

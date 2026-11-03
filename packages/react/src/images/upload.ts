@@ -1,7 +1,12 @@
 import { isSafeImageUrl } from '@inkbrick/document';
 
 import { ImageError } from './ImageError';
-import { DEFAULT_IMAGE_TYPES, DEFAULT_MAX_INLINE_BYTES, type ImageOptions } from './types';
+import {
+  DEFAULT_IMAGE_TYPES,
+  DEFAULT_MAX_INLINE_BYTES,
+  MAX_INLINE_BYTES_LIMIT,
+  type ImageOptions,
+} from './types';
 
 export function isAcceptedImage(file: { type: string }, options: ImageOptions): boolean {
   return (options.acceptedTypes ?? DEFAULT_IMAGE_TYPES).includes(file.type.toLowerCase());
@@ -29,7 +34,10 @@ export async function uploadImage(file: File, options: ImageOptions): Promise<st
   if (options.upload) {
     url = await options.upload(file);
   } else {
-    const limit = options.maxInlineBytes ?? DEFAULT_MAX_INLINE_BYTES;
+    const limit = Math.min(
+      options.maxInlineBytes ?? DEFAULT_MAX_INLINE_BYTES,
+      MAX_INLINE_BYTES_LIMIT,
+    );
 
     if (file.size > limit) {
       const size = Math.round(limit / 1024);

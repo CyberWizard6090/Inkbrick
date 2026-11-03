@@ -13,7 +13,7 @@ import {
 const schema = createSchemaRegistry();
 
 function base() {
-  const snapshot = serializeDocument(createDocument({ schema }));
+  const snapshot = serializeDocument(createDocument({ schema }), schema);
   const note = snapshot.blocks[snapshot.rootId].children[0];
   const first = snapshot.blocks[note].children[0];
 

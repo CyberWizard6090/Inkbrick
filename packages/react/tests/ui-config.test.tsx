@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
 import { Editor } from '@inkbrick/engine';
-import { createSchemaRegistry, deserializeDocument, serializeDocument } from '@inkbrick/document';
+import { createSchemaRegistry, deserializeDocument } from '@inkbrick/document';
 
 import {
   BlockChildren,
@@ -132,7 +132,7 @@ describe('EditorProvider.components (server render)', () => {
     );
 
     expect(received).toBe(editor);
-    expect(JSON.stringify(serializeDocument(editor.document))).not.toContain('Spy');
+    expect(JSON.stringify(editor.serialize())).not.toContain('Spy');
   });
 
   it('renders custom container components with children', () => {
@@ -157,7 +157,7 @@ describe('EditorProvider.components (server render)', () => {
 describe('unknown blocks', () => {
   function editorWithUnknown() {
     const source = new Editor();
-    const snapshot = serializeDocument(source.document);
+    const snapshot = source.serialize();
     const note = snapshot.blocks[snapshot.rootId].children[0];
 
     snapshot.blocks['u1'] = {

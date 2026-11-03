@@ -257,8 +257,8 @@ describe('images', () => {
     fireEvent.keyDown(alt, { key: 'Escape' });
     expect(image().props.alt).not.toBe('typed');
 
-    const width = $<HTMLInputElement>('[data-inkbrick-part="width"]')!;
-    fireEvent.change(width, { target: { value: '50' } });
+    fireEvent.click($('[data-inkbrick-part="width"]')!);
+    fireEvent.click($('[data-inkbrick-ui="select"] [data-value="50"]')!);
     expect(image().props.width).toBe(50);
 
     const right = [...document.querySelectorAll<HTMLElement>('[data-inkbrick-part="tool"]')].find(

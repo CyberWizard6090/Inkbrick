@@ -11,8 +11,10 @@ import { formatImageError } from '../images/ImageError';
 import { fillImageBlock } from '../images/insertImages';
 import { normalizeImageUrl } from '../images/upload';
 import { DEFAULT_IMAGE_TYPES } from '../images/types';
+import { Select } from '../ui/Select';
 import { useEditorUI } from '../ui/EditorUIContext';
 import type { BlockViewProps } from '../ui/types';
+import { CommitInput } from './CommitInput';
 
 const WIDTHS = [25, 50, 75, 100];
 const ALIGNS: ReadonlyArray<{ value: string; label: MessageKey; icon: IconName }> = [
@@ -23,69 +25,6 @@ const ALIGNS: ReadonlyArray<{ value: string; label: MessageKey; icon: IconName }
 
 const setProps = (editor: Editor, blockId: string, props: Record<string, unknown>) =>
   editor.dispatch({ type: 'setBlockProps', payload: { blockId, props: props as never } });
-
-/** Поле, которое сохраняется по Enter/потере фокуса, а не на каждую букву (одна запись в истории). */
-function CommitInput({
-  value,
-  label,
-  placeholder,
-  className,
-  part,
-  onCommit,
-}: {
-  value: string;
-  label: string;
-  placeholder: string;
-  className: string;
-  part: string;
-  onCommit: (value: string) => void;
-}) {
-  const [draft, setDraft] = useState(value);
-  // Последнее сохранённое/известное значение: Enter сохраняет и тут же снимает фокус, а blur не должен сохранить второй раз.
-  const saved = useRef(value);
-  const cancelled = useRef(false);
-
-  useEffect(() => {
-    saved.current = value;
-    setDraft(value);
-  }, [value]);
-
-  const commit = () => {
-    if (cancelled.current) {
-      cancelled.current = false;
-      return;
-    }
-
-    if (draft !== saved.current) {
-      saved.current = draft;
-      onCommit(draft);
-    }
-  };
-
-  return (
-    <input
-      className={className}
-      data-inkbrick-part={part}
-      type="text"
-      aria-label={label}
-      placeholder={placeholder}
-      value={draft}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          commit();
-          (event.target as HTMLInputElement).blur();
-        } else if (event.key === 'Escape') {
-          cancelled.current = true;
-          setDraft(saved.current);
-          (event.target as HTMLInputElement).blur();
-        }
-      }}
-    />
-  );
-}
 
 function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
   const view = useEditorView();
@@ -100,6 +39,8 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
   );
   const error = linkError ? t(linkError) : uploadError ? formatImageError(uploadError, t) : null;
   const file = useRef<HTMLInputElement>(null);
+  const zone = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
 
   const embed = () => {
     const normalized = normalizeImageUrl(url);
@@ -126,8 +67,74 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
     await fillImageBlock(editor, view, images, blockId, selected);
   };
 
+  useEffect(() => {
+    const element = zone.current;
+
+    if (!element) return;
+
+    const hasFiles = (event: DragEvent) => [...(event.dataTransfer?.types ?? [])].includes('Files');
+    const over = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setDragging(true);
+    };
+    const leave = (event: DragEvent) => {
+      if (!(event.relatedTarget instanceof Node && element.contains(event.relatedTarget))) {
+        setDragging(false);
+      }
+    };
+    const drop = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setDragging(false);
+      void upload(event.dataTransfer?.files[0]);
+    };
+
+    element.addEventListener('dragenter', over);
+    element.addEventListener('dragover', over);
+    element.addEventListener('dragleave', leave);
+    element.addEventListener('drop', drop);
+
+    return () => {
+      element.removeEventListener('dragenter', over);
+      element.removeEventListener('dragover', over);
+      element.removeEventListener('dragleave', leave);
+      element.removeEventListener('drop', drop);
+    };
+  });
+
   return (
-    <div className="image-picker" data-inkbrick-part="picker" data-testid="image-picker">
+    <div
+      ref={zone}
+      className="image-picker"
+      data-inkbrick-part="picker"
+      data-testid="image-picker"
+      data-dragging={dragging || undefined}
+    >
+      <div className="image-picker__head" data-inkbrick-part="picker-head">
+        <span data-inkbrick-part="picker-icon">
+          <Icon name="image" />
+        </span>
+        <span data-inkbrick-part="picker-text">
+          <span data-inkbrick-part="picker-title">{t('image.picker.title')}</span>
+          <span data-inkbrick-part="picker-hint">
+            {dragging ? t('image.picker.drop') : t('image.picker.hint')}
+          </span>
+        </span>
+        <button
+          type="button"
+          className="image-picker__upload"
+          data-inkbrick-part="picker-upload"
+          onClick={() => file.current?.click()}
+        >
+          <Icon name="upload" />
+          {t('image.upload')}
+        </button>
+      </div>
       <div className="image-picker__row" data-inkbrick-part="picker-row">
         <input
           className="image-picker__input"
@@ -156,13 +163,6 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
           onClick={embed}
         >
           {t('image.embed')}
-        </button>
-        <button
-          type="button"
-          className="image-picker__button"
-          onClick={() => file.current?.click()}
-        >
-          {t('image.upload')}
         </button>
         <input
           ref={file}
@@ -291,22 +291,17 @@ export function ImageBlock({ block, editor, selected, readOnly }: BlockViewProps
                 <Icon name={icon} />
               </button>
             ))}
-            <select
+            <Select
               className="image-tools__select"
-              data-inkbrick-part="width"
-              aria-label={t('image.width')}
-              value={WIDTHS.includes(width) ? width : ''}
-              onChange={(event) =>
-                setProps(editor, block.id, { width: Number(event.target.value) })
-              }
-            >
-              {!WIDTHS.includes(width) && <option value="">{width}%</option>}
-              {WIDTHS.map((w) => (
-                <option key={w} value={w}>
-                  {w}%
-                </option>
-              ))}
-            </select>
+              part="width"
+              label={t('image.width')}
+              value={String(width)}
+              options={(WIDTHS.includes(width)
+                ? WIDTHS
+                : [...WIDTHS, width].sort((a, b) => a - b)
+              ).map((w) => ({ value: String(w), label: `${w}%` }))}
+              onChange={(value) => setProps(editor, block.id, { width: Number(value) })}
+            />
             <CommitInput
               className="image-tools__alt"
               part="alt"
@@ -323,7 +318,7 @@ export function ImageBlock({ block, editor, selected, readOnly }: BlockViewProps
               title={t('image.replace')}
               onClick={() => setProps(editor, block.id, { src: '' })}
             >
-              <Icon name="replace" />
+              <Icon name="refresh-cw" />
             </button>
           </div>
         )}

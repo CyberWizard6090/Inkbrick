@@ -5,6 +5,7 @@ import {
   createDocument,
   createSchemaRegistry,
   deserializeDocument,
+  SNAPSHOT_VERSION,
   serializeDocument,
   validateSnapshot,
   z,
@@ -95,7 +96,7 @@ describe('snapshot relation checks', () => {
 
   it('rejects a block placed where its schema does not allow it', () => {
     const document = createDocument({ schema });
-    const snapshot = serializeDocument(document);
+    const snapshot = serializeDocument(document, schema);
     const note = snapshot.blocks[snapshot.rootId].children[0];
     const paragraph = snapshot.blocks[note].children[0];
 
@@ -124,16 +125,46 @@ describe('snapshot relation checks', () => {
 });
 
 describe('schema versions and migrations', () => {
-  it('serializeDocument records versions only when given a schema', () => {
+  it('serializeDocument records the format version and the schema versions', () => {
     const schema = createSchemaRegistry([WidgetV2]);
     const document = createDocument({ schema });
 
-    expect(serializeDocument(document).schemaVersions).toBeUndefined();
     expect(serializeDocument(document, schema).schemaVersions).toEqual({
       'block:page': 1,
       'block:note': 1,
       'block:paragraph': 1,
     });
+  });
+
+  it('writes the snapshot format version', () => {
+    const schema = createSchemaRegistry();
+
+    expect(serializeDocument(createDocument({ schema }), schema).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('rejects a snapshot in a newer or malformed format', () => {
+    const schema = createSchemaRegistry();
+    const snapshot = serializeDocument(createDocument({ schema }), schema);
+
+    expect(validateSnapshot({ ...snapshot, version: SNAPSHOT_VERSION + 1 }, schema)).toEqual([
+      expect.stringContaining('newer than supported'),
+    ]);
+    expect(validateSnapshot({ ...snapshot, version: 0 }, schema)).toEqual([
+      expect.stringContaining('invalid "version"'),
+    ]);
+    expect(validateSnapshot({ ...snapshot, version: undefined }, schema)).toEqual([]);
+  });
+
+  it('does not migrate props twice after a save with the schema registry', () => {
+    // v1 -> v2 хранит название в title; при повторной миграции из уже новых props title затёрся бы.
+    const v2 = createSchemaRegistry([WidgetV2]);
+    const saved = serializeDocument(
+      deserializeDocument(snapshotWith(createSchemaRegistry([WidgetV1])), { schema: v2 }),
+      v2,
+    );
+    const reloaded = deserializeDocument(saved, { schema: v2 });
+
+    expect(reloaded.getBlock('w1')!.props).toEqual({ title: 'hello' });
   });
 
   it('migrates props saved with an older version', () => {
@@ -206,7 +237,7 @@ describe('block meta in snapshots', () => {
   const schema = createSchemaRegistry();
 
   it('accepts valid meta and rejects malformed one', () => {
-    const snapshot = serializeDocument(createDocument({ schema }));
+    const snapshot = serializeDocument(createDocument({ schema }), schema);
     const note = snapshot.blocks[snapshot.rootId].children[0];
 
     snapshot.blocks[note].meta = { createdAt: 1, updatedAt: 2, createdBy: 'a' };
