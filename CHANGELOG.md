@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- `images.rehost`: re-host images from other servers when HTML is pasted, so pasted tracking pixels never reach the
+  reader's browser and no IP leaks.
 - Code block: collapse with an animated height (`collapsed` prop) and an optional caption (`caption` prop, exported as
   `<figure>`/`<figcaption>` in HTML and an italic line in Markdown).
 - Image picker: a drop zone with an upload button; a file dropped on it fills that block.
