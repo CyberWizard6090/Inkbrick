@@ -20,7 +20,10 @@ function setup(options: { mergeWindowMs?: number; limit?: number } = {}) {
   const noteId = document.getBlock(document.rootId)!.children[0];
   const firstId = document.getBlock(noteId)!.children[0];
 
-  const setText = (text: string, opts: { mergeKey?: string; history?: boolean } = {}) =>
+  const setText = (
+    text: string,
+    opts: { mergeKey?: string; mergeWindowMs?: number; history?: boolean } = {},
+  ) =>
     store.transact(
       (tx) => tx.apply(new UpdateBlockChange(firstId, { content: [{ insert: text }] })),
       opts,
@@ -220,6 +223,22 @@ describe('merging', () => {
 
     for (let i = 0; i < 6; i++) store.undo();
 
+    expect(text()).toBe('');
+    expect(store.canUndo).toBe(false);
+  });
+
+  it('merges steps with an unlimited merge window regardless of the time between them', () => {
+    const { store, setText, text, advance } = setup({ mergeWindowMs: 500 });
+
+    setText('a', { mergeKey: 'upload', mergeWindowMs: Infinity });
+    advance(60_000);
+    setText('ab', { mergeKey: 'upload', mergeWindowMs: Infinity });
+    advance(60_000);
+    setText('abc', { mergeKey: 'upload' }); // окно по умолчанию: слитая запись старше 500 мс
+
+    store.undo();
+    expect(text()).toBe('ab');
+    store.undo();
     expect(text()).toBe('');
     expect(store.canUndo).toBe(false);
   });

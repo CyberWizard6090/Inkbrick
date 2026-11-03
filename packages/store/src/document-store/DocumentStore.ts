@@ -34,6 +34,8 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
 export interface TransactOptions<TResult> {
   /** Однотипные правки с одним ключом в пределах окна сливаются в один шаг undo. */
   mergeKey?: string;
+  /** Окно слияния для этого ключа, мс (`Infinity` — без ограничения по времени); по умолчанию окно истории. */
+  mergeWindowMs?: number;
   /** false — изменение не попадает в историю (программная инициализация, синхронизация). */
   history?: boolean;
   /** Данные шага (например, курсор до/после); вызывается после успешного выполнения. */
@@ -136,7 +138,12 @@ export class DocumentStore {
   }
 
   createTransaction(
-    options: { mergeKey?: string; history?: boolean; meta?: HistoryMeta } = {},
+    options: {
+      mergeKey?: string;
+      mergeWindowMs?: number;
+      history?: boolean;
+      meta?: HistoryMeta;
+    } = {},
   ): Transaction {
     return new Transaction(this.writer, (transaction) => this.commit(transaction, options));
   }
@@ -150,8 +157,14 @@ export class DocumentStore {
    * в неё бы не попали. Promise в качестве результата отклоняется (с откатом).
    */
   transact<T>(fn: (transaction: Transaction) => T, options: TransactOptions<T> = {}): T {
-    const commitOptions: { mergeKey?: string; history?: boolean; meta?: HistoryMeta } = {
+    const commitOptions: {
+      mergeKey?: string;
+      mergeWindowMs?: number;
+      history?: boolean;
+      meta?: HistoryMeta;
+    } = {
       mergeKey: options.mergeKey,
+      mergeWindowMs: options.mergeWindowMs,
       history: options.history,
     };
     const transaction = this.createTransaction(commitOptions);
@@ -255,7 +268,12 @@ export class DocumentStore {
 
   private commit(
     transaction: Transaction,
-    options: { mergeKey?: string; history?: boolean; meta?: HistoryMeta },
+    options: {
+      mergeKey?: string;
+      mergeWindowMs?: number;
+      history?: boolean;
+      meta?: HistoryMeta;
+    },
   ): void {
     if (transaction.isEmpty) {
       return;
@@ -267,6 +285,7 @@ export class DocumentStore {
       this.history.record({
         changes: transaction.getChanges(),
         mergeKey: options.mergeKey,
+        mergeWindowMs: options.mergeWindowMs,
         meta: options.meta,
       });
       this.historyVersion++;
