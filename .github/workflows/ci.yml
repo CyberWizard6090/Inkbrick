@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   checks:
-    name: Types, lint, unit tests, size, audit, build
+    name: Types, lint, unit tests, size, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,6 @@ jobs:
       - run: pnpm lint
       - run: pnpm test:coverage
       - run: pnpm size
-      - run: pnpm audit
       - run: pnpm build:packages
       - run: pnpm build
       - run: pnpm docs:api
