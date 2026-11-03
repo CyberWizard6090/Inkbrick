@@ -10,7 +10,9 @@ import { collect } from './html/blocks';
  * Понимает разметку Google Docs и Word (списки `mso-list`, обёртки `<b style="font-weight:normal">`).
  */
 
-const MAX_HTML = 2_000_000;
+// Картинка у предела встраивания (`MAX_INLINE_BYTES_LIMIT`) занимает в HTML буфера ~5 МБ: `<img src>` плюс точная копия
+// фрагмента в атрибуте. Остальное — запас на текст; больше разбирать нет смысла (защита от тяжёлой разметки).
+const MAX_HTML = 6_000_000;
 
 export function embeddedFragment(html: string): Fragment | null {
   if (!html.includes('data-inkbrick-fragment')) return null;
