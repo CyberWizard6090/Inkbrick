@@ -23,6 +23,11 @@ export interface HistoryOptions {
 export interface RecordInput {
   changes: readonly Change[];
   mergeKey?: string;
+  /**
+   * Окно слияния для этой записи вместо `HistoryOptions.mergeWindowMs`; `Infinity` — сливать независимо от времени.
+   * Нужно связанным правкам, между которыми проходит неизвестное время (вставка картинки и её загрузка).
+   */
+  mergeWindowMs?: number;
   meta?: HistoryMeta;
 }
 
@@ -62,7 +67,7 @@ export class History {
       !this.sealed &&
       input.mergeKey !== undefined &&
       top.mergeKey === input.mergeKey &&
-      timestamp - top.timestamp <= this.mergeWindowMs
+      timestamp - top.timestamp <= (input.mergeWindowMs ?? this.mergeWindowMs)
     ) {
       top.changes.push(...input.changes);
       top.timestamp = timestamp;

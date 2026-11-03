@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Fragment, FragmentBlock } from '@inkbrick/engine';
+import { fragmentToHtml, type Fragment, type FragmentBlock } from '@inkbrick/engine';
 
 import { embeddedFragment, htmlToFragment } from '../src';
 
@@ -240,5 +240,28 @@ describe('embeddedFragment', () => {
     expect(embeddedFragment('<div data-inkbrick-fragment="%E0%A4%A">x</div>')).toBeNull();
     expect(embeddedFragment('<div data-inkbrick-fragment="{not json">x</div>')).toBeNull();
     expect(embeddedFragment('<div data-inkbrick-fragment="">x</div>')).toBeNull();
+  });
+});
+
+describe('a large embedded image survives copy and paste through HTML', () => {
+  it('keeps an image at the inline size ceiling (base64 twice in the HTML) instead of dropping it', () => {
+    // 1,8 МБ после base64 = 2,4 млн символов; алфавит с + и / (в percent-encoding они занимают по 3 символа).
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    let seed = 1;
+    const payload = Array.from({ length: (1_800_000 * 4) / 3 }, () => {
+      seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
+
+      return alphabet[(seed >> 8) % 64];
+    }).join('');
+    const src = `data:image/png;base64,${payload}`;
+    const fragment: Fragment = {
+      blocks: [{ flavour: 'block:image', props: { src, alt: 'big' }, content: [], children: [] }],
+    };
+    const html = fragmentToHtml(fragment, encodeURIComponent(JSON.stringify(fragment)));
+
+    expect(html.length).toBeGreaterThan(2_000_000);
+    expect(html.length).toBeLessThan(6_000_000);
+    expect(embeddedFragment(html)?.blocks[0].props.src).toBe(src);
+    expect(htmlToFragment(html)?.blocks[0].props.src).toBe(src);
   });
 });
