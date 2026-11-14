@@ -8,13 +8,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@inkbrick/collab": "workspace:*",
     "@inkbrick/document": "workspace:*",
     "@inkbrick/engine": "workspace:*",
     "@inkbrick/react": "workspace:*",
     "@inkbrick/store": "workspace:*",
     "@inkbrick/styles": "workspace:*",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "yjs": "^13.6.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.2.0",

@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -16,6 +18,15 @@ export default defineConfig({
   resolve: {
     // Две копии React ломают хуки («Invalid hook call»): пакеты монорепозитория всегда берут React приложения.
     dedupe: ['react', 'react-dom'],
+  },
+  build: {
+    // Вторая страница — прототип совместного редактирования (collab.html).
+    rollupOptions: {
+      input: {
+        main: resolve(import.meta.dirname, 'index.html'),
+        collab: resolve(import.meta.dirname, 'collab.html'),
+      },
+    },
   },
   plugins: [react()],
 });

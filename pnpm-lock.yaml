@@ -82,6 +82,9 @@ importers:
 
   apps/sandbox:
     dependencies:
+      '@inkbrick/collab':
+        specifier: workspace:*
+        version: link:../../packages/collab
       '@inkbrick/document':
         specifier: workspace:*
         version: link:../../packages/document
@@ -103,6 +106,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.8(react@19.2.8)
+      yjs:
+        specifier: ^13.6.0
+        version: 13.6.33
     devDependencies:
       '@vitejs/plugin-react':
         specifier: ^5.2.0
