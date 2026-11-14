@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@inkbrick/engine": "workspace:*",
+    "fake-indexeddb": "^6.2.8",
     "yjs": "^13.6.0"
   },
   "license": "MIT",

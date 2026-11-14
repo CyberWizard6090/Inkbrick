@@ -36,6 +36,9 @@ export class FakeServer {
 
   maxUpdateBytes = 512 * 1024;
 
+  /** Store updates but never acknowledge them (the acknowledgement is lost on the way). */
+  dropAcks = false;
+
   private tickets = new Map<string, string>();
 
   private nextConn = 0;
@@ -149,7 +152,7 @@ export class FakeServer {
 
         const seq = this.store(from.user.id, update);
 
-        from.deliver({ type: 'ack', ref: frame.ref, seq });
+        if (!this.dropAcks) from.deliver({ type: 'ack', ref: frame.ref, seq });
         this.broadcast({ type: 'update', seq, user_id: from.user.id, update: frame.update }, from);
 
         return undefined;

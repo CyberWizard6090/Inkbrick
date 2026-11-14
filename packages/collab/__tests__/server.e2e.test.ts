@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Editor } from '@inkbrick/engine';
 
-import { openDocument, toBase64, type DocumentConnection } from '../src';
+import { memoryPendingStore, openDocument, toBase64, type DocumentConnection } from '../src';
 import { schema } from './harness';
 
 /**
@@ -252,5 +252,98 @@ describe.skipIf(!base)('against a real server', () => {
     } finally {
       for (const connection of connections) connection.destroy();
     }
+  }, 60000);
+
+  it('keeps edits made offline across a reload of the page', async () => {
+    const ann = await signUp('ann');
+    const bob = await signUp('bob');
+    const workspace = (
+      await call<{ id: number }>('POST', '/workspaces', ann.token, { name: 'e2e reload' })
+    ).data.id;
+
+    expect((await call('POST', '/contacts', ann.token, { contact_id: bob.id })).status).toBe(202);
+    expect((await call('POST', `/contacts/requests/${ann.id}/accept`, bob.token)).status).toBe(200);
+    expect(
+      (
+        await call('POST', `/workspaces/${workspace}/members`, ann.token, {
+          user_id: bob.id,
+          role: 'Member',
+        })
+      ).status,
+    ).toBe(201);
+
+    const notebook = (
+      await call<{ id: number }>('POST', `/workspaces/${workspace}/notebooks`, ann.token, {
+        name: 'n',
+      })
+    ).data.id;
+    const documentId = (
+      await call<{ id: number }>('POST', `/notebooks/${notebook}/documents`, ann.token, {
+        title: 'Reload',
+      })
+    ).data.id;
+    // The same store for both page loads, like IndexedDB of one browser.
+    const store = memoryPendingStore();
+
+    const page = async (token: string, pendingStore?: typeof store) => {
+      const { collab, connection } = await openDocument({
+        baseUrl: base!,
+        getToken: () => token,
+        documentId,
+        schema,
+        pendingStore,
+      });
+      const editor = new Editor({
+        schema,
+        document: collab.createDocument(),
+        history: { limit: 0 },
+      });
+
+      collab.attach(editor.store);
+
+      const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+      const block = editor.document.getBlock(note)!.children[0];
+
+      return {
+        connection,
+        text: () =>
+          editor.store
+            .getBlock(block)!
+            .content.map((node) => node.insert)
+            .join(''),
+        type: (text: string) =>
+          void editor.dispatch({
+            type: 'insertText',
+            payload: { text, selection: { anchor: { blockId: block, offset: 0 } } },
+          }),
+      };
+    };
+
+    const watcher = await page(bob.token);
+
+    watcher.connection.connect();
+    await until(() => watcher.connection.status === 'online', 'bob to be online');
+
+    // Ann types without any connection (it was never opened), then closes the page.
+    const first = await page(ann.token, store);
+
+    first.type('written offline');
+    await first.connection.saved();
+    expect(await store.list()).toHaveLength(1);
+    first.connection.destroy();
+
+    // The page is opened again: her work is back at once, and it reaches the server and Bob after the connect.
+    const second = await page(ann.token, store);
+
+    expect(second.text()).toBe('written offline');
+    expect(watcher.text()).toBe('');
+
+    second.connection.connect();
+    await until(() => watcher.text() === 'written offline', 'the restored edit to reach bob');
+    await second.connection.saved();
+    expect(await store.list()).toEqual([]);
+
+    second.connection.destroy();
+    watcher.connection.destroy();
   }, 60000);
 });

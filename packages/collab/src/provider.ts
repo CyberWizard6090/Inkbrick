@@ -4,6 +4,7 @@ import type { SchemaRegistry } from '@inkbrick/document';
 
 import { fromBase64, toBase64 } from './base64';
 import { Collab, REMOTE_ORIGIN, createCollab } from './bridge';
+import { newEditId, type PendingStore, type StoredEdit } from './pending';
 
 /** Where the Rabbit Hole API is and who the user is. */
 export interface DocumentApi {
@@ -111,15 +112,18 @@ export interface ConnectionOptions extends DocumentApi {
   awarenessEvery?: number;
   /** Called for refusals that lose data or stop the connection. The connection stays usable unless it says so. */
   onError?: (error: Error) => void;
+  /**
+   * Keeps the edits the server has not acknowledged yet, so they survive a reload of the page. Edits found in it at
+   * start (`restored`) are sent after the first connect.
+   */
+  pendingStore?: PendingStore;
+  /** Edits read from `pendingStore` and already applied to the Y.Doc (see `openDocument`). */
+  restored?: StoredEdit[];
 }
 
 type Listener = () => void;
 
-interface Pending {
-  refs: string[];
-  update: Uint8Array;
-  touched: string[];
-}
+type Pending = StoredEdit;
 
 interface ServerFrame {
   type: string;
@@ -128,6 +132,7 @@ interface ServerFrame {
 
 const MAX_TOUCHED = 200;
 const MAX_MERGED_BYTES = 400 * 1024;
+const COMPACT_AT = 50;
 
 /**
  * The connection of one Collab to the document room of the server.
@@ -159,7 +164,7 @@ export class DocumentConnection {
 
   private pending: Pending[] = [];
 
-  private refCounter = 0;
+  private writes: Promise<void> = Promise.resolve();
 
   private awareness: unknown = null;
 
@@ -175,6 +180,7 @@ export class DocumentConnection {
 
   constructor(private readonly options: ConnectionOptions) {
     this.lastRemoteSeq = options.lastSeq;
+    this.pending = [...(options.restored ?? [])];
     this.stopLocal = options.collab.onLocalUpdate((update, meta) =>
       this.queue(update, meta.touched),
     );
@@ -246,19 +252,62 @@ export class DocumentConnection {
     return true;
   }
 
+  /** Runs a write to the pending store after the previous one, so that a record is stored before it is removed. */
+  private persist(write: (store: PendingStore) => Promise<void>): void {
+    const store = this.options.pendingStore;
+
+    if (!store) return;
+
+    this.writes = this.writes
+      .then(() => write(store))
+      .catch((error: unknown) => {
+        this.fail(
+          new DocumentApiError(
+            0,
+            'PENDING_STORE_FAILED',
+            `cannot save unsent edits: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
+      });
+  }
+
+  /** How many edits the server has not acknowledged yet (kept in the pending store, when there is one). */
+  get unsent(): number {
+    return this.pending.length;
+  }
+
+  /** Resolves when every change of the unsent edits has been written to the pending store. */
+  saved(): Promise<void> {
+    return this.writes;
+  }
+
+  /** Forgets the unsent edits, here and in the store (for example when the user signs out). */
+  async discardPending(): Promise<void> {
+    this.pending = [];
+    this.persist((store) => store.clear());
+    this.emit();
+    await this.writes;
+  }
+
+  private drop(id: string): void {
+    this.pending = this.pending.filter((item) => item.id !== id);
+    this.persist((store) => store.remove([id]));
+    this.emit();
+  }
+
   private queue(update: Uint8Array, touched: string[]): void {
     // Edits made while the connection is closed or down are kept and sent after the next `ready`.
     if (!this.canWrite) return;
 
-    this.refCounter++;
-
-    const item: Pending = {
-      refs: [String(this.refCounter)],
-      update,
-      touched: touched.slice(0, MAX_TOUCHED),
-    };
+    const item: Pending = { id: newEditId(), update, touched: touched.slice(0, MAX_TOUCHED) };
 
     this.pending.push(item);
+    this.persist((store) => store.put(item));
+    this.emit();
+
+    // A long offline stretch must not grow the stored list without bound: small edits are merged into one.
+    if (this.socket?.readyState !== 1 && this.pending.length >= COMPACT_AT) this.merge();
+
     this.flush(item);
   }
 
@@ -267,28 +316,36 @@ export class DocumentConnection {
       type: 'update',
       update: toBase64(item.update),
       touched: item.touched,
-      ref: item.refs[0],
+      ref: item.id,
+    });
+  }
+
+  /** Merges every unsent edit into one when the result is small enough for the server to accept. */
+  private merge(): void {
+    if (this.pending.length < 2) return;
+
+    const merged = Y.mergeUpdates(this.pending.map((item) => item.update));
+
+    if (merged.length > MAX_MERGED_BYTES) return;
+
+    const replaced = this.pending.map((item) => item.id);
+    const item: Pending = {
+      id: newEditId(),
+      update: merged,
+      touched: [...new Set(this.pending.flatMap((edit) => edit.touched))].slice(0, MAX_TOUCHED),
+    };
+
+    this.pending = [item];
+    // The merged record is stored before the old ones are removed: a crash in between loses nothing.
+    this.persist(async (store) => {
+      await store.put(item);
+      await store.remove(replaced);
     });
   }
 
   /** After a reconnect everything not yet acknowledged is sent again, merged into one update when it is small. */
   private resend(): void {
-    if (this.pending.length > 1) {
-      const merged = Y.mergeUpdates(this.pending.map((item) => item.update));
-
-      if (merged.length <= MAX_MERGED_BYTES) {
-        this.pending = [
-          {
-            refs: this.pending.flatMap((item) => item.refs),
-            update: merged,
-            touched: [...new Set(this.pending.flatMap((item) => item.touched))].slice(
-              0,
-              MAX_TOUCHED,
-            ),
-          },
-        ];
-      }
-    }
+    this.merge();
 
     for (const item of this.pending) this.flush(item);
   }
@@ -412,8 +469,16 @@ export class DocumentConnection {
         this.setStatus('online');
         this.publishPeers();
 
-        if (this.canWrite) this.resend();
-        else this.pending = [];
+        if (this.canWrite) {
+          this.resend();
+        } else {
+          // A viewer's edits are never sent, so they are not kept either.
+          const dropped = this.pending.map((item) => item.id);
+
+          this.pending = [];
+          this.persist((store) => store.remove(dropped));
+          this.emit();
+        }
 
         if (this.awareness !== null) this.send({ type: 'awareness', state: this.awareness });
 
@@ -457,9 +522,7 @@ export class DocumentConnection {
       }
 
       case 'ack': {
-        const ref = frame.ref as string;
-
-        this.pending = this.pending.filter((item) => !item.refs.includes(ref));
+        this.drop(frame.ref as string);
 
         return;
       }
@@ -511,7 +574,7 @@ export class DocumentConnection {
           ref &&
           (code === 'UPDATE_TOO_LARGE' || code === 'INVALID_UPDATE' || code === 'FORBIDDEN')
         ) {
-          this.pending = this.pending.filter((item) => !item.refs.includes(ref));
+          this.drop(ref);
         }
 
         if (code === 'FORBIDDEN') this.canWrite = false;
@@ -535,6 +598,71 @@ export interface OpenDocumentOptions extends DocumentApi {
   backoff?: { min: number; max: number };
   awarenessEvery?: number;
   onError?: (error: Error) => void;
+  /**
+   * Keeps unsent edits across reloads. Edits left in it by an earlier page are applied to the document before the
+   * editor is created, so the person sees their own work again, and are sent after the first connect.
+   */
+  pendingStore?: PendingStore;
+}
+
+/**
+ * Applies the edits an earlier page left in the store to the Y.Doc and returns them as the new unsent queue.
+ * An edit the server already has (its acknowledgement was lost) is dropped instead of being sent again.
+ */
+async function restorePending(
+  ydoc: Y.Doc,
+  store: PendingStore,
+  onError?: (error: Error) => void,
+): Promise<StoredEdit[]> {
+  let stored: StoredEdit[];
+
+  try {
+    stored = await store.list();
+  } catch (error) {
+    onError?.(
+      new DocumentApiError(
+        0,
+        'PENDING_STORE_FAILED',
+        `cannot read unsent edits: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+
+    return [];
+  }
+
+  const kept: StoredEdit[] = [];
+  const contained: string[] = [];
+
+  for (const edit of stored) {
+    const valid =
+      typeof edit?.id === 'string' &&
+      edit.update instanceof Uint8Array &&
+      Array.isArray(edit.touched);
+
+    if (!valid) {
+      if (typeof edit?.id === 'string') contained.push(edit.id);
+
+      continue;
+    }
+
+    try {
+      // `diffUpdate` leaves nothing but an empty update (two bytes) when the document already has all of it.
+      if (Y.diffUpdate(edit.update, Y.encodeStateVector(ydoc)).length <= 2) {
+        contained.push(edit.id);
+        continue;
+      }
+
+      Y.applyUpdate(ydoc, edit.update, REMOTE_ORIGIN);
+      kept.push(edit);
+    } catch {
+      // Not a Yjs update (damaged storage): forget it instead of sending it to everyone.
+      contained.push(edit.id);
+    }
+  }
+
+  if (contained.length > 0) await store.remove(contained).catch(() => undefined);
+
+  return kept;
 }
 
 /**
@@ -546,12 +674,15 @@ export async function openDocument(
   options: OpenDocumentOptions,
 ): Promise<{ collab: Collab; connection: DocumentConnection }> {
   const { ydoc, lastSeq } = await loadDocument(options, options.documentId);
+  const restored = options.pendingStore
+    ? await restorePending(ydoc, options.pendingStore, options.onError)
+    : [];
   const collab = createCollab({
     ydoc,
     schema: options.schema,
     undoCaptureMs: options.undoCaptureMs,
   });
-  const connection = new DocumentConnection({ ...options, collab, lastSeq });
+  const connection = new DocumentConnection({ ...options, collab, lastSeq, restored });
 
   return { collab, connection };
 }

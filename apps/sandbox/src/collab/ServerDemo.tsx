@@ -4,7 +4,16 @@ import { cursorsOf } from '@inkbrick/collab';
 import { DocumentView, EditorProvider, RemoteCursors, readDocSelection } from '@inkbrick/react';
 
 import { useCollabState, useEditorWiring } from './CollabDemo';
-import { COLORS, openServerPeer, setupDemo, type ServerPeer, type ServerSetup } from './serverMode';
+import {
+  COLORS,
+  forgetSetup,
+  loadSetup,
+  openServerPeer,
+  saveSetup,
+  setupDemo,
+  type ServerPeer,
+  type ServerSetup,
+} from './serverMode';
 
 const URL_KEY = 'inkbrick.collab.server';
 
@@ -15,6 +24,7 @@ function useConnection(peer: ServerPeer) {
       [
         peer.connection.status,
         peer.connection.canWrite,
+        peer.connection.unsent,
         ...peer.connection.peers.map((other) => `${other.conn}:${JSON.stringify(other.state)}`),
       ].join('|'),
   );
@@ -105,6 +115,15 @@ function ServerPeerPanel({
           {state.inSync ? 'экран = Y.Doc' : 'расхождение'}
         </span>
         {!connection.canWrite && <span className="pill off">только чтение</span>}
+        {connection.unsent > 0 && (
+          <span
+            className="pill bad"
+            title="Правки, которые сервер ещё не подтвердил; они сохранены в браузере"
+            data-testid={`${peer.person.name}-unsent`}
+          >
+            не отправлено: {connection.unsent}
+          </span>
+        )}
       </header>
       <div className="peer-tools">
         <button type="button" disabled={!state.canUndo} onClick={() => collab.history.undo()}>
@@ -177,18 +196,49 @@ export function ServerDemo() {
 
     try {
       const created = await setupDemo(url);
-      const errors = (error: Error): void => setMessage(error.message);
-      const opened = await Promise.all(
-        created.people.map((person) => openServerPeer(created, person, errors)),
-      );
 
-      setSetup(created);
-      setPeers(opened);
-      setPhase('ready');
+      saveSetup(created);
+      await openSetup(created);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
       setPhase('form');
     }
+  };
+
+  const openSetup = async (created: ServerSetup): Promise<void> => {
+    const errors = (error: Error): void => setMessage(error.message);
+    const opened = await Promise.all(
+      created.people.map((person) => openServerPeer(created, person, errors)),
+    );
+
+    setSetup(created);
+    setPeers(opened);
+    setPhase('ready');
+  };
+
+  // A reload of the page resumes the same demo: the same people, the same document and their unsent edits.
+  const resumed = useRef(false);
+
+  useEffect(() => {
+    const saved = loadSetup();
+
+    if (!saved || resumed.current) return;
+
+    resumed.current = true;
+    setPhase('loading');
+    openSetup(saved).catch((error: unknown) => {
+      forgetSetup();
+      setMessage(error instanceof Error ? error.message : String(error));
+      setPhase('form');
+    });
+  }, []);
+
+  const startOver = async (): Promise<void> => {
+    await Promise.all(peers.map((peer) => peer.connection.discardPending()));
+    forgetSetup();
+    setPeers([]);
+    setSetup(undefined);
+    setPhase('form');
   };
 
   useEffect(() => () => peers.forEach((peer) => peer.connection.destroy()), [peers]);
@@ -240,6 +290,11 @@ export function ServerDemo() {
       <p className="lead">
         Документ №{setup.documentId} на {setup.baseUrl}. Поставьте курсор или выделите текст: у
         другого редактора появятся ваш курсор с именем и подсветка выделения.
+      </p>
+      <p>
+        <button type="button" onClick={() => void startOver()} data-testid="server-reset">
+          Начать заново
+        </button>
       </p>
       {message && (
         <p role="alert" className="pill bad">

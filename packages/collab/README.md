@@ -36,7 +36,29 @@ connection.connect();
 ```
 
 Offline: edits made while the connection is down (or after `close()`) are kept and sent after the next connect; Yjs
-updates are idempotent, so a repeated send is harmless. A refused update (`UPDATE_TOO_LARGE`, `INVALID_UPDATE`) is
+updates are idempotent, so a repeated send is harmless.
+
+Reloads: pass `pendingStore` to `openDocument` and the unsent edits also survive a reload or a crash of the page. They are
+applied to the document before the editor is created (the person sees their work again) and sent after the first connect;
+an edit the server already has is dropped instead of being sent twice.
+
+```ts
+import { indexedDbPendingStore } from '@inkbrick/collab';
+
+const { collab, connection } = await openDocument({
+  // ...as above
+  // One scope per user and document: another person signing in on the same browser must not send these edits.
+  pendingStore: indexedDbPendingStore({ scope: `${userId}:${documentId}` }),
+});
+
+connection.unsent; // how many edits wait for the server (the connection notifies subscribers when it changes)
+await connection.saved(); // everything is written to the store
+await connection.discardPending(); // sign-out: forget the unsent edits
+```
+
+Each edit is a record of its own (two tabs do not overwrite each other); a long offline stretch is merged into one record
+every 50 edits. A write that fails (quota) is reported to `onError` as `PENDING_STORE_FAILED` and editing continues. Opening
+a document still needs the server (the state is loaded first); only the unsent edits survive offline reloads. A refused update (`UPDATE_TOO_LARGE`, `INVALID_UPDATE`) is
 dropped and reported to `onError`.
 
 ## Tests

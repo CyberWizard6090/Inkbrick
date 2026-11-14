@@ -1,6 +1,11 @@
 import { createSchemaRegistry } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
-import { DocumentConnection, openDocument, type Collab } from '@inkbrick/collab';
+import {
+  DocumentConnection,
+  indexedDbPendingStore,
+  openDocument,
+  type Collab,
+} from '@inkbrick/collab';
 
 export interface ServerPerson {
   name: string;
@@ -111,6 +116,8 @@ export async function openServerPeer(
     documentId: setup.documentId,
     schema,
     undoCaptureMs: 700,
+    // Edits not yet acknowledged by the server survive a reload of the page.
+    pendingStore: indexedDbPendingStore({ scope: `${person.id}:${setup.documentId}` }),
     onError,
   });
   // Inkbrick's own history reverts whole blocks and would erase other people's edits: undo goes through Yjs.
@@ -123,3 +130,32 @@ export async function openServerPeer(
 }
 
 export const COLORS = ['#2f6fed', '#d9531e'];
+
+const SETUP_KEY = 'inkbrick.collab.setup';
+
+/** The demo users are new on every start; the session is kept per tab so that a reload resumes the same document. */
+export function saveSetup(setup: ServerSetup): void {
+  try {
+    sessionStorage.setItem(SETUP_KEY, JSON.stringify(setup));
+  } catch {
+    // Without storage a reload starts a new demo.
+  }
+}
+
+export function loadSetup(): ServerSetup | undefined {
+  try {
+    const raw = sessionStorage.getItem(SETUP_KEY);
+
+    return raw ? (JSON.parse(raw) as ServerSetup) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function forgetSetup(): void {
+  try {
+    sessionStorage.removeItem(SETUP_KEY);
+  } catch {
+    // Nothing to forget.
+  }
+}

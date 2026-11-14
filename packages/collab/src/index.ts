@@ -18,3 +18,5 @@ export type {
 export { toBase64, fromBase64 } from './base64';
 export { shareSelection, resolveSelection, cursorsOf } from './selection';
 export type { AwarenessState, CursorInfo, SelectionPoint, SharedSelection } from './selection';
+export { indexedDbPendingStore, memoryPendingStore, newEditId } from './pending';
+export type { IndexedDbPendingStoreOptions, PendingStore, StoredEdit } from './pending';
