@@ -1,0 +1,57 @@
+/*
+ * Чужие курсоры (<RemoteCursors>): слой лежит в левом верхнем углу контейнера с position: relative и не занимает места.
+ * Цвет курсора приходит в --inkbrick-remote-color. Слой не перехватывает указатель и не попадает в выделение.
+ */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='remote-cursors']) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+    user-select: none;
+    z-index: 2;
+  }
+
+  :where([data-inkbrick-ui='remote-cursor']) {
+    --inkbrick-remote-color: #2f6fed;
+  }
+
+  :where([data-inkbrick-part='remote-selection']) {
+    position: absolute;
+    background: var(--inkbrick-remote-color);
+    opacity: 0.22;
+    border-radius: 2px;
+  }
+
+  :where([data-inkbrick-part='remote-caret']) {
+    position: absolute;
+    background: var(--inkbrick-remote-color);
+    border-radius: 1px;
+    transition:
+      left 80ms linear,
+      top 80ms linear;
+  }
+
+  :where([data-inkbrick-part='remote-flag']) {
+    position: absolute;
+    bottom: 100%;
+    left: -1px;
+    padding: 0 5px;
+    border-radius: 3px 3px 3px 0;
+    background: var(--inkbrick-remote-color);
+    color: #fff;
+    font:
+      600 11px/1.5 system-ui,
+      sans-serif;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-part='remote-caret']) {
+      transition: none;
+    }
+  }
+}

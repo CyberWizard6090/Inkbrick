@@ -100,3 +100,10 @@ export type {
   DropPosition,
 } from './block-handle/BlockHandleController';
 export { DefaultBlockMenu } from './block-handle/DefaultBlockMenu';
+
+export { RemoteCursors } from './remote/RemoteCursors';
+export type { RemoteCursorsProps } from './remote/RemoteCursors';
+export { layoutCursors } from './remote/geometry';
+export type { RemoteCursor, CursorBox, CursorGeometry } from './remote/geometry';
+export { readDocSelection, rangeForPoints } from './editing/selection';
+export type { DocPoint, DocSelection } from './editing/selection';

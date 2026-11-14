@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
-import { DocumentView, EditorProvider } from '@inkbrick/react';
+import { cursorsOf } from '@inkbrick/collab';
+import { DocumentView, EditorProvider, RemoteCursors, readDocSelection } from '@inkbrick/react';
 
 import { useCollabState, useEditorWiring } from './CollabDemo';
 import { COLORS, openServerPeer, setupDemo, type ServerPeer, type ServerSetup } from './serverMode';
@@ -38,63 +39,45 @@ function ServerPeerPanel({
 
   useEditorWiring(root, collab);
 
-  // Where this person is: the block of their caret goes to the others as awareness.
+  // Where this person is: the selection goes to the others as awareness, as relative Yjs positions.
   useEffect(() => {
     let last = '';
     const onSelection = (): void => {
-      const node = document.getSelection()?.anchorNode;
-      const element = node instanceof Element ? node : node?.parentElement;
-      const block = element?.closest('[data-block-id]');
+      const editable = root.current?.querySelector<HTMLElement>('[data-inkbrick-root]');
 
-      if (!block || !root.current?.contains(block)) return;
+      if (!editable) return;
 
-      const id = block.getAttribute('data-block-id') ?? '';
+      const selection = readDocSelection(editable);
 
-      if (id === last) return;
+      // Focus left this editor (here: the other editor on the same page owns the browser selection): keep the last
+      // place, like other editors do, instead of making the cursor vanish.
+      if (!selection) return;
 
-      last = id;
-      connection.setAwareness({ block: id, color: accent, name: peer.person.name });
+      const shared = collab.shareSelection({ anchor: selection.from, head: selection.to });
+      const state = { name: peer.person.name, color: accent, selection: shared };
+      const key = JSON.stringify(state);
+
+      if (key === last) return;
+
+      last = key;
+      connection.setAwareness(state);
     };
 
     document.addEventListener('selectionchange', onSelection);
 
     return () => document.removeEventListener('selectionchange', onSelection);
-  }, [connection, accent, peer.person.name]);
+  }, [collab, connection, accent, peer.person.name]);
 
-  // Where the others are: their block gets a bar in their color and their name.
-  useEffect(() => {
-    const element = root.current;
-
-    if (!element) return undefined;
-
-    const apply = (): void => {
-      element.querySelectorAll<HTMLElement>('[data-remote-user]').forEach((marked) => {
-        marked.removeAttribute('data-remote-user');
-        marked.style.removeProperty('--remote-color');
-      });
-
-      for (const other of connection.peers) {
-        const where = other.state as { block?: string; color?: string; name?: string } | null;
-
-        if (!where?.block) continue;
-
-        const block = element.querySelector<HTMLElement>(
-          `[data-block-id="${CSS.escape(where.block)}"]`,
-        );
-
-        block?.setAttribute('data-remote-user', where.name ?? other.user.username);
-        block?.style.setProperty('--remote-color', where.color ?? '#888');
-      }
-    };
-
-    apply();
-
-    const observer = new MutationObserver(apply);
-
-    observer.observe(element, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
-  }, [connection, key]);
+  // Where the others are: decoded again after every edit, so a cursor stays between the same characters.
+  const version = useSyncExternalStore(
+    (listener) => editor.store.subscribe(listener),
+    () => editor.store.getVersion(),
+  );
+  const cursors = useMemo(
+    () => cursorsOf(collab.ydoc, connection.peers),
+    // `key` changes with the presence of the others; `version` with every edit of the document.
+    [collab, connection, key, version],
+  );
 
   const status = connection.status;
   const online = status === 'online';
@@ -162,6 +145,7 @@ function ServerPeerPanel({
       <div className="peer-editor" ref={root}>
         <EditorProvider editor={editor}>
           <DocumentView />
+          <RemoteCursors cursors={cursors} />
         </EditorProvider>
       </div>
     </section>
@@ -254,8 +238,8 @@ export function ServerDemo() {
     <main className="collab">
       <h1>Совместное редактирование на сервере</h1>
       <p className="lead">
-        Документ №{setup.documentId} на {setup.baseUrl}. Поставьте курсор в блок: у другого
-        редактора он подсветится вашим цветом.
+        Документ №{setup.documentId} на {setup.baseUrl}. Поставьте курсор или выделите текст: у
+        другого редактора появятся ваш курсор с именем и подсветка выделения.
       </p>
       {message && (
         <p role="alert" className="pill bad">

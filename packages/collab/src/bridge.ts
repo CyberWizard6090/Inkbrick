@@ -19,6 +19,12 @@ import {
 import { deepEqual } from './equal';
 import { COLLAB_ORIGIN, getBlocks, isInitialized, readPlace, type YBlock } from './format';
 import { normalizeSnapshot, project } from './project';
+import {
+  resolveSelection,
+  shareSelection,
+  type SelectionPoint,
+  type SharedSelection,
+} from './selection';
 import { inlineEquals } from './textDiff';
 import { reconcileChildren, writeBlockData } from './writer';
 
@@ -248,6 +254,19 @@ export class Collab {
     return () => {
       this.updateListeners.delete(listener);
     };
+  }
+
+  /** Выделение в виде, пригодном для присутствия (`connection.setAwareness({ selection })`). */
+  shareSelection(selection: {
+    anchor: SelectionPoint;
+    head: SelectionPoint;
+  }): SharedSelection | undefined {
+    return shareSelection(this.ydoc, selection);
+  }
+
+  /** Выделение другого участника в координатах модели с учётом всех правок после того, как он его поставил. */
+  resolveSelection(shared: unknown): { anchor: SelectionPoint; head: SelectionPoint } | undefined {
+    return resolveSelection(this.ydoc, shared);
   }
 
   /** Редактор сообщает о начале и конце IME-композиции. */

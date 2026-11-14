@@ -187,6 +187,46 @@ function findPoint(editable: HTMLElement, offset: number): { node: Node; offset:
 }
 
 /**
+ * DOM-диапазон между двумя точками модели (для отрисовки чужих курсоров и выделений). Точки меняются местами, если
+ * `from` стоит позже `to`. Блок, которого нет в DOM (его вытеснил виртуальный рендерер, он без текста или удалён),
+ * даёт `null`.
+ */
+export function rangeForPoints(
+  root: HTMLElement,
+  from: DocPoint,
+  to: DocPoint = from,
+): Range | null {
+  const find = (id: string) =>
+    root.querySelector<HTMLElement>(`.editable[data-id="${CSS.escape(id)}"]`);
+  const start = find(from.blockId);
+  const end = find(to.blockId);
+
+  if (!start || !end) return null;
+
+  const inverted =
+    from.blockId === to.blockId
+      ? from.offset > to.offset
+      : !!(start.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_PRECEDING);
+  const [first, firstElement, last, lastElement] = inverted
+    ? [to, end, from, start]
+    : [from, start, to, end];
+  const a = findPoint(firstElement, first.offset);
+  const b =
+    first === last || (first.blockId === last.blockId && first.offset === last.offset)
+      ? a
+      : findPoint(lastElement, last.offset);
+
+  if (!a || !b) return null;
+
+  const range = globalThis.document.createRange();
+
+  range.setStart(a.node, a.offset);
+  range.setEnd(b.node, b.offset);
+
+  return range;
+}
+
+/**
  * Выделения, которые установил `selectAllText` (по одному на корень). Пока выделение браузера совпадает с запомненным,
  * оно считается выделением всего документа — вместе с блоками без текста в начале и в конце, которые
  * DOM-выделением не охватить: браузер сводит концы выделения к допустимым позициям каретки.

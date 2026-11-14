@@ -29,7 +29,10 @@ connection.connect();
 
 // Undo and redo: collab.history.undo() / redo().
 // IME: call collab.setComposing(true) on compositionstart and false on compositionend.
-// Presence: connection.peers, connection.setAwareness({ block, color, name }).
+// Presence: connection.peers, connection.setAwareness({ name, color, selection }).
+// Cursors inside the text: selection = collab.shareSelection({ anchor, head }) (relative Yjs positions, so a cursor stays
+// between the same characters when others edit); the others' cursors = cursorsOf(collab.ydoc, connection.peers),
+// drawn by <RemoteCursors cursors={...} /> from @inkbrick/react (re-decode them after every edit of the document).
 ```
 
 Offline: edits made while the connection is down (or after `close()`) are kept and sent after the next connect; Yjs

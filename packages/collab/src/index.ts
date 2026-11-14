@@ -16,3 +16,5 @@ export type {
   RemotePeer,
 } from './provider';
 export { toBase64, fromBase64 } from './base64';
+export { shareSelection, resolveSelection, cursorsOf } from './selection';
+export type { AwarenessState, CursorInfo, SelectionPoint, SharedSelection } from './selection';
