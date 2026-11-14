@@ -35,6 +35,10 @@ connection.connect();
 // drawn by <RemoteCursors cursors={...} /> from @inkbrick/react (re-decode them after every edit of the document).
 ```
 
+The server closes the connection at once when the document is deleted (`status` becomes `closed` and `onError` gets
+`DOCUMENT_NOT_FOUND`, no reconnect) and when the person's access changes (removed, new role, signed out everywhere): the
+client then reconnects with a new ticket, which is refused (it stops) or gives the new rights (`canWrite`).
+
 Offline: edits made while the connection is down (or after `close()`) are kept and sent after the next connect; Yjs
 updates are idempotent, so a repeated send is harmless.
 

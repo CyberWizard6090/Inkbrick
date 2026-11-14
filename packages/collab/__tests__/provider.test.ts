@@ -335,6 +335,40 @@ describe('DocumentConnection', () => {
     expect(ann.connection.status).toBe('closed');
   });
 
+  it('stops for good when the document was deleted on the server', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann');
+
+    [...server.sockets][0].drop(1001, 'document deleted');
+    await until(() => ann.connection.status === 'closed', 'a closed connection');
+    expect(ann.errors.at(-1)).toMatchObject({ status: 404, code: 'DOCUMENT_NOT_FOUND' });
+
+    await tick(60);
+    expect(ann.connection.status).toBe('closed');
+    expect(server.sockets.size).toBe(0);
+  });
+
+  it('reconnects after "access changed" and takes the new rights, or stops when access is gone', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann');
+
+    expect(ann.connection.canWrite).toBe(true);
+
+    // The role was downgraded: the server closes the connection, the client comes back as a viewer.
+    server.users.get('ann')!.canWrite = false;
+    [...server.sockets][0].drop(1001, 'access changed');
+    await until(
+      () => !ann.connection.canWrite && ann.connection.status === 'online',
+      'the client to be back as a viewer',
+    );
+
+    // The member was removed: the new ticket is refused, so the client stops instead of retrying forever.
+    server.ticketStatus = 403;
+    [...server.sockets][0].drop(1001, 'access changed');
+    await until(() => ann.connection.status === 'closed', 'a closed connection');
+    expect(ann.errors.at(-1)).toMatchObject({ status: 403 });
+  });
+
   it('applies updates of others through collab.receive, so IME holds them', async () => {
     const server = newServer();
     const ann = await client(server, 'ann');

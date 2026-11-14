@@ -249,6 +249,18 @@ describe.skipIf(!base)('against a real server', () => {
       late.connection.destroy();
 
       expect([a.errors, b.errors, g.errors].flat()).toEqual([]);
+
+      // Deleting the document closes every open connection at once, and the clients do not reconnect.
+      expect((await call('DELETE', `/documents/${documentId}`, ann.token)).status).toBe(200);
+      await until(
+        () => connections.every((connection) => connection.status === 'closed'),
+        'every connection to be closed by the server',
+      );
+      expect([a.errors, b.errors, g.errors].map((list) => list.at(-1))).toEqual([
+        expect.objectContaining({ code: 'DOCUMENT_NOT_FOUND' }),
+        expect.objectContaining({ code: 'DOCUMENT_NOT_FOUND' }),
+        expect.objectContaining({ code: 'DOCUMENT_NOT_FOUND' }),
+      ]);
     } finally {
       for (const connection of connections) connection.destroy();
     }
