@@ -1,0 +1,33 @@
+{
+  "name": "@inkbrick/collab",
+  "version": "0.1.0-alpha.0",
+  "description": "Inkbrick collaborative editing bridge: keeps a DocumentStore and a Yjs document in sync. Prototype.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@inkbrick/document": "workspace:*",
+    "@inkbrick/store": "workspace:*"
+  },
+  "peerDependencies": {
+    "yjs": "^13.6.0"
+  },
+  "devDependencies": {
+    "@inkbrick/engine": "workspace:*",
+    "yjs": "^13.6.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CyberWizard6090/Inkbrick.git",
+    "directory": "packages/collab"
+  }
+}
