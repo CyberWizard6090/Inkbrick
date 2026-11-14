@@ -247,7 +247,8 @@ export class DocumentConnection {
   }
 
   private queue(update: Uint8Array, touched: string[]): void {
-    if (!this.canWrite || this.status === 'closed') return;
+    // Edits made while the connection is closed or down are kept and sent after the next `ready`.
+    if (!this.canWrite) return;
 
     this.refCounter++;
 

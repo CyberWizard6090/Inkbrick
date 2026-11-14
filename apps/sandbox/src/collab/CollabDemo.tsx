@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import * as Y from 'yjs';
 
 import { createCollab, type Collab } from '@inkbrick/collab';
@@ -32,7 +32,7 @@ function createPeer(id: string, state: Uint8Array, network: MemoryNetwork): Peer
   return peer;
 }
 
-function useCollabState(
+export function useCollabState(
   collab: Collab,
   editor: Editor,
 ): { canUndo: boolean; canRedo: boolean; inSync: boolean } {
@@ -60,21 +60,8 @@ function usePending(network: MemoryNetwork): number {
   );
 }
 
-function PeerPanel({
-  peer,
-  network,
-  accent,
-}: {
-  peer: Peer;
-  network: MemoryNetwork;
-  accent: string;
-}) {
-  const { collab, editor } = peer;
-  const root = useRef<HTMLDivElement>(null);
-  const state = useCollabState(collab, editor);
-  const [online, setOnline] = useState(peer.online);
-  const [composing, setComposing] = useState(false);
-
+/** Ctrl+Z goes through Yjs, and an IME composition holds other people's edits until it ends. */
+export function useEditorWiring(root: RefObject<HTMLElement | null>, collab: Collab): void {
   useEffect(() => {
     const element = root.current;
 
@@ -92,7 +79,6 @@ function PeerPanel({
       if (key === 'y' || event.shiftKey) collab.history.redo();
       else collab.history.undo();
     };
-    // Композиция IME: чужие правки придерживаются до её конца.
     const start = (): void => collab.setComposing(true);
     const end = (): void => collab.setComposing(false);
 
@@ -105,7 +91,25 @@ function PeerPanel({
       element.removeEventListener('compositionstart', start);
       element.removeEventListener('compositionend', end);
     };
-  }, [collab]);
+  }, [root, collab]);
+}
+
+function PeerPanel({
+  peer,
+  network,
+  accent,
+}: {
+  peer: Peer;
+  network: MemoryNetwork;
+  accent: string;
+}) {
+  const { collab, editor } = peer;
+  const root = useRef<HTMLDivElement>(null);
+  const state = useCollabState(collab, editor);
+  const [online, setOnline] = useState(peer.online);
+  const [composing, setComposing] = useState(false);
+
+  useEditorWiring(root, collab);
 
   return (
     <section className="peer" style={{ ['--peer-accent' as string]: accent }}>

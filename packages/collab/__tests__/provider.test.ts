@@ -212,6 +212,21 @@ describe('DocumentConnection', () => {
     expect(ann.collab.inSync() && bob.collab.inSync()).toBe(true);
   });
 
+  it('keeps edits made after close() and sends them when connect() is called again', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann');
+    const bob = await client(server, 'bob');
+
+    ann.connection.close();
+    await until(() => ann.connection.status === 'closed', 'ann to be closed');
+    ann.type('offline');
+    await tick(30);
+    expect(bob.text()).toBe('');
+
+    ann.connection.connect();
+    await until(() => bob.text() === 'offline', 'the offline edit to reach bob');
+  });
+
   it('reloads the state when the history it needs was compacted', async () => {
     const server = newServer();
     const ann = await client(server, 'ann');
