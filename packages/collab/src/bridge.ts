@@ -36,6 +36,12 @@ export interface CollabOptions {
   onError?: (error: unknown) => void;
 }
 
+/** What a local update changed besides its bytes. */
+export interface LocalUpdateMeta {
+  /** Ids of the blocks the transaction changed (they feed the "who edited this block" record of the server). */
+  touched: string[];
+}
+
 export interface CollabHistory {
   readonly canUndo: boolean;
   readonly canRedo: boolean;
@@ -45,6 +51,32 @@ export interface CollabHistory {
   seal(): void;
   clear(): void;
   subscribe(listener: () => void): () => void;
+}
+
+/** Ids of the blocks a Yjs transaction changed: added, removed, or changed inside (props, text, place). */
+function changedBlockIds(ydoc: Y.Doc, transaction: Y.Transaction): string[] {
+  const blocks = getBlocks(ydoc);
+  const ids = new Set<string>();
+
+  for (const [type, keys] of transaction.changed) {
+    if ((type as unknown) === blocks) {
+      for (const key of keys) if (typeof key === 'string') ids.add(key);
+
+      continue;
+    }
+
+    let current: Y.AbstractType<any> = type;
+
+    while (current.parent && (current.parent as unknown) !== blocks) {
+      current = current.parent as Y.AbstractType<any>;
+    }
+
+    const id = (current.parent as unknown) === blocks ? current._item?.parentSub : undefined;
+
+    if (typeof id === 'string') ids.add(id);
+  }
+
+  return [...ids];
 }
 
 function blockEquals(a: BaseBlock, b: BaseBlock): boolean {
@@ -86,7 +118,9 @@ export class Collab {
 
   private readonly historyListeners = new Set<() => void>();
 
-  private readonly updateListeners = new Set<(update: Uint8Array) => void>();
+  private readonly updateListeners = new Set<(update: Uint8Array, meta: LocalUpdateMeta) => void>();
+
+  private touched: string[] = [];
 
   private readonly options: CollabOptions;
 
@@ -140,13 +174,20 @@ export class Collab {
       },
     };
 
+    // Yjs emits `afterTransaction` before `update`, so the blocks of a transaction are known when its update goes out.
     this.ydoc.on('update', (update: Uint8Array, origin: unknown) => {
+      const touched = this.touched;
+
+      this.touched = [];
+
       if (origin === REMOTE_ORIGIN) return;
 
-      for (const listener of [...this.updateListeners]) listener(update);
+      for (const listener of [...this.updateListeners]) listener(update, { touched });
     });
 
     this.ydoc.on('afterTransaction', (transaction: Y.Transaction) => {
+      this.touched = changedBlockIds(this.ydoc, transaction);
+
       if (transaction.origin === COLLAB_ORIGIN) return;
 
       this.pull();
@@ -201,7 +242,7 @@ export class Collab {
   }
 
   /** Обновления, которые нужно отправить другим (всё, кроме пришедшего снаружи). */
-  onLocalUpdate(listener: (update: Uint8Array) => void): () => void {
+  onLocalUpdate(listener: (update: Uint8Array, meta: LocalUpdateMeta) => void): () => void {
     this.updateListeners.add(listener);
 
     return () => {

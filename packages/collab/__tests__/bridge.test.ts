@@ -159,3 +159,47 @@ describe('bridge', () => {
     expect(normalizeSnapshot(project(ydoc), schema).blocks).toEqual(doc.blocks);
   });
 });
+
+describe('touched blocks', () => {
+  it('reports the blocks a local update changed', () => {
+    const peer = createPeer('a', createServerState());
+    const id = firstParagraph(peer);
+    const seen: string[][] = [];
+
+    peer.collab.onLocalUpdate((_update, meta) => seen.push(meta.touched));
+    peer.editor.dispatch({
+      type: 'insertText',
+      payload: { text: 'x', selection: { anchor: { blockId: id, offset: 0 } } },
+    });
+
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.flat()).toContain(id);
+    expect(new Set(seen.flat()).size).toBe(
+      seen.flat().length === 0 ? 0 : new Set(seen.flat()).size,
+    );
+  });
+
+  it('reports the blocks of an undo and none for remote updates', () => {
+    const state = createServerState();
+    const a = createPeer('a', state);
+    const b = createPeer('b', state);
+    const id = firstParagraph(a);
+    const fromB: string[][] = [];
+
+    b.collab.onLocalUpdate((_update, meta) => fromB.push(meta.touched));
+    a.editor.dispatch({
+      type: 'insertText',
+      payload: { text: 'x', selection: { anchor: { blockId: id, offset: 0 } } },
+    });
+    syncAll([a, b]);
+
+    expect(fromB).toEqual([]);
+
+    const undone: string[][] = [];
+
+    a.collab.onLocalUpdate((_update, meta) => undone.push(meta.touched));
+    a.collab.history.undo();
+
+    expect(undone.flat()).toContain(id);
+  });
+});

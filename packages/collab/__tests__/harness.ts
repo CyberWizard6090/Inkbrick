@@ -8,7 +8,7 @@ import {
 } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
 
-import { createCollab, initYDoc, type Collab } from '../src';
+import { REMOTE_ORIGIN, createCollab, initYDoc, type Collab } from '../src';
 
 export interface Peer {
   name: string;
@@ -33,7 +33,7 @@ export function createServerState(): Uint8Array {
 export function createPeer(name: string, state: Uint8Array): Peer {
   const ydoc = new Y.Doc();
 
-  Y.applyUpdate(ydoc, state, 'remote');
+  Y.applyUpdate(ydoc, state, REMOTE_ORIGIN);
 
   const collab = createCollab({ ydoc, schema });
   const editor = new Editor({ schema, document: collab.createDocument() });
@@ -64,7 +64,7 @@ export function syncAll(peers: readonly Peer[]): void {
           Y.applyUpdate(
             b.ydoc,
             Y.encodeStateAsUpdate(a.ydoc, Y.encodeStateVector(b.ydoc)),
-            'remote',
+            REMOTE_ORIGIN,
           );
       }
     }
