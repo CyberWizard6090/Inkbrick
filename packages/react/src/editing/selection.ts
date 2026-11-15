@@ -97,12 +97,30 @@ function resolvePoint(
   return resolveContainerPoint(root, node, offset, bias, includeIslands);
 }
 
+/**
+ * Одно выделение, охватывающее все диапазоны. Firefox при протягивании через ячейки таблицы держит по диапазону
+ * на ячейку; без объединения читалась бы только первая ячейка.
+ */
+function spanOf(selection: Selection): Range {
+  const first = selection.getRangeAt(0);
+
+  if (selection.rangeCount === 1) return first;
+
+  const last = selection.getRangeAt(selection.rangeCount - 1);
+  const span = globalThis.document.createRange();
+
+  span.setStart(first.startContainer, first.startOffset);
+  span.setEnd(last.endContainer, last.endOffset);
+
+  return span;
+}
+
 export function readDocSelection(root: HTMLElement): DocSelection | null {
   const selection = globalThis.getSelection();
 
   if (!selection || selection.rangeCount === 0) return null;
 
-  const range = selection.getRangeAt(0);
+  const range = spanOf(selection);
 
   if (!root.contains(range.commonAncestorContainer)) return null;
 
