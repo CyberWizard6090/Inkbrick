@@ -62,6 +62,10 @@ await connection.saved(); // everything is written to the store
 await connection.discardPending(); // sign-out: forget the unsent edits
 ```
 
+`discardPending` is meant for sign-out. If it forgot edits, the document in memory still contains them, and later edits would
+build on updates the server never got, so after it local edits are not sent any more and `onError` gets `EDITS_DISCARDED`
+(409): reload the document (`openDocument`) to continue editing.
+
 Each edit is a record of its own (two tabs do not overwrite each other); a long offline stretch is merged into one record
 every 50 edits. A write that fails (quota) is reported to `onError` as `PENDING_STORE_FAILED` and editing continues. Opening
 a document still needs the server (the state is loaded first); only the unsent edits survive offline reloads. A refused update (`UPDATE_TOO_LARGE`, `INVALID_UPDATE`) is
