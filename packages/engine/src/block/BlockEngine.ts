@@ -4,6 +4,7 @@ import {
   type BaseBlock,
   type BlockId,
   type BlockProps,
+  type BlockTemplate,
   type SchemaRegistry,
 } from '@inkbrick/document';
 import {
@@ -51,6 +52,33 @@ export class BlockEngine {
 
     tx.apply(new SetBlockChange({ ...block, parentId }));
     tx.apply(new InsertChildChange(parentId, index, block.id));
+  }
+
+  /**
+   * Создаёт начальных потомков блока по `BlockSchema.scaffold` (таблица 3×3), если у блока их ещё нет.
+   * Вызывается там, где блок создаёт пользователь; возвращает, появились ли потомки.
+   */
+  scaffold(tx: Transaction, id: BlockId): boolean {
+    const block = this.require(tx, id);
+    const templates = this.schema.getBlockSchema(block.flavour)?.scaffold?.(block.props) ?? [];
+
+    if (block.children.length > 0 || templates.length === 0) return false;
+
+    this.build(tx, id, templates);
+
+    return true;
+  }
+
+  /** Вставляет блоки по заготовкам в конец `parentId`. */
+  build(tx: Transaction, parentId: BlockId, templates: readonly BlockTemplate[]): BlockId[] {
+    return templates.map((template) => {
+      const block = this.create({ flavour: template.flavour, parentId, props: template.props });
+
+      this.insert(tx, parentId, this.require(tx, parentId).children.length, block);
+      this.build(tx, block.id, template.children ?? []);
+
+      return block.id;
+    });
   }
 
   update(tx: Transaction, id: BlockId, updater: (block: BaseBlock) => BaseBlock): void {

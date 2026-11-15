@@ -3,7 +3,7 @@ import type { Transaction } from '@inkbrick/store';
 
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, DeleteBackwardPayload } from '../dispatcher/Intents';
-import { isTextBlock } from '../utils';
+import { isIsolating, isTextBlock } from '../utils';
 import { canOutdent, outdent } from './outdent';
 
 /**
@@ -41,6 +41,9 @@ export const DeleteBackwardCommand: Command<DeleteBackwardPayload, CaretResult |
 
       return { blockId, offset: from };
     }
+
+    // Ячейку таблицы нельзя ни превратить в параграф, ни склеить с соседней.
+    if (isIsolating(engine.schema, block)) return undefined;
 
     if (canOutdent(context, block)) {
       outdent(context, blockId);

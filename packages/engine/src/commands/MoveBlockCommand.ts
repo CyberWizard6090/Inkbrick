@@ -1,5 +1,6 @@
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, MoveBlockPayload } from '../dispatcher/Intents';
+import { isIsolating } from '../utils';
 
 /**
  * Переносит блок на место рядом с `targetId` (перед ним или после него; «после» — после всего поддерева цели).
@@ -41,6 +42,7 @@ function plan(
   if (!parent || !blockParent?.parentId || !parent.parentId) return undefined;
   if (
     !engine.schema.hasBlock(block.flavour) ||
+    isIsolating(engine.schema, block) ||
     !engine.schema.validateRelation(parent.flavour, block.flavour)
   ) {
     return undefined;

@@ -2,7 +2,7 @@ import type { BaseBlock, BlockId } from '@inkbrick/document';
 
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, DeleteRangePayload } from '../dispatcher/Intents';
-import { isTextBlock, orderRange } from '../utils';
+import { isIsolating, isTextBlock, orderRange } from '../utils';
 
 /**
  * Удаляет выделение, которое может охватывать несколько блоков.
@@ -28,6 +28,8 @@ export const DeleteRangeCommand: Command<DeleteRangePayload, CaretResult> = {
     if (!p.text) return caretAfterRemoval(context, removed);
 
     const { start, end, between } = p.text;
+
+    if (p.text.clear) return clearRange(context, p.text);
 
     if (start.id === end.id) {
       engine.block.updateContent(
@@ -93,11 +95,52 @@ interface TextRange {
   between: BaseBlock[];
   from: { blockId: BlockId; offset: number };
   to: { blockId: BlockId; offset: number };
+  /** Граница выделения — в ячейке таблицы: блоки не склеиваются, текст очищается на месте. */
+  clear: boolean;
 }
 
 interface Plan {
   remove: BaseBlock[];
   text?: TextRange;
+}
+
+/**
+ * Удаление, у которого хотя бы одна граница в ячейке таблицы. Ячейки и строки остаются на месте —
+ * очищается только их текст; обычные блоки, попавшие в выделение целиком (в том числе таблица вместе
+ * со всеми ячейками), удаляются. Первый и последний блок не склеиваются.
+ */
+function clearRange(
+  { engine, transaction }: CommandContext,
+  { start, end, between, from, to }: TextRange,
+): CaretResult {
+  const holdsEnd = (block: BaseBlock) => {
+    for (let current = transaction.getBlock(end.id); current?.parentId;) {
+      if (current.parentId === block.id) return true;
+      current = transaction.getBlock(current.parentId);
+    }
+
+    return false;
+  };
+
+  engine.block.updateContent(
+    transaction,
+    start.id,
+    engine.inline.split(start.content, from.offset)[0],
+  );
+  engine.block.updateContent(transaction, end.id, engine.inline.split(end.content, to.offset)[1]);
+
+  for (const block of between) {
+    // Уже удалён вместе с родителем.
+    if (!transaction.getBlock(block.id)) continue;
+
+    if (!isIsolating(engine.schema, block) && !holdsEnd(block)) {
+      engine.block.remove(transaction, block.id);
+    } else if (isTextBlock(engine.schema, block)) {
+      engine.block.updateContent(transaction, block.id, []);
+    }
+  }
+
+  return { blockId: start.id, offset: from.offset };
 }
 
 function removeBoundaries(
@@ -177,7 +220,10 @@ function plan(
 
   if (between.some((block) => !engine.schema.hasBlock(block.flavour))) return undefined;
 
-  if (start.id !== end.id) {
+  const clear =
+    start.id !== end.id && (isIsolating(engine.schema, start) || isIsolating(engine.schema, end));
+
+  if (start.id !== end.id && !clear) {
     const parent = start.parentId ? transaction.getBlock(start.parentId) : undefined;
 
     for (const childId of end.children) {
@@ -201,6 +247,7 @@ function plan(
       between,
       from: start.id === range.from.blockId ? range.from : { blockId: start.id, offset: 0 },
       to: end.id === range.to.blockId ? range.to : { blockId: end.id, offset: length(end) },
+      clear,
     },
   };
 }

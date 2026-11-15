@@ -3,7 +3,7 @@ import type { BaseBlock, InlineNode } from '@inkbrick/document';
 import type { FragmentBlock } from '../clipboard/types';
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, PasteFragmentPayload } from '../dispatcher/Intents';
-import { isTextBlock } from '../utils';
+import { isIsolating, isTextBlock } from '../utils';
 
 const PARAGRAPH = 'block:paragraph';
 
@@ -42,6 +42,16 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
     const { inline } = engine;
 
     const [head, tail] = inline.split(target.content, at.offset);
+
+    // В ячейку таблицы блоки не вставить: фрагмент идёт текстом, блоки разделяются переводом строки.
+    if (isIsolating(engine.schema, target)) {
+      const text = flatten(inline, fragment.blocks);
+
+      engine.block.updateContent(tx, target.id, merge(inline, head, text, tail));
+
+      return { blockId: target.id, offset: inline.length(head) + inline.length(text) };
+    }
+
     const targetIsEmpty = head.length === 0 && tail.length === 0;
     const originalChildren = [...target.children];
 
@@ -153,6 +163,21 @@ type Inline = CommandContext['engine']['inline'];
 
 function merge(inline: Inline, ...parts: InlineNode[][]): InlineNode[] {
   return parts.reduce((acc, part) => inline.merge(acc, part), [] as InlineNode[]);
+}
+
+function flatten(inline: Inline, blocks: FragmentBlock[]): InlineNode[] {
+  const lines: InlineNode[][] = [];
+  const visit = (block: FragmentBlock) => {
+    if (block.content.length > 0) lines.push(block.content);
+    block.children.forEach(visit);
+  };
+
+  blocks.forEach(visit);
+
+  return lines.reduce(
+    (acc, line, index) => merge(inline, acc, index > 0 ? [{ insert: '\n' }] : [], line),
+    [] as InlineNode[],
+  );
 }
 
 function isTextual({ engine }: CommandContext, block: FragmentBlock): boolean {
