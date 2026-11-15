@@ -169,6 +169,12 @@ export class DocumentConnection {
 
   private failures = 0;
 
+  /** The ticket request of the current attempt is in flight (the socket does not exist yet). */
+  private ticketing = false;
+
+  /** A 401 was already reported; the next report waits for a successful ticket. */
+  private unauthorized = false;
+
   private lastRemoteSeq: number;
 
   private pending: Pending[] = [];
@@ -215,13 +221,18 @@ export class DocumentConnection {
 
   /** Opens the connection (and keeps it open, reconnecting after failures) until `close`. */
   connect(): void {
+    // An attempt or a socket exists already: a second one would leak the first.
+    if (this.socket || this.ticketing) return;
+
     if (this.status === 'closed') this.status = 'idle';
 
+    clearTimeout(this.reconnectTimer);
     void this.open();
   }
 
   close(): void {
     this.attempt++;
+    this.ticketing = false;
     this.setStatus('closed');
     clearTimeout(this.reconnectTimer);
     clearTimeout(this.awarenessTimer);
@@ -442,6 +453,8 @@ export class DocumentConnection {
   private async open(): Promise<void> {
     const attempt = ++this.attempt;
 
+    this.releaseSocket();
+    this.ticketing = true;
     this.setStatus(this.failures > 0 ? 'reconnecting' : 'connecting');
 
     let ticket: string;
@@ -457,7 +470,18 @@ export class DocumentConnection {
     } catch (error) {
       if (attempt !== this.attempt) return;
 
-      if (error instanceof DocumentApiError && [400, 401, 403, 404].includes(error.status)) {
+      this.ticketing = false;
+
+      // 401 is most likely an expired token: `getToken` may return a fresh one on the next attempt.
+      if (error instanceof DocumentApiError && error.status === 401) {
+        if (!this.unauthorized) this.fail(error);
+
+        this.unauthorized = true;
+        this.scheduleReconnect();
+        return;
+      }
+
+      if (error instanceof DocumentApiError && [400, 403, 404].includes(error.status)) {
         this.fail(error);
         this.setStatus('closed');
         return;
@@ -469,6 +493,9 @@ export class DocumentConnection {
     }
 
     if (attempt !== this.attempt) return;
+
+    this.ticketing = false;
+    this.unauthorized = false;
 
     const base = api(this.options).replace(/^http/, 'ws');
     const url = `${base}/documents/${this.options.documentId}/events?ticket=${encodeURIComponent(ticket)}&since=${this.lastRemoteSeq}`;
@@ -516,6 +543,19 @@ export class DocumentConnection {
     socket.onerror = () => {
       // The close event follows and drives the reconnect.
     };
+  }
+
+  /** Closes the previous socket (if any) and detaches its handlers, so it can neither deliver nor reconnect. */
+  private releaseSocket(): void {
+    const socket = this.socket;
+
+    if (!socket) return;
+
+    this.socket = undefined;
+    socket.onmessage = null;
+    socket.onclose = null;
+    socket.onerror = null;
+    socket.close(1000, 'reconnect');
   }
 
   private scheduleReconnect(): void {
@@ -605,6 +645,9 @@ export class DocumentConnection {
             void this.open();
           })
           .catch((error: unknown) => {
+            // Closed or reconnected meanwhile: nothing to retry.
+            if (attempt + 1 !== this.attempt) return;
+
             this.fail(error instanceof Error ? error : new Error(String(error)));
             this.scheduleReconnect();
           });

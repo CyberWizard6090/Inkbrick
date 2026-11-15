@@ -416,6 +416,73 @@ describe('DocumentConnection', () => {
     expect(frames).toBeLessThan(12);
   });
 
+  it('retries with backoff on a 401 ticket and reports it once', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann', false);
+
+    server.ticketStatus = 401;
+    ann.connection.connect();
+    await until(() => ann.errors.length > 0, 'the error');
+    await tick(100);
+    expect(ann.connection.status).toBe('reconnecting');
+    expect(ann.errors).toHaveLength(1);
+    expect(ann.errors[0]).toMatchObject({ status: 401 });
+
+    // The token was refreshed: the next attempt succeeds.
+    server.ticketStatus = 200;
+    await until(() => ann.connection.status === 'online', 'a recovered connection');
+    expect(ann.errors).toHaveLength(1);
+  });
+
+  it('does not open a second socket when connect is called again', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann', false);
+
+    ann.connection.connect();
+    ann.connection.connect();
+    await until(() => ann.connection.status === 'online', 'an online connection');
+    ann.connection.connect();
+    await tick(30);
+    expect(server.sockets.size).toBe(1);
+
+    // After a failed attempt connect() retries at once, still with one socket.
+    const bob = await client(server, 'bob', false);
+
+    server.ticketStatus = 500;
+    bob.connection.connect();
+    await until(() => bob.connection.status === 'reconnecting', 'a failed attempt');
+    server.ticketStatus = 200;
+    bob.connection.connect();
+    await until(() => bob.connection.status === 'online', 'an online connection');
+    await tick(60);
+    expect(server.sockets.size).toBe(2);
+  });
+
+  it('does not reconnect after close when the reload for a resync fails', async () => {
+    const server = newServer();
+    const real = server.fetch;
+    let failing = false;
+
+    server.fetch = async (input, init) => {
+      if (failing && String(input).endsWith('/state')) {
+        await tick(20);
+        throw new Error('network');
+      }
+
+      return real(input, init);
+    };
+
+    const ann = await client(server, 'ann');
+
+    failing = true;
+    [...server.sockets][0].deliver({ type: 'resync', reason: 'snapshot' });
+    await tick(5);
+    ann.connection.close();
+    await tick(80);
+    expect(ann.connection.status).toBe('closed');
+    expect(server.sockets.size).toBe(0);
+  });
+
   it('stops when the server refuses the ticket or revokes access', async () => {
     const server = newServer();
     const denied = await client(server, 'ann', false);
