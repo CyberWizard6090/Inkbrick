@@ -28,7 +28,10 @@ export const SplitBlockCommand: Command<SplitBlockPayload, CaretResult> = {
     if (rule.mode === 'newline') {
       const text = engine.inline.toPlainText(block.content);
 
-      if (offset === length && text.endsWith('\n')) {
+      // Выйти можно только туда, где параграфу есть место: из ячейки таблицы выхода нет.
+      const canExit = engine.schema.validateRelation(parent.flavour, 'block:paragraph');
+
+      if (canExit && offset === length && text.endsWith('\n')) {
         engine.block.updateContent(
           transaction,
           blockId,

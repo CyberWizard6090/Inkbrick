@@ -3,6 +3,7 @@ import type { Transaction } from '@inkbrick/store';
 
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, BlockTargetPayload } from '../dispatcher/Intents';
+import { isIsolating } from '../utils';
 
 export const DuplicateBlockCommand: Command<BlockTargetPayload, CaretResult> = {
   type: 'duplicateBlock',
@@ -14,6 +15,7 @@ export const DuplicateBlockCommand: Command<BlockTargetPayload, CaretResult> = {
     return (
       !!block &&
       !!parent?.parentId && // блоки верхнего уровня страницы не дублируем
+      !isIsolating(engine.schema, block) &&
       engine.schema.validateRelation(parent.flavour, block.flavour) &&
       isKnownSubtree(engine, transaction, block)
     );

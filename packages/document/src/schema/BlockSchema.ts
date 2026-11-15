@@ -1,5 +1,6 @@
 import type { ZodTypeAny } from 'zod';
 import type { BlockFlavour } from '../model/BlockFlavour';
+import type { BaseBlock } from '../model/BaseBlock';
 import type { BlockProps } from '../model/BlockProps';
 
 /**
@@ -26,6 +27,20 @@ export interface EnterBehavior {
   nextFlavour?: BlockFlavour;
   /** Enter в пустом блоке превращает его в параграф (списки, цитаты). */
   exitWhenEmpty?: boolean;
+}
+
+/** Блок, который создаётся вместе с родителем (см. `BlockSchema.scaffold`). */
+export interface BlockTemplate {
+  flavour: BlockFlavour;
+  props?: BlockProps;
+  children?: readonly BlockTemplate[];
+}
+
+/** Что доступно `BlockSchema.repair`: чтение блоков и добавление недостающих потомков. */
+export interface RepairTree {
+  get(id: string): BaseBlock | undefined;
+  /** Создаёт пустой блок `flavour` последним потомком `parentId` и возвращает его. */
+  append(parentId: string, flavour: BlockFlavour): BaseBlock;
 }
 
 export interface BlockSchema<TPropsSchema extends ZodTypeAny = ZodTypeAny> {
@@ -59,6 +74,32 @@ export interface BlockSchema<TPropsSchema extends ZodTypeAny = ZodTypeAny> {
   indentable?: boolean;
 
   enter?: EnterBehavior;
+
+  /**
+   * Блок — неделимая часть составного блока (строка и ячейка таблицы). Общие правки его не удаляют,
+   * не склеивают с соседями, не делят, не переносят и не дублируют: Backspace в начале ничего не делает,
+   * удаление выделения только очищает его текст, вставка из буфера идёт текстом. Количество и порядок таких
+   * блоков меняют только команды владельца (таблицы).
+   */
+  isolating?: boolean;
+
+  /**
+   * Начальные потомки блока, созданного пользователем (`insertBlock`, `convertBlock`): таблица 3×3 вместо
+   * пустой. При вставке из буфера, дублировании и загрузке не применяется — там потомки уже есть.
+   */
+  scaffold?: (props: BlockProps) => readonly BlockTemplate[];
+
+  /**
+   * Проверка поддерева, которую не выразить правилами вложенности (в строках таблицы поровну ячеек).
+   * Возвращает описания нарушений; вызывается из `validateSnapshot`.
+   */
+  validate?: (block: BaseBlock, getBlock: (id: string) => BaseBlock | undefined) => string[];
+
+  /**
+   * Исправляет то, что находит `validate` (дополняет короткие строки таблицы ячейками). Вызывается из
+   * `repairSnapshot`; возвращает описания правок.
+   */
+  repair?: (block: BaseBlock, tree: RepairTree) => string[];
 
   commands: string[];
   shortcuts: string[];
