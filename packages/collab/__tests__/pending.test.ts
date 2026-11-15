@@ -338,6 +338,32 @@ describe('unsent edits across reloads', () => {
     expect(await store.list()).toEqual([]);
   });
 
+  it('stops sending edits that build on discarded ones and reports EDITS_DISCARDED', async () => {
+    const server = newServer();
+    const store = memoryPendingStore();
+    const bob = await loadPage(server, 'bob', undefined);
+    const ann = await loadPage(server, 'ann', store);
+
+    await goOffline(server, ann);
+    ann.type('x');
+    await ann.connection.discardPending();
+
+    // Back online, the person keeps typing in the same document: 'y' builds on the discarded 'x'.
+    server.ticketStatus = 200;
+    await until(() => ann.connection.status === 'online', 'ann to reconnect');
+    ann.type('y');
+    await tick(50);
+
+    // The server never gets an update it cannot use, and the caller is told to reload.
+    expect(server.lastSeq).toBe(0);
+    expect(bob.text()).toBe('');
+    expect(ann.connection.unsent).toBe(0);
+    expect(ann.errors.map((error) => (error as { code?: string }).code)).toEqual([
+      'EDITS_DISCARDED',
+    ]);
+    expect(await store.list()).toEqual([]);
+  });
+
   it('keeps the edits of two tabs apart and delivers both', async () => {
     const server = newServer();
     const store = memoryPendingStore();

@@ -173,6 +173,9 @@ export class DocumentConnection {
 
   private pending: Pending[] = [];
 
+  /** Set when unsent edits were discarded: the Y.Doc still has them, so later edits would build on missing data. */
+  private discarded = false;
+
   private writes: Promise<void> = Promise.resolve();
 
   private awareness: unknown = null;
@@ -306,8 +309,14 @@ export class DocumentConnection {
     return this.writes;
   }
 
-  /** Forgets the unsent edits, here and in the store (for example when the user signs out). */
+  /**
+   * Forgets the unsent edits, here and in the store (for example when the user signs out). The Y.Doc keeps them, so
+   * later edits would depend on updates the server never got: after this, local edits are no longer sent and
+   * `onError` gets `EDITS_DISCARDED`; the document must be loaded again to edit it.
+   */
   async discardPending(): Promise<void> {
+    if (this.pending.length > 0) this.discarded = true;
+
     this.pending = [];
     this.persist((store) => store.clear());
     this.emit();
@@ -324,6 +333,18 @@ export class DocumentConnection {
   private queue(update: Uint8Array, touched: string[]): void {
     // Edits made while the connection is closed or down are kept and sent after the next `ready`.
     if (!this.canWrite) return;
+
+    if (this.discarded) {
+      this.fail(
+        new DocumentApiError(
+          409,
+          'EDITS_DISCARDED',
+          'unsent edits were discarded, so new edits cannot be sent; reload the document',
+        ),
+      );
+
+      return;
+    }
 
     const item: Pending = { id: newEditId(), update, touched: touched.slice(0, MAX_TOUCHED) };
 
