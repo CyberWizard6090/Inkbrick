@@ -22,7 +22,6 @@ function updateWidths(context: Context, change: (widths: (number | null)[]) => v
 
   if (!widths) return;
 
-  // Список может быть короче числа столбцов — дополняем, чтобы индексы совпали со столбцами.
   const next = Array.from({ length: columnsOf(context) }, (_, i) => widths[i] ?? null);
 
   change(next);
@@ -64,7 +63,6 @@ export const DeleteTableRowCommand = defineBlockCommand<TableProps, { index: num
   execute({ engine, transaction, block }, { index }): CaretResult {
     engine.block.remove(transaction, block.children[index]);
 
-    // Курсор — в ту же по счёту строку (или в последнюю), в первую ячейку.
     const rows = transaction.getBlock(block.id)!.children;
     const row = transaction.getBlock(rows[Math.min(index, rows.length - 1)])!;
 

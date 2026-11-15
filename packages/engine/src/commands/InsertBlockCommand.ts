@@ -17,7 +17,6 @@ export const InsertBlockCommand: Command<InsertBlockPayload, CaretResult | undef
     return (
       !!parent &&
       engine.schema.validateRelation(parent.flavour, payload.flavour) &&
-      // Строки и ячейки добавляют только команды таблицы: иначе строки стали бы разной длины.
       engine.schema.getBlockSchema(payload.flavour)?.isolating !== true
     );
   },
@@ -35,7 +34,6 @@ export const InsertBlockCommand: Command<InsertBlockPayload, CaretResult | undef
 
     engine.block.insert(transaction, parent.id, index, block);
 
-    // Составной блок (таблица) создаётся сразу с содержимым; курсор — в первую ячейку.
     const inner = engine.block.scaffold(transaction, block.id)
       ? firstTextBlock(transaction.getBlock.bind(transaction), engine.schema, block.id)
       : undefined;

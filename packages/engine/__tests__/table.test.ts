@@ -142,7 +142,6 @@ describe('table: creation', () => {
     );
     expect(editor.can('indentBlock', { blockId: cell(0, 1) })).toBe(false);
 
-    // Сама таблица — обычный блок.
     expect(editor.can('delete-block', { id: tableId })).toBe(true);
     expect(editor.can('duplicateBlock', { blockId: tableId })).toBe(true);
   });
@@ -254,7 +253,6 @@ describe('table: rows and columns', () => {
     expect(can('setTableColumnWidth', { index: 3, width: 100 })).toBe(false);
     expect(can('setTableColumnWidth', { index: 0, width: -5 })).toBe(false);
 
-    // Команды таблицы не работают с другими блоками.
     expect(editor.can('insertTableRow', { blockId: firstId, index: 0 })).toBe(false);
   });
 

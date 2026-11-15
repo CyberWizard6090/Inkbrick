@@ -55,7 +55,6 @@ export const ConvertBlockCommand: Command<ConvertBlockPayload, CaretResult> = {
       next,
     );
 
-    // Составной блок (таблица) создаётся с содержимым, и курсор встаёт в него, а не в параграф следом.
     const inner = engine.block.scaffold(transaction, afterId)
       ? firstTextBlock(transaction.getBlock.bind(transaction), engine.schema, afterId)
       : undefined;
