@@ -174,7 +174,6 @@ export function repairSnapshot(input: DocumentSnapshot, schema: SchemaRegistry):
     if (children.length !== block.children.length) blocks.set(block.id, { ...block, children });
   }
 
-  // Правила составных блоков (таблица прямоугольная): чинит сама схема блока.
   const tree: RepairTree = {
     get: (id) => blocks.get(id),
     append(parentId, flavour) {

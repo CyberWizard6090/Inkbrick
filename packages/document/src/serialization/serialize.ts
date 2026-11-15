@@ -216,7 +216,6 @@ export function validateSnapshot(snapshot: DocumentSnapshot, schema: SchemaRegis
 
   const tree = treeIssues(snapshot.rootId, blocks);
 
-  // Проверки схем читают поддерево, поэтому идут только по целому дереву.
   if (issues.length === 0 && tree.length === 0) {
     const getBlock = (id: string) => blocks[id] as BaseBlock | undefined;
 

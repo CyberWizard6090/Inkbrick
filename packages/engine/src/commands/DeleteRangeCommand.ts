@@ -130,7 +130,6 @@ function clearRange(
   engine.block.updateContent(transaction, end.id, engine.inline.split(end.content, to.offset)[1]);
 
   for (const block of between) {
-    // Уже удалён вместе с родителем.
     if (!transaction.getBlock(block.id)) continue;
 
     if (!isIsolating(engine.schema, block) && !holdsEnd(block)) {
