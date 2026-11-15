@@ -28,6 +28,8 @@ connection.subscribe(() => editor.setReadOnly(!connection.canWrite)); // viewers
 connection.connect();
 
 // Undo and redo: collab.history.undo() / redo().
+// Undo only reverts your own edits. If it removes a block (undoing a split) in which someone else typed meanwhile, that
+// text is not lost: it is added to the end of the nearest block that stays, and taken back out if redo brings the block back.
 // IME: call collab.setComposing(true) on compositionstart and false on compositionend.
 // Presence: connection.peers, connection.setAwareness({ name, color, selection }).
 // Cursors inside the text: selection = collab.shareSelection({ anchor, head }) (relative Yjs positions, so a cursor stays

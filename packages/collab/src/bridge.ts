@@ -25,11 +25,15 @@ import {
   type SelectionPoint,
   type SharedSelection,
 } from './selection';
+import { captureForeign, dropReturned, rescueForeign, type Rescued } from './rescue';
 import { inlineEquals } from './textDiff';
 import { reconcileChildren, writeBlockData } from './writer';
 
 /** Метка обновлений, пришедших снаружи: их не нужно отправлять обратно. */
 export const REMOTE_ORIGIN = 'inkbrick-remote';
+
+/** Метка записи спасённого чужого текста: она уходит на сервер и попадает в хранилище, но не в историю undo. */
+const RESCUE_ORIGIN = Symbol('inkbrick-rescue');
 
 export interface CollabOptions {
   ydoc: Y.Doc;
@@ -128,6 +132,9 @@ export class Collab {
 
   private touched: string[] = [];
 
+  /** Чужой текст, спасённый при undo и ещё лежащий в новом месте. */
+  private rescued: Rescued[] = [];
+
   private readonly options: CollabOptions;
 
   constructor(options: CollabOptions) {
@@ -163,12 +170,8 @@ export class Collab {
       get canRedo() {
         return undoManager.canRedo();
       },
-      undo: () => {
-        undoManager.undo();
-      },
-      redo: () => {
-        undoManager.redo();
-      },
+      undo: () => this.withRescue(() => undoManager.undo()),
+      redo: () => this.withRescue(() => undoManager.redo()),
       seal: () => undoManager.stopCapturing(),
       clear: () => undoManager.clear(),
       subscribe: (listener) => {
@@ -198,6 +201,37 @@ export class Collab {
 
       this.pull();
     });
+  }
+
+  /**
+   * Undo разделения блока удаляет новый блок вместе с текстом, который в нём успели напечатать другие. Перед
+   * undo/redo запоминается чужой текст блоков, после — он дописывается в конец ближайшего уцелевшего блока.
+   */
+  private withRescue(run: () => void): void {
+    const before = captureForeign(this.ydoc);
+
+    run();
+
+    // A block that came back (redo) brings its text with it: the copy made by an earlier undo goes away.
+    if (this.rescued.length > 0)
+      this.rescued = dropReturned(this.ydoc, this.rescued, RESCUE_ORIGIN);
+
+    if (before.length === 0) return;
+
+    const snapshot = this.snapshot();
+
+    const made = rescueForeign(
+      this.ydoc,
+      before,
+      (id) => {
+        const block = snapshot.blocks[id];
+
+        return block !== undefined && this.schema.getBlockSchema(block.flavour)?.inline !== false;
+      },
+      RESCUE_ORIGIN,
+    );
+
+    this.rescued.push(...made);
   }
 
   /** Снимок проекции, пригодный для `deserializeDocument`. */
