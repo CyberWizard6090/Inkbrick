@@ -100,6 +100,21 @@ test.describe('Block handle', () => {
     await expect(page.locator(handle)).toHaveAttribute('data-block', /.+/);
   });
 
+  test('stays inside the document, also next to a nested list item', async ({ page }) => {
+    await typeBlocks(page, ['- one', 'two']);
+    await page.keyboard.press('Tab');
+
+    const root = (await page.locator('[data-inkbrick-root]').boundingBox())!;
+
+    for (const index of [0, 1]) {
+      await hoverBlock(page, index);
+      const box = (await page.locator(handle).boundingBox())!;
+
+      expect(box.x).toBeGreaterThanOrEqual(root.x);
+      await expect(page.locator(handle)).not.toHaveAttribute('data-compact', /.*/);
+    }
+  });
+
   test('hides while typing', async ({ page }) => {
     await typeBlocks(page, ['one']);
     await hoverBlock(page, 0);

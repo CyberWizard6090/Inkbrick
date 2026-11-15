@@ -40,7 +40,7 @@ const texts = (page: Page) => page.locator(editable).allTextContents();
 
 test.describe('Floating toolbar', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?formatting=toolbar');
   });
 
   test('appears over a selection and hides when the caret collapses', async ({ page }) => {
@@ -133,7 +133,7 @@ test.describe('Floating toolbar', () => {
 
 test.describe('Links', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?formatting=toolbar');
     await typeBlocks(page, ['see docs here']);
     for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+ArrowLeft'); // «here»
   });

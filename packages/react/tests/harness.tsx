@@ -16,6 +16,8 @@ CSS.escape ??= (value: string) => value.replace(/["\\]/g, '\\$&');
 export function mountEditor(
   texts: string[] = [''],
   props: Partial<Omit<EditorProviderProps, 'editor' | 'children'>> = {},
+  /** Куда смонтировать (например, внутрь элемента с data-inkbrick-surface). */
+  container?: HTMLElement,
 ) {
   const editor = new Editor();
   const noteId = editor.document.getBlock(editor.document.rootId)!.children[0];
@@ -42,6 +44,7 @@ export function mountEditor(
     <EditorProvider editor={editor} formulaRenderer={false} highlighter={false} {...props}>
       <DocumentView />
     </EditorProvider>,
+    container ? { container: container.appendChild(document.createElement('div')) } : undefined,
   );
   const root = view.container.querySelector<HTMLElement>('[data-inkbrick-root]')!;
 

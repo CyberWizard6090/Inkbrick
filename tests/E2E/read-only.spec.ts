@@ -33,7 +33,7 @@ async function selectRange(page: Page, from: [number, number], to: [number, numb
 
 test.describe('Read-only mode', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?formatting=toolbar');
     await useTool(page, 'load-sample');
     await page.getByTestId('mode-read').click();
   });
@@ -172,7 +172,7 @@ test.describe('Read-only mode', () => {
 
 test.describe('selected in editing mode', () => {
   test('a caret alone does not mark a block as selected', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?formatting=toolbar');
     await page.locator(editable).first().click();
     await page.keyboard.type('hello');
 

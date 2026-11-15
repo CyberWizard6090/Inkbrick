@@ -63,8 +63,9 @@ interface BlockViewProps {
 ```
 
 Доступные слоты: `UnknownBlock` (заглушка неизвестного блока), `SlashMenu` (см. [slash-меню](slash-menu.md)), `Toolbar`,
-`BlockHandle` (ручка слева от блока), `BlockMenu` и `DropIndicator`. `null` для `Toolbar`, `BlockHandle` и `DropIndicator` отключает
-соответствующий элемент.
+`ContextMenu` (меню по правому клику), `BlockHandle` (ручка слева от блока), `BlockMenu` и `DropIndicator`. `null` для `Toolbar`,
+`ContextMenu`, `BlockHandle` и `DropIndicator` отключает соответствующий элемент
+(см. [toolbar и контекстное меню](toolbar-and-blocks.md)).
 
 ## 4. Новый тип блока
 

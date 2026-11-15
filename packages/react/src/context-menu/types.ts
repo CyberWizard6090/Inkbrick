@@ -1,0 +1,33 @@
+import type { ReactNode } from 'react';
+
+/**
+ * Где показывать форматирование текста:
+ *  - `'context-menu'` (по умолчанию) — в контекстном меню по правому клику; плавающий toolbar не показывается,
+ *    поэтому его не перекрывает меню выделения браузера. На сенсорном экране правого клика нет — там toolbar;
+ *  - `'toolbar'` — плавающий toolbar над выделением, контекстное меню браузерное;
+ *  - `'both'` — и то и другое.
+ */
+export type FormattingMode = 'context-menu' | 'toolbar' | 'both';
+
+export interface ContextMenuItem {
+  readonly id: string;
+  readonly title: string;
+  readonly icon?: ReactNode;
+  /** Подсказка с клавишами, например `Ctrl+C`. */
+  readonly shortcut?: string;
+  readonly disabled?: boolean;
+  readonly run: () => void;
+}
+
+export interface ContextMenuProps {
+  /** Точка правого клика (координаты окна, для position: fixed). */
+  readonly position: { readonly x: number; readonly y: number };
+  /**
+   * Кнопки форматирования — тот же `slots.Toolbar` (по умолчанию `DefaultToolbar`) с `placement: 'inline'`;
+   * `null`, если выделения нет или его нельзя форматировать.
+   */
+  readonly formatting: ReactNode | null;
+  /** Вырезать, копировать, вставить, выделить всё. */
+  readonly items: readonly ContextMenuItem[];
+  readonly onClose: () => void;
+}

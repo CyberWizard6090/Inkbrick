@@ -10,6 +10,18 @@
     font-size: var(--inkbrick-font-size);
     line-height: var(--inkbrick-line-height);
     caret-color: var(--inkbrick-brand-fg);
+    /*
+     * Ручка блока стоит внутри документа, в полосе слева, а не за его краем. Справа такой же отступ:
+     * текст стоит по центру страницы.
+     */
+    padding-inline: var(--inkbrick-gutter);
+  }
+
+  /* Узкий экран: полоса съела бы строку — ручка ложится поверх текста плашкой (data-compact). */
+  @media (max-width: 640px) {
+    :where([data-inkbrick-root]) {
+      padding-inline: 0;
+    }
   }
 
   :where([data-inkbrick-root][data-readonly]) {

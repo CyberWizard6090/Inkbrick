@@ -17,7 +17,7 @@ const box = (page: Page, selector: string) =>
 
 test.describe('Mobile layout', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('the page has no horizontal scroll and the editor uses the width', async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe('Mobile keyboard input (IME composition)', () => {
   };
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
     await page.locator('.editable').first().tap();
   });
 
@@ -122,7 +122,7 @@ test.describe('Mobile keyboard input (IME composition)', () => {
 });
 
 test('the empty-block hint hides while a word is being composed', async ({ page }) => {
-  await page.goto('/?lang=en');
+  await page.goto('/?formatting=toolbar&lang=en');
   await page.locator('.editable').first().tap();
 
   const hint = () =>
@@ -147,7 +147,7 @@ test('the empty-block hint hides while a word is being composed', async ({ page 
 });
 
 test('the tools menu opens inside the screen', async ({ page }) => {
-  await page.goto('/?lang=en');
+  await page.goto('/?formatting=toolbar&lang=en');
   await page.getByTestId('tools-menu').click();
 
   const menu = await page.getByRole('menu').evaluate((el) => {

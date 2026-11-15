@@ -15,7 +15,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | `data-inkbrick-root`  | корень документа        | —                                                                                                         |
 | `data-inkbrick-block` | корень блока            | `page`, `note`, `paragraph`, `heading`, `list`, `quote`, `code`, `divider`, `callout`, `image`, `unknown` |
 | `data-inkbrick-part`  | часть блока или оверлея | см. таблицу ниже                                                                                          |
-| `data-inkbrick-ui`    | оболочка редактора      | `slash-menu`, `toolbar`, `block-handle`, `block-menu`, `drop-indicator`, `select`                         |
+| `data-inkbrick-ui`    | оболочка редактора      | `slash-menu`, `toolbar`, `context-menu`, `block-handle`, `block-menu`, `drop-indicator`, `select`         |
 | `data-inkbrick-icon`  | иконка (svg)            | имя иконки: `bold`, `plus`, `trash`, …                                                                    |
 | `data-block-id`       | корень блока            | id блока                                                                                                  |
 
@@ -64,6 +64,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | `toolbar`       | `button` (`data-format`), `separator`, `link-form`, `input`                                                                                                                                                                                   |
 | `block-handle`  | `button` (`data-action="add"`), `grip` (`data-action="grip"`)                                                                                                                                                                                 |
 | `block-menu`    | `item` (`data-action`), `icon`, `label`                                                                                                                                                                                                       |
+| `context-menu`  | `item` (`data-action`: `cut`, `copy`, `paste`, `selectAll`), `icon`, `shortcut`, `separator`; кнопки форматирования — `toolbar` с `data-placement="inline"`                                                                                   |
 | `select`        | `option` (`data-value`, `aria-selected`, `data-active`), `option-label`, `option-check`; у кнопки — `select-value`, `select-chevron`                                                                                                          |
 
 Инлайн-форматирование внутри `content` — обычные теги `strong`, `em`, `u`, `s`, `code`, `a`. В блоке кода текст
@@ -125,7 +126,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | Типографика              | `--inkbrick-font-family`, `--inkbrick-font-mono`, `--inkbrick-font-size`, `--inkbrick-font-size-ui`, `--inkbrick-line-height`                     |
 | Подсветка кода           | `--inkbrick-syntax-{keyword,string,comment,number,function,type,constant,builtin,variable,property,tag,attribute,meta,regex}`                     |
 | Цвета текста и подсветки | `--inkbrick-color-<имя>`, `--inkbrick-highlight-<имя>` (имена палитры: black, white, gray, brown, orange, yellow, green, blue, purple, pink, red) |
-| Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`                                   |
+| Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-gutter`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`              |
 
 Прежние имена (`--inkbrick-bg-surface`, `--inkbrick-text-primary`, `--inkbrick-accent-color`, …) продолжают работать как псевдонимы.
 

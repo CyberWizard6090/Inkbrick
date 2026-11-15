@@ -18,7 +18,7 @@ async function violations(page: Page) {
 
 test.describe('Accessibility (axe)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
     await useTool(page, 'load-sample');
   });
 

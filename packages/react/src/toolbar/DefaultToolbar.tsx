@@ -29,6 +29,7 @@ const PANELS: readonly { panel: ToolbarPanel; icon: IconName }[] = [
 export function DefaultToolbar({
   formats,
   position,
+  placement = 'floating',
   linkOpen,
   panel,
   onToggle,
@@ -68,6 +69,7 @@ export function DefaultToolbar({
     setWidth(ref.current?.offsetWidth ?? 0);
   }, [position.x, position.y, linkOpen, panel]);
 
+  const inline = placement === 'inline';
   const left = Math.max(8, Math.min(position.x - width / 2, window.innerWidth - width - 8));
 
   const submit = (event: FormEvent) => {
@@ -86,13 +88,17 @@ export function DefaultToolbar({
       role="toolbar"
       aria-label={t('toolbar.label')}
       data-inkbrick-ui="toolbar"
-      data-placement={below ? 'below' : 'above'}
+      data-placement={inline ? 'inline' : below ? 'below' : 'above'}
       data-testid="toolbar"
-      style={{
-        left,
-        top: position.y,
-        transform: below ? 'translateY(28px)' : 'translateY(calc(-100% - 8px))',
-      }}
+      style={
+        inline
+          ? undefined
+          : {
+              left,
+              top: position.y,
+              transform: below ? 'translateY(28px)' : 'translateY(calc(-100% - 8px))',
+            }
+      }
       onMouseDown={(event) => {
         if (event.target !== input.current) event.preventDefault();
       }}

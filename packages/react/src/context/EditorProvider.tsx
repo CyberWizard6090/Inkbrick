@@ -16,6 +16,7 @@ import type { SlashMenuItem } from '../slash/types';
 import { EditorUIContext } from '../ui/EditorUIContext';
 import type { EditorPresentation } from '../ui/presentation';
 import type { BlockComponentRegistry, EditorSlots } from '../ui/types';
+import type { FormattingMode } from '../context-menu/types';
 import { EditorContext, EditorViewContext } from './EditorContext';
 import { blockComponentsOf, type ReactBlockDefinition } from '../blocks/defineBlock';
 import { controllerKeymap, controllerSlashItems, mergeById } from '../controllers/adapters';
@@ -87,6 +88,11 @@ export interface EditorProviderProps {
    * до `maxInlineBytes`), `acceptedTypes`, `onError`. Держите объект стабильным.
    */
   readonly images?: ImageOptions;
+  /**
+   * Где показывать форматирование текста: `'context-menu'` (по умолчанию) — в меню по правому клику,
+   * `'toolbar'` — плавающий toolbar над выделением, `'both'` — оба. На сенсорном экране toolbar есть всегда.
+   */
+  readonly formatting?: FormattingMode;
 }
 
 export function EditorProvider({
@@ -105,6 +111,7 @@ export function EditorProvider({
   messages,
   readOnly,
   images,
+  formatting,
 }: EditorProviderProps) {
   const view = useMemo(() => new EditorView(), [editor]);
 
@@ -144,6 +151,7 @@ export function EditorProvider({
       t,
       keymap: resolveKeymap(mergeById(controllerKeymap(editor), customKeys, 'preferred-first')),
       images: images ?? {},
+      formatting: formatting ?? 'context-menu',
       readOnly,
     };
   }, [
@@ -160,6 +168,7 @@ export function EditorProvider({
     t,
     readOnly,
     images,
+    formatting,
   ]);
 
   return (

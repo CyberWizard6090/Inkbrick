@@ -166,7 +166,10 @@ function outsideFormula(node: Node, offset: number): { node: Node; offset: numbe
   return { node: parent, offset: offset === 0 ? index : index + 1 };
 }
 
-function findPoint(editable: HTMLElement, offset: number): { node: Node; offset: number } | null {
+export function findPoint(
+  editable: HTMLElement,
+  offset: number,
+): { node: Node; offset: number } | null {
   const walker = globalThis.document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
 
   let remaining = offset;

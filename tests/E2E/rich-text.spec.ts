@@ -46,7 +46,7 @@ async function selectLine(page: Page) {
 
 test.describe('Block formula', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('the slash menu inserts a formula block that opens for editing and renders MathML', async ({
@@ -117,7 +117,7 @@ test.describe('Block formula', () => {
 
 test.describe('Inline formula', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('typing $code$ converts to a formula and typing continues after it', async ({ page }) => {
@@ -245,7 +245,7 @@ test.describe('Inline formula', () => {
   });
 
   test('formulas are not editable in read-only mode', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?formatting=toolbar');
     await page.evaluate(() => {
       const { editor } = (window as any).__inkbrick.main;
       const note = editor.document.getBlock(editor.document.rootId).children[0];
@@ -266,7 +266,7 @@ test.describe('Inline formula', () => {
 
 test.describe('Text color and highlight', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('the toolbar colors the selection and the color is stored as a palette name', async ({
@@ -403,7 +403,7 @@ test.describe('Text color and highlight', () => {
 
 test.describe('Text alignment', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('toolbar buttons align the block and show the current alignment', async ({ page }) => {
@@ -478,7 +478,7 @@ test.describe('Text alignment', () => {
       ['> ', 'quote'],
       ['- ', 'list'],
     ] as const) {
-      await page.goto('/?lang=en');
+      await page.goto('/?formatting=toolbar&lang=en');
       await page.locator('.editable').first().click();
       await page.keyboard.type(`${shortcut}text`);
       await page.keyboard.press(`${modifier}+Shift+R`);
@@ -511,7 +511,7 @@ test.describe('Text alignment', () => {
 
 test.describe('Rich text: localization', () => {
   test('toolbar labels follow the language', async ({ page }) => {
-    await page.goto('/?lang=ru');
+    await page.goto('/?formatting=toolbar&lang=ru');
     await typeLine(page, 'привет');
     await selectLine(page);
 
@@ -542,7 +542,7 @@ test.describe('Math symbol palette', () => {
     page.locator('[data-inkbrick-block="formula"] [data-inkbrick-part="formula-source"]');
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('block editor: sin inserts \\sin() with the caret inside the brackets', async ({ page }) => {
@@ -624,7 +624,7 @@ test.describe('Math symbol palette', () => {
   });
 
   test('palette names are translated; tooltips show the LaTeX code', async ({ page }) => {
-    await page.goto('/?lang=ru');
+    await page.goto('/?formatting=toolbar&lang=ru');
     await typeLine(page, '$$ ');
 
     await expect(page.locator('[data-inkbrick-part="formula-palette"]')).toHaveAttribute(

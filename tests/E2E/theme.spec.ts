@@ -8,7 +8,7 @@ const bg = (page: Page) =>
 test.describe('Theme switch', () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
   });
 
   test('light and dark are forced regardless of the system setting; auto follows it', async ({
@@ -46,7 +46,7 @@ test.describe('Color palette', () => {
     page.locator(`[data-inkbrick-part="panel"][data-kind="${kind}"] [data-color="${color}"]`);
 
   test('has black and white; text color black/white is stored and rendered', async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
     await page.locator('.editable').first().click();
     await page.keyboard.type('mono');
     await page.keyboard.press('Shift+Home');
@@ -65,7 +65,7 @@ test.describe('Color palette', () => {
   });
 
   test('highlight black and white fill the background', async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
     await page.locator('.editable').first().click();
     await page.keyboard.type('mark');
     await page.keyboard.press('Shift+Home');
@@ -83,7 +83,7 @@ test.describe('Color palette', () => {
   test('every palette color has its own look in both themes (no two the same)', async ({
     page,
   }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/?formatting=toolbar&lang=en');
     await page.locator('.editable').first().click();
     await page.keyboard.type('x');
     await page.keyboard.press('Shift+Home');

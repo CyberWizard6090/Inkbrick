@@ -12,8 +12,21 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Code block: collapse with an animated height (`collapsed` prop) and an optional caption (`caption` prop, exported as
   `<figure>`/`<figcaption>` in HTML and an italic line in Markdown).
 - Image picker: a drop zone with an upload button; a file dropped on it fills that block.
+- A click beside the text — in the left gutter, past the end of a line, between blocks or, with
+  `data-inkbrick-surface` on an ancestor, anywhere around the document — puts the caret on the line at that height:
+  at the start of that visual line on the left, at its end on the right; below the last block, at its end. Dragging
+  from the margin selects text, Shift+click extends the selection.
+- Context menu (right click): the formatting buttons (the same `Toolbar` with `placement: 'inline'`) and Cut, Copy,
+  Paste, Select all. Paste reads the clipboard through the Clipboard API and goes through the regular paste pipeline.
+  Custom view — `slots.ContextMenu`; `null` keeps the browser menu.
+- `EditorProvider` `formatting` option: `'context-menu'` (default), `'toolbar'` or `'both'`.
 
 ### Changed
+
+- **Breaking:** formatting moved from the floating toolbar to the context menu by default: on desktop many browsers
+  (Yandex Browser, Edge) draw their own popup over a selection and it covered the toolbar. After a touch the
+  toolbar still appears, and Ctrl/Cmd+K still opens the link field next to the selection. `formatting="toolbar"`
+  restores the previous behaviour.
 
 - **Breaking:** `serializeDocument(document, schema)` requires the schema registry. Without it the snapshot had no `schemaVersions`, and
   props of a block whose schema version later increased were migrated twice on load. Pass `editor.schema` or use the
@@ -23,6 +36,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - The code language and the image width use a styled dropdown (`data-inkbrick-ui="select"`) with keyboard
   navigation instead of the native `<select>`.
 - The replace-image button uses a cleaner icon (`refresh-cw`).
+- The block handle («+» and the grip) sits inside the document: the editor root has equal paddings on both sides
+  (`--inkbrick-gutter`, 56px; none below 640px) instead of relying on the page margin, and the handle lives in the left
+  one. The handle is no longer clipped
+  by a container with `overflow: hidden` and never leaves the document's left edge.
 
 ### Fixed
 
