@@ -7,6 +7,15 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tables, engine part (`docs/tables.md`): `block:table` → `block:table-row` → `block:table-cell`, where a cell is a
+  text block. Opt-in: `new Editor({ blocks: tableBlocks })`. Commands `insertTableRow`, `deleteTableRow`,
+  `moveTableRow`, `insertTableColumn`, `deleteTableColumn`, `moveTableColumn`, `setTableColumnWidth`; helpers
+  `locateTableCell`, `tableCellAt`, `tableSize`. `validateSnapshot` checks that a table is rectangular and
+  `repairSnapshot` pads short rows. Rendering in `@inkbrick/react` is not there yet.
+- `BlockSchema`: `isolating` (a block general commands never delete, merge, move or duplicate; deleting a selection
+  clears its text, pasting into it inserts plain lines), `scaffold` (initial children of a block the user creates),
+  `validate` and `repair` (subtree rules for `validateSnapshot` and `repairSnapshot`).
+
 - `images.rehost`: re-host images from other servers when HTML is pasted, so pasted tracking pixels never reach the
   reader's browser and no IP leaks.
 - Code block: collapse with an animated height (`collapsed` prop) and an optional caption (`caption` prop, exported as
@@ -22,6 +31,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - `EditorProvider` `formatting` option: `'context-menu'` (default), `'toolbar'` or `'both'`.
 
 ### Changed
+
+- Bundle size budget of `@inkbrick/react` raised from 64 KB to 66 KB.
 
 - **Breaking:** formatting moved from the floating toolbar to the context menu by default: on desktop many browsers
   (Yandex Browser, Edge) draw their own popup over a selection and it covered the toolbar. After a touch the

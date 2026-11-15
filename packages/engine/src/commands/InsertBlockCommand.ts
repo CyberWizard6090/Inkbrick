@@ -2,6 +2,7 @@ import type { BaseBlock, BlockId } from '@inkbrick/document';
 
 import type { Command } from './Command';
 import type { CaretResult, InsertBlockPayload } from '../dispatcher/Intents';
+import { firstTextBlock } from '../utils';
 
 /**
  * Вставляет блок любого зарегистрированного типа сразу после `afterId`
@@ -13,7 +14,11 @@ export const InsertBlockCommand: Command<InsertBlockPayload, CaretResult | undef
   canExecute({ engine, transaction }, payload) {
     const parent = resolveParent(transaction.getBlock.bind(transaction), payload);
 
-    return !!parent && engine.schema.validateRelation(parent.flavour, payload.flavour);
+    return (
+      !!parent &&
+      engine.schema.validateRelation(parent.flavour, payload.flavour) &&
+      engine.schema.getBlockSchema(payload.flavour)?.isolating !== true
+    );
   },
 
   execute({ engine, transaction }, payload) {
@@ -29,7 +34,11 @@ export const InsertBlockCommand: Command<InsertBlockPayload, CaretResult | undef
 
     engine.block.insert(transaction, parent.id, index, block);
 
-    return { blockId: block.id, offset: 0 };
+    const inner = engine.block.scaffold(transaction, block.id)
+      ? firstTextBlock(transaction.getBlock.bind(transaction), engine.schema, block.id)
+      : undefined;
+
+    return { blockId: inner?.id ?? block.id, offset: 0 };
   },
 };
 

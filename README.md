@@ -96,7 +96,7 @@ Guides (in Russian): [UI customization and custom blocks](docs/ui-customization.
 [clipboard](docs/clipboard.md) · [images and callouts](docs/images-and-callout.md) · [styling](docs/styling.md) ·
 [i18n](docs/i18n.md) · [formulas](docs/formulas.md) · [text style](docs/text-style.md) ·
 [code highlighting](docs/code-highlighting.md) · [schemas, nesting, versions](docs/schema-rules.md) ·
-[export](docs/export.md) · [keymap](docs/keymap.md).
+[export](docs/export.md) · [keymap](docs/keymap.md) · [tables](docs/tables.md).
 
 API reference: `pnpm docs:api` generates it into `docs/api` from the TSDoc comments.
 

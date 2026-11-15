@@ -214,7 +214,19 @@ export function validateSnapshot(snapshot: DocumentSnapshot, schema: SchemaRegis
     }
   }
 
-  return [...issues, ...treeIssues(snapshot.rootId, blocks)];
+  const tree = treeIssues(snapshot.rootId, blocks);
+
+  if (issues.length === 0 && tree.length === 0) {
+    const getBlock = (id: string) => blocks[id] as BaseBlock | undefined;
+
+    for (const raw of Object.values(blocks)) {
+      const block = raw as BaseBlock;
+
+      issues.push(...(schema.getBlockSchema(block.flavour)?.validate?.(block, getBlock) ?? []));
+    }
+  }
+
+  return [...issues, ...tree];
 }
 
 /**
