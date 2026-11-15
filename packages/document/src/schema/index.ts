@@ -13,3 +13,4 @@ export * from './blocks/DividerSchema';
 export * from './blocks/CalloutSchema';
 export * from './blocks/ImageSchema';
 export * from './blocks/FormulaSchema';
+export * from './exportSchema';
