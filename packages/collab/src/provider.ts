@@ -110,6 +110,11 @@ export interface ConnectionOptions extends DocumentApi {
   backoff?: { min: number; max: number };
   /** Shortest interval between two awareness frames, ms. */
   awarenessEvery?: number;
+  /**
+   * Shortest interval between two `update` frames, ms (150 by default). Edits made in between are merged into one
+   * frame, so fast typing stays far below the server's budget of updates per minute.
+   */
+  sendEvery?: number;
   /** Called for refusals that lose data or stop the connection. The connection stays usable unless it says so. */
   onError?: (error: Error) => void;
   /**
@@ -133,6 +138,10 @@ interface ServerFrame {
 const MAX_TOUCHED = 200;
 const MAX_MERGED_BYTES = 400 * 1024;
 const COMPACT_AT = 50;
+/** The largest update the server stores (`MaxDocumentUpdateBytes`). A larger one is never sent. */
+const MAX_UPDATE_BYTES = 512 * 1024;
+const SEND_EVERY = 150;
+const MAX_HOLD_SECONDS = 60;
 
 /**
  * The connection of one Collab to the document room of the server.
@@ -172,6 +181,16 @@ export class DocumentConnection {
 
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
+  /** Edits already sent over the current socket and waiting for their acknowledgement. */
+  private readonly sent = new Set<string>();
+
+  private sendTimer: ReturnType<typeof setTimeout> | undefined;
+
+  private lastSendAt = 0;
+
+  /** Until this moment (ms) the server refuses updates of this user: nothing is sent, edits wait in the queue. */
+  private holdUntil = 0;
+
   private readonly listeners = new Set<Listener>();
 
   private readonly stopLocal: () => void;
@@ -207,6 +226,7 @@ export class DocumentConnection {
     clearTimeout(this.reconnectTimer);
     clearTimeout(this.awarenessTimer);
     this.awarenessTimer = undefined;
+    this.stopSending();
     this.socket?.close(1000, 'client closed');
     this.socket = undefined;
   }
@@ -271,6 +291,11 @@ export class DocumentConnection {
       });
   }
 
+  /** True while the server's rate limit holds the edits back; they are sent by themselves when it ends. */
+  get throttled(): boolean {
+    return this.holdUntil > Date.now();
+  }
+
   /** How many edits the server has not acknowledged yet (kept in the pending store, when there is one). */
   get unsent(): number {
     return this.pending.length;
@@ -291,6 +316,7 @@ export class DocumentConnection {
 
   private drop(id: string): void {
     this.pending = this.pending.filter((item) => item.id !== id);
+    this.sent.delete(id);
     this.persist((store) => store.remove([id]));
     this.emit();
   }
@@ -306,48 +332,111 @@ export class DocumentConnection {
     this.emit();
 
     // A long offline stretch must not grow the stored list without bound: small edits are merged into one.
-    if (this.socket?.readyState !== 1 && this.pending.length >= COMPACT_AT) this.merge();
+    if (this.socket?.readyState !== 1 && this.pending.length >= COMPACT_AT)
+      this.merge(this.pending);
 
-    this.flush(item);
+    this.pump();
   }
 
-  private flush(item: Pending): void {
-    this.send({
-      type: 'update',
-      update: toBase64(item.update),
-      touched: item.touched,
-      ref: item.id,
-    });
+  private stopSending(): void {
+    clearTimeout(this.sendTimer);
+    this.sendTimer = undefined;
+    this.sent.clear();
   }
 
-  /** Merges every unsent edit into one when the result is small enough for the server to accept. */
-  private merge(): void {
-    if (this.pending.length < 2) return;
+  /**
+   * Sends the edits that were not sent over this socket yet. At most one batch goes out per `sendEvery`, and none
+   * while the server's rate limit holds; what gathers meanwhile is merged into one update. Order is kept: an edit
+   * builds on the ones before it, so they never overtake each other.
+   */
+  private pump(): void {
+    if (this.status !== 'online' || !this.canWrite || this.socket?.readyState !== 1) return;
 
-    const merged = Y.mergeUpdates(this.pending.map((item) => item.update));
+    const now = Date.now();
+    const every = this.options.sendEvery ?? SEND_EVERY;
+    const wait = Math.max(this.holdUntil - now, this.lastSendAt + every - now);
 
-    if (merged.length > MAX_MERGED_BYTES) return;
+    if (wait > 0) {
+      if (!this.sendTimer) {
+        this.sendTimer = setTimeout(() => {
+          this.sendTimer = undefined;
+          this.pump();
+          this.emit();
+        }, wait);
+      }
 
-    const replaced = this.pending.map((item) => item.id);
+      return;
+    }
+
+    const unsent = this.merge(this.pending.filter((item) => !this.sent.has(item.id)));
+
+    if (unsent.length === 0) return;
+
+    this.lastSendAt = now;
+
+    for (const item of unsent) {
+      if (item.update.length > MAX_UPDATE_BYTES) {
+        // The server would refuse it, or close the socket when the frame is over its limit, again after every
+        // reconnect. It is dropped here instead and reported.
+        this.drop(item.id);
+        this.fail(
+          new DocumentApiError(
+            413,
+            'UPDATE_TOO_LARGE',
+            `an edit of ${item.update.length} bytes is larger than the server accepts (${MAX_UPDATE_BYTES}) and was not sent`,
+          ),
+        );
+        continue;
+      }
+
+      this.sent.add(item.id);
+      this.send({
+        type: 'update',
+        update: toBase64(item.update),
+        touched: item.touched,
+        ref: item.id,
+      });
+    }
+  }
+
+  /**
+   * Merges the given edits (a run of `pending`) into one when the result is small enough for the server to accept.
+   * Returns what is left of them: the merged edit, or the same edits when they cannot be merged.
+   */
+  private merge(items: Pending[]): Pending[] {
+    if (items.length < 2) return items;
+
+    const merged = Y.mergeUpdates(items.map((item) => item.update));
+
+    if (merged.length > MAX_MERGED_BYTES) return items;
+
+    const replaced = new Set(items.map((item) => item.id));
     const item: Pending = {
       id: newEditId(),
       update: merged,
-      touched: [...new Set(this.pending.flatMap((edit) => edit.touched))].slice(0, MAX_TOUCHED),
+      touched: [...new Set(items.flatMap((edit) => edit.touched))].slice(0, MAX_TOUCHED),
     };
+    const at = this.pending.findIndex((edit) => replaced.has(edit.id));
 
-    this.pending = [item];
+    this.pending = this.pending.filter((edit) => !replaced.has(edit.id));
+    this.pending.splice(at, 0, item);
+
+    for (const id of replaced) this.sent.delete(id);
+
     // The merged record is stored before the old ones are removed: a crash in between loses nothing.
     this.persist(async (store) => {
       await store.put(item);
-      await store.remove(replaced);
+      await store.remove([...replaced]);
     });
+
+    return [item];
   }
 
   /** After a reconnect everything not yet acknowledged is sent again, merged into one update when it is small. */
   private resend(): void {
-    this.merge();
-
-    for (const item of this.pending) this.flush(item);
+    this.sent.clear();
+    this.lastSendAt = 0;
+    this.pump();
   }
 
   private async open(): Promise<void> {
@@ -402,6 +491,7 @@ export class DocumentConnection {
       if (attempt !== this.attempt) return;
 
       this.socket = undefined;
+      this.stopSending();
       this.peerMap.clear();
       this.peers = [];
       this.self = undefined;
@@ -504,6 +594,7 @@ export class DocumentConnection {
 
         this.socket?.close(1000, 'resync');
         this.socket = undefined;
+        this.stopSending();
         this.attempt++;
 
         void loadDocument(this.options, this.options.documentId, this.options.collab.ydoc)
@@ -569,6 +660,35 @@ export class DocumentConnection {
         const code = frame.code as string;
         const ref = frame.ref as string | undefined;
 
+        if (code === 'RATE_LIMITED') {
+          // Nothing is lost: the edits stay in the queue and go out again, merged, when the server allows.
+          // Everything unacknowledged is sent again then, because later edits build on the refused one.
+          const seconds =
+            typeof frame.retry_after === 'number' && frame.retry_after > 0 ? frame.retry_after : 1;
+          const already = this.throttled;
+
+          this.holdUntil = Date.now() + Math.min(seconds, MAX_HOLD_SECONDS) * 1000;
+          this.sent.clear();
+          clearTimeout(this.sendTimer);
+          this.sendTimer = undefined;
+          this.pump();
+
+          // One report per pause, not one per refused frame.
+          if (!already) {
+            this.fail(
+              new DocumentApiError(
+                429,
+                code,
+                `the server limits how often edits are sent; they will be sent in ${seconds} s`,
+              ),
+            );
+          }
+
+          this.emit();
+
+          return;
+        }
+
         // A refused update will be refused again: drop it instead of sending it on every reconnect.
         if (
           ref &&
@@ -597,6 +717,7 @@ export interface OpenDocumentOptions extends DocumentApi {
   WebSocket?: typeof WebSocket;
   backoff?: { min: number; max: number };
   awarenessEvery?: number;
+  sendEvery?: number;
   onError?: (error: Error) => void;
   /**
    * Keeps unsent edits across reloads. Edits left in it by an earlier page are applied to the document before the

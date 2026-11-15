@@ -51,7 +51,12 @@ function newServer(): FakeServer {
   return server;
 }
 
-async function client(server: FakeServer, token: string, connect = true): Promise<Client> {
+async function client(
+  server: FakeServer,
+  token: string,
+  connect = true,
+  sendEvery?: number,
+): Promise<Client> {
   const errors: Error[] = [];
   const { collab, connection } = await openDocument({
     baseUrl: 'http://server.test',
@@ -62,6 +67,7 @@ async function client(server: FakeServer, token: string, connect = true): Promis
     schema,
     backoff: { min: 5, max: 20 },
     awarenessEvery: 5,
+    sendEvery,
     onError: (error) => errors.push(error),
   });
   const editor = new Editor({ schema, document: collab.createDocument(), history: { limit: 0 } });
@@ -314,6 +320,100 @@ describe('DocumentConnection', () => {
     await tick(20);
 
     expect([...server.sockets][0].received.filter((frame) => frame.type === 'update')).toEqual([]);
+  });
+
+  it('never sends an update larger than the server accepts', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann', true, 0);
+    const bob = await client(server, 'bob', true, 0);
+
+    // 300 000 Cyrillic characters are about 600 KiB as an update: over the limit of 512 KiB.
+    ann.type('ж'.repeat(300_000));
+    await until(() => ann.errors.length > 0, 'the report');
+
+    expect(ann.errors[0]).toMatchObject({ code: 'UPDATE_TOO_LARGE', status: 413 });
+    expect(ann.connection.unsent).toBe(0);
+    expect(ann.connection.status).toBe('online');
+    expect([...server.sockets][0].received.filter((frame) => frame.type === 'update')).toEqual([]);
+    expect(bob.text()).toBe('');
+  });
+
+  it('waits out the rate limit and then sends everything, nothing is lost', async () => {
+    const server = newServer();
+
+    server.budget = 2;
+    server.retryAfter = 0.2;
+
+    const ann = await client(server, 'ann', true, 0);
+    const bob = await client(server, 'bob', true, 0);
+
+    for (const letter of 'abcdef') ann.type(letter, ann.text().length);
+
+    await until(() => ann.errors.length > 0, 'the refusal');
+
+    expect(ann.errors).toHaveLength(1);
+    expect(ann.errors[0]).toMatchObject({ code: 'RATE_LIMITED', status: 429 });
+    expect(ann.connection.throttled).toBe(true);
+    expect(ann.connection.unsent).toBeGreaterThan(0);
+    expect(ann.connection.status).toBe('online');
+
+    // Edits made during the pause wait too.
+    ann.type('g', ann.text().length);
+    await tick(50);
+    expect(bob.text()).not.toBe('abcdefg');
+
+    server.budget = Infinity;
+    await until(() => bob.text() === 'abcdefg', 'the edits to arrive after the pause', 3000);
+    await until(() => ann.connection.unsent === 0, 'the acknowledgement');
+
+    expect(ann.connection.throttled).toBe(false);
+    // The pause ended with one merged update, not one per keystroke, and without a reconnect.
+    expect(server.sockets.size).toBe(2);
+    expect(ann.errors).toHaveLength(1);
+  });
+
+  it('keeps waiting while the server still refuses', async () => {
+    const server = newServer();
+
+    server.budget = 0;
+    server.retryAfter = 0.05;
+
+    const ann = await client(server, 'ann', true, 0);
+    const bob = await client(server, 'bob', true, 0);
+
+    ann.type('later');
+    await tick(250);
+
+    const socket = [...server.sockets].find((item) => item.user.id === 1)!;
+    const attempts = socket.received.filter((frame) => frame.type === 'update').length;
+
+    // It tries again after every pause, one frame per try.
+    expect(attempts).toBeGreaterThan(1);
+    expect(attempts).toBeLessThan(8);
+    expect(bob.text()).toBe('');
+
+    server.budget = Infinity;
+    await until(() => bob.text() === 'later', 'the edit after the limit is lifted');
+  });
+
+  it('merges fast typing into few frames', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann', true, 40);
+    const bob = await client(server, 'bob', true, 0);
+
+    for (const letter of 'hello world, this is fast') {
+      ann.type(letter, ann.text().length);
+      await tick(2);
+    }
+
+    await until(() => bob.text() === 'hello world, this is fast', 'the text');
+    await until(() => ann.connection.unsent === 0, 'the acknowledgements');
+
+    const socket = [...server.sockets].find((item) => item.user.id === 1)!;
+    const frames = socket.received.filter((frame) => frame.type === 'update').length;
+
+    expect(frames).toBeGreaterThan(1);
+    expect(frames).toBeLessThan(12);
   });
 
   it('stops when the server refuses the ticket or revokes access', async () => {

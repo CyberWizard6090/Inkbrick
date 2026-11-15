@@ -12,7 +12,7 @@ import { schema } from './harness';
  *
  *   COLLAB_E2E_URL=http://127.0.0.1:8081 pnpm vitest run --project @inkbrick/collab server.e2e
  *
- * The server needs RATE_LIMIT_STORE=memory or a fresh minute: the test registers three users.
+ * The tests register three users (ann, bob, guest) once for the whole file.
  */
 const base = process.env.COLLAB_E2E_URL;
 
@@ -35,7 +35,25 @@ async function call<T = Record<string, unknown>>(
   return { status: response.status, data: json.data };
 }
 
-async function signUp(name: string): Promise<{ token: string; id: number }> {
+const people = new Map<string, Promise<{ token: string; id: number }>>();
+
+/** One account per name for the whole file: the server limits registrations to a few per minute. */
+function signUp(name: string): Promise<{ token: string; id: number }> {
+  if (!people.has(name)) people.set(name, register(name));
+
+  return people.get(name)!;
+}
+
+/** Makes `other` a contact of `owner`. Repeating it for people who are contacts already is harmless. */
+async function befriend(
+  owner: { token: string; id: number },
+  other: { token: string; id: number },
+): Promise<void> {
+  await call('POST', '/contacts', owner.token, { contact_id: other.id });
+  await call('POST', `/contacts/requests/${owner.id}/accept`, other.token);
+}
+
+async function register(name: string): Promise<{ token: string; id: number }> {
   const email = `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@e2e.test`;
 
   await call('POST', '/auth/register', '', { email, password: 'password-123' });
@@ -76,12 +94,7 @@ describe.skipIf(!base)('against a real server', () => {
       [bob, 'Member'],
       [guest, 'Guest'],
     ] as const) {
-      expect((await call('POST', '/contacts', ann.token, { contact_id: person.id })).status).toBe(
-        202,
-      );
-      expect((await call('POST', `/contacts/requests/${ann.id}/accept`, person.token)).status).toBe(
-        200,
-      );
+      await befriend(ann, person);
       expect(
         (
           await call('POST', `/workspaces/${workspace}/members`, ann.token, {
@@ -266,6 +279,211 @@ describe.skipIf(!base)('against a real server', () => {
     }
   }, 60000);
 
+  it('checks every update on the server: a long session passes, a broken update is refused', async () => {
+    const ann = await signUp('ann');
+    const bob = await signUp('bob');
+    const workspace = (
+      await call<{ id: number }>('POST', '/workspaces', ann.token, { name: 'e2e-checks' })
+    ).data.id;
+
+    await befriend(ann, bob);
+    await call('POST', `/workspaces/${workspace}/members`, ann.token, {
+      user_id: bob.id,
+      role: 'Member',
+    });
+
+    const notebook = (
+      await call<{ id: number }>('POST', `/workspaces/${workspace}/notebooks`, ann.token, {
+        name: 'n',
+      })
+    ).data.id;
+    const documentId = (
+      await call<{ id: number }>('POST', `/notebooks/${notebook}/documents`, ann.token, {
+        title: 'Checked',
+      })
+    ).data.id;
+
+    const open = async (token: string) => {
+      const errors: Error[] = [];
+      const { collab, connection } = await openDocument({
+        baseUrl: base!,
+        getToken: () => token,
+        documentId,
+        schema,
+        undoCaptureMs: 0,
+        onError: (error) => errors.push(error),
+      });
+      const editor = new Editor({
+        schema,
+        document: collab.createDocument(),
+        history: { limit: 0 },
+      });
+
+      collab.attach(editor.store);
+      connection.connect();
+      await until(() => connection.status === 'online', 'a connection to be online');
+
+      return { collab, connection, editor, errors };
+    };
+
+    const peers = [await open(ann.token), await open(bob.token)];
+
+    // A seeded random session of real editor commands on both sides: typing with Cyrillic and emoji, splitting,
+    // merging, moving, nesting, converting, formatting, deleting, undo and redo.
+    let seed = Number(process.env.COLLAB_E2E_SEED ?? 20261115);
+    const rnd = (): number => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+
+      return seed / 2 ** 32;
+    };
+    const pick = <T>(list: readonly T[]): T => list[Math.floor(rnd() * list.length)];
+    const flavours = [
+      'block:paragraph',
+      'block:heading',
+      'block:list',
+      'block:quote',
+      'block:code',
+    ];
+
+    for (let step = 0; step < 400; step++) {
+      const peer = pick(peers);
+      const blocks = Object.values(peer.editor.document.dump()).filter(
+        (block) => schema.getBlockSchema(block.flavour)?.inline !== false,
+      );
+
+      if (blocks.length === 0) continue;
+
+      const block = pick(blocks);
+      const length = block.content.reduce((sum, node) => sum + node.insert.length, 0);
+      const offset = Math.floor(rnd() * (length + 1));
+      const other = Math.floor(rnd() * (length + 1));
+      const [from, to] = offset <= other ? [offset, other] : [other, offset];
+      // An offset never lands inside a surrogate pair (an emoji): a selection in the editor cannot either.
+      const plain = block.content.map((node) => node.insert).join('');
+      const safe = (position: number): number => {
+        const code = plain.charCodeAt(position - 1);
+
+        return code >= 0xd800 && code <= 0xdbff ? position - 1 : position;
+      };
+      const run = (intent: Parameters<typeof peer.editor.dispatch>[0]): void => {
+        try {
+          peer.editor.dispatch(intent);
+        } catch {
+          // the command cannot be run here: an ordinary situation
+        }
+      };
+
+      switch (Math.floor(rnd() * 12)) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+          run({
+            type: 'insertText',
+            payload: {
+              text: pick(['a', 'б', 'привет ', '🙂', ' ', 'xyz']),
+              selection: { anchor: { blockId: block.id, offset: 0 } },
+            },
+          });
+          break;
+        case 4:
+          run({ type: 'splitBlock', payload: { blockId: block.id, offset: 0 } });
+          break;
+        case 5:
+          run({ type: 'deleteBackward', payload: { blockId: block.id, offset: 0 } });
+          break;
+        case 6:
+          run({
+            type: 'moveBlock',
+            payload: { blockId: block.id, targetId: pick(blocks).id, position: 'after' },
+          });
+          break;
+        case 7:
+          run({ type: pick(['indentBlock', 'outdentBlock']), payload: { blockId: block.id } });
+          break;
+        case 8:
+          run({ type: 'convertBlock', payload: { blockId: block.id, flavour: pick(flavours) } });
+          break;
+        case 9:
+          run({
+            type: 'toggleFormat',
+            payload: {
+              blockId: block.id,
+              from: 0,
+              to: safe(Math.min(length, to - from)),
+              format: 'bold',
+            },
+          });
+          break;
+        case 10:
+          peer.collab.history.undo();
+          break;
+        default:
+          peer.collab.history.redo();
+      }
+
+      if (step % 20 === 0) await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+
+    await until(
+      () => peers.every((peer) => peer.connection.unsent === 0),
+      'every edit to be acknowledged',
+      20000,
+    );
+
+    const vector = (peer: (typeof peers)[number]): string =>
+      Buffer.from(Y.encodeStateVector(peer.collab.ydoc)).toString('hex');
+
+    await until(() => vector(peers[0]) === vector(peers[1]), 'both sides to have the same edits');
+
+    // The server refused nothing of what the editor produced, and both sides show the same document.
+    expect(peers.flatMap((peer) => peer.errors)).toEqual([]);
+    expect(peers[0].collab.inSync() && peers[1].collab.inSync()).toBe(true);
+    expect(peers[1].editor.serialize().blocks).toEqual(peers[0].editor.serialize().blocks);
+
+    // Bytes that are not an update, and an update that removes the root block, are refused over REST.
+    const rootId = peers[0].editor.document.rootId;
+    const attacker = new Y.Doc();
+
+    Y.applyUpdate(attacker, Y.encodeStateAsUpdate(peers[0].collab.ydoc));
+
+    const before = Y.encodeStateVector(attacker);
+
+    attacker.getMap('blocks').delete(rootId);
+
+    for (const update of [
+      toBase64(new TextEncoder().encode('not a yjs update')),
+      toBase64(Y.encodeStateAsUpdate(attacker, before)),
+    ]) {
+      expect(
+        (await call('POST', `/documents/${documentId}/updates`, bob.token, { update })).status,
+      ).toBe(400);
+    }
+
+    // The document on the server is intact: a newcomer opens it and sees what the others see.
+    const late = await open(ann.token);
+
+    await until(() => vector(late) === vector(peers[0]), 'the newcomer to catch up');
+    expect(late.errors).toEqual([]);
+    expect(late.editor.serialize().blocks).toEqual(peers[0].editor.serialize().blocks);
+
+    // And the session goes on after the refusals.
+    const firstText = Object.values(peers[0].editor.document.dump()).find(
+      (block) => schema.getBlockSchema(block.flavour)?.inline !== false,
+    )!;
+
+    peers[0].editor.dispatch({
+      type: 'insertText',
+      payload: { text: 'после', selection: { anchor: { blockId: firstText.id, offset: 0 } } },
+    });
+    await until(
+      () => JSON.stringify(late.editor.serialize().blocks).includes('после'),
+      'an edit after the refusals to arrive',
+    );
+
+    for (const peer of [...peers, late]) peer.connection.destroy();
+  }, 60000);
+
   it('keeps edits made offline across a reload of the page', async () => {
     const ann = await signUp('ann');
     const bob = await signUp('bob');
@@ -273,8 +491,7 @@ describe.skipIf(!base)('against a real server', () => {
       await call<{ id: number }>('POST', '/workspaces', ann.token, { name: 'e2e reload' })
     ).data.id;
 
-    expect((await call('POST', '/contacts', ann.token, { contact_id: bob.id })).status).toBe(202);
-    expect((await call('POST', `/contacts/requests/${ann.id}/accept`, bob.token)).status).toBe(200);
+    await befriend(ann, bob);
     expect(
       (
         await call('POST', `/workspaces/${workspace}/members`, ann.token, {

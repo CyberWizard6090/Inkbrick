@@ -36,6 +36,12 @@ export class FakeServer {
 
   maxUpdateBytes = 512 * 1024;
 
+  /** How many more updates are accepted before RATE_LIMITED is answered (like the per-user budget). */
+  budget = Infinity;
+
+  /** `retry_after` of the RATE_LIMITED answer, seconds. */
+  retryAfter = 1;
+
   /** Store updates but never acknowledge them (the acknowledgement is lost on the way). */
   dropAcks = false;
 
@@ -149,6 +155,17 @@ export class FakeServer {
         if (update.length > this.maxUpdateBytes) {
           return from.deliver({ type: 'error', code: 'UPDATE_TOO_LARGE', ref: frame.ref });
         }
+
+        if (this.budget <= 0) {
+          return from.deliver({
+            type: 'error',
+            code: 'RATE_LIMITED',
+            ref: frame.ref,
+            retry_after: this.retryAfter,
+          });
+        }
+
+        this.budget--;
 
         const seq = this.store(from.user.id, update);
 
