@@ -105,7 +105,7 @@ describe('Editor history', () => {
     expect(result.caret).toEqual({ blockId: second, offset: 0 });
   });
 
-  it('undoes a merge that moved nested children', () => {
+  it('undoes a list item turning into a paragraph that lifted nested children', () => {
     const { editor, firstId, noteId, type } = setup();
 
     editor.dispatch({
@@ -129,16 +129,15 @@ describe('Editor history', () => {
     editor.dispatch({ type: 'indentBlock', payload: { blockId: third } });
     editor.sealHistory();
 
-    editor.dispatch({ type: 'deleteBackward', payload: { blockId: second, offset: 0 } }); // пункт → параграф
-    editor.sealHistory();
     const before = structuredClone(editor.document.dump());
-    editor.dispatch({ type: 'deleteBackward', payload: { blockId: second, offset: 0 } }); // склейка
-    expect(editor.document.getBlock(second)).toBeUndefined();
+    editor.dispatch({ type: 'deleteBackward', payload: { blockId: second, offset: 0 } }); // пункт → параграф
+    expect(editor.document.getBlock(noteId)!.children).toEqual([firstId, second, third]);
 
     editor.undo();
 
     expect(editor.document.dump()).toEqual(before);
     expect(editor.document.getBlock(noteId)!.children).toEqual([firstId, second]);
+    expect(editor.document.getBlock(second)!.children).toEqual([third]);
   });
 
   it('batch is a single undo step with the first "before" and last "after"', () => {

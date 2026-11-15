@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { BlockId } from '@inkbrick/document';
+import { validateSnapshot, type BlockId } from '@inkbrick/document';
 
 import { Editor, type CaretResult } from '../src';
 
@@ -200,6 +200,59 @@ describe('Enter behaviors from the schema', () => {
 
     editor.dispatch({ type: 'splitBlock', payload: { blockId: next.blockId, offset: 0 } });
     expect(flavours()).toEqual(['block:quote', 'block:paragraph']);
+  });
+
+  it('list: Enter in an empty item with nested items lifts them out of the new paragraph', () => {
+    const { editor, firstId, type, convert, children, flavours } = setup();
+    convert(firstId, 'block:list', { type: 'bullet' });
+    type(firstId, 0, 'a');
+    const second = (
+      editor.dispatch({
+        type: 'splitBlock',
+        payload: { blockId: firstId, offset: 1 },
+      }) as CaretResult
+    ).blockId;
+    type(second, 0, 'b');
+    editor.dispatch({ type: 'indentBlock', payload: { blockId: second } });
+    editor.dispatch({ type: 'deleteText', payload: { blockId: firstId, from: 0, to: 1 } });
+
+    editor.dispatch({ type: 'splitBlock', payload: { blockId: firstId, offset: 0 } });
+
+    expect(flavours()).toEqual(['block:paragraph', 'block:list']);
+    expect(children()).toEqual([firstId, second]);
+    expect(editor.document.getBlock(firstId)!.children).toEqual([]);
+    expect(validateSnapshot(editor.serialize(), editor.schema)).toEqual([]);
+
+    // Пустой первый параграф, за которым есть блоки, стирается Backspace.
+    const caret = editor.dispatch({
+      type: 'deleteBackward',
+      payload: { blockId: firstId, offset: 0 },
+    }) as CaretResult;
+    expect(caret).toEqual({ blockId: second, offset: 0 });
+    expect(children()).toEqual([second]);
+
+    editor.undo();
+    expect(children()).toEqual([firstId, second]);
+  });
+
+  it('backspace on an empty item with nested items keeps the document valid', () => {
+    const { editor, firstId, type, convert, children } = setup();
+    convert(firstId, 'block:list', { type: 'bullet' });
+    type(firstId, 0, 'a');
+    const second = (
+      editor.dispatch({
+        type: 'splitBlock',
+        payload: { blockId: firstId, offset: 1 },
+      }) as CaretResult
+    ).blockId;
+    type(second, 0, 'b');
+    editor.dispatch({ type: 'indentBlock', payload: { blockId: second } });
+    editor.dispatch({ type: 'deleteText', payload: { blockId: firstId, from: 0, to: 1 } });
+
+    editor.dispatch({ type: 'deleteBackward', payload: { blockId: firstId, offset: 0 } });
+
+    expect(children()).toEqual([firstId, second]);
+    expect(validateSnapshot(editor.serialize(), editor.schema)).toEqual([]);
   });
 
   it('heading continues with a paragraph', () => {

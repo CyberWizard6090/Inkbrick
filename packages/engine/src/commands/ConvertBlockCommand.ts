@@ -1,6 +1,3 @@
-import type { BaseBlock } from '@inkbrick/document';
-import type { Transaction } from '@inkbrick/store';
-
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, ConvertBlockPayload } from '../dispatcher/Intents';
 import { isTextBlock } from '../utils';
@@ -12,7 +9,7 @@ import { isTextBlock } from '../utils';
  *  - Тип без текста (разделитель): пустой блок заменяется им, непустой остаётся,
  *    разделитель вставляется после него. В обоих случаях следом создаётся
  *    пустой параграф, куда встаёт курсор.
- *  - Потомки, которые не подходят новому типу, поднимаются на уровень блока.
+ *  - Потомки, которые не подходят новому типу, поднимаются на уровень блока (`BlockEngine.morph`).
  */
 export const ConvertBlockCommand: Command<ConvertBlockPayload, CaretResult> = {
   type: 'convertBlock',
@@ -27,7 +24,6 @@ export const ConvertBlockCommand: Command<ConvertBlockPayload, CaretResult> = {
     const target = engine.schema.requireBlockSchema(payload.flavour);
 
     if (target.inline !== false) {
-      liftChildren(context, block, parent, payload.flavour);
       engine.block.morph(transaction, block.id, payload.flavour, payload.props);
 
       const length = engine.inline.length(transaction.getBlock(block.id)!.content);
@@ -92,27 +88,4 @@ function check({ engine, transaction }: CommandContext, { blockId, flavour }: Co
   }
 
   return { block, parent };
-}
-
-function liftChildren(
-  { engine, transaction }: CommandContext,
-  block: BaseBlock,
-  parent: BaseBlock,
-  flavour: string,
-): void {
-  let placed = 0;
-
-  for (const childId of [...block.children]) {
-    const child = (transaction as Transaction).getBlock(childId)!;
-
-    if (engine.schema.validateRelation(flavour, child.flavour)) continue;
-
-    const current = transaction.getBlock(parent.id)!;
-    engine.block.move(
-      transaction,
-      childId,
-      parent.id,
-      current.children.indexOf(block.id) + 1 + placed++,
-    );
-  }
 }

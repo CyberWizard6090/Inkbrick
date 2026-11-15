@@ -65,15 +65,46 @@ export class BlockEngine {
     tx.apply(new UpdateBlockChange(id, { content }));
   }
 
+  /**
+   * Меняет тип блока. Потомки, которых новый тип не допускает (например, вложенный список
+   * у пункта, ставшего параграфом), поднимаются на уровень блока — сразу после него, в прежнем порядке.
+   * Если потомок не подходит ни новому типу, ни родителю блока, бросает ошибку.
+   */
   morph(tx: Transaction, id: BlockId, flavour: string, props?: BlockProps): void {
     const block = this.require(tx, id);
+    const parent = block.parentId ? this.require(tx, block.parentId) : undefined;
 
-    if (block.parentId) {
-      const parent = this.require(tx, block.parentId);
+    if (parent && !this.schema.validateRelation(parent.flavour, flavour)) {
+      throw new Error(`"${flavour}" cannot be placed inside "${parent.flavour}"`);
+    }
 
-      if (!this.schema.validateRelation(parent.flavour, flavour)) {
-        throw new Error(`"${flavour}" cannot be placed inside "${parent.flavour}"`);
+    const misfits = block.children.filter((childId) => {
+      const child = tx.getBlock(childId);
+
+      return (
+        !!child &&
+        this.schema.hasBlock(child.flavour) &&
+        !this.schema.validateRelation(flavour, child.flavour)
+      );
+    });
+
+    if (misfits.length > 0) {
+      if (!parent) {
+        throw new Error(`"${flavour}" cannot contain the children of "${id}"`);
       }
+
+      for (const childId of misfits) {
+        const child = tx.getBlock(childId)!;
+
+        if (!this.schema.validateRelation(parent.flavour, child.flavour)) {
+          throw new Error(`"${child.flavour}" fits neither "${flavour}" nor "${parent.flavour}"`);
+        }
+      }
+
+      misfits.forEach((childId, placed) => {
+        const siblings = tx.getBlock(parent.id)!.children;
+        this.move(tx, childId, parent.id, siblings.indexOf(id) + 1 + placed);
+      });
     }
 
     tx.apply(

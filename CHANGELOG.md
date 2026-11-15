@@ -24,6 +24,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   navigation instead of the native `<select>`.
 - The replace-image button uses a cleaner icon (`refresh-cw`).
 
+### Fixed
+
+- Changing a block's type no longer leaves children the new type does not allow: `BlockEngine.morph` lifts them out
+  right after the block. Enter in an empty list item with nested items used to turn it into a paragraph that still
+  held the nested list (`validateSnapshot`: `block:list cannot be placed inside block:paragraph`). Backspace at the
+  start of such an item now lifts the nested items too, instead of keeping them inside the paragraph.
+- Backspace in an empty first block removes it when a text block follows, and moves the caret there.
+
 ## 0.1.0-alpha.0 — 2026-11-01
 
 First public alpha, published under the `alpha` dist-tag: `npm install @inkbrick/react@alpha`. The API may change
