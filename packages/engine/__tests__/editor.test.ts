@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { BlockId } from '@inkbrick/document';
+import { validateSnapshot, type BlockId } from '@inkbrick/document';
 
 import { Editor, type CaretResult } from '../src';
 
@@ -133,6 +133,27 @@ describe('splitBlock / deleteBackward', () => {
     expect(noteChildren()).toEqual([firstId]);
   });
 
+  it('keeps a non-empty first paragraph and removes an empty one followed by blocks', () => {
+    const { editor, firstId, noteChildren, type } = setup();
+
+    const { blockId: second } = editor.dispatch({
+      type: 'splitBlock',
+      payload: { blockId: firstId, offset: 0 },
+    }) as CaretResult;
+    type(second, 0, 'x');
+    type(firstId, 0, 'a');
+
+    expect(
+      editor.dispatch({ type: 'deleteBackward', payload: { blockId: firstId, offset: 0 } }),
+    ).toBeUndefined();
+
+    editor.dispatch({ type: 'deleteBackward', payload: { blockId: firstId, offset: 1 } });
+    expect(
+      editor.dispatch({ type: 'deleteBackward', payload: { blockId: firstId, offset: 0 } }),
+    ).toEqual({ blockId: second, offset: 0 });
+    expect(noteChildren()).toEqual([second]);
+  });
+
   it('turns a heading with no previous sibling back into a paragraph', () => {
     const { editor, firstId } = setup();
 
@@ -239,8 +260,8 @@ describe('morph, lists and nesting', () => {
     expect(editor.dispatch({ type: 'indentBlock', payload: { blockId: firstId } })).toBeUndefined();
   });
 
-  it('merging a list item moves its nested children along', () => {
-    const { editor, firstId, text, type } = setup();
+  it('turning a list item into a paragraph lifts its nested items out', () => {
+    const { editor, firstId, noteChildren, text, type } = setup();
 
     editor.dispatch({
       type: 'morphBlock',
@@ -265,11 +286,14 @@ describe('morph, lists and nesting', () => {
 
     editor.dispatch({ type: 'deleteBackward', payload: { blockId: second, offset: 0 } });
     expect(editor.document.getBlock(second)!.flavour).toBe('block:paragraph');
+    expect(editor.document.getBlock(second)!.children).toEqual([]);
+    expect(noteChildren()).toEqual([firstId, second, third]);
+    expect(validateSnapshot(editor.serialize(), editor.schema)).toEqual([]);
+
     editor.dispatch({ type: 'deleteBackward', payload: { blockId: second, offset: 0 } });
 
     expect(text(firstId)).toBe('ab');
-    expect(editor.document.getBlock(firstId)!.children).toEqual([third]);
-    expect(editor.document.getBlock(third)!.parentId).toBe(firstId);
+    expect(noteChildren()).toEqual([firstId, third]);
   });
 });
 
