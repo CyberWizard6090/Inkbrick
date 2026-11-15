@@ -5,10 +5,6 @@ import { Editable } from '../blocks/Editable';
 import { useChildren } from '../hooks/useChildren';
 import { BlockRenderer } from '../renderer/BlockRenderer';
 
-/*
- * Строки и ячейки выводятся напрямую, а не через рендерер документа: внутри <tbody> и <tr> допустимы только
- * <tr> и <td>, виртуальный рендерер со своими обёртками там не подходит.
- */
 function Children({ id }: { readonly id: string }) {
   return (
     <>

@@ -131,7 +131,6 @@ export function pointAt(root: HTMLElement, x: number, y: number): DomPoint | nul
   // Ниже последнего блока — в его конец.
   if (y > last.getBoundingClientRect().bottom) return endOf(last);
 
-  // Ближайший по высоте блок; среди стоящих на одной высоте (ячейки строки таблицы) — ближайший по горизонтали.
   let target = editables[0];
   let distance = Infinity;
   let aside = Infinity;

@@ -109,7 +109,6 @@ describe('table keyboard', () => {
 
     key('Tab', { shift: true });
     key('Tab', { shift: true });
-    // Курсор встаёт в конец текста ячейки.
     type('!');
     expect(text(cell(0, 1))).toBe('b!');
   });

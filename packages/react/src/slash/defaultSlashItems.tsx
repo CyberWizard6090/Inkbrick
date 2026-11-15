@@ -182,7 +182,6 @@ export function resolveSlashItems(
   const merged = defaults.map((item) => overrides.get(item.id) ?? item);
   const extra = custom
     .filter((item) => !defaultSlashItems.some((d) => d.id === item.id))
-    // Пункт подключаемого блока (таблица) переводится, если для его id есть строки в словаре.
     .map((item) =>
       t && messageKey(item.id, 'title') in en
         ? {

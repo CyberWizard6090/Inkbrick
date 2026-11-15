@@ -91,7 +91,6 @@ test.describe('Table', () => {
 
     const box = (await page.locator(cells).nth(4).boundingBox())!;
 
-    // Правый край ячейки: мимо текста, но внутри её рамки.
     await page.mouse.click(box.x + box.width - 6, box.y + box.height / 2);
     await page.keyboard.type('!');
 

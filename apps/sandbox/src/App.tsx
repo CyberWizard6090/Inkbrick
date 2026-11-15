@@ -211,7 +211,6 @@ function loadSample(editor: Editor): void {
     payload: { from: point(centered, 0), to: point(centered, 0), align: 'center' },
   });
 
-  // Таблица 3×3: insertBlock возвращает её первую ячейку; следующие блоки встают после самой таблицы.
   const firstCell = add('block:table');
   const row = editor.document.getBlock(editor.document.getBlock(firstCell)!.parentId!)!;
   const table = editor.document.getBlock(row.parentId!)!;

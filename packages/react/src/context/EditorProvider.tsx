@@ -135,7 +135,6 @@ export function EditorProvider({
     const code = highlighter ?? visual.highlighter;
     const math = formulaRenderer ?? visual.formulaRenderer;
     const customSlash = slashItems ?? visual.slashItems;
-    // Клавиши приложения важнее клавиш подключённых блоков.
     const customKeys = mergeById(
       (blocks ?? []).flatMap((block) => block.keymap ?? []),
       keymap ?? [],

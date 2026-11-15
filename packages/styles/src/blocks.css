@@ -145,7 +145,6 @@
     text-decoration: line-through;
   }
 
-  /* ---- Таблица: обёртка прокручивается по горизонтали, сетка — обычная <table> ---- */
   :where([data-inkbrick-block='table']) {
     max-width: 100%;
     margin: 4px 0;
@@ -166,7 +165,6 @@
     text-align: start;
   }
 
-  /* Первая строка — заголовок (props.header). */
   :where(
     [data-inkbrick-block='table'][data-header]
       [data-inkbrick-block='table-row']:first-child

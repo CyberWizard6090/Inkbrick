@@ -29,7 +29,6 @@ export const tableBlocks: readonly ReactBlockDefinition<any>[] = [
     component: view(TableBlock),
     controller: {
       commands: tableCommands,
-      // Название и описание переводятся: ключи `slash.item.table.*` в словарях.
       slashItems: [
         {
           id: 'table',

@@ -19,7 +19,6 @@ export function mountEditor(
   /** Куда смонтировать (например, внутрь элемента с data-inkbrick-surface). */
   container?: HTMLElement,
 ) {
-  // Блоки провайдера (таблица, свои блоки) нужны и редактору: их схемы и команды.
   const editor = new Editor({ blocks: props.blocks });
   const noteId = editor.document.getBlock(editor.document.rootId)!.children[0];
   const ids: BlockId[] = [editor.document.getBlock(noteId)!.children[0]];

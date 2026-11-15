@@ -21,7 +21,6 @@ const step = (direction: 1 | -1) => (context: KeymapContext) => {
 
   const index = cell.row * size.columns + cell.column + direction;
 
-  // Shift+Tab в первой ячейке: дальше некуда, но и фокус из редактора не уходит.
   if (index < 0) return;
 
   if (index >= size.rows * size.columns) {

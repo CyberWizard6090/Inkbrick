@@ -12,7 +12,6 @@ export function hasHandle(editor: Editor, blockId: string): boolean {
   const block = editor.store.getBlock(blockId);
   const parent = block?.parentId ? editor.store.getBlock(block.parentId) : undefined;
 
-  // Строки и ячейки таблицы — части одного блока: ручка, меню и перенос есть только у таблицы целиком.
   return !!parent?.parentId && editor.schema.getBlockSchema(block!.flavour)?.isolating !== true;
 }
 
