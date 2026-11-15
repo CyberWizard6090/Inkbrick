@@ -538,11 +538,27 @@ export class DocumentConnection {
     socket.onclose = (event: CloseEvent) => {
       if (attempt !== this.attempt) return;
 
+      const inFlight = [...this.sent];
+
       this.socket = undefined;
       this.stopSending();
       this.peerMap.clear();
       this.peers = [];
       this.self = undefined;
+
+      if (event.reason === 'frame too large') {
+        // The server closes for a frame over its limit (1 MiB). Whatever was in flight may be the culprit and would
+        // close the socket again after every reconnect, so it is dropped and reported; the connection goes on.
+        for (const id of inFlight) this.drop(id);
+
+        this.fail(
+          new DocumentApiError(
+            413,
+            'FRAME_TOO_LARGE',
+            'the server closed the connection because a message was too large; the edits being sent were dropped',
+          ),
+        );
+      }
 
       if (event.code === 1008 && event.reason === 'access revoked') {
         this.fail(

@@ -483,6 +483,33 @@ describe('DocumentConnection', () => {
     expect(server.sockets.size).toBe(0);
   });
 
+  it('drops what was in flight when the server closes for a message that is too large', async () => {
+    const server = newServer();
+
+    server.dropAcks = true;
+
+    const ann = await client(server, 'ann', true, 0);
+
+    ann.type('big');
+
+    const first = [...server.sockets][0];
+
+    await until(() => first.received.some((f) => f.type === 'update'), 'the send');
+
+    first.drop(1009, 'frame too large');
+    await until(() => ann.errors.length > 0, 'the report');
+    await until(() => ann.connection.status === 'online', 'the reconnect');
+
+    expect(ann.errors[0]).toMatchObject({ code: 'FRAME_TOO_LARGE' });
+    // The edit that was in flight is not sent again: it could be what the server refused.
+    expect(ann.connection.unsent).toBe(0);
+    await tick(30);
+    expect(first.received.filter((f) => f.type === 'update')).toHaveLength(1);
+    expect(
+      [...server.sockets].flatMap((socket) => socket.received).filter((f) => f.type === 'update'),
+    ).toHaveLength(0);
+  });
+
   it('stops when the server refuses the ticket or revokes access', async () => {
     const server = newServer();
     const denied = await client(server, 'ann', false);
