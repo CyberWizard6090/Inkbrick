@@ -77,6 +77,12 @@ export const ICON_SHAPES = {
     ['circle', { cx: '6', cy: '18', r: '3' }],
     ['path', { d: 'M14.8 14.8 20 20' }],
   ],
+  table: [
+    ['path', { d: 'M12 3v18' }],
+    ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
+    ['path', { d: 'M3 9h18' }],
+    ['path', { d: 'M3 15h18' }],
+  ],
   'select-all': [
     ['path', { d: 'M5 3a2 2 0 0 0-2 2' }],
     ['path', { d: 'M19 3a2 2 0 0 1 2 2' }],

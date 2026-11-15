@@ -131,19 +131,21 @@ export function pointAt(root: HTMLElement, x: number, y: number): DomPoint | nul
   // Ниже последнего блока — в его конец.
   if (y > last.getBoundingClientRect().bottom) return endOf(last);
 
+  // Ближайший по высоте блок; среди стоящих на одной высоте (ячейки строки таблицы) — ближайший по горизонтали.
   let target = editables[0];
   let distance = Infinity;
+  let aside = Infinity;
 
   for (const element of editables) {
     const rect = element.getBoundingClientRect();
     const gap = y < rect.top ? rect.top - y : y > rect.bottom ? y - rect.bottom : 0;
+    const side = x < rect.left ? rect.left - x : x > rect.right ? x - rect.right : 0;
 
-    if (gap < distance) {
+    if (gap < distance || (gap === distance && side < aside)) {
       target = element;
       distance = gap;
+      aside = side;
     }
-
-    if (gap === 0) break;
   }
 
   const rect = target.getBoundingClientRect();

@@ -189,6 +189,9 @@ export const en = {
   'slash.item.divider.title': 'Divider',
   'slash.item.divider.description': 'Visually separate sections',
   'slash.item.divider.keywords': 'hr, line, separator, rule',
+  'slash.item.table.title': 'Table',
+  'slash.item.table.description': 'Rows and columns of text',
+  'slash.item.table.keywords': 'table, grid, rows, columns',
 } as const;
 
 export type MessageKey = keyof typeof en;

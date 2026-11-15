@@ -1,6 +1,6 @@
 import { Icon } from '../icons/Icon';
 import type { TFunction } from '../i18n/translate';
-import type { MessageKey } from '../i18n/en';
+import { en, type MessageKey } from '../i18n/en';
 import type { SlashMenuItem } from './types';
 
 export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
@@ -180,7 +180,24 @@ export function resolveSlashItems(
 
   const overrides = new Map(custom.map((item) => [item.id, item]));
   const merged = defaults.map((item) => overrides.get(item.id) ?? item);
-  const extra = custom.filter((item) => !defaultSlashItems.some((d) => d.id === item.id));
+  const extra = custom
+    .filter((item) => !defaultSlashItems.some((d) => d.id === item.id))
+    // Пункт подключаемого блока (таблица) переводится, если для его id есть строки в словаре.
+    .map((item) =>
+      t && messageKey(item.id, 'title') in en
+        ? {
+            ...item,
+            title: t(messageKey(item.id, 'title')),
+            description: t(messageKey(item.id, 'description')),
+            keywords: [
+              ...new Set([
+                ...(item.keywords ?? []),
+                ...splitKeywords(t(messageKey(item.id, 'keywords'))),
+              ]),
+            ],
+          }
+        : item,
+    );
 
   return [...merged, ...extra];
 }

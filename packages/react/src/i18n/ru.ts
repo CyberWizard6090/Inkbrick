@@ -187,4 +187,7 @@ export const ru: Messages = {
   'slash.item.divider.title': 'Разделитель',
   'slash.item.divider.description': 'Визуально разделить разделы',
   'slash.item.divider.keywords': 'линия, разделитель, черта, hr',
+  'slash.item.table.title': 'Таблица',
+  'slash.item.table.description': 'Строки и столбцы с текстом',
+  'slash.item.table.keywords': 'таблица, сетка, строки, столбцы',
 };
