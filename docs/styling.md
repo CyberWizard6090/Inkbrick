@@ -125,7 +125,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | Типографика              | `--inkbrick-font-family`, `--inkbrick-font-mono`, `--inkbrick-font-size`, `--inkbrick-font-size-ui`, `--inkbrick-line-height`                     |
 | Подсветка кода           | `--inkbrick-syntax-{keyword,string,comment,number,function,type,constant,builtin,variable,property,tag,attribute,meta,regex}`                     |
 | Цвета текста и подсветки | `--inkbrick-color-<имя>`, `--inkbrick-highlight-<имя>` (имена палитры: black, white, gray, brown, orange, yellow, green, blue, purple, pink, red) |
-| Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`                                   |
+| Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-gutter`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`              |
 
 Прежние имена (`--inkbrick-bg-surface`, `--inkbrick-text-primary`, `--inkbrick-accent-color`, …) продолжают работать как псевдонимы.
 

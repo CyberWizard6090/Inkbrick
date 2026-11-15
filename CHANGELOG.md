@@ -23,6 +23,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - The code language and the image width use a styled dropdown (`data-inkbrick-ui="select"`) with keyboard
   navigation instead of the native `<select>`.
 - The replace-image button uses a cleaner icon (`refresh-cw`).
+- The block handle («+» and the grip) sits inside the document: the editor root has equal paddings on both sides
+  (`--inkbrick-gutter`, 56px; none below 640px) instead of relying on the page margin, and the handle lives in the left
+  one. The handle is no longer clipped
+  by a container with `overflow: hidden` and never leaves the document's left edge.
 
 ### Fixed
 

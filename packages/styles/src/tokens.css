@@ -28,6 +28,7 @@
     --inkbrick-radius-surface: 8px; /* меню, панели, блоки-карточки */
 
     --inkbrick-space-block: 2px; /* промежуток между блоками */
+    --inkbrick-gutter: 56px; /* поля документа слева и справа: в левом живут «+» и хваталка блока */
     --inkbrick-icon-size: 16px;
 
     --inkbrick-duration-fast: 100ms;
