@@ -12,6 +12,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Code block: collapse with an animated height (`collapsed` prop) and an optional caption (`caption` prop, exported as
   `<figure>`/`<figcaption>` in HTML and an italic line in Markdown).
 - Image picker: a drop zone with an upload button; a file dropped on it fills that block.
+- A click beside the text — in the left gutter, past the end of a line, between blocks or, with
+  `data-inkbrick-surface` on an ancestor, anywhere around the document — puts the caret on the line at that height:
+  at the start of that visual line on the left, at its end on the right; below the last block, at its end. Dragging
+  from the margin selects text, Shift+click extends the selection.
 
 ### Changed
 

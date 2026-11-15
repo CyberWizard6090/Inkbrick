@@ -5,6 +5,7 @@ import { DropIndicatorHost } from '../block-handle/DropIndicatorHost';
 import { useClipboard } from '../clipboard/useClipboard';
 import { useBlockHandles } from '../block-handle/useBlockHandles';
 import { useEditorInput } from '../editing/useEditorInput';
+import { useMarginClick } from '../editing/useMarginClick';
 import { useSelectionState } from '../editing/useSelectionState';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -49,6 +50,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
   const t = useT();
 
   useEditorInput(ref, !readOnly);
+  useMarginClick(ref, !readOnly);
   useSelectionState(ref);
   useClipboard(ref, readOnly);
   useBlockHandles(ref, slots.BlockHandle !== null && !readOnly);

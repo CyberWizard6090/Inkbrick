@@ -396,7 +396,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
           locales={availableLocales()}
           onLocaleChange={changeLocale}
         />
-        <div className="playground-root">
+        <div className="playground-root" data-inkbrick-surface="">
           <div className="playground-editor">
             <header className="playground-header">{t('app.title')}</header>
             <HistoryButtons />
