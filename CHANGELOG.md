@@ -11,7 +11,13 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   text block. Opt-in: `new Editor({ blocks: tableBlocks })`. Commands `insertTableRow`, `deleteTableRow`,
   `moveTableRow`, `insertTableColumn`, `deleteTableColumn`, `moveTableColumn`, `setTableColumnWidth`; helpers
   `locateTableCell`, `tableCellAt`, `tableSize`. `validateSnapshot` checks that a table is rectangular and
-  `repairSnapshot` pads short rows. Rendering in `@inkbrick/react` is not there yet.
+  `repairSnapshot` pads short rows.
+- Tables in `@inkbrick/react`: `tableBlocks` (pass it to both `new Editor({ blocks })` and `<EditorProvider blocks>`)
+  renders a real `<table>`, adds the «Table» slash item, and binds Tab / Shift+Tab to the next and previous cell; Tab
+  in the last cell adds a row. Rows and cells have no block handle of their own. Export to Markdown and HTML still
+  writes a table as paragraphs.
+- `defineBlock({ keymap })`: key bindings of a block that need the selection and the DOM (`KeymapContext`).
+- A slash item contributed by a block is translated when the dictionary has `slash.item.<id>.*` strings.
 - `BlockSchema`: `isolating` (a block general commands never delete, merge, move or duplicate; deleting a selection
   clears its text, pasting into it inserts plain lines), `scaffold` (initial children of a block the user creates),
   `validate` and `repair` (subtree rules for `validateSnapshot` and `repairSnapshot`).
@@ -53,6 +59,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   by a container with `overflow: hidden` and never leaves the document's left edge.
 
 ### Fixed
+
+- A click beside the text of blocks standing side by side (table cells) puts the caret into the nearest one, not the
+  first one on that line.
 
 - Changing a block's type no longer leaves children the new type does not allow: `BlockEngine.morph` lifts them out
   right after the block. Enter in an empty list item with nested items used to turn it into a paragraph that still

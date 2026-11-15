@@ -135,7 +135,10 @@ export function EditorProvider({
     const code = highlighter ?? visual.highlighter;
     const math = formulaRenderer ?? visual.formulaRenderer;
     const customSlash = slashItems ?? visual.slashItems;
-    const customKeys = keymap ?? [];
+    const customKeys = mergeById(
+      (blocks ?? []).flatMap((block) => block.keymap ?? []),
+      keymap ?? [],
+    );
 
     return {
       components: { ...blockComponentsOf(blocks), ...visual.components, ...components },

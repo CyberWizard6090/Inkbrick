@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import type { BlockProps as DocumentBlockProps } from '@inkbrick/document';
 import type { BlockController, BlockDefinition, TypedBlock } from '@inkbrick/engine';
 
+import type { KeyBinding } from '../keymap/types';
 import type { BlockComponent, BlockComponentRegistry, BlockViewProps } from '../ui/types';
 
 export type CustomBlockViewProps<TProps extends DocumentBlockProps = DocumentBlockProps> =
@@ -17,6 +18,11 @@ export interface ReactBlockDefinition<
 > extends BlockDefinition<TProps> {
   readonly component: ComponentType<CustomBlockViewProps<TProps>>;
   readonly controller?: BlockController<TProps>;
+  /**
+   * Клавиши блока, которым нужен доступ к выделению и DOM (`KeymapContext`): переход между ячейками таблицы.
+   * Проверяются раньше стандартных; клавиши без такой нужды удобнее задать в `controller.keymap`.
+   */
+  readonly keymap?: readonly KeyBinding[];
 }
 
 /**

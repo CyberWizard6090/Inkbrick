@@ -4,6 +4,7 @@ import type { BaseBlock } from '@inkbrick/document';
 
 import { renderCode } from '../editing/renderCode';
 import { renderInline } from '../editing/renderInline';
+import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
@@ -29,6 +30,7 @@ export interface EditableProps {
 export function Editable({ block, placeholder }: EditableProps) {
   const ref = useRef<HTMLDivElement>(null);
   const view = useEditorView();
+  const editor = useEditor();
   const t = useT();
   const readOnly = useReadOnly();
   const { slashItems, highlighter, formulaRenderer } = useEditorUI();
@@ -67,7 +69,11 @@ export function Editable({ block, placeholder }: EditableProps) {
   const isEmpty = block.content.every((node) => node.insert.length === 0);
 
   // Подсказка про «/» уместна там, где меню открывается: не в режиме чтения, не в коде и если меню не отключено.
-  const hinted = !readOnly && slashItems.length > 0 && block.flavour !== 'block:code';
+  const hinted =
+    !readOnly &&
+    slashItems.length > 0 &&
+    block.flavour !== 'block:code' &&
+    editor.schema.getBlockSchema(block.flavour)?.isolating !== true;
 
   return (
     <div

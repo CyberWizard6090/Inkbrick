@@ -211,6 +211,22 @@ function loadSample(editor: Editor): void {
     payload: { from: point(centered, 0), to: point(centered, 0), align: 'center' },
   });
 
+  const firstCell = add('block:table');
+  const row = editor.document.getBlock(editor.document.getBlock(firstCell)!.parentId!)!;
+  const table = editor.document.getBlock(row.parentId!)!;
+  const sampleRows = [
+    ['Block', 'Shortcut', 'Notes'],
+    ['Heading', '# ', 'Six levels'],
+    ['List', '- ', 'Bullets, numbers, tasks'],
+  ];
+
+  table.children.forEach((rowId, r) =>
+    editor.document
+      .getBlock(rowId)!
+      .children.forEach((cellId, c) => write(cellId, [sampleRows[r][c]])),
+  );
+  after = table.id;
+
   add('block:paragraph', undefined, ['Last paragraph']);
 
   editor.clearHistory();
