@@ -2,7 +2,10 @@ import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
 
-/** Ширина полосы слева от текста, в которой ручка остаётся видимой. */
+/**
+ * Запас слева от документа, в котором блок под указателем ещё находится. Полоса для ручки обычно внутри
+ * документа (`--inkbrick-gutter`), но приложение может её убрать — тогда ручка снова оказывается за краем корня.
+ */
 export const GUTTER = 72;
 
 export function hasHandle(editor: Editor, blockId: string): boolean {

@@ -128,6 +128,12 @@ export const ru: Messages = {
   'menu.turnInto': 'Превратить в',
   'menu.empty': 'Нет действий',
 
+  'contextMenu.label': 'Правка',
+  'contextMenu.cut': 'Вырезать',
+  'contextMenu.copy': 'Копировать',
+  'contextMenu.paste': 'Вставить',
+  'contextMenu.selectAll': 'Выделить всё',
+
   'history.undo': 'Отменить',
   'history.redo': 'Повторить',
 

@@ -8,6 +8,11 @@ export type ToolbarPanel = 'color' | 'highlight';
 export interface ToolbarProps {
   readonly formats: RangeFormats;
   readonly position: { readonly x: number; readonly y: number };
+  /**
+   * `'floating'` (по умолчанию) — toolbar сам встаёт над выделением (`position` — середина его верхнего края);
+   * `'inline'` — часть контекстного меню: обычный блок без своего позиционирования.
+   */
+  readonly placement?: 'floating' | 'inline';
   readonly linkOpen: boolean;
   readonly onToggle: (format: InlineFormat) => void;
   readonly onOpenLink: () => void;

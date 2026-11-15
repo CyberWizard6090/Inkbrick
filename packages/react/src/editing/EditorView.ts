@@ -3,6 +3,7 @@ import type { BlockId } from '@inkbrick/document';
 import { BlockHandleController } from '../block-handle/BlockHandleController';
 import { UploadTracker } from '../images/UploadTracker';
 import { BlockSelectionController } from './BlockSelectionController';
+import { ContextMenuController } from '../context-menu/ContextMenuController';
 import { FormulaController } from '../formula/FormulaController';
 import { CaretController } from './CaretController';
 import { SlashMenuController } from '../slash/SlashMenuController';
@@ -33,9 +34,15 @@ export class EditorView {
 
   readonly toolbar = new ToolbarController();
 
+  readonly contextMenu = new ContextMenuController();
+
   readonly viewport = new ViewportController();
 
   pointerDown = false;
+
+  /** Чем последний раз нажимали в документе: от этого зависит, показывать ли плавающий toolbar. */
+  lastPointerType: 'mouse' | 'pen' | 'touch' =
+    typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse';
 
   private pending: { from: DocPoint; to: DocPoint } | null = null;
 

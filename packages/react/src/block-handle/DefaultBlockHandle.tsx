@@ -1,3 +1,4 @@
+import { useEditorView } from '../hooks/useEditorView';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import type { BlockHandleProps } from './types';
@@ -15,6 +16,9 @@ export function DefaultBlockHandle({
   gripProps,
 }: BlockHandleProps) {
   const t = useT();
+  const view = useEditorView();
+  // Ручка не выходит за левый край документа: полоса для неё — внутренний отступ корня.
+  const edge = Math.max(2, Math.round(view.getRoot()?.getBoundingClientRect().left ?? 0));
   const left = position.x - HANDLE_WIDTH;
 
   return (
@@ -25,9 +29,9 @@ export function DefaultBlockHandle({
       data-block={blockId}
       data-inkbrick-block-ui
       // Слева от текста нет места (узкий экран): ручка ложится поверх текста отдельной плашкой.
-      data-compact={left < 2 || undefined}
+      data-compact={left < edge || undefined}
       style={{
-        left: Math.max(2, left),
+        left: Math.max(edge, left),
         top: position.y,
         pointerEvents: dragging ? 'none' : undefined,
       }}

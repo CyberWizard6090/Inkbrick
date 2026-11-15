@@ -1,7 +1,7 @@
 import type { BaseBlock, BlockId } from '@inkbrick/document';
 import type { Transaction } from '@inkbrick/store';
 
-import type { Command } from './Command';
+import type { Command, CommandContext } from './Command';
 import type { CaretResult, DeleteBackwardPayload } from '../dispatcher/Intents';
 import { isTextBlock } from '../utils';
 import { canOutdent, outdent } from './outdent';
@@ -11,7 +11,9 @@ import { canOutdent, outdent } from './outdent';
  *  - offset > 0 — удаляет символ слева (суррогатная пара удаляется целиком);
  *  - offset = 0 — ступенчато: вложенный блок поднимается на уровень выше; блок не-параграф
  *    становится параграфом; параграф склеивается с предыдущим соседним блоком
- *    (если перед ним разделитель — удаляется разделитель).
+ *    (если перед ним разделитель — удаляется разделитель);
+ *  - пустой первый параграф без потомков удаляется, если следом есть текстовый блок
+ *    (курсор встаёт в его начало); единственный блок остаётся на месте.
  */
 export const DeleteBackwardCommand: Command<DeleteBackwardPayload, CaretResult | undefined> = {
   type: 'deleteBackward',
@@ -52,7 +54,7 @@ export const DeleteBackwardCommand: Command<DeleteBackwardPayload, CaretResult |
 
     const previous = getPreviousSibling(transaction, block);
 
-    if (!previous) return undefined;
+    if (!previous) return removeEmptyFirst(context, block);
 
     if (!engine.schema.hasBlock(previous.flavour)) return undefined;
 
@@ -83,6 +85,25 @@ export const DeleteBackwardCommand: Command<DeleteBackwardPayload, CaretResult |
     return { blockId: previous.id, offset: caretOffset };
   },
 };
+
+function removeEmptyFirst(
+  { engine, transaction }: CommandContext,
+  block: BaseBlock,
+): CaretResult | undefined {
+  if (engine.inline.length(block.content) > 0 || block.children.length > 0) return undefined;
+
+  const parent = block.parentId ? transaction.getBlock(block.parentId) : undefined;
+  const nextId = parent?.children[parent.children.indexOf(block.id as BlockId) + 1];
+  const next = nextId ? transaction.getBlock(nextId) : undefined;
+
+  if (!next || !engine.schema.hasBlock(next.flavour) || !isTextBlock(engine.schema, next)) {
+    return undefined;
+  }
+
+  engine.block.remove(transaction, block.id);
+
+  return { blockId: next.id, offset: 0 };
+}
 
 function endsWithSurrogatePair(text: string, offset: number): boolean {
   if (offset < 2) return false;
