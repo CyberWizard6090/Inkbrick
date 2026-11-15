@@ -35,7 +35,11 @@ export function createPeer(name: string, state: Uint8Array): Peer {
 
   Y.applyUpdate(ydoc, state, REMOTE_ORIGIN);
 
-  const collab = createCollab({ ydoc, schema });
+  const collab = createCollab({
+    ydoc,
+    schema,
+    undoCaptureMs: Number(process.env.COLLAB_UNDO_MS ?? 1000),
+  });
   const editor = new Editor({ schema, document: collab.createDocument() });
 
   collab.attach(editor.store);
