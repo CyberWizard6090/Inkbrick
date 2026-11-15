@@ -42,7 +42,6 @@ export const DeleteBackwardCommand: Command<DeleteBackwardPayload, CaretResult |
       return { blockId, offset: from };
     }
 
-    // Ячейку таблицы нельзя ни превратить в параграф, ни склеить с соседней.
     if (isIsolating(engine.schema, block)) return undefined;
 
     if (canOutdent(context, block)) {

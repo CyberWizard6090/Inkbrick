@@ -43,7 +43,6 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
 
     const [head, tail] = inline.split(target.content, at.offset);
 
-    // В ячейку таблицы блоки не вставить: фрагмент идёт текстом, блоки разделяются переводом строки.
     if (isIsolating(engine.schema, target)) {
       const text = flatten(inline, fragment.blocks);
 

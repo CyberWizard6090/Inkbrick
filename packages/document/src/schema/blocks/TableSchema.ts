@@ -126,7 +126,6 @@ export const TableCellSchema: BlockSchema<typeof tableCellPropsSchema> = {
   allowedParents: [TABLE_ROW],
   allowedChildren: [],
   isolating: true,
-  // Enter переносит строку внутри ячейки; между ячейками ходит Tab (слой интерфейса).
   enter: { mode: 'newline' },
 
   commands: [],
