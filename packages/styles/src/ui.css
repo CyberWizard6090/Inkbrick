@@ -1,5 +1,6 @@
 /*
- * Оболочка редактора: slash-меню, плавающий toolbar, ручка блока, меню блока, индикатор перетаскивания.
+ * Оболочка редактора: slash-меню, плавающий toolbar, ручка блока, меню блока, контекстное меню, индикатор
+ * перетаскивания.
  * Каждый элемент — data-inkbrick-ui="<имя>", части — data-inkbrick-part. Состояния: data-active, data-pressed,
  * data-disabled, data-danger, data-invalid, data-position.
  * Вид — всплывающие поверхности Windows 11: рамка 1px, радиус 8px, тень 16, пункты 32px с радиусом 4px.
@@ -8,6 +9,7 @@
   :where(
     [data-inkbrick-ui='slash-menu'],
     [data-inkbrick-ui='block-menu'],
+    [data-inkbrick-ui='context-menu'],
     [data-inkbrick-ui='toolbar']
   ) {
     box-sizing: border-box;
@@ -322,6 +324,85 @@
     color: var(--inkbrick-fg-3);
     font-size: var(--inkbrick-font-size-caption);
     line-height: 16px;
+  }
+
+  :where([data-inkbrick-ui='context-menu']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-menu);
+    box-sizing: border-box;
+    min-width: 220px;
+    max-width: calc(100vw - 16px);
+    padding: 4px;
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  /* Кнопки форматирования внутри меню: тот же toolbar, но без своей рамки, тени и позиционирования. */
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-ui='toolbar'][data-placement='inline']) {
+    position: static;
+    width: auto;
+    max-width: 100%;
+    padding: 0 0 4px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='separator']) {
+    height: 1px;
+    margin: 0 -4px 4px;
+    background: var(--inkbrick-stroke-3);
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    outline: none;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']:hover:not([data-disabled]),
+    [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']:focus-visible
+  ) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']:active:not([data-disabled])
+  ) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item'][data-disabled]) {
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='icon']) {
+    display: inline-grid;
+    place-content: center;
+    width: 20px;
+    color: var(--inkbrick-fg-2);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-part='item'][data-disabled]
+      [data-inkbrick-part='icon']
+  ) {
+    color: inherit;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='shortcut']) {
+    margin-left: auto;
+    padding-left: 16px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
   }
 
   :where([data-inkbrick-ui='drop-indicator']) {

@@ -143,8 +143,16 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
     const prevent = (event: Event) => event.preventDefault();
     const sealHistory = () => editor.sealHistory();
     const closeSlash = () => view.slash.close();
-    const onPointerDown = () => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        event.pointerType === 'mouse' ||
+        event.pointerType === 'pen' ||
+        event.pointerType === 'touch'
+      )
+        view.lastPointerType = event.pointerType;
+
       view.pointerDown = true;
+      view.contextMenu.close();
       view.toolbar.closeLink();
       view.toolbar.hide();
     };

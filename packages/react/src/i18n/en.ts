@@ -130,6 +130,12 @@ export const en = {
   'menu.turnInto': 'Turn into',
   'menu.empty': 'No actions',
 
+  'contextMenu.label': 'Edit',
+  'contextMenu.cut': 'Cut',
+  'contextMenu.copy': 'Copy',
+  'contextMenu.paste': 'Paste',
+  'contextMenu.selectAll': 'Select all',
+
   'history.undo': 'Undo',
   'history.redo': 'Redo',
 

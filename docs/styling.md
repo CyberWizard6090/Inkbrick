@@ -15,7 +15,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | `data-inkbrick-root`  | корень документа        | —                                                                                                         |
 | `data-inkbrick-block` | корень блока            | `page`, `note`, `paragraph`, `heading`, `list`, `quote`, `code`, `divider`, `callout`, `image`, `unknown` |
 | `data-inkbrick-part`  | часть блока или оверлея | см. таблицу ниже                                                                                          |
-| `data-inkbrick-ui`    | оболочка редактора      | `slash-menu`, `toolbar`, `block-handle`, `block-menu`, `drop-indicator`, `select`                         |
+| `data-inkbrick-ui`    | оболочка редактора      | `slash-menu`, `toolbar`, `context-menu`, `block-handle`, `block-menu`, `drop-indicator`, `select`         |
 | `data-inkbrick-icon`  | иконка (svg)            | имя иконки: `bold`, `plus`, `trash`, …                                                                    |
 | `data-block-id`       | корень блока            | id блока                                                                                                  |
 
@@ -64,6 +64,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | `toolbar`       | `button` (`data-format`), `separator`, `link-form`, `input`                                                                                                                                                                                   |
 | `block-handle`  | `button` (`data-action="add"`), `grip` (`data-action="grip"`)                                                                                                                                                                                 |
 | `block-menu`    | `item` (`data-action`), `icon`, `label`                                                                                                                                                                                                       |
+| `context-menu`  | `item` (`data-action`: `cut`, `copy`, `paste`, `selectAll`), `icon`, `shortcut`, `separator`; кнопки форматирования — `toolbar` с `data-placement="inline"`                                                                                   |
 | `select`        | `option` (`data-value`, `aria-selected`, `data-active`), `option-label`, `option-check`; у кнопки — `select-value`, `select-chevron`                                                                                                          |
 
 Инлайн-форматирование внутри `content` — обычные теги `strong`, `em`, `u`, `s`, `code`, `a`. В блоке кода текст

@@ -16,8 +16,17 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   `data-inkbrick-surface` on an ancestor, anywhere around the document — puts the caret on the line at that height:
   at the start of that visual line on the left, at its end on the right; below the last block, at its end. Dragging
   from the margin selects text, Shift+click extends the selection.
+- Context menu (right click): the formatting buttons (the same `Toolbar` with `placement: 'inline'`) and Cut, Copy,
+  Paste, Select all. Paste reads the clipboard through the Clipboard API and goes through the regular paste pipeline.
+  Custom view — `slots.ContextMenu`; `null` keeps the browser menu.
+- `EditorProvider` `formatting` option: `'context-menu'` (default), `'toolbar'` or `'both'`.
 
 ### Changed
+
+- **Breaking:** formatting moved from the floating toolbar to the context menu by default: on desktop many browsers
+  (Yandex Browser, Edge) draw their own popup over a selection and it covered the toolbar. After a touch the
+  toolbar still appears, and Ctrl/Cmd+K still opens the link field next to the selection. `formatting="toolbar"`
+  restores the previous behaviour.
 
 - **Breaking:** `serializeDocument(document, schema)` requires the schema registry. Without it the snapshot had no `schemaVersions`, and
   props of a block whose schema version later increased were migrated twice on load. Pass `editor.schema` or use the

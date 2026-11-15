@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { BlockHandleHost } from '../block-handle/BlockHandleHost';
 import { DropIndicatorHost } from '../block-handle/DropIndicatorHost';
 import { useClipboard } from '../clipboard/useClipboard';
+import { ContextMenuHost, useContextMenu } from '../context-menu/ContextMenuHost';
 import { useBlockHandles } from '../block-handle/useBlockHandles';
 import { useEditorInput } from '../editing/useEditorInput';
 import { useMarginClick } from '../editing/useMarginClick';
@@ -44,13 +45,14 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
   const view = useEditorView();
   const ref = useRef<HTMLDivElement>(null);
 
-  const { slots } = useEditorUI();
+  const { slots, formatting } = useEditorUI();
 
   const readOnly = useReadOnly();
   const t = useT();
 
   useEditorInput(ref, !readOnly);
   useMarginClick(ref, !readOnly);
+  useContextMenu(ref, !readOnly && formatting !== 'toolbar' && slots.ContextMenu !== null);
   useSelectionState(ref);
   useClipboard(ref, readOnly);
   useBlockHandles(ref, slots.BlockHandle !== null && !readOnly);
@@ -88,6 +90,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
       </div>
       <SlashMenuHost />
       <ToolbarHost />
+      <ContextMenuHost />
       <FormulaPopover />
       <BlockHandleHost />
       <DropIndicatorHost />

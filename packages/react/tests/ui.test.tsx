@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 
 import { Editor } from '@inkbrick/engine';
@@ -13,7 +13,12 @@ import {
   type EditorView,
 } from '../src';
 import { addBlockBelow, buildBlockActions } from '../src/block-handle/actions';
+import { preloadContextMenu } from '../src/context-menu/ContextMenuHost';
 import { mountEditor } from './harness';
+
+beforeAll(async () => {
+  await preloadContextMenu();
+});
 
 const PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
@@ -86,13 +91,89 @@ describe('slash menu', () => {
   });
 });
 
+describe('context menu', () => {
+  const $menu = () => document.querySelector<HTMLElement>('[data-testid="context-menu"]');
+  const item = (id: string) =>
+    $menu()!.querySelector<HTMLElement>(`[data-inkbrick-part="item"][data-action="${id}"]`)!;
+
+  it('is the default place for formatting: no floating toolbar, the menu has the same buttons', () => {
+    const { editor, ids, select, editable } = mountEditor(['format me']);
+
+    select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
+    expect(document.querySelector('[data-testid="toolbar"]')).toBeNull();
+
+    fireEvent.contextMenu(editable(ids[0]), { clientX: 40, clientY: 20 });
+
+    const toolbar = $menu()!.querySelector<HTMLElement>('[data-testid="toolbar"]')!;
+
+    expect(toolbar.dataset.placement).toBe('inline');
+    expect(item('copy').hasAttribute('data-disabled')).toBe(false);
+
+    fireEvent.click(toolbar.querySelector('[data-format="bold"]')!);
+    expect(editor.document.getBlock(ids[0])!.content[0]).toEqual({
+      insert: 'format',
+      attributes: { bold: true },
+    });
+    // Меню остаётся открытым: можно применить ещё один формат.
+    expect($menu()).not.toBeNull();
+  });
+
+  it('without a selection offers only clipboard items; Escape and a click outside close it', () => {
+    const { ids, caret, editable } = mountEditor(['text']);
+
+    caret(ids[0], 2);
+    fireEvent.contextMenu(editable(ids[0]), { clientX: 40, clientY: 20 });
+
+    expect($menu()!.querySelector('[data-testid="toolbar"]')).toBeNull();
+    expect(item('cut').hasAttribute('data-disabled')).toBe(true);
+    expect(item('copy').hasAttribute('data-disabled')).toBe(true);
+    expect(item('selectAll')).not.toBeNull();
+
+    fireEvent.keyDown($menu()!, { key: 'Escape' });
+    expect($menu()).toBeNull();
+
+    fireEvent.contextMenu(editable(ids[0]), { clientX: 40, clientY: 20 });
+    fireEvent.pointerDown(document.body);
+    expect($menu()).toBeNull();
+  });
+
+  it('Shift+right click keeps the browser menu', () => {
+    const { ids, editable } = mountEditor(['text']);
+    const event = fireEvent.contextMenu(editable(ids[0]), { shiftKey: true });
+
+    expect(event).toBe(true);
+    expect($menu()).toBeNull();
+  });
+
+  it('formatting="toolbar" keeps the floating toolbar and the browser menu', () => {
+    const { ids, select, editable } = mountEditor(['format me'], { formatting: 'toolbar' });
+
+    select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
+    expect(document.querySelector('[data-testid="toolbar"]')).not.toBeNull();
+
+    expect(fireEvent.contextMenu(editable(ids[0]))).toBe(true);
+    expect($menu()).toBeNull();
+  });
+
+  it('Ctrl+K still opens the link field next to the selection', () => {
+    const { ids, select, root } = mountEditor(['link me']);
+
+    select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 4 });
+    fireEvent.keyDown(root, { key: 'k', ctrlKey: true });
+
+    expect(
+      document.querySelector('[data-testid="toolbar"] [data-inkbrick-part="input"]'),
+    ).not.toBeNull();
+  });
+});
+
 describe('formatting toolbar', () => {
   const toolbar = () => $('[data-testid="toolbar"]')!;
   const button = (format: string) =>
     toolbar().querySelector<HTMLElement>(`[data-format="${format}"]`)!;
 
   it('appears over a selection and applies formats, colors and alignment', () => {
-    const { editor, ids, select } = mountEditor(['format me']);
+    const { editor, ids, select } = mountEditor(['format me'], { formatting: 'toolbar' });
     const block = () => editor.document.getBlock(ids[0])!;
 
     select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
@@ -123,7 +204,7 @@ describe('formatting toolbar', () => {
   });
 
   it('link: the form validates the address; a safe one is applied, Escape cancels', () => {
-    const { editor, ids, select } = mountEditor(['see docs']);
+    const { editor, ids, select } = mountEditor(['see docs'], { formatting: 'toolbar' });
 
     select({ blockId: ids[0], offset: 4 }, { blockId: ids[0], offset: 8 });
     fireEvent.click(button('link'));
@@ -144,7 +225,7 @@ describe('formatting toolbar', () => {
   });
 
   it('the formula button turns the selection into the code of an inline formula', () => {
-    const { editor, ids, select } = mountEditor(['x+1']);
+    const { editor, ids, select } = mountEditor(['x+1'], { formatting: 'toolbar' });
 
     select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 3 });
     fireEvent.click(button('formula'));

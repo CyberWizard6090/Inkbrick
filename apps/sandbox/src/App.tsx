@@ -4,6 +4,7 @@ import {
   EditorProvider,
   htmlToFragment,
   virtualRenderer,
+  type FormattingMode,
   type ImageOptions,
 } from '@inkbrick/react';
 import { type DocumentSnapshot, type TextAttributes } from '@inkbrick/document';
@@ -256,6 +257,13 @@ window.__inkbrickClipboard = { htmlToFragment };
  */
 const renderer = virtualRenderer();
 
+/** `?formatting=toolbar|both|context-menu` — где показывать форматирование (по умолчанию контекстное меню). */
+const formatting = ((): FormattingMode => {
+  const param = new URLSearchParams(window.location.search).get('formatting');
+
+  return param === 'toolbar' || param === 'both' ? param : 'context-menu';
+})();
+
 window.__counterEvents = counterEvents;
 
 export const publish = (editor: Editor) => {
@@ -377,6 +385,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         locale={locale}
         readOnly={readOnly}
         images={demoImages}
+        formatting={formatting}
       >
         <SandboxNav
           readOnly={readOnly}

@@ -11,6 +11,7 @@ import type { FormulaRenderer } from '../math/renderer';
 import type { TFunction } from '../i18n/translate';
 import type { KeyBinding } from '../keymap/types';
 import type { ToolbarProps } from '../toolbar/types';
+import type { ContextMenuProps, FormattingMode } from '../context-menu/types';
 
 /**
  * Props, которые получает React-представление блока.
@@ -54,6 +55,8 @@ export interface EditorSlots {
   readonly BlockHandle?: ComponentType<BlockHandleProps> | null;
   readonly BlockMenu?: ComponentType<BlockMenuProps>;
   readonly DropIndicator?: ComponentType<DropIndicatorProps> | null;
+  /** Контекстное меню документа (правый клик); `null` оставляет меню браузера. */
+  readonly ContextMenu?: ComponentType<ContextMenuProps> | null;
 }
 
 export interface EditorUIConfig {
@@ -66,5 +69,6 @@ export interface EditorUIConfig {
   readonly t: TFunction;
   readonly keymap: readonly KeyBinding[];
   readonly images: ImageOptions;
+  readonly formatting: FormattingMode;
   readonly readOnly?: boolean;
 }

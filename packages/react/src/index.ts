@@ -83,6 +83,8 @@ export { filterSlashItems } from './slash/filter';
 export { DefaultSlashMenu } from './slash/DefaultSlashMenu';
 export type { ToolbarProps, InlineFormat } from './toolbar/types';
 export { DefaultToolbar } from './toolbar/DefaultToolbar';
+export type { ContextMenuProps, ContextMenuItem, FormattingMode } from './context-menu/types';
+export { DefaultContextMenu } from './context-menu/DefaultContextMenu';
 export type {
   BlockHandleProps,
   BlockMenuProps,
