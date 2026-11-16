@@ -110,6 +110,13 @@ function mergeKeyOf(type: string, payload: unknown): string | undefined {
   return undefined;
 }
 
+/** Команда сняла бы закреплённый блок: транзакция откатывается, `dispatch` возвращает `undefined`. */
+export class PinnedBlockError extends Error {
+  constructor(id: string) {
+    super(`Block "${id}" is pinned and cannot be removed or moved`);
+  }
+}
+
 interface BatchState {
   transaction: Transaction;
   before?: CaretResult;
@@ -160,17 +167,23 @@ export class Dispatcher {
       return result;
     }
 
-    return this.engine.store.transact(
-      (transaction) => this.run(command, type, payload, transaction),
-      {
-        mergeKey: mergeKeyOf(type, payload),
-        mergeWindowMs: hasExplicitMergeKey(payload) ? Infinity : undefined,
-        describe: (result) => ({
-          before: caretBefore(type, payload),
-          after: isCaret(result) ? result : undefined,
-        }),
-      },
-    );
+    try {
+      return this.engine.store.transact(
+        (transaction) => this.run(command, type, payload, transaction),
+        {
+          mergeKey: mergeKeyOf(type, payload),
+          mergeWindowMs: hasExplicitMergeKey(payload) ? Infinity : undefined,
+          describe: (result) => ({
+            before: caretBefore(type, payload),
+            after: isCaret(result) ? result : undefined,
+          }),
+        },
+      );
+    } catch (error) {
+      if (error instanceof PinnedBlockError) return undefined;
+
+      throw error;
+    }
   }
 
   /**
@@ -222,7 +235,23 @@ export class Dispatcher {
   private run(command: Command<any>, type: string, payload: unknown, transaction: Transaction) {
     if (!this.accepts(command, type, payload, transaction)) return undefined;
 
-    return command.execute({ engine: this.engine, transaction }, payload);
+    const result = command.execute({ engine: this.engine, transaction }, payload);
+
+    this.assertPinned(transaction);
+
+    return result;
+  }
+
+  private assertPinned(transaction: Transaction): void {
+    const { pinned } = this.engine;
+
+    if (!pinned) return;
+
+    const block = transaction.getBlock(pinned.id);
+
+    if (!block || block.flavour !== pinned.flavour || block.parentId !== pinned.parentId) {
+      throw new PinnedBlockError(pinned.id);
+    }
   }
 
   private accepts(

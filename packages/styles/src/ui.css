@@ -1,6 +1,6 @@
 /*
  * Оболочка редактора: slash-меню, плавающий toolbar, ручка блока, меню блока, контекстное меню, индикатор
- * перетаскивания.
+ * перетаскивания, управление таблицей.
  * Каждый элемент — data-inkbrick-ui="<имя>", части — data-inkbrick-part. Состояния: data-active, data-pressed,
  * data-disabled, data-danger, data-invalid, data-position.
  * Вид — всплывающие поверхности Windows 11: рамка 1px, радиус 8px, тень 16, пункты 32px с радиусом 4px.
@@ -32,6 +32,18 @@
     max-height: min(320px, 50vh);
     padding: 4px;
     overflow-y: auto;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']) {
+    padding: 8px 8px 2px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    font-weight: var(--inkbrick-font-weight-semibold);
+    line-height: 16px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']:first-child) {
+    padding-top: 4px;
   }
 
   :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item']) {
@@ -247,6 +259,125 @@
   :where([data-inkbrick-ui='block-handle'] > :disabled) {
     opacity: 0.35;
     cursor: default;
+  }
+
+  /* ---- Управление таблицей: полоски строки и столбца, кнопки добавления, ручки ширины ---- */
+  :where([data-inkbrick-ui='table-controls']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-handle);
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']
+  ) {
+    border-radius: 3px;
+    background: var(--inkbrick-stroke-1);
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
+    width: 8px;
+    height: 24px;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
+    width: 24px;
+    height: 8px;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-grip'],
+        [data-inkbrick-part='column-grip']
+      ):hover,
+    [data-inkbrick-ui='table-controls'][aria-expanded='true']
+  ) {
+    background: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='table-controls']:is(button):focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='add-row'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='add-column']
+  ) {
+    display: inline-grid;
+    place-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: 50%;
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-3);
+    box-shadow: var(--inkbrick-shadow-4);
+    cursor: pointer;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='add-row'],
+        [data-inkbrick-part='add-column']
+      ):hover:not(:disabled)
+  ) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='table-controls']:disabled) {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
+    width: 6px;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']::after) {
+    content: '';
+    display: block;
+    width: 2px;
+    height: 100%;
+    margin: 0 auto;
+    background: transparent;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']:is(
+        :hover,
+        :focus-visible
+      )::after
+  ) {
+    background: var(--inkbrick-brand-bg);
+  }
+
+  /* Палец не наводится: полоски крупнее, чтобы в них попадать. */
+  @media (pointer: coarse) {
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
+      width: 14px;
+      height: 32px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
+      width: 32px;
+      height: 14px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
+      width: 14px;
+    }
   }
 
   :where([data-inkbrick-ui='block-menu']) {
@@ -991,5 +1122,198 @@
     :where([data-inkbrick-part='formula-symbol']) {
       height: 38px;
     }
+  }
+
+  /* Поиск и замена: панель в правом верхнем углу окна и подсветка совпадений в документе. */
+  :where([data-inkbrick-ui='find']) {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: var(--inkbrick-z-popup);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    padding: 6px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='row']) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  :where([data-inkbrick-ui='find'] input) {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+  }
+
+  :where([data-inkbrick-ui='find'] button) {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-fg-2);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='find'] button:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-3);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='find'] button:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='find'] button[data-active]) {
+    background: var(--inkbrick-bg-4);
+    color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='status']) {
+    min-width: 56px;
+    padding: 0 6px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='expand'][data-active]) {
+    transform: rotate(90deg);
+  }
+
+  :where(*)::highlight(inkbrick-find) {
+    background-color: rgba(255, 200, 0, 0.4);
+  }
+
+  :where(*)::highlight(inkbrick-find-current) {
+    background-color: rgba(255, 140, 0, 0.7);
+  }
+
+  /* Панель форматирования: «Превратить в» — кнопка с названием типа блока и список типов под панелью. */
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button'][data-format='turn-into']) {
+    gap: 4px;
+    width: auto;
+    padding: 0 8px;
+    font: inherit;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-menu']) {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    min-width: 200px;
+    max-height: min(320px, 50vh);
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: var(--inkbrick-radius-control);
+    color: var(--inkbrick-fg-1);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option']:hover),
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option']:focus-visible) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option'][data-active]) {
+    color: var(--inkbrick-brand-bg);
+    font-weight: var(--inkbrick-font-weight-semibold);
+  }
+
+  /* Панель оглавления сбоку: висит у края окна, на узком окне скрыта. */
+  :where([data-inkbrick-ui='toc-panel']) {
+    position: fixed;
+    top: 96px;
+    z-index: var(--inkbrick-z-handle);
+    box-sizing: border-box;
+    width: 220px;
+    max-height: calc(100vh - 128px);
+    overflow-y: auto;
+    padding: 4px 0;
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 18px;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'][data-side='right']) {
+    right: 16px;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'][data-side='left']) {
+    left: 16px;
+  }
+
+  @media (max-width: 1100px) {
+    :where([data-inkbrick-ui='toc-panel']) {
+      display: none;
+    }
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] ul) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] [data-inkbrick-part='link']) {
+    display: block;
+    width: 100%;
+    padding: 3px 8px;
+    border: none;
+    border-inline-start: 2px solid transparent;
+    background: none;
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    text-align: start;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] [data-inkbrick-part='link']:hover) {
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] [data-active] > [data-inkbrick-part='link']) {
+    border-inline-start-color: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-1);
+    font-weight: var(--inkbrick-font-weight-semibold);
   }
 }

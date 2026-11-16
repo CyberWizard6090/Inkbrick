@@ -16,6 +16,8 @@ export interface ContextMenuItem {
   /** Подсказка с клавишами, например `Ctrl+C`. */
   readonly shortcut?: string;
   readonly disabled?: boolean;
+  /** Разделитель перед пунктом: отделяет группу пунктов блока от стандартных. */
+  readonly separatorBefore?: boolean;
   readonly run: () => void;
 }
 

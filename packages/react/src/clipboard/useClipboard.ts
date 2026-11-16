@@ -6,6 +6,7 @@ import {
   fragmentToHtml,
   fragmentToPlainText,
   sanitizeFragment,
+  tableFragment,
   type CaretResult,
   type Fragment,
 } from '@inkbrick/engine';
@@ -21,6 +22,7 @@ import { isAcceptedImage } from '../images/upload';
 import { setLinkInSelection } from '../toolbar/formatting';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { embeddedFragment, htmlToFragment } from './htmlToFragment';
+import { tabularText } from './tabularText';
 
 const URL_ONLY = /^(https?:\/\/|mailto:)\S+$/i;
 
@@ -228,6 +230,12 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
 
         if (fragment && pasteFragment(fragment, selection)) return;
       }
+
+      // Текст с табуляциями, похожий на таблицу (Excel, Sheets, терминал), — таблица; Ctrl+Shift+V вставляет текстом.
+      const rows =
+        !plainOnly && !inCode && editor.schema.hasBlock('block:table') ? tabularText(text) : null;
+
+      if (rows && pasteFragment(tableFragment(rows, { header: false }), selection)) return;
 
       if (text) pastePlain(text, selection);
     };

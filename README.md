@@ -96,7 +96,7 @@ Guides (in Russian): [UI customization and custom blocks](docs/ui-customization.
 [clipboard](docs/clipboard.md) · [images and callouts](docs/images-and-callout.md) · [styling](docs/styling.md) ·
 [i18n](docs/i18n.md) · [formulas](docs/formulas.md) · [text style](docs/text-style.md) ·
 [code highlighting](docs/code-highlighting.md) · [schemas, nesting, versions](docs/schema-rules.md) ·
-[export](docs/export.md) · [keymap](docs/keymap.md).
+[export](docs/export.md) · [keymap](docs/keymap.md) · [tables](docs/tables.md).
 
 API reference: `pnpm docs:api` generates it into `docs/api` from the TSDoc comments.
 
@@ -104,7 +104,8 @@ API reference: `pnpm docs:api` generates it into `docs/api` from the TSDoc comme
 
 ```bash
 pnpm install
-pnpm dev              # sandbox: every block type, themes, languages, a debug panel, JSON import/export, autosave
+pnpm dev              # sandbox: every block type, themes, languages, a debug panel, JSON import/export, autosave;
+                      # `?demo=table` (or the switch in the corner) is the table editor with the same tools
 pnpm test:coverage    # unit tests with coverage thresholds
 pnpm test:e2e         # Playwright: Chromium, Firefox, WebKit
 pnpm typecheck && pnpm lint && pnpm size && pnpm audit

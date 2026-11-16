@@ -8,6 +8,7 @@ import { useReadOnly } from '../hooks/useReadOnly';
 import { Icon } from '../icons/Icon';
 import { DefaultToolbar } from '../toolbar/DefaultToolbar';
 import { toolbarHandlers } from '../toolbar/toolbarHandlers';
+import { turnIntoFor } from '../toolbar/turnInto';
 import { useEditorUI } from '../ui/EditorUIContext';
 import {
   canReadClipboard,
@@ -23,7 +24,7 @@ import type { ContextMenuItem } from './types';
 export function ContextMenuPanel() {
   const editor = useEditor();
   const view = useEditorView();
-  const { slots, t } = useEditorUI();
+  const { slots, t, contextMenu, slashItems } = useEditorUI();
   const readOnly = useReadOnly();
   const menu = useSyncExternalStore(
     view.contextMenu.subscribe,
@@ -116,6 +117,20 @@ export function ContextMenuPanel() {
     },
   ];
 
+  const context = { editor, view, selection, t };
+
+  for (const contribute of contextMenu) {
+    const extra = contribute(context).map((item) => ({
+      ...item,
+      run: () => {
+        close();
+        item.run();
+      },
+    }));
+
+    if (extra.length > 0) items.push({ ...extra[0], separatorBefore: true }, ...extra.slice(1));
+  }
+
   const Toolbar = slots.Toolbar === null ? null : (slots.Toolbar ?? DefaultToolbar);
   const formatting =
     Toolbar && hasText && toolbar.visible && toolbar.formats && toolbar.range ? (
@@ -125,6 +140,7 @@ export function ContextMenuPanel() {
         placement="inline"
         linkOpen={toolbar.linkOpen}
         panel={toolbar.panel}
+        turnInto={turnIntoFor(editor, view, slashItems, toolbar.range)}
         {...toolbarHandlers(editor, view, toolbar.range, { onFormula: () => close(false) })}
       />
     ) : null;

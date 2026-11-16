@@ -1,6 +1,7 @@
 import type { BlockId } from '@inkbrick/document';
 
 import type { Command } from './Command';
+import { isIsolating } from '../utils';
 
 /**
  * Удаляет блок с потомками. Корневую страницу и заметку (основной контейнер текста)
@@ -15,7 +16,7 @@ export const DeleteBlockCommand: Command<{ id: BlockId }, void> = {
 
     if (!block || id === engine.store.document.rootId) return false;
 
-    return block.flavour !== 'block:note';
+    return block.flavour !== 'block:note' && !isIsolating(engine.schema, block);
   },
 
   execute({ engine, transaction }, { id }) {
@@ -25,12 +26,14 @@ export const DeleteBlockCommand: Command<{ id: BlockId }, void> = {
 
     const parent = parentId ? transaction.getBlock(parentId) : undefined;
 
-    if (parent && parent.children.length === 0 && parent.flavour === 'block:note') {
+    const fill = parent && engine.schema.getBlockSchema(parent.flavour)?.fillWhenEmpty;
+
+    if (parent && fill && parent.children.length === 0) {
       engine.block.insert(
         transaction,
         parent.id,
         0,
-        engine.block.create({ flavour: 'block:paragraph', parentId: parent.id }),
+        engine.block.create({ flavour: fill, parentId: parent.id }),
       );
     }
   },

@@ -1,6 +1,12 @@
 import type { Document } from '../document';
+import { serializeDelimited } from '../utils/delimited';
 import {
   buildExportTree,
+  collectHeadings,
+  isToc,
+  tocOutline,
+  type OutlineItem,
+  exportTable,
   groupSiblings,
   isOrdered,
   isTodo,
@@ -12,7 +18,8 @@ import {
 
 /**
  * Простой текст: без форматирования. Блоки разделены пустой строкой, пункты списков идут подряд
- * с маркерами (`-`, `1.`, `[ ]`/`[x]`), вложенность — отступ в два пробела.
+ * с маркерами (`-`, `1.`, `[ ]`/`[x]`), вложенность — отступ в два пробела. Таблица — строки с ячейками через
+ * табуляцию (ячейки с переводами строк и табуляцией — в кавычках), так её понимают Excel и Google Sheets.
  */
 export function toPlainText(document: Document, options: ExportOptions = {}): string {
   const { nodes, title } = buildExportTree(document, options);
@@ -50,9 +57,33 @@ export function toPlainText(document: Document, options: ExportOptions = {}): st
     return lines;
   };
 
-  const renderBlock = ({ block, children }: ExportNode, depth: number): string[] => {
+  const headings = collectHeadings(nodes);
+  const renderOutline = (items: readonly OutlineItem[], depth: number): string[] =>
+    items.flatMap(({ block, children }) => [
+      `${'  '.repeat(depth)}- ${plainOf(block.content).replace(/\s*\n\s*/g, ' ')}`,
+      ...renderOutline(children, depth + 1),
+    ]);
+
+  const renderBlock = (node: ExportNode, depth: number): string[] => {
+    const { block, children } = node;
     const indent = '  '.repeat(depth);
+
+    if (isToc(block)) {
+      return renderOutline(tocOutline(headings, block), 0).map((line) => `${indent}${line}`);
+    }
     let text: string;
+
+    if (block.flavour === 'block:table') {
+      const rows = exportTable(node).rows.map((row) =>
+        row.map((cell) => plainOf(cell?.content ?? [])),
+      );
+
+      if (rows.length === 0) return [];
+
+      return serializeDelimited(rows)
+        .split('\n')
+        .map((line) => `${indent}${line}`);
+    }
 
     switch (block.flavour) {
       case 'block:divider':

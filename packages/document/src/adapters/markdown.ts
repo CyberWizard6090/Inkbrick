@@ -4,6 +4,11 @@ import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
+  collectHeadings,
+  isToc,
+  tocOutline,
+  type OutlineItem,
+  exportTable,
   groupSiblings,
   headingLevel,
   isOrdered,
@@ -77,6 +82,36 @@ function inlineToMarkdown(nodes: readonly InlineNode[]): string {
     .join('');
 }
 
+/** Ячейка таблицы GFM: одна строка. Перевод строки — `<br>`, вертикальная черта экранируется (в том числе в коде). */
+const tableCell = (cell: BaseBlock | undefined) =>
+  inlineToMarkdown(cell?.content ?? [])
+    .replace(/ {2}\n/g, '<br>')
+    .replace(/\\?\|/g, (match) => (match.length === 2 ? match : '\\|'));
+
+const ALIGN_MARK: Record<string, string> = { left: ':---', center: ':---:', right: '---:' };
+
+/**
+ * Таблица GFM. У GFM нет таблицы без заголовка: если `header` выключен, первой строкой идёт пустой заголовок,
+ * чтобы не потерять ни одной строки данных. Выравнивание столбца — по ячейкам первой строки.
+ */
+function renderTable(node: ExportNode): string {
+  const { header, rows } = exportTable(node);
+
+  if (rows.length === 0) return '';
+
+  const columns = rows[0].length;
+  const line = (cells: readonly string[]) => `| ${cells.join(' | ')} |`;
+  const head = header ? rows[0].map(tableCell) : Array.from({ length: columns }, () => ' ');
+  const body = header ? rows.slice(1) : rows;
+  const marks = rows[0].map((cell) => {
+    const align = cell?.props.align;
+
+    return (typeof align === 'string' && ALIGN_MARK[align]) || '---';
+  });
+
+  return [line(head), line(marks), ...body.map((row) => line(row.map(tableCell)))].join('\n');
+}
+
 const TONE_LABEL: Record<string, string> = {
   info: 'NOTE',
   warning: 'WARNING',
@@ -95,12 +130,22 @@ const softBreaks = (text: string) => text.replace(/ {2}\n/g, '\n');
 /**
  * Markdown (CommonMark + `~~зачёркнутое~~`, чекбоксы `- [ ]` и блоки-предупреждения `> [!NOTE]` как в GitHub).
  * Подчёркивание выводится тегом `<u>`, цвета отбрасываются, небезопасные ссылки и картинки — только текстом.
+ * Таблица — таблица GFM (`| a | b |`).
  */
 export function toMarkdown(document: Document, options: ExportOptions = {}): string {
   const { nodes, title } = buildExportTree(document, options);
   const chunks: string[] = title ? [`# ${escapeText(title).replace(/\s*\n\s*/g, ' ')}`] : [];
 
+  const headings = collectHeadings(nodes);
+  const renderOutline = (items: readonly OutlineItem[], depth: number): string[] =>
+    items.flatMap(({ block, children }) => [
+      `${'  '.repeat(depth)}- ${inlineToMarkdown(block.content).replace(/\s*\n\s*/g, ' ')}`,
+      ...renderOutline(children, depth + 1),
+    ]);
+
   const renderBlock = (block: BaseBlock): string => {
+    if (isToc(block)) return renderOutline(tocOutline(headings, block), 0).join('\n');
+
     const text = inlineToMarkdown(block.content);
 
     switch (block.flavour) {
@@ -178,19 +223,50 @@ export function toMarkdown(document: Document, options: ExportOptions = {}): str
     return lines.join('\n');
   };
 
-  for (const group of groupSiblings(nodes)) {
-    if (group.list) {
-      chunks.push(renderList(group.nodes, 0));
-      continue;
+  // Переключатель — `<details>`: Markdown в нём начинается после пустой строки, поэтому вложенные блоки пишутся как обычно.
+  const renderNodes = (items: readonly ExportNode[]): string[] => {
+    const out: string[] = [];
+
+    for (const group of groupSiblings(items)) {
+      if (group.list) {
+        out.push(renderList(group.nodes, 0));
+        continue;
+      }
+
+      const node = group.nodes[0];
+
+      if (node.block.flavour === 'block:toggle') {
+        const open = node.block.props.open === false ? '' : ' open';
+        const summary = inlineToMarkdown(node.block.content).replace(/\s*\n\s*/g, ' ');
+
+        out.push(
+          [
+            `<details${open}>`,
+            `<summary>${summary}</summary>`,
+            ...renderNodes(node.children),
+            '</details>',
+          ]
+            .filter((chunk) => chunk !== '')
+            .join('\n\n'),
+        );
+        continue;
+      }
+
+      out.push(node.block.flavour === 'block:table' ? renderTable(node) : renderBlock(node.block));
+
+      if (node.block.flavour !== 'block:table') {
+        for (const child of node.children) {
+          out.push(
+            child.block.flavour === 'block:table' ? renderTable(child) : renderBlock(child.block),
+          );
+        }
+      }
     }
 
-    const { block, children } = group.nodes[0];
+    return out;
+  };
 
-    chunks.push(renderBlock(block));
-
-    // Потомки обычного блока бывают только у пользовательских типов: выводим их следом.
-    for (const child of children) chunks.push(renderBlock(child.block));
-  }
+  chunks.push(...renderNodes(nodes));
 
   const result = chunks.filter((chunk) => chunk !== '').join('\n\n');
 

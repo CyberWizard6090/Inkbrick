@@ -9,6 +9,7 @@ export default defineConfig({
       exclude: [
         '**/index.ts',
         'packages/react/src/icons/lucide.ts',
+        'packages/react/src/icons/lucideExtra.ts',
         'packages/react/src/math/mathCss.ts',
       ],
       reporter: ['text-summary', 'html', 'lcov'],

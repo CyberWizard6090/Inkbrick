@@ -1,7 +1,7 @@
 export { Editor } from './editor';
 export type { EditorOptions, HistoryResult } from './editor';
 export { Engine } from './editor';
-export { Dispatcher } from './dispatcher';
+export { Dispatcher, PinnedBlockError } from './dispatcher';
 export type {
   EditorIntent,
   CaretResult,
@@ -17,6 +17,7 @@ export type {
   DeleteRangePayload,
   ConvertBlockPayload,
   MoveBlockPayload,
+  MoveBlockToSidePayload,
   PasteFragmentPayload,
   ToggleFormatRangePayload,
   SetInlineAttributesPayload,
@@ -31,3 +32,7 @@ export { FRAGMENT_MIME } from './clipboard/types';
 export type { Fragment, FragmentBlock } from './clipboard/types';
 export { sanitizeFragment } from './clipboard/sanitize';
 export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
+export * from './table';
+export * from './toc';
+export * from './columns';
+export * from './toggle';

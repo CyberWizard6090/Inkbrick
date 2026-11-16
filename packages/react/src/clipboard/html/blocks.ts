@@ -2,6 +2,7 @@ import { type InlineNode, isSafeImageUrl, normalizeInlineNodes } from '@inkbrick
 import type { FragmentBlock } from '@inkbrick/engine';
 import { cleanInline, inlineOf } from './inline';
 import { isHidden, styleOf } from './style';
+import { importTable } from './table';
 import { BLOCK_TAGS, MAX_DEPTH, SKIP_TAGS, type Style, tagOf } from './tags';
 
 interface Item {
@@ -268,6 +269,25 @@ export function collect(container: Node, style: Style, out: FragmentBlock[], dep
         break;
       }
 
+      case 'DETAILS': {
+        flush();
+
+        const summary = element.querySelector(':scope > summary');
+        const content: InlineNode[] = [];
+
+        summary?.childNodes.forEach((child) => inlineOf(child, next, content, depth + 1));
+
+        const toggle = block('block:toggle', cleanInline(content), {
+          open: element.hasAttribute('open'),
+        });
+        const body = element.cloneNode(true) as HTMLElement;
+
+        body.querySelector(':scope > summary')?.remove();
+        collect(body, next, toggle.children, depth + 1);
+        out.push(toggle);
+        return;
+      }
+
       case 'UL':
       case 'OL':
         flush();
@@ -325,7 +345,14 @@ export function collect(container: Node, style: Style, out: FragmentBlock[], dep
       case 'TABLE': {
         flush();
 
-        // Таблиц в Inkbrick нет: каждая строка — абзац, ячейки через табуляцию.
+        const imported = importTable(element as HTMLTableElement, next, depth + 1);
+
+        if (imported) {
+          out.push(...imported);
+          return;
+        }
+
+        // Таблица больше пределов или пустая: каждая строка — абзац, ячейки через табуляцию.
         element.querySelectorAll('tr').forEach((row) => {
           const cells: InlineNode[] = [];
 

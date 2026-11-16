@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { act, render } from '@testing-library/react';
 
 import type { BlockId } from '@inkbrick/document';
@@ -15,11 +16,17 @@ CSS.escape ??= (value: string) => value.replace(/["\\]/g, '\\$&');
 
 export function mountEditor(
   texts: string[] = [''],
-  props: Partial<Omit<EditorProviderProps, 'editor' | 'children'>> = {},
+  {
+    extra,
+    ...props
+  }: Partial<Omit<EditorProviderProps, 'editor' | 'children'>> & {
+    /** Дополнительные компоненты рядом с документом (например, панель поиска). */
+    extra?: ReactNode;
+  } = {},
   /** Куда смонтировать (например, внутрь элемента с data-inkbrick-surface). */
   container?: HTMLElement,
 ) {
-  const editor = new Editor();
+  const editor = new Editor({ blocks: props.blocks });
   const noteId = editor.document.getBlock(editor.document.rootId)!.children[0];
   const ids: BlockId[] = [editor.document.getBlock(noteId)!.children[0]];
 
@@ -42,6 +49,7 @@ export function mountEditor(
 
   const view = render(
     <EditorProvider editor={editor} formulaRenderer={false} highlighter={false} {...props}>
+      {extra}
       <DocumentView />
     </EditorProvider>,
     container ? { container: container.appendChild(document.createElement('div')) } : undefined,

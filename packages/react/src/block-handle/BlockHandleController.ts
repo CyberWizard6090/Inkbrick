@@ -10,12 +10,19 @@ export interface DropIndicatorRect {
   readonly left: number;
   readonly top: number;
   readonly width: number;
+  /** Задана у вертикальной линии — когда блок встаёт рядом (в колонки); у обычной линии вставки высота из стиля. */
+  readonly height?: number;
 }
+
+/** С какой стороны блок встаёт рядом с целевым (в колонки). */
+export type DropSide = 'left' | 'right';
 
 export interface DragState {
   readonly blockId: string;
   readonly targetId: string | null;
   readonly position: DropPosition | null;
+  /** Задана, когда блок встаёт рядом с целью (в колонки), а не до или после неё. */
+  readonly side?: DropSide | null;
   readonly indicator: DropIndicatorRect | null;
 }
 
@@ -74,6 +81,8 @@ export class BlockHandleController {
     const same =
       next.targetId === drag.targetId &&
       next.position === drag.position &&
+      (next.side ?? null) === (drag.side ?? null) &&
+      next.indicator?.height === drag.indicator?.height &&
       next.indicator?.left === drag.indicator?.left &&
       next.indicator?.top === drag.indicator?.top &&
       next.indicator?.width === drag.indicator?.width;

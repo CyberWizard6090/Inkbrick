@@ -3,9 +3,11 @@ import {
   isFormulaNode,
   isSafeImageUrl,
   isSafeUrl,
+  serializeDelimited,
   type InlineNode,
 } from '@inkbrick/document';
 
+import { readTable } from '../table/tableFragment';
 import type { Fragment, FragmentBlock } from './types';
 
 const escapeHtml = (text: string) =>
@@ -24,6 +26,15 @@ export function fragmentToPlainText(fragment: Fragment): string {
   const lines: string[] = [];
 
   const walk = (block: FragmentBlock, depth: number) => {
+    // Таблица — строки с ячейками через табуляцию: так её понимают Excel и Google Sheets. Потомки уже учтены.
+    if (block.flavour === 'block:table') {
+      const { rows } = readTable(block);
+
+      if (rows.length > 0) lines.push(serializeDelimited(rows.map((row) => row.map(plain))));
+
+      return;
+    }
+
     if (block.flavour === 'block:image') {
       // У картинки нет текста: в простой текст идёт подпись (или описание).
       const caption = [block.props.caption, block.props.alt].find(
@@ -88,6 +99,32 @@ function inlineToHtml(nodes: InlineNode[], inCode: boolean): string {
     .join('');
 }
 
+function tableHtml(table: FragmentBlock): string {
+  const { header, rows, align, widths } = readTable(table);
+
+  if (rows.length === 0) return '';
+
+  const cell = (content: InlineNode[], column: number, tag: 'td' | 'th') => {
+    const side = align[column];
+    const style = side && side !== 'left' ? ` style="text-align:${side}"` : '';
+
+    return `<${tag}${style}>${inlineToHtml(content, false)}</${tag}>`;
+  };
+  const row = (cells: readonly InlineNode[][], tag: 'td' | 'th') =>
+    `<tr>${cells.map((content, column) => cell(content, column, tag)).join('')}</tr>`;
+  const columns = widths.some((width) => width !== null)
+    ? `<colgroup>${widths
+        .map((width) => (width === null ? '<col>' : `<col style="width:${width}px">`))
+        .join('')}</colgroup>`
+    : '';
+
+  return (
+    `<table>${columns}` +
+    (header ? `<thead>${row(rows[0], 'th')}</thead>` : '') +
+    `<tbody>${(header ? rows.slice(1) : rows).map((cells) => row(cells, 'td')).join('')}</tbody></table>`
+  );
+}
+
 function listHtml(items: FragmentBlock[]): string {
   let html = '';
 
@@ -130,6 +167,11 @@ function blocksToHtml(blocks: FragmentBlock[]): string {
     }
 
     i++;
+
+    if (block.flavour === 'block:table') {
+      html += tableHtml(block);
+      continue;
+    }
 
     const inner = inlineToHtml(block.content, block.flavour === 'block:code');
     const nested = block.children.length > 0 ? blocksToHtml(block.children) : '';

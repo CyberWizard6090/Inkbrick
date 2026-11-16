@@ -5,13 +5,18 @@ import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
+  collectHeadings,
+  exportTable,
   groupSiblings,
   headingLevel,
   isOrdered,
+  isToc,
   isTodo,
   stringProp,
+  tocOutline,
   type ExportNode,
   type ExportOptions,
+  type OutlineItem,
 } from './tree';
 
 const escapeHtml = (text: string) =>
@@ -129,13 +134,84 @@ function renderBlock(block: BaseBlock): string {
   }
 }
 
-function renderGroups(nodes: readonly ExportNode[]): string {
+function renderTable(node: ExportNode): string {
+  const { header, rows, widths, merges } = exportTable(node);
+
+  if (rows.length === 0) return '';
+
+  const cellHtml = (
+    cell: BaseBlock | undefined,
+    tag: 'td' | 'th',
+    rowIndex: number,
+    columnIndex: number,
+  ) => {
+    const found = merges.find(
+      (merge) =>
+        rowIndex >= merge.row &&
+        rowIndex < merge.row + merge.rows &&
+        columnIndex >= merge.column &&
+        columnIndex < merge.column + merge.columns,
+    );
+
+    if (found && (found.row !== rowIndex || found.column !== columnIndex)) return '';
+
+    const spans =
+      (found && found.columns > 1 ? ` colspan="${found.columns}"` : '') +
+      (found && found.rows > 1 ? ` rowspan="${found.rows}"` : '');
+
+    return `<${tag}${spans}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${tag}>`;
+  };
+  const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th', rowIndex: number) =>
+    `<tr>${cells.map((cell, columnIndex) => cellHtml(cell, tag, rowIndex, columnIndex)).join('')}</tr>`;
+  const columns = widths.some((width) => width !== null)
+    ? `<colgroup>${widths
+        .map((width) => (width === null ? '<col>' : `<col style="width:${width}px">`))
+        .join('')}</colgroup>`
+    : '';
+  const head = header ? `<thead>${row(rows[0], 'th', 0)}</thead>` : '';
+  const offset = header ? 1 : 0;
+  const body = rows
+    .slice(offset)
+    .map((cells, index) => row(cells, 'td', index + offset))
+    .join('');
+
+  return `<table>${columns}${head}<tbody>${body}</tbody></table>`;
+}
+
+function renderOutline(items: readonly OutlineItem[]): string {
+  if (items.length === 0) return '';
+
+  const list = items
+    .map(
+      ({ block, children }) => `<li>${inlineToHtml(block.content)}${renderOutline(children)}</li>`,
+    )
+    .join('');
+
+  return `<ul>${list}</ul>`;
+}
+
+function renderGroups(nodes: readonly ExportNode[], headings: readonly BaseBlock[] = []): string {
   return groupSiblings(nodes)
     .map((group) => {
       if (!group.list) {
         const { block, children } = group.nodes[0];
 
-        return renderBlock(block) + renderGroups(children);
+        // Потомки таблицы — её строки и ячейки, они выведены вместе с ней.
+        if (block.flavour === 'block:table') return renderTable(group.nodes[0]);
+
+        if (isToc(block)) {
+          const outline = renderOutline(tocOutline(headings, block));
+
+          return outline === '' ? '' : `<nav>${outline}</nav>`;
+        }
+
+        if (block.flavour === 'block:toggle') {
+          const open = block.props.open === false ? '' : ' open';
+
+          return `<details${open}><summary>${inlineToHtml(block.content)}</summary>${renderGroups(children, headings)}</details>`;
+        }
+
+        return renderBlock(block) + renderGroups(children, headings);
       }
 
       let html = '';
@@ -153,7 +229,7 @@ function renderGroups(nodes: readonly ExportNode[]): string {
               ? `<input type="checkbox" disabled${block.props.checked === true ? ' checked' : ''}> `
               : '';
 
-            return `<li${alignStyle(block)}>${checkbox}${inlineToHtml(block.content)}${renderGroups(children)}</li>`;
+            return `<li${alignStyle(block)}>${checkbox}${inlineToHtml(block.content)}${renderGroups(children, headings)}</li>`;
           })
           .join('');
 
@@ -167,12 +243,13 @@ function renderGroups(nodes: readonly ExportNode[]): string {
 }
 
 /**
- * HTML-фрагмент (без `<html>`/`<body>`): семантические теги без классов и стилей, кроме выравнивания.
+ * HTML-фрагмент (без `<html>`/`<body>`): семантические теги без классов и стилей, кроме выравнивания (и ширины
+ * столбцов таблицы).
  * Весь текст и атрибуты экранируются, небезопасные ссылки и адреса картинок отбрасываются.
  */
 export function toHtml(document: Document, options: ExportOptions = {}): string {
   const { nodes, title } = buildExportTree(document, options);
-  const body = renderGroups(nodes);
+  const body = renderGroups(nodes, collectHeadings(nodes));
 
   return title ? `<h1>${escapeHtml(title)}</h1>\n${body}` : body;
 }

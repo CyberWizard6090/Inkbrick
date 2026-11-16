@@ -617,6 +617,10 @@ test.describe('Math symbol palette', () => {
 
   test('keyboard users can reach the palette: the block editor stays open', async ({ page }) => {
     await typeLine(page, '$$ ');
+    // Tab уходит из поля, поэтому ждём, пока блок станет формулой и поле получит фокус, а затем уляжется
+    // его возврат после создания блока.
+    await expect(field(page)).toBeFocused();
+    await page.waitForTimeout(350);
     await page.keyboard.press('Tab');
 
     await expect(page.locator('[data-inkbrick-part="formula-palette-tab"]').first()).toBeFocused();

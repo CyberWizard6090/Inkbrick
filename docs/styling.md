@@ -10,14 +10,14 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 
 ## Атрибуты
 
-| Атрибут               | Где                     | Значения                                                                                                  |
-| --------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `data-inkbrick-root`  | корень документа        | —                                                                                                         |
-| `data-inkbrick-block` | корень блока            | `page`, `note`, `paragraph`, `heading`, `list`, `quote`, `code`, `divider`, `callout`, `image`, `unknown` |
-| `data-inkbrick-part`  | часть блока или оверлея | см. таблицу ниже                                                                                          |
-| `data-inkbrick-ui`    | оболочка редактора      | `slash-menu`, `toolbar`, `context-menu`, `block-handle`, `block-menu`, `drop-indicator`, `select`         |
-| `data-inkbrick-icon`  | иконка (svg)            | имя иконки: `bold`, `plus`, `trash`, …                                                                    |
-| `data-block-id`       | корень блока            | id блока                                                                                                  |
+| Атрибут               | Где                     | Значения                                                                                                            |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `data-inkbrick-root`  | корень документа        | —                                                                                                                   |
+| `data-inkbrick-block` | корень блока            | `page`, `note`, `paragraph`, `heading`, `list`, `quote`, `code`, `divider`, `callout`, `image`, `unknown`           |
+| `data-inkbrick-part`  | часть блока или оверлея | см. таблицу ниже                                                                                                    |
+| `data-inkbrick-ui`    | оболочка редактора      | `slash-menu`, `toolbar`, `context-menu`, `table-controls`, `block-handle`, `block-menu`, `drop-indicator`, `select` |
+| `data-inkbrick-icon`  | иконка (svg)            | имя иконки: `bold`, `plus`, `trash`, …                                                                              |
+| `data-block-id`       | корень блока            | id блока                                                                                                            |
 
 Параметры блока и состояния — отдельные атрибуты:
 
@@ -51,21 +51,23 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 
 ### Части (`data-inkbrick-part`)
 
-| Блок / оверлей  | Части                                                                                                                                                                                                                                         |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| любой с текстом | `content` (редактируемый текст)                                                                                                                                                                                                               |
-| `list`          | `row`, `marker`, `checkbox`, `children`                                                                                                                                                                                                       |
-| `code`          | `toolbar`, `collapse`, `language`, `summary`, `spacer`, `caption-toggle`, `copy`, `body`, `body-inner`, `caption-row`, `caption`                                                                                                              |
-| `callout`       | `icon` (кнопка смены тона)                                                                                                                                                                                                                    |
-| `divider`       | `rule`                                                                                                                                                                                                                                        |
-| `image`         | `figure`, `image`, `caption`, `tools`, `tool`, `width`, `alt`, `picker`, `picker-head`, `picker-icon`, `picker-text`, `picker-title`, `picker-hint`, `picker-upload`, `picker-row`, `picker-input`, `picker-button`, `picker-error`, `status` |
-| `unknown`       | `message`                                                                                                                                                                                                                                     |
-| `slash-menu`    | `item`, `icon`, `body`, `title`, `description`, `empty`                                                                                                                                                                                       |
-| `toolbar`       | `button` (`data-format`), `separator`, `link-form`, `input`                                                                                                                                                                                   |
-| `block-handle`  | `button` (`data-action="add"`), `grip` (`data-action="grip"`)                                                                                                                                                                                 |
-| `block-menu`    | `item` (`data-action`), `icon`, `label`                                                                                                                                                                                                       |
-| `context-menu`  | `item` (`data-action`: `cut`, `copy`, `paste`, `selectAll`), `icon`, `shortcut`, `separator`; кнопки форматирования — `toolbar` с `data-placement="inline"`                                                                                   |
-| `select`        | `option` (`data-value`, `aria-selected`, `data-active`), `option-label`, `option-check`; у кнопки — `select-value`, `select-chevron`                                                                                                          |
+| Блок / оверлей   | Части                                                                                                                                                                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| любой с текстом  | `content` (редактируемый текст)                                                                                                                                                                                                               |
+| `list`           | `row`, `marker`, `checkbox`, `children`                                                                                                                                                                                                       |
+| `code`           | `toolbar`, `collapse`, `language`, `summary`, `spacer`, `caption-toggle`, `copy`, `body`, `body-inner`, `caption-row`, `caption`                                                                                                              |
+| `callout`        | `icon` (кнопка смены тона)                                                                                                                                                                                                                    |
+| `divider`        | `rule`                                                                                                                                                                                                                                        |
+| `image`          | `figure`, `image`, `caption`, `tools`, `tool`, `width`, `alt`, `picker`, `picker-head`, `picker-icon`, `picker-text`, `picker-title`, `picker-hint`, `picker-upload`, `picker-row`, `picker-input`, `picker-button`, `picker-error`, `status` |
+| `table`          | `grid` (`<table>`); строки — `table-row`, ячейки — `table-cell` (`data-align`)                                                                                                                                                                |
+| `unknown`        | `message`                                                                                                                                                                                                                                     |
+| `slash-menu`     | `item`, `icon`, `body`, `title`, `description`, `empty`                                                                                                                                                                                       |
+| `toolbar`        | `button` (`data-format`), `separator`, `link-form`, `input`                                                                                                                                                                                   |
+| `block-handle`   | `button` (`data-action="add"`), `grip` (`data-action="grip"`)                                                                                                                                                                                 |
+| `block-menu`     | `item` (`data-action`), `icon`, `label`                                                                                                                                                                                                       |
+| `context-menu`   | `item` (`data-action`: `cut`, `copy`, `paste`, `selectAll`), `icon`, `shortcut`, `separator`; кнопки форматирования — `toolbar` с `data-placement="inline"`                                                                                   |
+| `table-controls` | `row-grip`, `column-grip`, `add-row`, `add-column`, `resize` (по одной на границу столбца)                                                                                                                                                    |
+| `select`         | `option` (`data-value`, `aria-selected`, `data-active`), `option-label`, `option-check`; у кнопки — `select-value`, `select-chevron`                                                                                                          |
 
 Инлайн-форматирование внутри `content` — обычные теги `strong`, `em`, `u`, `s`, `code`, `a`. В блоке кода текст
 разбит на `<span data-inkbrick-token="keyword|string|comment|…">` (см. [подсветку кода](code-highlighting.md)).
@@ -106,6 +108,21 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 - Каждый селектор стандартных стилей обёрнут в `:where(…)` — специфичность 0. Правило в вашем собственном
   слое, объявленном позже (`@layer inkbrick.tokens, inkbrick.base, inkbrick.blocks, inkbrick.ui, app;`), тоже побеждает.
 - `!important` в стандартных стилях не используется (это проверяет тест `packages/styles/__tests__/contract.test.ts`).
+
+## Ширина страницы (временное решение)
+
+Корень редактора занимает весь контейнер, а текст стоит колонкой по центру шириной `--inkbrick-page-width`; по умолчанию она
+`100%`, то есть вся ширина, как раньше:
+
+```css
+.my-editor {
+  --inkbrick-page-width: 720px;
+}
+```
+
+Поля по бокам принадлежат редактору: клик в них ставит курсор. Если поля уже полосы ручки блока (`--inkbrick-gutter`), остаётся
+полоса. **Это временное решение:** пока в документе нет страницы с собственным размером, ширина задаётся переменной; когда она
+появится, переменную заменит настройка страницы.
 
 ## Тема и токены
 

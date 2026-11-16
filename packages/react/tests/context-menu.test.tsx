@@ -320,3 +320,82 @@ describe('context menu opening and closing', () => {
     expect($menu()).toBeNull();
   });
 });
+
+describe('table items', () => {
+  async function mountTable() {
+    const { tableBlocks } = await import('../src');
+    const mounted = mountEditor(['before'], { blocks: tableBlocks });
+    const { editor, ids } = mounted;
+    const getBlock = (id: string) => editor.document.getBlock(id);
+    let caret!: { blockId: string };
+
+    act(() => {
+      caret = editor.dispatch({
+        type: 'insertBlock',
+        payload: { flavour: 'block:table', afterId: ids[0] },
+      }) as { blockId: string };
+    });
+
+    const { locateTableCell, tableCellAt } = await import('@inkbrick/engine');
+    const tableId = locateTableCell(getBlock, caret.blockId)!.tableId;
+    const rows = () => getBlock(tableId)!.children.length;
+    const columns = () => getBlock(getBlock(tableId)!.children[0])!.children.length;
+
+    return {
+      ...mounted,
+      tableId,
+      rows,
+      columns,
+      cell: (r: number, c: number) => tableCellAt(getBlock, tableId, r, c)!,
+    };
+  }
+
+  it('are added under the standard ones and edit the row and column under the caret', async () => {
+    const { editable, root, caret, rows, columns, cell } = await mountTable();
+
+    root.focus();
+    caret(cell(1, 1), 0);
+    fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+
+    const ids = [...$menu()!.querySelectorAll('[data-action]')].map((el) =>
+      el.getAttribute('data-action'),
+    );
+
+    expect(ids).toEqual([
+      'cut',
+      'copy',
+      'paste',
+      'selectAll',
+      'table-row-above',
+      'table-row-below',
+      'table-row-delete',
+      'table-column-left',
+      'table-column-right',
+      'table-column-delete',
+    ]);
+    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(1);
+
+    fireEvent.click(item('table-row-below'));
+    expect([rows(), columns(), $menu()]).toEqual([4, 3, null]);
+
+    fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+    fireEvent.click(item('table-column-right'));
+    expect([rows(), columns()]).toEqual([4, 4]);
+
+    fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+    fireEvent.click(item('table-column-delete'));
+    fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+    fireEvent.click(item('table-row-delete'));
+    expect([rows(), columns()]).toEqual([3, 3]);
+  });
+
+  it('are absent outside a table and for the editor without tableBlocks', async () => {
+    const { editable, ids, root, caret } = mountEditor(['text']);
+
+    root.focus();
+    caret(ids[0], 1);
+    fireEvent.contextMenu(editable(ids[0]), { clientX: 40, clientY: 20 });
+
+    expect($menu()!.querySelector('[data-action^="table"]')).toBeNull();
+  });
+});

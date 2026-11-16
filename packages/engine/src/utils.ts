@@ -24,6 +24,20 @@ export function isTextBlock(schema: SchemaRegistry, block: BaseBlock): boolean {
   return definition !== undefined && definition.inline !== false;
 }
 
+/** Неделимая часть составного блока (строка, ячейка таблицы): см. `BlockSchema.isolating`. */
+export function isIsolating(schema: SchemaRegistry, block: BaseBlock): boolean {
+  return schema.getBlockSchema(block.flavour)?.isolating === true;
+}
+
+/** Первый текстовый блок в поддереве `rootId` (в порядке документа), если есть. */
+export function firstTextBlock(
+  getBlock: GetBlock,
+  schema: SchemaRegistry,
+  rootId: BlockId,
+): BaseBlock | undefined {
+  return preorder(getBlock, rootId).find((block) => isTextBlock(schema, block));
+}
+
 export interface BlockPoint {
   blockId: BlockId;
   offset: number;

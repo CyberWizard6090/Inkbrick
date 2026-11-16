@@ -14,6 +14,7 @@ const ALIGN_KEYS: Readonly<Record<string, 'alignment' | 'align'>> = {
   'block:quote': 'align',
   'block:list': 'align',
   'block:callout': 'align',
+  'block:table-cell': 'align',
 };
 
 export const isAlignment = (value: unknown): value is Alignment =>

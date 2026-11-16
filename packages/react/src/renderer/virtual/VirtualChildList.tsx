@@ -13,6 +13,7 @@ import type { BlockId } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import { useEditor } from '../../hooks/useEditor';
+import { selectionEdges } from '../../editing/useSelectionState';
 import { useEditorView } from '../../hooks/useEditorView';
 import { BlockRenderer } from '../BlockRenderer';
 import type { ChildListProps } from '../DocumentRenderer';
@@ -145,6 +146,13 @@ export function VirtualChildList({
     () => null,
   );
 
+  // Свёрнутые заголовком блоки не занимают места: ни в оценке высоты, ни в окне отрисовки.
+  const foldVersion = useSyncExternalStore(
+    view.folds.subscribeAll,
+    () => view.folds.version,
+    () => 0,
+  );
+
   useEffect(() => (windowed ? view.viewport.attach() : undefined), [view, windowed]);
 
   const offsets = useMemo(() => {
@@ -155,6 +163,12 @@ export function VirtualChildList({
 
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
+
+      if (view.folds.isHidden(id)) {
+        result[i + 1] = result[i];
+        continue;
+      }
+
       let height = heights.get(id) ?? estimates.get(id);
 
       if (height === undefined) {
@@ -166,19 +180,25 @@ export function VirtualChildList({
     }
 
     return result;
-    // measured — версия изменяемой карты heights
-  }, [ids, windowed, measured, heights, estimates, editor, options.estimateHeight]);
+    // measured — версия изменяемой карты heights, foldVersion — набор свёрнутых блоков
+  }, [
+    ids,
+    windowed,
+    measured,
+    foldVersion,
+    heights,
+    estimates,
+    editor,
+    view,
+    options.estimateHeight,
+  ]);
 
   const rendered = useMemo(() => {
     if (!offsets) return null;
 
     const last = ids.length - 1;
     const from = Math.max(0, upperBound(offsets, range.top - options.overscan) - 1);
-    const to = Math.min(
-      last,
-      upperBound(offsets, range.bottom + options.overscan) - 1,
-      from + options.maxRendered - 1,
-    );
+    const to = Math.min(last, upperBound(offsets, range.bottom + options.overscan) - 1);
     const pinned = new Set<number>([0, last]);
 
     for (const id of [...view.viewport.getPinned(), dragId, dropId]) {
@@ -187,15 +207,22 @@ export function VirtualChildList({
 
     pinned.delete(-1);
 
-    const result: number[] = [];
+    const shown = (i: number) => !view.folds.isHidden(ids[i]);
 
-    for (const i of [...pinned].sort((a, b) => a - b)) if (i < from) result.push(i);
-    for (let i = from; i <= to; i++) result.push(i);
-    for (const i of [...pinned].sort((a, b) => a - b)) if (i > to) result.push(i);
+    // Лимит окна считает отрисованные блоки, а не индексы: свёрнутый раздел из сотен скрытых блоков не должен
+    // выталкивать из окна блоки, которые стоят на экране сразу за ним.
+    const inWindow: number[] = [];
 
-    return result;
+    for (let i = from; i <= to && inWindow.length < options.maxRendered; i++) {
+      if (shown(i)) inWindow.push(i);
+    }
+
+    const taken = new Set(inWindow);
+    const extra = [...pinned].filter((i) => shown(i) && !taken.has(i)).sort((a, b) => a - b);
+
+    return [...extra.filter((i) => i < from), ...inWindow, ...extra.filter((i) => i >= from)];
     // pins — версия view.viewport: getPinned() меняется вместе с ней
-  }, [offsets, ids, range, options, view, editor, parentId, dragId, dropId, pins]);
+  }, [offsets, ids, range, options, view, editor, parentId, dragId, dropId, pins, foldVersion]);
 
   const observer = useRef<ResizeObserver | null>(null);
   const observed = useRef(new Map<Element, number>());
@@ -294,6 +321,11 @@ export function VirtualChildList({
     const step = options.overscan / 4;
 
     const onScroll = () => {
+      // `selectionchange` приходит отдельной задачей и может отстать от прокрутки: блок с кареткой успел бы
+      // выгрузиться, а вместе с ним пропало бы выделение. Края читаем здесь, до перерисовки окна.
+      const root = view.getRoot();
+
+      if (root) view.viewport.setEdges(selectionEdges(root));
       if (frame) return;
 
       frame = requestAnimationFrame(() => {
@@ -318,7 +350,7 @@ export function VirtualChildList({
       window.removeEventListener('scroll', onScroll, { capture: true });
       window.removeEventListener('resize', onScroll);
     };
-  }, [windowed, options.overscan]);
+  }, [windowed, options.overscan, view]);
 
   if (!rendered || !offsets) {
     return (
@@ -335,7 +367,9 @@ export function VirtualChildList({
   let next = 0;
 
   for (const i of rendered) {
-    if (i > next) items.push(<Spacer key={`gap:${next}`} height={offsets[i] - offsets[next]} />);
+    if (i > next && offsets[i] - offsets[next] > 0) {
+      items.push(<Spacer key={`gap:${next}`} height={offsets[i] - offsets[next]} />);
+    }
     items.push(<BlockRenderer key={ids[i]} id={ids[i]} />);
     next = i + 1;
   }

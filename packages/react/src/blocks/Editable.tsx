@@ -4,9 +4,11 @@ import type { BaseBlock } from '@inkbrick/document';
 
 import { renderCode } from '../editing/renderCode';
 import { renderInline } from '../editing/renderInline';
+import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
+import { isDefaultHighlighterLoaded, subscribeDefaultHighlighter } from '../code/lazyHighlight';
 import { useEditorUI } from '../ui/EditorUIContext';
 
 export interface EditableProps {
@@ -29,6 +31,7 @@ export interface EditableProps {
 export function Editable({ block, placeholder }: EditableProps) {
   const ref = useRef<HTMLDivElement>(null);
   const view = useEditorView();
+  const editor = useEditor();
   const t = useT();
   const readOnly = useReadOnly();
   const { slashItems, highlighter, formulaRenderer } = useEditorUI();
@@ -41,6 +44,12 @@ export function Editable({ block, placeholder }: EditableProps) {
   useLayoutEffect(() => view.register(block.id, ref.current!), [view, block.id]);
 
   const isCode = block.flavour === 'block:code';
+  // Встроенный подсветчик грузится отдельным чанком: когда он появится, блок кода перерисуется с раскраской.
+  const highlighterReady = useSyncExternalStore(
+    subscribeDefaultHighlighter,
+    isDefaultHighlighterLoaded,
+    isDefaultHighlighterLoaded,
+  );
   const language = typeof block.props.language === 'string' ? block.props.language : 'plain';
 
   useLayoutEffect(() => {
@@ -62,12 +71,16 @@ export function Editable({ block, placeholder }: EditableProps) {
     } else {
       renderInline(ref.current!, block.content, { formulaRenderer });
     }
-  }, [block.content, isCode, language, highlighter, formulaRenderer]);
+  }, [block.content, isCode, language, highlighter, formulaRenderer, highlighterReady]);
 
   const isEmpty = block.content.every((node) => node.insert.length === 0);
 
   // Подсказка про «/» уместна там, где меню открывается: не в режиме чтения, не в коде и если меню не отключено.
-  const hinted = !readOnly && slashItems.length > 0 && block.flavour !== 'block:code';
+  const hinted =
+    !readOnly &&
+    slashItems.length > 0 &&
+    block.flavour !== 'block:code' &&
+    editor.schema.getBlockSchema(block.flavour)?.isolating !== true;
 
   return (
     <div

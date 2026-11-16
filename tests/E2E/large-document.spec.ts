@@ -203,4 +203,84 @@ test.describe('Large document (virtual renderer)', () => {
       .toBe(1);
     expect(await modelIds(page)).toHaveLength(SIZE);
   });
+
+  const fold = (page: Page, id: string) =>
+    block(page, id).locator('xpath=..').locator('[data-inkbrick-part="fold"]').click();
+
+  const heightOf = (page: Page) => page.evaluate(() => document.documentElement.scrollHeight);
+
+  test('a folded part takes no room: the next heading follows its heading right away', async ({
+    page,
+  }) => {
+    const before = await heightOf(page);
+
+    // «Part 0» (h1) прячет 999 блоков до «Part 1»: больше, чем окно отрисовки (400), — следующий заголовок всё равно на экране.
+    await fold(page, 'large-0');
+
+    await expect.poll(async () => before - (await heightOf(page))).toBeGreaterThan(20000);
+    await expect(block(page, 'large-1000')).toBeVisible();
+
+    const gap = await page.evaluate(() => {
+      const heading = document
+        .querySelector('.editable[data-id="large-0"]')!
+        .getBoundingClientRect();
+      const next = document
+        .querySelector('.editable[data-id="large-1000"]')!
+        .getBoundingClientRect();
+
+      return next.top - heading.bottom;
+    });
+
+    expect(gap).toBeLessThan(40);
+
+    const folded = await heightOf(page);
+
+    await fold(page, 'large-0');
+    // Развернули — раздел вернул своё место (до измеренных высот: оценка и измерение не совпадают в точности).
+    await expect.poll(async () => (await heightOf(page)) - folded).toBeGreaterThan(20000);
+  });
+
+  test('folded headings one after another leave no gap: the next ones stay on the page', async ({
+    page,
+  }) => {
+    // Сворачиваем «Part 0», затем «Part 1» и «Part 2» (каждый прячет 999 блоков): три подряд — почти 3000 скрытых.
+    await fold(page, 'large-0');
+    await expect(block(page, 'large-1000')).toBeVisible();
+    await fold(page, 'large-1000');
+    await expect(block(page, 'large-2000')).toBeVisible();
+    await fold(page, 'large-2000');
+    await expect(block(page, 'large-3000')).toBeVisible();
+
+    const tops = await page.evaluate(() =>
+      ['large-0', 'large-1000', 'large-2000', 'large-3000'].map((id) =>
+        Math.round(
+          document.querySelector(`.editable[data-id="${id}"]`)!.getBoundingClientRect().top,
+        ),
+      ),
+    );
+
+    // Заголовки идут вплотную друг за другом (шаг одной строки заголовка), без пустых промежутков.
+    for (let i = 1; i < tops.length; i++) expect(tops[i] - tops[i - 1]).toBeLessThan(80);
+  });
+
+  test('the document has six heading levels and mixed blocks', async ({ page }) => {
+    const kinds = await page.evaluate(() => {
+      const { editor } = window.__inkbrick!.main;
+      const levels = new Set<number>();
+      const flavours = new Set<string>();
+
+      for (const block of Object.values(editor.document.dump())) {
+        flavours.add(block.flavour);
+
+        if (block.flavour === 'block:heading') levels.add(Number(block.props.level));
+      }
+
+      return { levels: [...levels].sort(), flavours: [...flavours] };
+    });
+
+    expect(kinds.levels).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(kinds.flavours).toEqual(
+      expect.arrayContaining(['block:quote', 'block:callout', 'block:list', 'block:code']),
+    );
+  });
 });

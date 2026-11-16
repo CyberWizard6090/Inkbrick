@@ -1,4 +1,6 @@
 import type { Document } from '../document';
+import type { TableMerge } from '../schema/blocks/TableSchema';
+import { normalizeMerges } from '../utils/tableMerges';
 import type { BaseBlock, BlockId, InlineNode } from '../model';
 import type { SchemaRegistry } from '../schema';
 import { isFormulaNode } from '../utils/formula';
@@ -18,7 +20,7 @@ export interface ExportNode {
   readonly children: readonly ExportNode[];
 }
 
-const DEFAULT_CONTAINERS = new Set(['block:page', 'block:note']);
+const DEFAULT_CONTAINERS = new Set(['block:page', 'block:note', 'block:columns', 'block:column']);
 
 export function buildExportTree(
   document: Document,
@@ -96,4 +98,80 @@ export function groupSiblings(
   }
 
   return groups;
+}
+
+export const isTable = (block: BaseBlock) => block.flavour === 'block:table';
+
+export interface ExportTable {
+  /** Первая строка — заголовок. */
+  readonly header: boolean;
+  /** Строки; во всех строках поровну ячеек (недостающие — `undefined`, их выводят пустыми). */
+  readonly rows: readonly (readonly (BaseBlock | undefined)[])[];
+  readonly widths: readonly (number | null)[];
+  /** Объединённые ячейки: пригодные к использованию, без пересечений. */
+  readonly merges: readonly TableMerge[];
+}
+
+/** Таблица для экспорта: строки и ячейки по порядку. Лишние потомки (не строки, не ячейки) пропускаются. */
+export function exportTable(node: ExportNode): ExportTable {
+  const rows = node.children
+    .filter(({ block }) => block.flavour === 'block:table-row')
+    .map((row) =>
+      row.children
+        .filter(({ block }) => block.flavour === 'block:table-cell')
+        .map(({ block }) => block),
+    );
+  const columns = Math.max(1, ...rows.map((row) => row.length));
+  const widths = node.block.props.widths;
+
+  return {
+    header: node.block.props.header !== false,
+    merges: normalizeMerges(node.block.props.merges, rows.length, columns),
+    rows: rows.map((row) => Array.from({ length: columns }, (_, index) => row[index])),
+    widths: Array.from({ length: columns }, (_, index) => {
+      const width = Array.isArray(widths) ? widths[index] : null;
+
+      return typeof width === 'number' && width > 0 ? width : null;
+    }),
+  };
+}
+
+export const isToc = (block: BaseBlock) => block.flavour === 'block:toc';
+
+/** Заголовки документа по порядку, вместе с вложенными в другие блоки. */
+export function collectHeadings(nodes: readonly ExportNode[]): BaseBlock[] {
+  return nodes.flatMap(({ block, children }) => [
+    ...(block.flavour === 'block:heading' ? [block] : []),
+    ...collectHeadings(children),
+  ]);
+}
+
+export interface OutlineItem {
+  readonly block: BaseBlock;
+  readonly children: readonly OutlineItem[];
+}
+
+/**
+ * Заголовки оглавления деревом: заголовок следующего уровня вкладывается в предыдущий, пропущенные уровни
+ * не оставляют пустых ступеней (после `h1` сразу `h3` — вложенный пункт). Выше `maxLevel` заголовки не берутся.
+ */
+export function tocOutline(headings: readonly BaseBlock[], toc: BaseBlock): OutlineItem[] {
+  const max = typeof toc.props.maxLevel === 'number' ? Math.trunc(toc.props.maxLevel) : 6;
+  const roots: { block: BaseBlock; children: OutlineItem[]; level: number }[] = [];
+  const stack: typeof roots = [];
+
+  for (const block of headings) {
+    const level = headingLevel(block);
+
+    if (level > max) continue;
+
+    const item = { block, children: [], level };
+
+    while (stack.length > 0 && stack[stack.length - 1].level >= level) stack.pop();
+
+    (stack.length > 0 ? stack[stack.length - 1].children : roots).push(item);
+    stack.push(item);
+  }
+
+  return roots;
 }

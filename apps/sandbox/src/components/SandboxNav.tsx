@@ -1,5 +1,5 @@
-import { useSandboxI18n } from '../i18n';
 import type { Theme } from '../theme';
+import { ModeSwitch } from './ModeSwitch';
 import { SettingsMenu } from './SettingsMenu';
 import { ToolsMenu } from './ToolsMenu';
 
@@ -40,35 +40,9 @@ export function SandboxNav({
   locales,
   onLocaleChange,
 }: SandboxNavProps) {
-  const { t } = useSandboxI18n();
-
   return (
     <nav className="sandbox-nav" data-testid="sandbox-nav">
-      <span
-        className="sandbox-nav__group"
-        role="group"
-        aria-label={t('nav.mode')}
-        data-testid="mode-switch"
-      >
-        <button
-          type="button"
-          className={readOnly ? '' : 'is-active'}
-          data-testid="mode-edit"
-          aria-pressed={!readOnly}
-          onClick={() => onReadOnlyChange(false)}
-        >
-          {t('nav.edit')}
-        </button>
-        <button
-          type="button"
-          className={readOnly ? 'is-active' : ''}
-          data-testid="mode-read"
-          aria-pressed={readOnly}
-          onClick={() => onReadOnlyChange(true)}
-        >
-          {t('nav.read')}
-        </button>
-      </span>
+      <ModeSwitch readOnly={readOnly} onChange={onReadOnlyChange} />
       <ToolsMenu
         onLoadSample={onLoadSample}
         onLoadLarge={onLoadLarge}

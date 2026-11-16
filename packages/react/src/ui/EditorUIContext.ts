@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-import { highlightCode } from '../code/highlight';
+import { lazyHighlightCode } from '../code/lazyHighlight';
 import { temmlRenderer } from '../math/renderer';
 import { defaultT } from '../i18n/translate';
 import { defaultKeymap } from '../keymap/defaultKeymap';
@@ -12,12 +12,13 @@ export const EMPTY_UI_CONFIG: EditorUIConfig = Object.freeze({
   slots: Object.freeze({}),
   slashItems: defaultSlashItems,
   keymap: defaultKeymap,
-  highlighter: highlightCode,
+  highlighter: lazyHighlightCode,
   formulaRenderer: temmlRenderer,
   locale: 'en',
   t: defaultT,
   images: Object.freeze({}),
   formatting: 'context-menu',
+  contextMenu: Object.freeze([]),
 });
 
 export const EditorUIContext = createContext<EditorUIConfig>(EMPTY_UI_CONFIG);

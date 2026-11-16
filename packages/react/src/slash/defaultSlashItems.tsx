@@ -1,11 +1,12 @@
 import { Icon } from '../icons/Icon';
 import type { TFunction } from '../i18n/translate';
-import type { MessageKey } from '../i18n/en';
+import { en, type MessageKey } from '../i18n/en';
 import type { SlashMenuItem } from './types';
 
 export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   {
     id: 'text',
+    group: 'basic',
     title: 'Text',
     description: 'Plain paragraph',
     keywords: ['paragraph', 'p'],
@@ -14,6 +15,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'heading-1',
+    group: 'basic',
     title: 'Heading 1',
     description: 'Large section heading',
     keywords: ['h1', 'title'],
@@ -23,6 +25,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'heading-2',
+    group: 'basic',
     title: 'Heading 2',
     description: 'Medium section heading',
     keywords: ['h2', 'subtitle'],
@@ -32,6 +35,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'heading-3',
+    group: 'basic',
     title: 'Heading 3',
     description: 'Small section heading',
     keywords: ['h3'],
@@ -41,6 +45,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'heading-4',
+    group: 'basic',
     title: 'Heading 4',
     description: 'Subsection heading',
     keywords: ['h4'],
@@ -50,6 +55,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'heading-5',
+    group: 'basic',
     title: 'Heading 5',
     description: 'Minor subsection heading',
     keywords: ['h5'],
@@ -59,6 +65,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'heading-6',
+    group: 'basic',
     title: 'Heading 6',
     description: 'Smallest heading',
     keywords: ['h6'],
@@ -68,6 +75,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'bullet-list',
+    group: 'basic',
     title: 'Bulleted list',
     description: 'Simple bulleted list',
     keywords: ['ul', 'unordered', 'list'],
@@ -77,6 +85,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'numbered-list',
+    group: 'basic',
     title: 'Numbered list',
     description: 'List with numbering',
     keywords: ['ol', 'ordered', 'list'],
@@ -86,6 +95,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'todo-list',
+    group: 'basic',
     title: 'To-do list',
     description: 'Track tasks with checkboxes',
     keywords: ['todo', 'task', 'checkbox', 'check'],
@@ -95,6 +105,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'quote',
+    group: 'basic',
     title: 'Quote',
     description: 'Capture a quote',
     keywords: ['blockquote', 'citation'],
@@ -103,6 +114,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'code',
+    group: 'advanced',
     title: 'Code',
     description: 'Code snippet with monospace font',
     keywords: ['snippet', 'pre', 'program'],
@@ -111,6 +123,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'callout',
+    group: 'basic',
     title: 'Callout',
     description: 'Highlight important information',
     keywords: ['info', 'note', 'warning', 'tip', 'alert'],
@@ -119,6 +132,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'image',
+    group: 'media',
     title: 'Image',
     description: 'Upload or embed an image',
     keywords: ['picture', 'photo', 'img', 'upload'],
@@ -127,6 +141,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'formula',
+    group: 'advanced',
     title: 'Formula',
     description: 'Display a LaTeX formula',
     keywords: ['math', 'equation', 'latex', 'tex'],
@@ -135,6 +150,7 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
   },
   {
     id: 'divider',
+    group: 'basic',
     title: 'Divider',
     description: 'Visually separate sections',
     keywords: ['hr', 'line', 'separator', 'rule'],
@@ -180,7 +196,23 @@ export function resolveSlashItems(
 
   const overrides = new Map(custom.map((item) => [item.id, item]));
   const merged = defaults.map((item) => overrides.get(item.id) ?? item);
-  const extra = custom.filter((item) => !defaultSlashItems.some((d) => d.id === item.id));
+  const extra = custom
+    .filter((item) => !defaultSlashItems.some((d) => d.id === item.id))
+    .map((item) =>
+      t && messageKey(item.id, 'title') in en
+        ? {
+            ...item,
+            title: t(messageKey(item.id, 'title')),
+            description: t(messageKey(item.id, 'description')),
+            keywords: [
+              ...new Set([
+                ...(item.keywords ?? []),
+                ...splitKeywords(t(messageKey(item.id, 'keywords'))),
+              ]),
+            ],
+          }
+        : item,
+    );
 
   return [...merged, ...extra];
 }

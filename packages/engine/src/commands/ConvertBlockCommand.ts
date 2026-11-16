@@ -1,6 +1,6 @@
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, ConvertBlockPayload } from '../dispatcher/Intents';
-import { isTextBlock } from '../utils';
+import { firstTextBlock, isTextBlock } from '../utils';
 
 /**
  * Превращает блок в блок другого типа (slash-меню, markdown-шорткаты).
@@ -8,7 +8,8 @@ import { isTextBlock } from '../utils';
  *  - Текстовый тип: блок меняется на месте, текст сохраняется.
  *  - Тип без текста (разделитель): пустой блок заменяется им, непустой остаётся,
  *    разделитель вставляется после него. В обоих случаях следом создаётся
- *    пустой параграф, куда встаёт курсор.
+ *    пустой параграф, куда встаёт курсор. Составной блок (таблица) получает начальное
+ *    содержимое, и курсор встаёт в его первый текстовый блок.
  *  - Потомки, которые не подходят новому типу, поднимаются на уровень блока (`BlockEngine.morph`).
  */
 export const ConvertBlockCommand: Command<ConvertBlockPayload, CaretResult> = {
@@ -54,7 +55,11 @@ export const ConvertBlockCommand: Command<ConvertBlockPayload, CaretResult> = {
       next,
     );
 
-    return { blockId: next.id, offset: 0 };
+    const inner = engine.block.scaffold(transaction, afterId)
+      ? firstTextBlock(transaction.getBlock.bind(transaction), engine.schema, afterId)
+      : undefined;
+
+    return { blockId: inner?.id ?? next.id, offset: 0 };
   },
 };
 

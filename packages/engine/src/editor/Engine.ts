@@ -17,6 +17,9 @@ export class Engine {
 
   readOnly = false;
 
+  /** Закреплённый блок (см. `Editor.pin`): команда, после которой его нет или он сменил родителя, откатывается. */
+  pinned: { id: string; parentId: string | null; flavour: string } | null = null;
+
   constructor(options: EngineOptions) {
     this.store = options.store;
     this.schema = options.schema;

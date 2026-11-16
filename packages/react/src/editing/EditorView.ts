@@ -3,6 +3,8 @@ import type { BlockId } from '@inkbrick/document';
 import { BlockHandleController } from '../block-handle/BlockHandleController';
 import { UploadTracker } from '../images/UploadTracker';
 import { BlockSelectionController } from './BlockSelectionController';
+import { FoldController } from './FoldController';
+import { CellSelectionController } from './CellSelectionController';
 import { ContextMenuController } from '../context-menu/ContextMenuController';
 import { FormulaController } from '../formula/FormulaController';
 import { CaretController } from './CaretController';
@@ -26,6 +28,9 @@ export class EditorView {
 
   readonly selection = new BlockSelectionController();
 
+  readonly folds = new FoldController();
+  readonly cells = new CellSelectionController();
+
   readonly caret = new CaretController();
 
   readonly blocks = new BlockHandleController();
@@ -39,6 +44,9 @@ export class EditorView {
   readonly viewport = new ViewportController();
 
   pointerDown = false;
+
+  /** Место сразу после строчной Markdown-разметки: первый набранный там символ не наследует форматирование. */
+  plainAt: { blockId: BlockId; offset: number; version: number } | null = null;
 
   /** Чем последний раз нажимали в документе: от этого зависит, показывать ли плавающий toolbar. */
   lastPointerType: 'mouse' | 'pen' | 'touch' =

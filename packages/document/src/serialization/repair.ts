@@ -1,5 +1,6 @@
 import type { BaseBlock, DocumentSnapshot, InlineNode } from '../model';
-import type { SchemaRegistry } from '../schema';
+import type { RepairTree, SchemaRegistry } from '../schema';
+import { createId } from '../utils/id';
 
 export interface RepairResult {
   readonly snapshot: DocumentSnapshot;
@@ -171,6 +172,33 @@ export function repairSnapshot(input: DocumentSnapshot, schema: SchemaRegistry):
     const children = block.children.filter((id) => blocks.has(id));
 
     if (children.length !== block.children.length) blocks.set(block.id, { ...block, children });
+  }
+
+  const tree: RepairTree = {
+    get: (id) => blocks.get(id),
+    append(parentId, flavour) {
+      const child: BaseBlock = {
+        id: `${flavour.replace('block:', '')}-${createId()}`,
+        flavour,
+        parentId,
+        children: [],
+        content: [],
+        props: schema.hasBlock(flavour) ? schema.createProps(flavour) : {},
+      };
+      const parent = blocks.get(parentId)!;
+
+      blocks.set(child.id, child);
+      blocks.set(parentId, { ...parent, children: [...parent.children, child.id] });
+      owner.set(child.id, parentId);
+
+      return child;
+    },
+  };
+
+  for (const id of [...blocks.keys()]) {
+    const block = blocks.get(id)!;
+
+    fixes.push(...(schema.getBlockSchema(block.flavour)?.repair?.(block, tree) ?? []));
   }
 
   for (const block of [...blocks.values()]) {

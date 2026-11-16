@@ -12,6 +12,29 @@ export * from './hooks/useHistory';
 export * from './hooks/useReadOnly';
 export * from './hooks/useBlockController';
 export { defineBlock } from './blocks/defineBlock';
+export {
+  tableBlocks,
+  tableKeymap,
+  TableBlock,
+  TableRowBlock,
+  TableCellBlock,
+  TableEditor,
+} from './table';
+export type { TableEditorProps } from './table';
+export { columnsBlocks, ColumnsBlock, ColumnBlock } from './columns';
+export { tocBlocks, TocBlock, TocPanel, useHeadings } from './toc';
+export {
+  findReplace,
+  FindReplacePanel,
+  FindController,
+  findMatches,
+  replaceMatches,
+  searchPattern,
+  useFind,
+} from './find';
+export type { FindMatch, FindOptions, FindState } from './find';
+export { toggleBlocks, ToggleBlock } from './toggle';
+export type { HeadingEntry, TocPanelProps } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
 export type { ImageOptions } from './images/types';
@@ -25,6 +48,7 @@ export * from './blocks/PageBlock';
 export * from './blocks/NoteBlock';
 export * from './blocks/ParagraphBlock';
 export * from './blocks/HeadingBlock';
+export { headingFolding, FoldableHeadingBlock, computeFolds, useFoldTracking } from './fold';
 export * from './blocks/ListBlock';
 export * from './blocks/QuoteBlock';
 export * from './blocks/CodeBlock';
@@ -52,6 +76,7 @@ export type {
   UnknownBlockViewProps,
 } from './ui/types';
 export { useEditorUI } from './ui/EditorUIContext';
+export { preloadEditorUI } from './ui/lazy';
 export { defaultBlockComponents } from './registry/defaultBlockComponents';
 export { resolveBlockComponent } from './registry/resolveBlockComponent';
 
@@ -69,7 +94,7 @@ export { en } from './i18n/en';
 export type { MessageKey, Messages, PartialMessages } from './i18n/en';
 export { ru } from './i18n/ru';
 
-export { Icon } from './icons/Icon';
+export { Icon, preloadIcons } from './icons/Icon';
 export type { IconName, IconProps } from './icons/Icon';
 
 export type { KeyBinding, KeymapContext } from './keymap/types';
@@ -100,6 +125,7 @@ export type {
   DragState as BlockDragState,
   DropIndicatorRect,
   DropPosition,
+  DropSide,
 } from './block-handle/BlockHandleController';
 export { DefaultBlockMenu } from './block-handle/DefaultBlockMenu';
 

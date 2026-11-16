@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from '../zod';
 import { BlockSchema } from '../BlockSchema';
 
 export const headingPropsSchema = z.object({
@@ -6,6 +6,8 @@ export const headingPropsSchema = z.object({
     .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)])
     .default(1),
   align: z.enum(['left', 'center', 'right', 'justify']).default('left'),
+  /** Блоки после заголовка до следующего заголовка того же или более высокого уровня скрыты (сворачивание). */
+  collapsed: z.boolean().optional(),
 });
 
 export type HeadingProps = z.infer<typeof headingPropsSchema>;

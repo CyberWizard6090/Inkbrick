@@ -8,4 +8,8 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   tsconfig: '../../tsconfig.build.json',
+  // Кириллица в словарях — как есть, без \uXXXX: строки короче, приложение легче.
+  esbuildOptions(options) {
+    options.charset = 'utf8';
+  },
 });

@@ -12,7 +12,7 @@ export function hasHandle(editor: Editor, blockId: string): boolean {
   const block = editor.store.getBlock(blockId);
   const parent = block?.parentId ? editor.store.getBlock(block.parentId) : undefined;
 
-  return !!parent?.parentId;
+  return !!parent?.parentId && editor.schema.getBlockSchema(block!.flavour)?.isolating !== true;
 }
 
 export function blockElement(view: EditorView, blockId: string): HTMLElement | null {

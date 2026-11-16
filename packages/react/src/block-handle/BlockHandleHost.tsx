@@ -6,13 +6,19 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { addBlockBelow, buildBlockActions } from './actions';
-import { DefaultBlockHandle } from './DefaultBlockHandle';
-import { DefaultBlockMenu } from './DefaultBlockMenu';
+import { lazyModule, useLazy } from '../ui/lazy';
 import { startGripGesture } from './gripGesture';
 import type { GripProps } from './types';
 import { useBlockDrag } from './useBlockDrag';
 
 const GRIP_STYLE = Object.freeze({ touchAction: 'none' as const });
+
+const defaultBlockHandle = lazyModule(() =>
+  import('./DefaultBlockHandle').then((module) => module.DefaultBlockHandle),
+);
+const defaultBlockMenu = lazyModule(() =>
+  import('./DefaultBlockMenu').then((module) => module.DefaultBlockMenu),
+);
 
 /**
  * Ручка блока и меню действий. `slots.BlockHandle = null` отключает их вместе со встроенным перетаскиванием;
@@ -24,6 +30,8 @@ export function BlockHandleHost() {
   const drag = useBlockDrag();
   const { slots, slashItems, t } = useEditorUI();
   const readOnly = useReadOnly();
+  const DefaultHandle = useLazy(defaultBlockHandle, slots.BlockHandle === undefined && !readOnly);
+  const DefaultMenu = useLazy(defaultBlockMenu, slots.BlockMenu === undefined && !readOnly);
   const state = useSyncExternalStore(
     view.blocks.subscribe,
     view.blocks.getState,
@@ -67,8 +75,8 @@ export function BlockHandleHost() {
     'data-inkbrick-grip': '',
   });
 
-  const Handle = slots.BlockHandle ?? DefaultBlockHandle;
-  const Menu = slots.BlockMenu ?? DefaultBlockMenu;
+  const Handle = slots.BlockHandle ?? DefaultHandle;
+  const Menu = slots.BlockMenu ?? DefaultMenu;
   const activeId = dragging?.blockId ?? hover?.blockId;
 
   const menuBlock = menu ? editor.store.getBlock(menu.blockId) : undefined;
@@ -77,7 +85,7 @@ export function BlockHandleHost() {
 
   return createPortal(
     <>
-      {hover && activeId && (
+      {hover && activeId && Handle && (
         <Handle
           blockId={activeId}
           position={{ x: hover.x, y: hover.y }}
@@ -90,7 +98,7 @@ export function BlockHandleHost() {
         />
       )}
 
-      {menu && menuBlock && menuContent && (
+      {menu && menuBlock && menuContent && Menu && (
         <Menu
           block={menuBlock}
           position={{ x: menu.x, y: menu.y }}

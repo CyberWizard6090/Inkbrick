@@ -6,6 +6,7 @@ import {
   type TextAttributes,
 } from '@inkbrick/document';
 
+import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS, repairTables } from '../table/tableFragment';
 import type { Fragment, FragmentBlock } from './types';
 
 const MAX_DEPTH = 12;
@@ -56,17 +57,37 @@ function sanitizeInsert(insert: string, attributes: TextAttributes | undefined):
   return insert.includes(FORMULA_CHAR) ? insert.split(FORMULA_CHAR).join('') : insert;
 }
 
-function sanitizeBlock(
-  input: unknown,
-  depth: number,
-  budget: { blocks: number; text: number },
-): FragmentBlock | null {
+interface Budget {
+  blocks: number;
+  text: number;
+  /** Таблица больше допустимого: фрагмент отклоняется целиком (иначе бюджет блоков молча обрезал бы её). */
+  rejected?: boolean;
+}
+
+/** Размер таблицы по сырым данным: строки × самая длинная строка (после выравнивания строк ячеек столько и будет). */
+function isOversizedTable(input: Record<string, unknown>): boolean {
+  const rows = Array.isArray(input.children) ? input.children : [];
+  const columns = Math.max(
+    0,
+    ...rows.map((row) => (isRecord(row) && Array.isArray(row.children) ? row.children.length : 0)),
+  );
+
+  return columns > MAX_TABLE_COLUMNS || rows.length * columns > MAX_TABLE_CELLS;
+}
+
+function sanitizeBlock(input: unknown, depth: number, budget: Budget): FragmentBlock | null {
   if (
     !isRecord(input) ||
     depth > MAX_DEPTH ||
     typeof input.flavour !== 'string' ||
     input.flavour === ''
   ) {
+    return null;
+  }
+
+  if (input.flavour === 'block:table' && isOversizedTable(input)) {
+    budget.rejected = true;
+
     return null;
   }
 
@@ -113,12 +134,13 @@ function sanitizeBlock(
 
 /**
  * Проверяет фрагмент из буфера обмена (JSON из чужого источника): ограничивает размер и глубину,
- * отбрасывает неизвестные атрибуты и небезопасные ссылки. null — данные непригодны.
+ * отбрасывает неизвестные атрибуты и небезопасные ссылки. null — данные непригодны (в том числе таблица больше
+ * `MAX_TABLE_CELLS` ячеек или `MAX_TABLE_COLUMNS` столбцов: такую вставляют текстом).
  */
 export function sanitizeFragment(input: unknown): Fragment | null {
   if (!isRecord(input) || !Array.isArray(input.blocks)) return null;
 
-  const budget = { blocks: 0, text: 0 };
+  const budget: Budget = { blocks: 0, text: 0 };
   const blocks: FragmentBlock[] = [];
 
   for (const block of input.blocks) {
@@ -128,5 +150,10 @@ export function sanitizeFragment(input: unknown): Fragment | null {
     else if (budget.blocks > MAX_BLOCKS || budget.text > MAX_TEXT) return null;
   }
 
-  return blocks.length > 0 ? { blocks } : null;
+  // Бюджет блоков исчерпан внутри вложенного блока (ячейки таблицы): отбрасываем фрагмент, а не режем молча.
+  if (budget.rejected || budget.blocks > MAX_BLOCKS) return null;
+
+  const repaired = repairTables(blocks);
+
+  return repaired.length > 0 ? { blocks: repaired } : null;
 }

@@ -1,0 +1,264 @@
+import { test, expect, type Page } from '@playwright/test';
+
+const editable = '.editable';
+const table = '[data-inkbrick-block="table"]';
+const cells = `${table} td`;
+const part = (name: string) => `[data-inkbrick-ui="table-controls"][data-inkbrick-part="${name}"]`;
+const menu = '[data-testid="block-menu"]';
+const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+
+/** Абзац и под ним таблица 3×3 из slash-меню, заполненная «r<строка>c<столбец>». */
+async function insertTable(page: Page) {
+  await page.locator(editable).first().click();
+  await page.keyboard.type('before');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('/table');
+  await page.keyboard.press('Enter');
+
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      await page.keyboard.type(`r${r}c${c}`);
+      if (r < 2 || c < 2) await page.keyboard.press('Tab');
+    }
+  }
+}
+
+const grid = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('[data-inkbrick-block="table"] tr')].map((row) =>
+      [...row.querySelectorAll('td .editable')].map((cell) => cell.textContent),
+    ),
+  );
+
+async function hover(page: Page, row: number, column: number) {
+  const columns = await page.locator(`${table} tr`).first().locator('td').count();
+  const box = (await page
+    .locator(cells)
+    .nth(row * columns + column)
+    .boundingBox())!;
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+}
+
+test.describe('Table controls', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+    await page.mouse.move(2, 2);
+  });
+
+  test('hovering a cell shows the strips of its row and column and the add buttons', async ({
+    page,
+  }) => {
+    await page.keyboard.press('Escape');
+    await page.locator('.playground-header').click();
+    await expect(page.locator(part('row-grip'))).toHaveCount(0);
+
+    await hover(page, 1, 2);
+
+    await expect(page.locator(part('row-grip'))).toHaveAttribute('aria-label', /Row 2/);
+    await expect(page.locator(part('column-grip'))).toHaveAttribute('aria-label', /Column 3/);
+    await expect(page.locator(part('add-row'))).toBeVisible();
+    await expect(page.locator(part('add-column'))).toBeVisible();
+
+    await page.mouse.move(2, 2);
+    await expect(page.locator(part('row-grip'))).toHaveCount(0);
+  });
+
+  test('the strips can be reached with the mouse: they stay while the pointer travels to them', async ({
+    page,
+  }) => {
+    await hover(page, 1, 1);
+
+    const grip = (await page.locator(part('row-grip')).boundingBox())!;
+
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2, { steps: 6 });
+
+    await expect(page.locator(part('row-grip'))).toBeVisible();
+    await page.mouse.click(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await expect(page.locator(menu)).toBeVisible();
+  });
+
+  test('add row and add column grow the table; undo takes each back in one step', async ({
+    page,
+  }) => {
+    await hover(page, 2, 2);
+    await page.locator(part('add-row')).click();
+    expect(await grid(page)).toHaveLength(4);
+
+    await hover(page, 0, 0);
+    await page.locator(part('add-column')).click();
+    expect((await grid(page))[0]).toHaveLength(4);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect((await grid(page))[0]).toHaveLength(3);
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await grid(page)).toHaveLength(3);
+  });
+
+  test('the row menu inserts, moves, toggles the header and deletes', async ({ page }) => {
+    await hover(page, 1, 0);
+    await page.locator(part('row-grip')).click();
+    await page.getByRole('menuitem', { name: 'Insert row above' }).click();
+    expect((await grid(page)).map((row) => row[0])).toEqual(['r0c0', '', 'r1c0', 'r2c0']);
+
+    await hover(page, 2, 0);
+    await page.locator(part('row-grip')).click();
+    await page.getByRole('menuitem', { name: 'Move row down' }).click();
+    expect((await grid(page)).map((row) => row[0])).toEqual(['r0c0', '', 'r2c0', 'r1c0']);
+
+    await hover(page, 0, 0);
+    await page.locator(part('row-grip')).click();
+    await page.getByRole('menuitem', { name: 'Make first row a regular row' }).click();
+    await expect(page.locator(table)).not.toHaveAttribute('data-header', /.*/);
+
+    await hover(page, 1, 0);
+    await page.locator(part('row-grip')).click();
+    await page.getByRole('menuitem', { name: 'Delete row' }).click();
+    expect((await grid(page)).map((row) => row[0])).toEqual(['r0c0', 'r2c0', 'r1c0']);
+  });
+
+  test('the column menu inserts, aligns and deletes', async ({ page }) => {
+    await hover(page, 0, 1);
+    await page.locator(part('column-grip')).click();
+    await page.getByRole('menuitem', { name: 'Insert column right' }).click();
+    expect((await grid(page))[0]).toEqual(['r0c0', 'r0c1', '', 'r0c2']);
+
+    await hover(page, 1, 0);
+    await page.locator(part('column-grip')).click();
+    await page.getByRole('menuitem', { name: 'Align column center' }).click();
+    await expect(page.locator(cells).nth(0)).toHaveAttribute('data-align', 'center');
+    await expect(page.locator(cells).nth(8)).toHaveAttribute('data-align', 'center');
+    await expect(page.locator(cells).nth(1)).toHaveAttribute('data-align', 'left');
+
+    await hover(page, 0, 2);
+    await page.locator(part('column-grip')).click();
+    await page.getByRole('menuitem', { name: 'Delete column' }).click();
+    expect((await grid(page))[0]).toEqual(['r0c0', 'r0c1', 'r0c2']);
+  });
+
+  test('the menu closes with Escape and a click outside, and typing continues in the table', async ({
+    page,
+  }) => {
+    await hover(page, 1, 1);
+    await page.locator(part('row-grip')).click();
+    await expect(page.locator(menu)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator(menu)).toHaveCount(0);
+
+    // Каретка вернулась в документ: набор продолжается в той ячейке, где она стояла.
+    await page.keyboard.type('Z');
+    expect((await grid(page))[2][2]).toBe('r2c2Z');
+
+    await hover(page, 1, 1);
+    await page.locator(part('column-grip')).click();
+    await page.mouse.click(5, 300);
+    await expect(page.locator(menu)).toHaveCount(0);
+
+    await page.locator(cells).nth(4).locator(editable).click();
+    await page.keyboard.type('!');
+    expect((await grid(page))[1][1]).toContain('!');
+  });
+
+  test('dragging a column border resizes the column live and undo restores it', async ({
+    page,
+  }) => {
+    await hover(page, 0, 0);
+
+    const before = (await page.locator(cells).nth(0).boundingBox())!;
+    const handle = (await page.locator(part('resize')).nth(0).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 80, y, { steps: 6 });
+
+    const during = (await page.locator(cells).nth(0).boundingBox())!;
+
+    expect(during.width).toBeGreaterThan(before.width + 40);
+
+    await page.mouse.up();
+
+    const after = (await page.locator(cells).nth(0).boundingBox())!;
+
+    expect(Math.abs(after.width - during.width)).toBeLessThan(2);
+    await expect(page.locator(`${table} col`).first()).toHaveAttribute('style', /width/);
+
+    await page.locator(cells).nth(0).locator(editable).click();
+    await page.keyboard.press(`${modifier}+z`);
+
+    const undone = (await page.locator(cells).nth(0).boundingBox())!;
+
+    expect(Math.abs(undone.width - before.width)).toBeLessThan(2);
+  });
+
+  test('a double click on the border sets the width back to automatic', async ({ page }) => {
+    await hover(page, 0, 0);
+
+    const handle = (await page.locator(part('resize')).nth(1).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - 50, y, { steps: 4 });
+    await page.mouse.up();
+    await expect(page.locator(`${table} col`).nth(1)).toHaveAttribute('style', /width/);
+
+    await hover(page, 0, 0);
+
+    const again = (await page.locator(part('resize')).nth(1).boundingBox())!;
+
+    await page.mouse.dblclick(again.x + again.width / 2, again.y + again.height / 2);
+
+    // У столбца ширины больше нет (занимает остаток), у остальных она осталась.
+    await expect(page.locator(`${table} col`).nth(1)).not.toHaveAttribute('style', /width/);
+    await expect(page.locator(`${table} col`).first()).toHaveAttribute('style', /width/);
+  });
+
+  test('a border between columns leaves the other columns as they are', async ({ page }) => {
+    await hover(page, 0, 0);
+
+    const widths = async () =>
+      page
+        .locator(cells)
+        .evaluateAll((items) =>
+          items.slice(0, 3).map((item) => Math.round(item.getBoundingClientRect().width)),
+        );
+    const before = await widths();
+    const handle = (await page.locator(part('resize')).nth(0).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 40, y, { steps: 5 });
+    await page.mouse.up();
+
+    const after = await widths();
+
+    expect(after[0]).toBeGreaterThan(before[0] + 30);
+    expect(after[1]).toBeLessThan(before[1] - 30);
+    expect(Math.abs(after[2] - before[2])).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(after[0] + after[1] + after[2] - (before[0] + before[1] + before[2])),
+    ).toBeLessThanOrEqual(2);
+  });
+
+  test('the controls are not part of what gets copied', async ({ page }) => {
+    await hover(page, 1, 1);
+    await page.keyboard.press(`${modifier}+a`);
+
+    const html = await page.evaluate(() => {
+      const range = getSelection()!.getRangeAt(0).cloneContents();
+      const holder = document.createElement('div');
+
+      holder.append(range);
+
+      return holder.innerHTML;
+    });
+
+    expect(html).not.toContain('table-controls');
+  });
+});

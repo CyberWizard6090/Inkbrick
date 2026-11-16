@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DocumentView,
   EditorProvider,
+  FindReplacePanel,
+  TocPanel,
+  findReplace,
+  headingFolding,
   htmlToFragment,
   virtualRenderer,
   type FormattingMode,
@@ -12,8 +16,10 @@ import type { Editor } from '@inkbrick/engine';
 import { InsertChildChange, SetBlockChange } from '@inkbrick/store';
 
 import { DebugPanel } from './components/DebugPanel';
+import { NoticeBar, type Notice } from './components/NoticeBar';
+import { DemoSwitch } from './DemoSwitch';
 import { HistoryButtons } from './components/HistoryButtons';
-import { createSandboxI18n, describe, SandboxI18nContext } from './i18n';
+import { createSandboxI18n, SandboxI18nContext } from './i18n';
 import { loadLargeDocument } from './largeDocument';
 import { SandboxNav } from './components/SandboxNav';
 import { ShortcutsHelp } from './components/ShortcutsHelp';
@@ -211,6 +217,37 @@ function loadSample(editor: Editor): void {
     payload: { from: point(centered, 0), to: point(centered, 0), align: 'center' },
   });
 
+  const firstCell = add('block:table');
+  const row = editor.document.getBlock(editor.document.getBlock(firstCell)!.parentId!)!;
+  const table = editor.document.getBlock(row.parentId!)!;
+  const sampleRows = [
+    ['Block', 'Shortcut', 'Notes'],
+    ['Heading', '# ', 'Six levels'],
+    ['List', '- ', 'Bullets, numbers, tasks'],
+  ];
+
+  table.children.forEach((rowId, r) =>
+    editor.document
+      .getBlock(rowId)!
+      .children.forEach((cellId, c) => write(cellId, [sampleRows[r][c]])),
+  );
+  after = table.id;
+
+  add('block:toc');
+
+  const leftColumn = add('block:columns', undefined, ['Left column']);
+  const columnsId = editor.document.getBlock(
+    editor.document.getBlock(leftColumn)!.parentId!,
+  )!.parentId!;
+  const rightColumn = editor.document.getBlock(columnsId)!.children[1];
+
+  write(editor.document.getBlock(rightColumn)!.children[0], ['Right column']);
+  after = columnsId;
+
+  const toggle = add('block:toggle', { open: true }, ['Toggle: click the arrow']);
+
+  add('block:paragraph', undefined, ['Hidden until you open it'], toggle);
+
   add('block:paragraph', undefined, ['Last paragraph']);
 
   editor.clearHistory();
@@ -273,13 +310,14 @@ export const publish = (editor: Editor) => {
   };
 };
 
-/** `value` — сообщение или ошибка: переводятся при показе, поэтому смена языка меняет и видимое уведомление. */
-interface Notice {
-  value: unknown;
-  error?: boolean;
-}
-
 const NOTICE_MS = 6000;
+
+/** Панель оглавления: справа по умолчанию, `?toc=left` — слева, `?toc=off` — без неё. */
+const tocParam = new URLSearchParams(window.location.search).get('toc');
+const tocPanelSide = tocParam === 'off' ? null : tocParam === 'left' ? 'left' : 'right';
+
+/** Клавиши сворачивания заголовков и поиска; объект стабилен, как требует провайдер. */
+const sandboxKeymap = [...headingFolding.keymap, ...findReplace.keymap];
 
 export function App({ initial }: { initial: RestoredEditor }) {
   const [editor, setEditor] = useState(initial.editor);
@@ -386,7 +424,12 @@ export function App({ initial }: { initial: RestoredEditor }) {
         readOnly={readOnly}
         images={demoImages}
         formatting={formatting}
+        components={headingFolding.components}
+        keymap={sandboxKeymap}
       >
+        <DemoSwitch current="editor" />
+        <FindReplacePanel />
+        {tocPanelSide && <TocPanel side={tocPanelSide} maxLevel={3} />}
         <SandboxNav
           readOnly={readOnly}
           onReadOnlyChange={setReadOnly}
@@ -417,18 +460,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         </div>
         {shortcuts && <ShortcutsHelp onClose={() => setShortcuts(false)} />}
       </EditorProvider>
-      {notice && (
-        <div
-          className={notice.error ? 'sandbox-notice sandbox-notice--error' : 'sandbox-notice'}
-          role={notice.error ? 'alert' : 'status'}
-          data-testid="notice"
-        >
-          <span>{describe(t, notice.value)}</span>
-          <button type="button" aria-label={t('notice.close')} onClick={() => setNotice(null)}>
-            ×
-          </button>
-        </div>
-      )}
+      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
     </SandboxI18nContext.Provider>
   );
 }

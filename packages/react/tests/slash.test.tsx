@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { orderByGroup } from '../src/slash/groups';
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
@@ -78,7 +79,8 @@ describe('availableSlashItems', () => {
 
     const items = availableSlashItems(editor, [...defaultSlashItems, custom], first);
 
-    expect(titles(items)).toEqual(titles(defaultSlashItems)); // widget не зарегистрирован — не предлагается
+    // widget не зарегистрирован — не предлагается; остальные идут по группам
+    expect(titles(items)).toEqual(titles(orderByGroup(defaultSlashItems)));
     expect(visibleSlashItems(editor, defaultSlashItems, first, 'code').map((i) => i.id)).toEqual([
       'code',
     ]);
@@ -153,5 +155,44 @@ describe('rendering', () => {
     expect(html).toContain('data-language="ts"');
     expect(html).toContain('block-divider');
     expect(html).not.toContain('inkbrick-slash-menu');
+  });
+});
+
+describe('slash menu groups', () => {
+  const item = (id: string, group?: string): SlashMenuItem => ({
+    id,
+    title: id,
+    flavour: 'block:paragraph',
+    group,
+  });
+
+  it('puts basic, media and advanced first, then own groups, then ungrouped, keeping the order inside a group', () => {
+    const ordered = orderByGroup([
+      item('free'),
+      item('own-b', 'mine'),
+      item('adv-1', 'advanced'),
+      item('media-1', 'media'),
+      item('basic-1', 'basic'),
+      item('own-a', 'other-group'),
+      item('basic-2', 'basic'),
+      item('own-c', 'mine'),
+    ]);
+
+    expect(ordered.map((i) => i.id)).toEqual([
+      'basic-1',
+      'basic-2',
+      'media-1',
+      'adv-1',
+      'own-b',
+      'own-c',
+      'own-a',
+      'free',
+    ]);
+  });
+
+  it('every built-in item is in a group and the table is among the basic ones', () => {
+    expect(defaultSlashItems.every((entry) => entry.group)).toBe(true);
+    expect(defaultSlashItems.find((entry) => entry.id === 'image')?.group).toBe('media');
+    expect(defaultSlashItems.find((entry) => entry.id === 'code')?.group).toBe('advanced');
   });
 });

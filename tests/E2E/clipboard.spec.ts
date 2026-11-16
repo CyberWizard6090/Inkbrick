@@ -484,15 +484,21 @@ let b = 2;
       'quote:plain quote',
       'code:let a = 1;\nlet b = 2;',
       'divider:',
-      'paragraph:a\tb',
-      'paragraph:c\td',
+      'table:',
+      '  table-row:',
+      '    table-cell:a',
+      '    table-cell:b',
+      '  table-row:',
+      '    table-cell:c',
+      '    table-cell:d',
       'list:done',
       'list:open',
       '  list:x',
     ]);
     expect(fragment.blocks[4].props).toEqual({ language: 'ts' });
-    expect(fragment.blocks[8].props).toEqual({ type: 'todo', checked: true });
-    expect(fragment.blocks[9].children[0].props).toEqual({ type: 'ordered' });
+    expect(fragment.blocks[6].props).toEqual({ header: false });
+    expect(fragment.blocks[7].props).toEqual({ type: 'todo', checked: true });
+    expect(fragment.blocks[8].children[0].props).toEqual({ type: 'ordered' });
   });
 
   test('whitespace: collapses runs, handles nbsp and <br>, trims block edges, drops empty blocks', async ({
