@@ -40,10 +40,10 @@ test.describe('Slash menu', () => {
 
   test('Arrow keys wrap around and Tab selects', async ({ page }) => {
     await page.keyboard.type('/');
-    await page.keyboard.press('ArrowUp'); // с первого пункта — на последний (переключатель, подключён в песочнице)
+    await page.keyboard.press('ArrowUp'); // с первого пункта — на последний (свой блок без группы, подключён в песочнице)
     await expect(page.locator('[role="option"][aria-selected="true"]')).toHaveAttribute(
       'data-slash-item',
-      'toggle',
+      'counter',
     );
 
     await page.keyboard.press('ArrowDown');

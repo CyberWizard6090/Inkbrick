@@ -29,6 +29,7 @@ export const tocBlocks: readonly ReactBlockDefinition<any>[] = [
       slashItems: [
         {
           id: 'toc',
+          group: 'advanced',
           title: 'Table of contents',
           description: 'Links to the headings of the document',
           keywords: ['toc', 'contents', 'outline'],

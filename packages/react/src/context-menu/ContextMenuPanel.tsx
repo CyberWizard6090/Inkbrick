@@ -8,6 +8,7 @@ import { useReadOnly } from '../hooks/useReadOnly';
 import { Icon } from '../icons/Icon';
 import { DefaultToolbar } from '../toolbar/DefaultToolbar';
 import { toolbarHandlers } from '../toolbar/toolbarHandlers';
+import { turnIntoFor } from '../toolbar/turnInto';
 import { useEditorUI } from '../ui/EditorUIContext';
 import {
   canReadClipboard,
@@ -23,7 +24,7 @@ import type { ContextMenuItem } from './types';
 export function ContextMenuPanel() {
   const editor = useEditor();
   const view = useEditorView();
-  const { slots, t, contextMenu } = useEditorUI();
+  const { slots, t, contextMenu, slashItems } = useEditorUI();
   const readOnly = useReadOnly();
   const menu = useSyncExternalStore(
     view.contextMenu.subscribe,
@@ -139,6 +140,7 @@ export function ContextMenuPanel() {
         placement="inline"
         linkOpen={toolbar.linkOpen}
         panel={toolbar.panel}
+        turnInto={turnIntoFor(editor, view, slashItems, toolbar.range)}
         {...toolbarHandlers(editor, view, toolbar.range, { onFormula: () => close(false) })}
       />
     ) : null;

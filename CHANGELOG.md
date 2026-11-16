@@ -7,6 +7,13 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Block groups in the slash menu (`docs/slash-menu.md`): items stand under the headings «Basic blocks», «Media» and «Advanced» while
+  the query is empty (the table is a basic block). `SlashMenuItem.group` / `BlockSlashItem.group` take `basic`, `media`,
+  `advanced` or your own name (title from `slash.group.<name>`); items without a group come last under «Other». The turn-into list of
+  the block menu follows the same order.
+- Turn into in the formatting toolbar and in the context menu (`docs/toolbar-and-blocks.md`): a button with the type of the block
+  opens the list of types it can become (only valid ones; hidden when there are none or the selection spans several blocks). One
+  undo step, the selection stays. `ToolbarProps.turnInto` for a custom toolbar.
 - Table of contents panel (`docs/toc.md`): `<TocPanel side maxLevel />` shows the headings beside the document, marks the current
   section while scrolling and goes to a heading on click. Not shown unless you place it; `side` is `'left'` or `'right'`; hidden
   in windows narrower than 1100 px. The `block:toc` block stays.

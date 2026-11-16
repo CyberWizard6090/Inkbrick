@@ -87,6 +87,7 @@ export const toggleBlocks: readonly ReactBlockDefinition<any>[] = [
       slashItems: [
         {
           id: 'toggle',
+          group: 'advanced',
           title: 'Toggle',
           description: 'A line that hides and shows the blocks inside it',
           keywords: ['toggle', 'collapse', 'details', 'fold'],

@@ -60,6 +60,8 @@ export interface BlockSlashItem<TProps extends BlockProps = BlockProps> {
   readonly keywords?: readonly string[];
   /** Имя иконки UI-кита (для `@inkbrick/react` — имя из `IconName`). */
   readonly icon?: string;
+  /** Группа пункта в меню вставки: `basic`, `media`, `advanced` или своя; без группы пункт идёт после всех групп. */
+  readonly group?: string;
   readonly props?: Partial<TProps>;
 }
 

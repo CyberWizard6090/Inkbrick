@@ -1,6 +1,7 @@
 import type { Editor } from '@inkbrick/engine';
 
 import { filterSlashItems } from './filter';
+import { orderByGroup } from './groups';
 import type { SlashMenuItem } from './types';
 
 export function availableSlashItems(
@@ -13,10 +14,12 @@ export function availableSlashItems(
 
   if (!block || !parent) return [];
 
-  return items.filter(
-    (item) =>
-      editor.schema.hasBlock(item.flavour) &&
-      editor.schema.validateRelation(parent.flavour, item.flavour),
+  return orderByGroup(
+    items.filter(
+      (item) =>
+        editor.schema.hasBlock(item.flavour) &&
+        editor.schema.validateRelation(parent.flavour, item.flavour),
+    ),
   );
 }
 

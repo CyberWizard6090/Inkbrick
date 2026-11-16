@@ -84,6 +84,8 @@ export const ru: Messages = {
   'color.pink': 'Розовый',
   'color.red': 'Красный',
 
+  'toolbar.turnInto.label': 'Превратить в: {type}',
+  'toolbar.turnInto.title': 'Превратить в',
   'toolbar.label': 'Форматирование текста',
   'toolbar.bold.label': 'Жирный',
   'toolbar.bold.title': 'Жирный (Ctrl+B)',
@@ -174,6 +176,10 @@ export const ru: Messages = {
   'history.undo': 'Отменить',
   'history.redo': 'Повторить',
 
+  'slash.group.basic': 'Основные блоки',
+  'slash.group.media': 'Медиа',
+  'slash.group.advanced': 'Продвинутые',
+  'slash.group.other': 'Другое',
   'slash.label': 'Вставить блок',
   'slash.empty': 'Ничего не найдено',
   'slash.item.text.title': 'Текст',
