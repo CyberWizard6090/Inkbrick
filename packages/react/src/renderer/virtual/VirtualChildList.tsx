@@ -198,11 +198,7 @@ export function VirtualChildList({
 
     const last = ids.length - 1;
     const from = Math.max(0, upperBound(offsets, range.top - options.overscan) - 1);
-    const to = Math.min(
-      last,
-      upperBound(offsets, range.bottom + options.overscan) - 1,
-      from + options.maxRendered - 1,
-    );
+    const to = Math.min(last, upperBound(offsets, range.bottom + options.overscan) - 1);
     const pinned = new Set<number>([0, last]);
 
     for (const id of [...view.viewport.getPinned(), dragId, dropId]) {
@@ -211,15 +207,20 @@ export function VirtualChildList({
 
     pinned.delete(-1);
 
-    const result: number[] = [];
-
     const shown = (i: number) => !view.folds.isHidden(ids[i]);
 
-    for (const i of [...pinned].sort((a, b) => a - b)) if (i < from && shown(i)) result.push(i);
-    for (let i = from; i <= to; i++) if (shown(i)) result.push(i);
-    for (const i of [...pinned].sort((a, b) => a - b)) if (i > to && shown(i)) result.push(i);
+    // Лимит окна считает отрисованные блоки, а не индексы: свёрнутый раздел из сотен скрытых блоков не должен
+    // выталкивать из окна блоки, которые стоят на экране сразу за ним.
+    const inWindow: number[] = [];
 
-    return result;
+    for (let i = from; i <= to && inWindow.length < options.maxRendered; i++) {
+      if (shown(i)) inWindow.push(i);
+    }
+
+    const taken = new Set(inWindow);
+    const extra = [...pinned].filter((i) => shown(i) && !taken.has(i)).sort((a, b) => a - b);
+
+    return [...extra.filter((i) => i < from), ...inWindow, ...extra.filter((i) => i >= from)];
     // pins — версия view.viewport: getPinned() меняется вместе с ней
   }, [offsets, ids, range, options, view, editor, parentId, dragId, dropId, pins, foldVersion]);
 

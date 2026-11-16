@@ -112,6 +112,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Sandbox: the large document (50,000 blocks) has six heading levels (part, section and four deeper levels), quotes and callouts besides paragraphs,
+  lists and code, so folding hides from tens to a thousand blocks and the outline is nested.
 - Sandbox: the table editor page has the tools of the document page — edit and read modes, data (sample, random, a large 100 × 12 table, ten more
   rows in one undo step, empty table), the debug panel, JSON export and import, theme and language. The page switch, the table page and the
   counter block are translated (en, ru); the switch keeps the chosen language.
@@ -171,6 +173,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Virtual renderer: the limit of the rendered window (`maxRendered`) counted the indexes of blocks hidden by folded headings, so after a few
+  folded sections the next heading, which stood on the screen right behind them, was not drawn (an empty gap, later it vanished). The limit now
+  counts only the blocks that are drawn.
 - Heading folding with the virtual renderer (`renderer="virtual"`): blocks hidden by a folded heading still counted in the height estimate, so the
   spacer below kept their room and the document had an empty gap. They are now zero height and do not take a slot of the rendered window.
 - Styles: the highlight rules of find and replace are wrapped in `:where()` like every other rule, which the styles contract test (and CI) requires.
