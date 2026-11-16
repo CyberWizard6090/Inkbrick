@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from '../zod';
 import { BlockSchema } from '../BlockSchema';
 
 export const codePropsSchema = z.object({

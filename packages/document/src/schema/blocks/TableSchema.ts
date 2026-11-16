@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from '../zod';
 
 import type { BaseBlock } from '../../model/BaseBlock';
 import type { BlockSchema, BlockTemplate } from '../BlockSchema';

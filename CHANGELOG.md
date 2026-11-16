@@ -88,6 +88,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Built-in schemas import zod functions by name instead of the `z` namespace. An editor app that does not use `z` itself is
+  65 KB gzip lighter (161.7 → 96.4 KB with zod bundled); the public `z` export of `@inkbrick/document` is unchanged.
+  A lint rule keeps `import { z } from 'zod'` out of the packages.
 - Tables: dragging the mouse from one cell to another now selects a rectangle of cells instead of a run of text in
   document order (see cell selection below). A selection that starts or ends in a cell from outside the table, or made with
   the keyboard, still works as before.
