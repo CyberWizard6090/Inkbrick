@@ -4,6 +4,17 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { readDocSelection } from './selection';
 
+/** Блоки на краях текущего выделения в DOM: каретка — один блок, выделение — начало и конец. */
+export function selectionEdges(root: HTMLElement): readonly string[] {
+  const selection = readDocSelection(root);
+
+  return !selection
+    ? []
+    : selection.collapsed
+      ? [selection.from.blockId]
+      : [selection.from.blockId, selection.to.blockId];
+}
+
 export function useSelectionState(ref: RefObject<HTMLElement | null>) {
   const editor = useEditor();
   const view = useEditorView();
@@ -23,13 +34,7 @@ export function useSelectionState(ref: RefObject<HTMLElement | null>) {
 
       view.caret.set(caret);
       editor.controllers.setFocusedBlock(caret);
-      view.viewport.setEdges(
-        !selection
-          ? []
-          : selection.collapsed
-            ? [selection.from.blockId]
-            : [selection.from.blockId, selection.to.blockId],
-      );
+      view.viewport.setEdges(selectionEdges(root));
     };
 
     document.addEventListener('selectionchange', update);
