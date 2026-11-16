@@ -40,6 +40,7 @@ export function DefaultToolbar({
   onApplyColor,
   onAlign,
   onInsertFormula,
+  turnInto,
 }: ToolbarProps) {
   const t = useT();
   const input = useRef<HTMLInputElement>(null);
@@ -48,6 +49,7 @@ export function DefaultToolbar({
   const [invalid, setInvalid] = useState(false);
   const [below, setBelow] = useState(false);
   const [width, setWidth] = useState(0);
+  const [turnOpen, setTurnOpen] = useState(false);
 
   useEffect(() => {
     if (!linkOpen) return;
@@ -149,6 +151,68 @@ export function DefaultToolbar({
         </form>
       ) : (
         <>
+          {turnInto && (
+            <>
+              <button
+                type="button"
+                className="inkbrick-toolbar__button inkbrick-toolbar__turn"
+                data-inkbrick-part="button"
+                data-format="turn-into"
+                aria-haspopup="menu"
+                aria-expanded={turnOpen}
+                aria-label={t('toolbar.turnInto.label', { type: turnInto.title })}
+                title={t('toolbar.turnInto.title')}
+                onClick={() => setTurnOpen((open) => !open)}
+              >
+                <span data-inkbrick-part="turn-title">{turnInto.title}</span>
+                <Icon name="chevron-down" />
+              </button>
+              {turnOpen && (
+                <div
+                  className="inkbrick-toolbar__turn-menu"
+                  data-inkbrick-part="turn-menu"
+                  role="menu"
+                  aria-label={t('toolbar.turnInto.title')}
+                >
+                  {turnInto.options.map((option) => (
+                    <div
+                      key={option.id}
+                      role="menuitemradio"
+                      aria-checked={option.active}
+                      tabIndex={0}
+                      data-action={option.id}
+                      data-inkbrick-part="turn-option"
+                      data-active={option.active || undefined}
+                      onClick={() => {
+                        setTurnOpen(false);
+                        if (!option.active) option.run();
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setTurnOpen(false);
+                          if (!option.active) option.run();
+                        } else if (event.key === 'Escape') {
+                          event.preventDefault();
+                          setTurnOpen(false);
+                        }
+                      }}
+                    >
+                      {option.icon !== undefined && (
+                        <span data-inkbrick-part="icon">{option.icon}</span>
+                      )}
+                      {option.title}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <span
+                className="inkbrick-toolbar__separator"
+                data-inkbrick-part="separator"
+                role="separator"
+              />
+            </>
+          )}
           {BUTTONS.map(({ format, icon }) => (
             <button
               key={format}

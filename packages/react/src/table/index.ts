@@ -35,6 +35,7 @@ export const tableBlocks: readonly ReactBlockDefinition<any>[] = [
       slashItems: [
         {
           id: 'table',
+          group: 'basic',
           title: 'Table',
           description: 'Rows and columns of text',
           keywords: ['table', 'grid'],

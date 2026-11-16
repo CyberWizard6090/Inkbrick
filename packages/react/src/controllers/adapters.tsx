@@ -21,6 +21,7 @@ export function controllerSlashItems(editor: Editor): SlashMenuItem[] {
       description: item.description,
       keywords: item.keywords,
       icon: iconByName(item.icon),
+      group: item.group,
       flavour,
       props: item.props,
     })),

@@ -31,6 +31,7 @@ export const columnsBlocks: readonly ReactBlockDefinition<any>[] = [
       slashItems: [
         {
           id: 'columns2',
+          group: 'advanced',
           title: '2 columns',
           description: 'Two blocks side by side',
           keywords: ['columns', 'two'],
@@ -39,6 +40,7 @@ export const columnsBlocks: readonly ReactBlockDefinition<any>[] = [
         },
         {
           id: 'columns3',
+          group: 'advanced',
           title: '3 columns',
           description: 'Three blocks side by side',
           keywords: ['columns', 'three'],

@@ -1,9 +1,27 @@
+import type { ReactNode } from 'react';
+
 import type { Alignment } from '@inkbrick/document';
 import type { RangeFormats } from '@inkbrick/engine';
 
 export type InlineFormat = 'bold' | 'italic' | 'underline' | 'strike' | 'code';
 
 export type ToolbarPanel = 'color' | 'highlight';
+
+/** Пункт списка «Превратить в» в toolbar. */
+export interface ToolbarTurnOption {
+  readonly id: string;
+  readonly title: string;
+  readonly icon?: ReactNode;
+  /** Блок уже этого типа. */
+  readonly active: boolean;
+  readonly run: () => void;
+}
+
+/** Превращение блока под выделением в другой тип: название текущего типа и куда можно превратить. */
+export interface ToolbarTurnInto {
+  readonly title: string;
+  readonly options: readonly ToolbarTurnOption[];
+}
 
 export interface ToolbarProps {
   readonly formats: RangeFormats;
@@ -23,4 +41,6 @@ export interface ToolbarProps {
   readonly onApplyColor: (kind: 'color' | 'backgroundColor', value: string | null) => void;
   readonly onAlign: (align: Alignment) => void;
   readonly onInsertFormula: () => void;
+  /** Есть, когда выделение в одном блоке и его можно превратить в другой тип; без поля кнопки «Превратить в» нет. */
+  readonly turnInto?: ToolbarTurnInto;
 }

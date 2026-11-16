@@ -86,6 +86,8 @@ export const en = {
   'color.pink': 'Pink',
   'color.red': 'Red',
 
+  'toolbar.turnInto.label': 'Turn into: {type}',
+  'toolbar.turnInto.title': 'Turn into',
   'toolbar.label': 'Text formatting',
   'toolbar.bold.label': 'Bold',
   'toolbar.bold.title': 'Bold (Ctrl+B)',
@@ -176,6 +178,10 @@ export const en = {
   'history.undo': 'Undo',
   'history.redo': 'Redo',
 
+  'slash.group.basic': 'Basic blocks',
+  'slash.group.media': 'Media',
+  'slash.group.advanced': 'Advanced',
+  'slash.group.other': 'Other',
   'slash.label': 'Insert block',
   'slash.empty': 'No results',
   'slash.item.text.title': 'Text',

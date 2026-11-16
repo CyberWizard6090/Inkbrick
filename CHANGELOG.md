@@ -7,6 +7,13 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Block groups in the slash menu (`docs/slash-menu.md`): items stand under the headings «Basic blocks», «Media» and «Advanced» while
+  the query is empty (the table is a basic block). `SlashMenuItem.group` / `BlockSlashItem.group` take `basic`, `media`,
+  `advanced` or your own name (title from `slash.group.<name>`); items without a group come last under «Other». The turn-into list of
+  the block menu follows the same order.
+- Turn into in the formatting toolbar and in the context menu (`docs/toolbar-and-blocks.md`): a button with the type of the block
+  opens the list of types it can become (only valid ones; hidden when there are none or the selection spans several blocks). One
+  undo step, the selection stays. `ToolbarProps.turnInto` for a custom toolbar.
 - Find and replace (`docs/find-replace.md`): Ctrl/Cmd+F and Ctrl/Cmd+H open a panel that finds text in all blocks, highlights the
   matches (CSS Custom Highlight API), walks through them with Enter / Shift+Enter, matches case or whole words, replaces the current
   match or all of them in one undo step. Opt-in: `findReplace.keymap` in the provider and `<FindReplacePanel />` next to the document.
