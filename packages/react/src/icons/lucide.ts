@@ -154,6 +154,7 @@ export const ICON_SHAPES = {
 
 /** Имена иконок из отдельного чанка: чтобы узнать иконку, не загружая её. */
 export const EXTRA_ICON_NAMES: readonly string[] = [
+  'chevron-right',
   'bold',
   'italic',
   'underline',

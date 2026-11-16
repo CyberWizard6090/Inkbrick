@@ -205,6 +205,12 @@ function renderGroups(nodes: readonly ExportNode[], headings: readonly BaseBlock
           return outline === '' ? '' : `<nav>${outline}</nav>`;
         }
 
+        if (block.flavour === 'block:toggle') {
+          const open = block.props.open === false ? '' : ' open';
+
+          return `<details${open}><summary>${inlineToHtml(block.content)}</summary>${renderGroups(children, headings)}</details>`;
+        }
+
         return renderBlock(block) + renderGroups(children, headings);
       }
 

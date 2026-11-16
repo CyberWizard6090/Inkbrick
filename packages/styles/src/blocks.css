@@ -497,6 +497,49 @@
     transform: rotate(-90deg);
   }
 
+  :where([data-inkbrick-block='toggle'] > [data-inkbrick-part='row']) {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  :where(
+    [data-inkbrick-block='toggle'] > [data-inkbrick-part='row'] > [data-inkbrick-part='content']
+  ) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :where([data-inkbrick-block='toggle'] [data-inkbrick-part='toggle']) {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-fg-3);
+    font-size: 0.8em;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-block='toggle'] [data-inkbrick-part='toggle']:hover) {
+    background: var(--inkbrick-bg-3);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where(
+    [data-inkbrick-block='toggle']:not([data-open])
+      > [data-inkbrick-part='row']
+      [data-inkbrick-part='toggle']
+      svg
+  ) {
+    transform: rotate(-90deg);
+  }
+
   :where([data-inkbrick-block='columns']) {
     position: relative;
     margin: 4px 0;
