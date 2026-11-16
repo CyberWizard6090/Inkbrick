@@ -26,6 +26,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   pinned table: no block handle, block drag or slash menu, and the table cannot be deleted, converted or left. Without
   React: `createTableEditor(options)`, `tableValue(editor)` and `tableIdOf(editor)` in `@inkbrick/engine`. New
   `editor.pin(blockId)` makes any block undeletable: a command that would remove, convert or move it is rolled back whole.
+- Right-click menu in a table cell gets row and column items (insert above/below/left/right, delete). New block hook:
+  `defineBlock({ contextMenu(context) })` adds items under the standard ones; `ContextMenuItem.separatorBefore`.
 - Table controls in `@inkbrick/react`: strips at the row and column under the mouse (or the caret) open a menu (insert,
   move, header row, delete; align column, automatic width), «+» buttons add a column or a row, and dragging a column border
   resizes it with a live preview (arrow keys on a focused border, double click for automatic width). The menus are the

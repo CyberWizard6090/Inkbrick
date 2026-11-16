@@ -23,7 +23,7 @@ import type { ContextMenuItem } from './types';
 export function ContextMenuPanel() {
   const editor = useEditor();
   const view = useEditorView();
-  const { slots, t } = useEditorUI();
+  const { slots, t, contextMenu } = useEditorUI();
   const readOnly = useReadOnly();
   const menu = useSyncExternalStore(
     view.contextMenu.subscribe,
@@ -115,6 +115,20 @@ export function ContextMenuPanel() {
       },
     },
   ];
+
+  const context = { editor, view, selection, t };
+
+  for (const contribute of contextMenu) {
+    const extra = contribute(context).map((item) => ({
+      ...item,
+      run: () => {
+        close();
+        item.run();
+      },
+    }));
+
+    if (extra.length > 0) items.push({ ...extra[0], separatorBefore: true }, ...extra.slice(1));
+  }
 
   const Toolbar = slots.Toolbar === null ? null : (slots.Toolbar ?? DefaultToolbar);
   const formatting =

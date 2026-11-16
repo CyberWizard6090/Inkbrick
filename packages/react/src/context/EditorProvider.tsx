@@ -155,6 +155,9 @@ export function EditorProvider({
       keymap: resolveKeymap(mergeById(controllerKeymap(editor), customKeys, 'preferred-first')),
       images: images ?? {},
       formatting: formatting ?? 'context-menu',
+      contextMenu: (blocks ?? []).flatMap((block) =>
+        block.contextMenu ? [block.contextMenu] : [],
+      ),
       readOnly,
     };
   }, [
