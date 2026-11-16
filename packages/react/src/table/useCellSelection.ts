@@ -6,7 +6,6 @@ import {
   fragmentToHtml,
   fragmentToPlainText,
   locateTableCell,
-  tableCellAt,
   tableRangeFragment,
   tableSize,
   type TableCellRef,
@@ -14,7 +13,7 @@ import {
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { cellOfRange, clearTableCells, selectTableCells } from './cellSelection';
+import { cellOfRange, clearTableCells, selectTableCells, visibleCell } from './cellSelection';
 
 const ARROWS: Record<string, readonly [number, number]> = {
   ArrowUp: [-1, 0],
@@ -116,7 +115,7 @@ export function useCellSelection(
 
     const getBlock = (id: string) => editor.store.getBlock(id);
     const place = (row: number, column: number) => {
-      const id = tableCellAt(getBlock, tableId, row, column);
+      const { id } = visibleCell(editor, tableId, row, column);
 
       view.cells.clear();
 
@@ -196,6 +195,8 @@ export function useCellSelection(
 
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
+
+      if (event.button !== 0) return;
 
       if (target instanceof Element && target.closest('[data-inkbrick-ui]')) return;
       if (event.shiftKey && target instanceof Element && target.closest('td[data-block-id]'))

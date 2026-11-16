@@ -3,6 +3,7 @@ import { isAlignment, type Alignment, type BaseBlock, type BlockId } from '@inkb
 import type { Fragment } from '../clipboard/types';
 import { tableCellAt, tableSize } from './tableGrid';
 import { tableFragment } from './tableFragment';
+import { mergesWithin, normalizeMerges } from './tableMerge';
 
 type GetBlock = (id: BlockId) => BaseBlock | undefined;
 
@@ -95,6 +96,14 @@ export function tableRangeFragment(
       columnTypes: Array.isArray(table.props.columnTypes)
         ? table.props.columnTypes.slice(clamped.left, clamped.right + 1)
         : undefined,
+      merges: mergesWithin(
+        normalizeMerges(
+          table.props.merges,
+          tableSize(getBlock, tableId)?.rows ?? 0,
+          tableSize(getBlock, tableId)?.columns ?? 0,
+        ),
+        clamped,
+      ),
     },
   );
 }

@@ -297,7 +297,7 @@ describe('htmlToFragment: tables', () => {
     ).toEqual({ header: false });
   });
 
-  it('colspan and rowspan fill the grid: the text stays in the first cell of the area', () => {
+  it('colspan and rowspan become merged cells: the text stays in the first cell of the area', () => {
     const table = first(
       '<table><tr><td colspan="2">wide</td><td rowspan="2">tall</td></tr>' +
         '<tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td><td>e</td></tr></table>',
@@ -308,6 +308,14 @@ describe('htmlToFragment: tables', () => {
       ['a', 'b', ''],
       ['c', 'd', 'e'],
     ]);
+    expect(table.props.merges).toEqual([
+      { row: 0, column: 0, rows: 1, columns: 2 },
+      { row: 0, column: 2, rows: 2, columns: 1 },
+    ]);
+  });
+
+  it('plain tables carry no merges', () => {
+    expect(first('<table><tr><td>a</td><td>b</td></tr></table>').props.merges).toBeUndefined();
   });
 
   it('rows of different length are padded; absurd spans are refused, not expanded', () => {

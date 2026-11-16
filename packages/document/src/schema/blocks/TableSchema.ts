@@ -16,6 +16,16 @@ export const TABLE_COLUMN_TYPES = ['text', 'number', 'date'] as const;
 
 export type TableColumnType = (typeof TABLE_COLUMN_TYPES)[number];
 
+/** Объединённые ячейки: прямоугольник `rows` × `columns` с началом в `row`, `column` (с нуля); текст хранит верхняя левая. */
+export const tableMergeSchema = z.object({
+  row: z.number().int().min(0),
+  column: z.number().int().min(0),
+  rows: z.number().int().min(1),
+  columns: z.number().int().min(1),
+});
+
+export type TableMerge = z.infer<typeof tableMergeSchema>;
+
 export const tablePropsSchema = z.object({
   /** Первая строка — заголовок. */
   header: z.boolean().default(true),
@@ -30,6 +40,8 @@ export const tablePropsSchema = z.object({
   widths: z.array(z.number().positive().nullable()).optional(),
   /** Типы столбцов по порядку; недостающие элементы — `text`. */
   columnTypes: z.array(z.enum(TABLE_COLUMN_TYPES)).optional(),
+  /** Объединённые ячейки. Сетка остаётся прямоугольной: перекрытые ячейки есть в документе, но пусты и не показываются. */
+  merges: z.array(tableMergeSchema).optional(),
 });
 
 export type TableProps = z.infer<typeof tablePropsSchema>;

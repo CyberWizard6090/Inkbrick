@@ -99,3 +99,64 @@ test.describe('Table cell selection', () => {
     await expect(page.locator(`${cells}[data-cell-selected]`)).toHaveCount(3);
   });
 });
+
+test.describe('Merged table cells', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+    await page.mouse.move(2, 2);
+  });
+
+  test('merge from the right-click menu, type in the merged cell, split again', async ({
+    page,
+  }) => {
+    const before = (await page.locator(cells).nth(0).boundingBox())!;
+
+    await dragCells(page, 0, 4);
+
+    const target = (await page.locator(cells).nth(4).boundingBox())!;
+
+    await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2, {
+      button: 'right',
+    });
+    await page.getByRole('menuitem', { name: 'Merge cells' }).click();
+
+    const merged = (await page.locator(cells).nth(0).boundingBox())!;
+
+    expect(merged.width).toBeGreaterThan(before.width * 1.8);
+    expect(merged.height).toBeGreaterThan(before.height * 1.8);
+    await expect(page.locator(`${cells}:visible`)).toHaveCount(6);
+
+    await page.locator(cells).nth(0).locator(editable).click();
+    await page.keyboard.type('!');
+    expect((await grid(page))[0][0]).toContain('!');
+
+    await page.locator(cells).nth(0).locator(editable).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Split cell' }).click();
+
+    await expect(page.locator(`${cells}:visible`)).toHaveCount(9);
+  });
+
+  test('Tab goes past the merged cell and undo takes the merge back', async ({ page }) => {
+    await dragCells(page, 1, 2);
+
+    const target = (await page.locator(cells).nth(2).boundingBox())!;
+
+    await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2, {
+      button: 'right',
+    });
+    await page.getByRole('menuitem', { name: 'Merge cells' }).click();
+    await expect(page.locator(`${cells}:visible`)).toHaveCount(8);
+
+    await page.locator(cells).nth(0).locator(editable).click();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type('X');
+
+    expect((await grid(page))[1].some((cell) => cell?.includes('X'))).toBe(true);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(page.locator(`${cells}:visible`)).toHaveCount(9);
+  });
+});

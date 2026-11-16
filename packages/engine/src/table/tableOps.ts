@@ -2,6 +2,7 @@ import { TABLE, TABLE_CELL, TABLE_ROW, type BlockId, type TableProps } from '@in
 import type { Transaction } from '@inkbrick/store';
 
 import type { Engine } from '../editor/Engine';
+import { mergesAfterInsert, normalizeMerges } from './tableMerge';
 
 /** Списки по столбцам в props таблицы (ширины, типы) и чем дополнять короткий список. */
 export const COLUMN_LISTS = [
@@ -47,6 +48,19 @@ export function addTableRow(
   // Ширина — до вставки: новая строка, вставленная первой, ещё пуста.
   const columns = Math.max(1, columnsIn(tx, tableId));
   const row = engine.block.create({ flavour: TABLE_ROW, parentId: tableId });
+  const table = tx.getBlock(tableId)!;
+  const merges = normalizeMerges(
+    (table.props as TableProps).merges,
+    table.children.length,
+    columns,
+  );
+
+  if (merges.length > 0) {
+    engine.block.morph(tx, tableId, TABLE, {
+      ...table.props,
+      merges: mergesAfterInsert(merges, 'row', index),
+    });
+  }
 
   engine.block.insert(tx, tableId, index, row);
 
@@ -71,7 +85,16 @@ export function addTableColumn(
     list.splice(index, 0, fill),
   );
 
-  if (lists) engine.block.morph(tx, tableId, TABLE, { ...table.props, ...lists } as TableProps);
+  const columns = columnsIn(tx, tableId);
+  const merges = normalizeMerges(props.merges, table.children.length, columns);
+
+  if (lists || merges.length > 0) {
+    engine.block.morph(tx, tableId, TABLE, {
+      ...table.props,
+      ...lists,
+      ...(merges.length > 0 ? { merges: mergesAfterInsert(merges, 'column', index) } : {}),
+    } as TableProps);
+  }
 
   return table.children.map((rowId) => {
     const cell = engine.block.create({ flavour: TABLE_CELL, parentId: rowId });

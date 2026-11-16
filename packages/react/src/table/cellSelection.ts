@@ -1,6 +1,9 @@
 import type { BlockId } from '@inkbrick/document';
+import { normalizeMerges } from '@inkbrick/document';
 import {
   clampTableRange,
+  expandRangeToMerges,
+  mergeAt,
   tableCellAt,
   tableRangeBetween,
   tableRangeCells,
@@ -22,12 +25,18 @@ export function selectTableCells(
   head: TableCellRef,
 ): CellSelection | null {
   const getBlock = (id: BlockId) => editor.store.getBlock(id);
-  const range = clampTableRange(getBlock, tableId, tableRangeBetween(anchor, head));
+  const size = tableSize(getBlock, tableId);
+  const clamped = clampTableRange(getBlock, tableId, tableRangeBetween(anchor, head));
 
-  if (!range) {
+  if (!clamped || !size) {
     view.cells.clear();
     return null;
   }
+
+  const range = expandRangeToMerges(
+    clamped,
+    normalizeMerges(getBlock(tableId)?.props.merges, size.rows, size.columns),
+  );
 
   const next: CellSelection = {
     tableId,
@@ -101,4 +110,24 @@ export function cellOfRange(
     corner === 'start' ? range.top : range.bottom,
     corner === 'start' ? range.left : range.right,
   );
+}
+
+/** Ячейка, в которую можно поставить курсор: у перекрытой объединением — её верхняя левая. */
+export function visibleCell(
+  editor: Editor,
+  tableId: BlockId,
+  row: number,
+  column: number,
+): { row: number; column: number; id: BlockId | undefined } {
+  const getBlock = (id: BlockId) => editor.store.getBlock(id);
+  const size = tableSize(getBlock, tableId);
+  const merges = normalizeMerges(
+    getBlock(tableId)?.props.merges,
+    size?.rows ?? 0,
+    size?.columns ?? 0,
+  );
+  const found = mergeAt(merges, row, column);
+  const target = found ? { row: found.merge.row, column: found.merge.column } : { row, column };
+
+  return { ...target, id: tableCellAt(getBlock, tableId, target.row, target.column) };
 }

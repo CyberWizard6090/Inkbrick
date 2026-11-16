@@ -5,6 +5,7 @@ import {
   isAlignment,
   type Alignment,
   type TableColumnType,
+  type TableMerge,
   type InlineNode,
 } from '@inkbrick/document';
 
@@ -25,6 +26,8 @@ export interface TableFragmentOptions {
   freezeColumn?: boolean;
   /** Типы столбцов по порядку (`text`, `number`, `date`). */
   columnTypes?: readonly TableColumnType[];
+  /** Объединённые ячейки. */
+  merges?: readonly TableMerge[];
   /** Выравнивание столбцов по порядку. */
   align?: readonly (Alignment | undefined)[];
   /** Ширины столбцов в пикселях по порядку; `null` — по содержимому. */
@@ -68,6 +71,7 @@ export function tableFragment(
 
   if (options.freezeRow) props.freezeRow = true;
   if (options.freezeColumn) props.freezeColumn = true;
+  if (options.merges?.length) props.merges = options.merges.map((merge) => ({ ...merge }));
   if (options.columnTypes?.some((type) => type !== 'text'))
     props.columnTypes = [...options.columnTypes];
 

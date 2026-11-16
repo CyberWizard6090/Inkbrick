@@ -45,7 +45,7 @@ interface Layout {
   readonly row: Box;
   readonly cell: Box;
   /** Правые края столбцов (по ячейкам первой строки). */
-  readonly edges: readonly number[];
+  readonly edges: readonly Edge[];
 }
 
 interface MenuState {
@@ -79,6 +79,59 @@ function boxOf(element: Element): Box {
   return { left, top, width, height };
 }
 
+interface Edge {
+  readonly x: number;
+  readonly top: number;
+  readonly height: number;
+}
+
+/**
+ * Правые границы столбцов и участок, где граница настоящая. Скрытые (перекрытые) ячейки остаются в `row.cells`, поэтому
+ * номер ячейки — это столбец; объединённая ячейка даёт границу только своего последнего столбца. Участок — самая длинная
+ * непрерывная цепочка строк с такой границей: ручка не лежит поверх текста объединённых ячеек.
+ */
+function columnEdges(table: HTMLTableElement): Edge[] {
+  const columns = table.rows[0]?.cells.length ?? 0;
+  const found: { x: number; top: number; bottom: number }[][] = Array.from(
+    { length: columns },
+    () => [],
+  );
+
+  for (const row of Array.from(table.rows)) {
+    Array.from(row.cells).forEach((cell, index) => {
+      const last = index + Math.max(1, cell.colSpan) - 1;
+
+      if (cell.hidden || last >= columns) return;
+
+      const { right, top, bottom } = cell.getBoundingClientRect();
+
+      found[last].push({ x: right, top, bottom });
+    });
+  }
+
+  const bounds = table.getBoundingClientRect();
+  let previous = bounds.left;
+
+  return found.map((segments) => {
+    const runs: { x: number; top: number; bottom: number }[] = [];
+
+    for (const segment of segments.sort((a, b) => a.top - b.top)) {
+      const run = runs[runs.length - 1];
+
+      if (run && segment.top - run.bottom <= 2) run.bottom = Math.max(run.bottom, segment.bottom);
+      else runs.push({ ...segment });
+    }
+
+    const best = runs.sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
+
+    previous = best?.x ?? previous;
+
+    return best
+      ? { x: best.x, top: best.top, height: best.bottom - best.top }
+      : { x: previous, top: bounds.top, height: bounds.height };
+  });
+}
+
 function measure(table: HTMLTableElement, position: Position): Layout | null {
   const row = table.rows[position.row];
   const cell = row?.cells[position.column];
@@ -90,7 +143,7 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
     table: boxOf(table),
     row: boxOf(row),
     cell: boxOf(cell),
-    edges: Array.from(first.cells, (item) => item.getBoundingClientRect().right),
+    edges: columnEdges(table),
   };
 }
 
@@ -648,7 +701,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           aria-label={t('table.resize', { column: column + 1 })}
           tabIndex={0}
           data-inkbrick-part="resize"
-          style={{ left: edge - 3, top: table.top, height: table.height }}
+          style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
           onPointerDown={(event) => resize(column, event)}
           onKeyDown={(event) => resizeByKey(column, event)}
           onDoubleClick={() => {

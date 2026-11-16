@@ -145,6 +145,8 @@ export const ru: Messages = {
   'table.column.type.date': 'Тип: дата',
   'table.column.sortAsc': 'Сортировать по возрастанию',
   'table.column.sortDesc': 'Сортировать по убыванию',
+  'table.cells.merge': 'Объединить ячейки',
+  'table.cells.split': 'Разделить ячейку',
   'table.row.select': 'Выделить строку',
   'table.column.select': 'Выделить столбец',
   'table.row.freezeOn': 'Закрепить первую строку',

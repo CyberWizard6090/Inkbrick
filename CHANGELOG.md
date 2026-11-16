@@ -7,6 +7,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tables: merged cells (`docs/tables.md`). "Merge cells" and "Split cell" in the right-click menu, commands `mergeTableCells`
+  and `splitTableCell`, `merges` in the table props. Rows and columns inserted or deleted inside a merge stretch or shrink it;
+  moving and sorting are off while a table has merges. `colspan` and `rowspan` of pasted HTML tables stay merged, `toHtml`
+  writes them. New exports `normalizeMerges`, `mergeAt`, `mergesAfterInsert`, `mergesAfterDelete`, `expandRangeToMerges`,
+  `mergesWithin`, `mergesAfterKeeping`.
 - Tables: column types (`text`, `number`, `date`) and sorting from the column menu (`docs/tables.md`). Commands
   `setTableColumnType` and `sortTableRows`; types follow their columns. New exports `parseNumber`, `parseDate`, `sortKey`,
   `sortedOrder`, `TABLE_COLUMN_TYPES`.

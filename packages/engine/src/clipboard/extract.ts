@@ -1,3 +1,4 @@
+import { mergesAfterKeeping, normalizeMerges } from '../table/tableMerge';
 import { TABLE, TABLE_CELL, TABLE_ROW, type BaseBlock, type BlockId } from '@inkbrick/document';
 
 import type { Editor } from '../editor/Editor';
@@ -78,6 +79,14 @@ function extractTable(
 
   if (keptColumns.some((column) => typeof widths[column] === 'number'))
     props.widths = keptColumns.map((column) => widths[column] ?? null);
+
+  const merges = mergesAfterKeeping(
+    normalizeMerges(table.props.merges, rows.length, columns),
+    keptRows.map(({ index }) => index),
+    keptColumns,
+  );
+
+  if (merges.length > 0) props.merges = merges;
 
   return {
     flavour: TABLE,

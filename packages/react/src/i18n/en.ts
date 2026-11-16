@@ -147,6 +147,8 @@ export const en = {
   'table.column.type.date': 'Type: date',
   'table.column.sortAsc': 'Sort ascending',
   'table.column.sortDesc': 'Sort descending',
+  'table.cells.merge': 'Merge cells',
+  'table.cells.split': 'Split cell',
   'table.row.select': 'Select row',
   'table.column.select': 'Select column',
   'table.row.freezeOn': 'Keep first row in view',
