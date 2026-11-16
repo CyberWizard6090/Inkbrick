@@ -1,9 +1,12 @@
+import { useRef, useState } from 'react';
+
 import { getBlockAlign, type TableProps } from '@inkbrick/document';
 
 import type { BlockProps } from '../blocks/BlockProps';
 import { Editable } from '../blocks/Editable';
 import { useChildren } from '../hooks/useChildren';
 import { BlockRenderer } from '../renderer/BlockRenderer';
+import { TableControls } from './TableControls';
 
 function Children({ id }: { readonly id: string }) {
   return (
@@ -20,8 +23,14 @@ function Children({ id }: { readonly id: string }) {
  * форматирование и ввод работают как в любом текстовом блоке. Обёртка прокручивается по горизонтали,
  * если таблица шире документа.
  */
-export function TableBlock({ block, selected }: BlockProps) {
+export function TableBlock({ block, selected, readOnly }: BlockProps) {
   const { header, widths } = block.props as TableProps;
+  const table = useRef<HTMLTableElement>(null);
+  // Ширина столбца, которую тянут: рисуется поверх widths, пока перетаскивание не записано в модель.
+  const [preview, setPreview] = useState<{ index: number; width: number } | null>(null);
+  const columns = preview
+    ? Math.max(widths?.length ?? 0, preview.index + 1)
+    : (widths?.length ?? 0);
 
   return (
     <div
@@ -31,18 +40,21 @@ export function TableBlock({ block, selected }: BlockProps) {
       data-selected={selected || undefined}
       data-header={header || undefined}
     >
-      <table data-inkbrick-part="grid">
-        {widths && (
+      <table ref={table} data-inkbrick-part="grid">
+        {columns > 0 && (
           <colgroup>
-            {widths.map((width, index) => (
-              <col key={index} style={width ? { width } : undefined} />
-            ))}
+            {Array.from({ length: columns }, (_, index) => {
+              const width = preview?.index === index ? preview.width : widths?.[index];
+
+              return <col key={index} style={width ? { width } : undefined} />;
+            })}
           </colgroup>
         )}
         <tbody>
           <Children id={block.id} />
         </tbody>
       </table>
+      {!readOnly && <TableControls block={block} tableRef={table} onPreview={setPreview} />}
     </div>
   );
 }
