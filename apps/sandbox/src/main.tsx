@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import '@inkbrick/styles';
 
 import { App, publish } from './App';
+import { DemoSwitch } from './DemoSwitch';
 import { TableDemo } from './TableDemo';
 import './index.css';
 import { restoreEditor } from './persistence';
@@ -15,6 +16,7 @@ applyTheme(initialTheme());
 if (new URLSearchParams(window.location.search).get('demo') === 'table') {
   createRoot(document.getElementById('root') as HTMLElement).render(
     <StrictMode>
+      <DemoSwitch current="table" />
       <TableDemo />
     </StrictMode>,
   );
@@ -29,6 +31,7 @@ function start() {
 
     createRoot(document.getElementById('root') as HTMLElement).render(
       <StrictMode>
+        <DemoSwitch current="editor" />
         <App initial={initial} />
       </StrictMode>,
     );

@@ -38,6 +38,8 @@ export function FoldableHeadingBlock({ block, selected }: BlockProps) {
       data-foldable=""
       data-collapsed={collapsed || undefined}
     >
+      <Editable block={block} />
+      {/* Стрелка стоит после текста: слева полосу занимает ручка блока, а перед текстом стрелка сдвигала бы заголовок. */}
       <button
         type="button"
         contentEditable={false}
@@ -50,7 +52,6 @@ export function FoldableHeadingBlock({ block, selected }: BlockProps) {
       >
         <Icon name="chevron-down" />
       </button>
-      <Editable block={block} />
     </div>
   );
 }

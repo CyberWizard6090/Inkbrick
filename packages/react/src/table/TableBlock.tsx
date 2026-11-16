@@ -69,13 +69,18 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
   const editor = useEditor();
   const table = useRef<HTMLTableElement>(null);
   const merged = useMemo(() => mergedCells(editor, block), [editor, block]);
-  // Ширина столбца, которую тянут: рисуется поверх widths, пока перетаскивание не записано в модель.
-  const [preview, setPreview] = useState<{ index: number; width: number } | null>(null);
+  // Ширины, пока границу тянут: рисуются поверх widths, пока перетаскивание не записано в модель.
+  const [preview, setPreview] = useState<readonly number[] | null>(null);
   useCellSelection(block.id, table, !readOnly);
 
-  const columns = preview
-    ? Math.max(widths?.length ?? 0, preview.index + 1)
-    : (widths?.length ?? 0);
+  const shown: readonly (number | null | undefined)[] = preview ?? widths ?? [];
+  const columns = shown.length;
+  // Когда ширина задана у всех столбцов, таблица ровно такой ширины: растягивается только край последнего столбца,
+  // остальные границы перераспределяют ширину между соседями. Пока у столбца ширины нет, он занимает остаток.
+  const total =
+    columns > 0 && shown.every((width): width is number => typeof width === 'number' && width > 0)
+      ? shown.reduce((sum, width) => sum + width, 0)
+      : undefined;
 
   return (
     <div
@@ -87,14 +92,12 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
     >
-      <table ref={table} data-inkbrick-part="grid">
+      <table ref={table} data-inkbrick-part="grid" style={total ? { width: total } : undefined}>
         {columns > 0 && (
           <colgroup>
-            {Array.from({ length: columns }, (_, index) => {
-              const width = preview?.index === index ? preview.width : widths?.[index];
-
-              return <col key={index} style={width ? { width } : undefined} />;
-            })}
+            {shown.map((width, index) => (
+              <col key={index} style={width ? { width } : undefined} />
+            ))}
           </colgroup>
         )}
         <tbody>
