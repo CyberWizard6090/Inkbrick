@@ -1192,11 +1192,11 @@
     transform: rotate(90deg);
   }
 
-  ::highlight(inkbrick-find) {
+  :where(*)::highlight(inkbrick-find) {
     background-color: rgba(255, 200, 0, 0.4);
   }
 
-  ::highlight(inkbrick-find-current) {
+  :where(*)::highlight(inkbrick-find-current) {
     background-color: rgba(255, 140, 0, 0.7);
   }
 }

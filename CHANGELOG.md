@@ -102,6 +102,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Page layout (temporary, `docs/styling.md`): the editor root fills its container and the text column is centred with the width
+  `--inkbrick-page-width` (100% by default, so nothing changes until it is set). It is a stop-gap until the document has a page
+  with its own size.
+- Table columns: a border between columns moves width only between its two neighbours (the others keep their width), and only
+  the right edge of the last column changes the width of the table. Once any column is resized, all columns get a width, so a table
+  that has been resized has an explicit width per column; a double click on a border still sets that column back to automatic.
+- Heading folding: the arrow stands after the heading text instead of before it, so folding headings start where paragraphs start.
+- Sandbox: a switch between the editor and the table editor.
 - Size budgets lowered to keep the win: `@inkbrick/react` 75 → 65 KB gzip, the whole editor app with zod 100 → 92 KB.
 - Icons: only the 26 that blocks and the slash menu need at once stay in the main bundle; the rest (formatting, tables,
   columns, alignment…) are a separate chunk that `<Icon>` loads by itself and the editor preloads on mount (−0.8 KB gzip).
@@ -150,6 +158,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Styles: the highlight rules of find and replace are wrapped in `:where()` like every other rule, which the styles contract test (and CI) requires.
 - Virtual renderer: scrolling right after a click could unmount the block with the caret and lose the selection,
   because the pinned blocks were updated only on `selectionchange`; the scroll handler now reads the selection edges
   itself.

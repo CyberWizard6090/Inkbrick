@@ -212,7 +212,38 @@ test.describe('Table controls', () => {
 
     await page.mouse.dblclick(again.x + again.width / 2, again.y + again.height / 2);
 
-    await expect(page.locator(`${table} colgroup`)).toHaveCount(0);
+    // У столбца ширины больше нет (занимает остаток), у остальных она осталась.
+    await expect(page.locator(`${table} col`).nth(1)).not.toHaveAttribute('style', /width/);
+    await expect(page.locator(`${table} col`).first()).toHaveAttribute('style', /width/);
+  });
+
+  test('a border between columns leaves the other columns as they are', async ({ page }) => {
+    await hover(page, 0, 0);
+
+    const widths = async () =>
+      page
+        .locator(cells)
+        .evaluateAll((items) =>
+          items.slice(0, 3).map((item) => Math.round(item.getBoundingClientRect().width)),
+        );
+    const before = await widths();
+    const handle = (await page.locator(part('resize')).nth(0).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 40, y, { steps: 5 });
+    await page.mouse.up();
+
+    const after = await widths();
+
+    expect(after[0]).toBeGreaterThan(before[0] + 30);
+    expect(after[1]).toBeLessThan(before[1] - 30);
+    expect(Math.abs(after[2] - before[2])).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(after[0] + after[1] + after[2] - (before[0] + before[1] + before[2])),
+    ).toBeLessThanOrEqual(2);
   });
 
   test('the controls are not part of what gets copied', async ({ page }) => {
