@@ -217,6 +217,8 @@ export const ru: Messages = {
   'slash.item.toc.title': 'Оглавление',
   'slash.item.toc.description': 'Ссылки на заголовки документа',
   'slash.item.toc.keywords': 'оглавление, содержание, toc',
+  'fold.collapse': 'Свернуть раздел',
+  'fold.expand': 'Развернуть раздел',
   'toc.label': 'Оглавление',
   'toc.empty': 'Здесь появятся заголовки документа',
   'toc.levels': 'Уровни заголовков: нажмите, чтобы изменить',

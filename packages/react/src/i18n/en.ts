@@ -219,6 +219,8 @@ export const en = {
   'slash.item.toc.title': 'Table of contents',
   'slash.item.toc.description': 'Links to the headings of the document',
   'slash.item.toc.keywords': 'toc, contents, outline',
+  'fold.collapse': 'Collapse the section',
+  'fold.expand': 'Expand the section',
   'toc.label': 'Table of contents',
   'toc.empty': 'Headings of the document will appear here',
   'toc.levels': 'Heading levels shown: click to change',

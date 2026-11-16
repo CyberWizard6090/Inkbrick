@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DocumentView,
   EditorProvider,
+  headingFolding,
   htmlToFragment,
   virtualRenderer,
   type FormattingMode,
@@ -403,6 +404,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         readOnly={readOnly}
         images={demoImages}
         formatting={formatting}
+        {...headingFolding}
       >
         <SandboxNav
           readOnly={readOnly}

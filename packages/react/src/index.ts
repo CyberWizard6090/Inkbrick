@@ -36,6 +36,7 @@ export * from './blocks/PageBlock';
 export * from './blocks/NoteBlock';
 export * from './blocks/ParagraphBlock';
 export * from './blocks/HeadingBlock';
+export { headingFolding, FoldableHeadingBlock, computeFolds, useFoldTracking } from './fold';
 export * from './blocks/ListBlock';
 export * from './blocks/QuoteBlock';
 export * from './blocks/CodeBlock';
