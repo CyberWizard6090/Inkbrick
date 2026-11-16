@@ -23,18 +23,20 @@ export const customBlocks = [
 export const createSandboxSchema = (): SchemaRegistry =>
   createSchemaRegistry(customBlocks.map((block) => block.schema));
 
-/** Реестр схем создаётся заранее: по нему документ из файла или памяти браузера проверяется до создания редактора. */
-export function createSandboxEditor(
-  schema: SchemaRegistry = createSandboxSchema(),
-  document?: Document,
-): Editor {
-  const controllers = Object.fromEntries(
+/** Контроллеры блоков из `customBlocks` (таблицы, колонки и другие): без них команды этих блоков не работают. */
+export const createSandboxControllers = () =>
+  Object.fromEntries(
     customBlocks.flatMap((block) =>
       block.controller ? [[block.schema.flavour, block.controller] as const] : [],
     ),
   );
 
-  return new Editor({ schema, document, controllers });
+/** Реестр схем создаётся заранее: по нему документ из файла или памяти браузера проверяется до создания редактора. */
+export function createSandboxEditor(
+  schema: SchemaRegistry = createSandboxSchema(),
+  document?: Document,
+): Editor {
+  return new Editor({ schema, document, controllers: createSandboxControllers() });
 }
 
 export interface ParsedDocument {

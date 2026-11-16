@@ -80,3 +80,18 @@ COLLAB_FUZZ_RUNS=600 COLLAB_FUZZ_STEPS=150 pnpm vitest run --project @inkbrick/c
 ```
 
 The sandbox page `collab.html` shows both modes: an in-memory network and a real server (`#server`).
+
+## Tables, columns and other structural blocks
+
+Rule 4 of the projection (`normalizeSnapshot`) also keeps structural blocks whole, so that two people editing a table at once
+never see different or broken documents:
+
+- a block that can only live inside a given container (a table cell, a row, a column) is dropped together with its children when
+  that container is gone. This is "deletion wins": somebody deleted the table while somebody else typed into it;
+- the `repair` of the block schemas runs: rows of a table are padded to the same width, an empty column gets a paragraph. The new
+  blocks have ids made from the parent id (`<row id>~table-cell0`), so everybody gets the same ones. They are not in the `Y.Doc` until
+  somebody edits next to them; a local edit in the same parent writes them. Two people filling the same padded cell at the same moment
+  write one key, and one of the two texts wins.
+
+`schema/blocks.json` lists the nesting rules of all editor blocks (the server reads it). After a change of schemas:
+`UPDATE_SCHEMA_JSON=1 pnpm vitest run packages/collab/__tests__/exportSchema.test.ts`.

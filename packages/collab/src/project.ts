@@ -7,6 +7,7 @@ import {
   type BlockProps,
   type DocumentSnapshot,
   type InlineNode,
+  type RepairTree,
   type SchemaRegistry,
 } from '@inkbrick/document';
 
@@ -152,7 +153,15 @@ export function project(ydoc: Y.Doc): DocumentSnapshot {
 /**
  * Правило 4 проекции: по схеме. Блок, которому `validateRelation` не разрешает лежать в родителе, поднимается к
  * первому предку, где можно, и встаёт сразу после ветки, из которой вышел; `props`, не прошедшие `propsSchema`,
- * заменяются значениями по умолчанию. Блок, для которого подходящего предка нет, остаётся на месте.
+ * заменяются значениями по умолчанию.
+ *
+ * Блок, для которого подходящего предка нет, остаётся на месте, кроме блоков, которые вообще не живут вне своего
+ * контейнера (`allowedParents` — список конкретных блоков: ячейка таблицы, строка, колонка). Если контейнер удалили,
+ * пока в нём правили, такой блок вместе с потомками отбрасывается: «удаление таблицы побеждает».
+ *
+ * Затем вызываются `repair` схем (строки таблицы выравниваются по ширине, пустая колонка получает абзац). Новые блоки
+ * получают идентификаторы из идентификатора родителя и номера среди достроенных, поэтому у всех участников они одинаковы; в `Y.Doc`
+ * они попадают, только когда кто-то в них что-то напишет.
  */
 export function normalizeSnapshot(
   snapshot: DocumentSnapshot,
@@ -207,11 +216,77 @@ export function normalizeSnapshot(
         break;
       }
 
-      if (!lifted) visit(childId, path);
+      if (lifted) continue;
+
+      if (onlyInsideContainers(child)) {
+        parent.children = parent.children.filter((item) => item !== childId);
+        dropSubtree(childId);
+        continue;
+      }
+
+      visit(childId, path);
+    }
+  };
+
+  const onlyInsideContainers = (block: BaseBlock): boolean => {
+    const parents = schema.getBlockSchema(block.flavour)?.allowedParents;
+
+    return Array.isArray(parents) && parents.every((entry) => !entry.startsWith('role:'));
+  };
+
+  const dropSubtree = (rootOfDrop: BlockId): void => {
+    const stack = [rootOfDrop];
+
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const block = blocks[id];
+
+      if (!block) continue;
+
+      delete blocks[id];
+      stack.push(...block.children);
     }
   };
 
   visit(snapshot.rootId, []);
+  repairStructure(blocks, schema);
 
   return { ...snapshot, blocks };
+}
+
+/** `BlockSchema.repair` для всех блоков с детерминированными идентификаторами новых блоков. */
+function repairStructure(blocks: Record<BlockId, BaseBlock>, schema: SchemaRegistry): void {
+  const tree: RepairTree = {
+    get: (id) => blocks[id],
+    append(parentId, flavour) {
+      const parent = blocks[parentId]!;
+      // Номер считается среди уже достроенных потомков, а не по месту в списке: число настоящих детей меняется,
+      // а блок, который кто-то успел заполнить, должен остаться тем же.
+      const prefix = `${parentId}~${flavour.replace('block:', '')}`;
+      let id = `${prefix}${parent.children.filter((childId) => childId.startsWith(prefix)).length}`;
+
+      // Идентификатор мог быть занят блоком из Y.Doc, который сейчас лежит в другом месте.
+      while (blocks[id]) id += '_';
+
+      const child: BaseBlock = {
+        id,
+        flavour,
+        parentId,
+        children: [],
+        content: [],
+        props: schema.hasBlock(flavour) ? schema.createProps(flavour) : {},
+      };
+
+      blocks[id] = child;
+      blocks[parentId] = { ...parent, children: [...parent.children, id] };
+
+      return child;
+    },
+  };
+
+  for (const id of Object.keys(blocks).sort()) {
+    const block = blocks[id];
+
+    if (block) schema.getBlockSchema(block.flavour)?.repair?.(block, tree);
+  }
 }

@@ -1,12 +1,13 @@
 import * as Y from 'yjs';
 
-import { createSchemaRegistry, serializeDocument, type BlockId } from '@inkbrick/document';
+import { serializeDocument, type BlockId } from '@inkbrick/document';
 import { initYDoc } from '@inkbrick/collab';
 import { Editor, type CaretResult } from '@inkbrick/engine';
+import { createSandboxSchema } from '../sandboxEditor';
 
 /** Начальный документ создаёт «сервер»: здесь это одна функция, в продукте его создаёт бэкенд при создании записи. */
 export function createServerState(): Uint8Array {
-  const schema = createSchemaRegistry();
+  const schema = createSandboxSchema();
   const editor = new Editor({ schema });
   const doc = editor.document;
   const noteId = doc.getBlock(doc.rootId)!.children[0];

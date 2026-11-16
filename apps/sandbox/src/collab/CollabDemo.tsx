@@ -2,26 +2,31 @@ import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } fro
 import * as Y from 'yjs';
 
 import { createCollab, type Collab } from '@inkbrick/collab';
-import { createSchemaRegistry } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
 import { DocumentView, EditorProvider } from '@inkbrick/react';
 
 import { MemoryNetwork, type NetworkPeer } from './network';
 import { createServerState } from './seed';
+import { createSandboxControllers, createSandboxSchema, customBlocks } from '../sandboxEditor';
 
 interface Peer extends NetworkPeer {
   editor: Editor;
 }
 
 function createPeer(id: string, state: Uint8Array, network: MemoryNetwork): Peer {
-  const schema = createSchemaRegistry();
+  const schema = createSandboxSchema();
   const ydoc = new Y.Doc();
 
   Y.applyUpdate(ydoc, state, 'remote');
 
   const collab = createCollab({ ydoc, schema, undoCaptureMs: 700 });
   // История Inkbrick откатывает блок целиком и затёрла бы чужие правки: в совместном режиме отмена идёт через Y.UndoManager.
-  const editor = new Editor({ schema, document: collab.createDocument(), history: { limit: 0 } });
+  const editor = new Editor({
+    schema,
+    document: collab.createDocument(),
+    history: { limit: 0 },
+    controllers: createSandboxControllers(),
+  });
 
   collab.attach(editor.store);
 
@@ -154,7 +159,7 @@ function PeerPanel({
         </label>
       </div>
       <div className="peer-editor" ref={root}>
-        <EditorProvider editor={editor}>
+        <EditorProvider editor={editor} blocks={customBlocks}>
           <DocumentView />
         </EditorProvider>
       </div>

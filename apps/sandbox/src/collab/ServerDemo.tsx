@@ -4,6 +4,7 @@ import { cursorsOf } from '@inkbrick/collab';
 import { DocumentView, EditorProvider, RemoteCursors, readDocSelection } from '@inkbrick/react';
 
 import { useCollabState, useEditorWiring } from './CollabDemo';
+import { customBlocks } from '../sandboxEditor';
 import {
   COLORS,
   forgetSetup,
@@ -162,7 +163,7 @@ function ServerPeerPanel({
       </div>
       <p className="mine">{mine}</p>
       <div className="peer-editor" ref={root}>
-        <EditorProvider editor={editor}>
+        <EditorProvider editor={editor} blocks={customBlocks}>
           <DocumentView />
           <RemoteCursors cursors={cursors} />
         </EditorProvider>

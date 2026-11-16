@@ -389,7 +389,17 @@ export class Collab {
       for (const parentId of parents) {
         const parent = store.getBlock(parentId);
 
-        if (parent) reconcileChildren(blocks, parentId, parent.children);
+        if (!parent) continue;
+
+        // Блоки, которых нет в Y.Doc, но которые уже лежат в хранилище, — достроенные правилом 4 (ячейка в короткой
+        // строке, абзац в пустой колонке). Правка рядом с ними делает их настоящими, чтобы у всех было одно и то же.
+        for (const childId of parent.children) {
+          const child = store.getBlock(childId);
+
+          if (child && !(blocks.get(childId) instanceof Y.Map)) writeBlockData(blocks, child);
+        }
+
+        reconcileChildren(blocks, parentId, parent.children);
       }
     }, COLLAB_ORIGIN);
 
@@ -401,11 +411,37 @@ export class Collab {
       // Смена типа блока может сделать недопустимыми его потомков, поэтому проверяются и они.
       const checked = block ? [block, ...store.getChildren(block.id)] : [];
 
-      if (checked.some((item) => this.violatesSchema(store, item))) {
+      if (
+        checked.some((item) => this.violatesSchema(store, item)) ||
+        (block && this.structureBroken(store, block)) ||
+        // Достройка (ячейки короткой строки, абзац пустой колонки) зависит от всей таблицы: после правки самого
+        // блока таблицы или колонок хранилище сверяется с проекцией. Печать в ячейке сюда не попадает.
+        (block && this.schema.getBlockSchema(block.flavour)?.repair !== undefined)
+      ) {
         this.pull();
         break;
       }
     }
+  }
+
+  /**
+   * Правка внутри таблицы или колонок могла нарушить то, что не выразить правилами вложенности (в строках таблицы
+   * разное число ячеек): проверяется `BlockSchema.validate` у самого блока и трёх его предков.
+   */
+  private structureBroken(store: DocumentStore, block: BaseBlock): boolean {
+    let current: BaseBlock | undefined = block;
+
+    for (let depth = 0; current && depth < 4; depth++) {
+      const issues = this.schema
+        .getBlockSchema(current.flavour)
+        ?.validate?.(current, (id) => store.getBlock(id));
+
+      if (issues && issues.length > 0) return true;
+
+      current = current.parentId ? store.getBlock(current.parentId) : undefined;
+    }
+
+    return false;
   }
 
   private violatesSchema(store: DocumentStore, block: BaseBlock): boolean {

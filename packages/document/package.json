@@ -7,8 +7,7 @@
   "types": "src/index.ts",
   "files": [
     "dist",
-    "src",
-    "schema"
+    "src"
   ],
   "sideEffects": false,
   "scripts": {

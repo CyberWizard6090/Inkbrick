@@ -1,4 +1,3 @@
-import { createSchemaRegistry } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
 import {
   DocumentConnection,
@@ -6,6 +5,7 @@ import {
   openDocument,
   type Collab,
 } from '@inkbrick/collab';
+import { createSandboxControllers, createSandboxSchema } from '../sandboxEditor';
 
 export interface ServerPerson {
   name: string;
@@ -109,7 +109,7 @@ export async function openServerPeer(
   person: ServerPerson,
   onError: (error: Error) => void,
 ): Promise<ServerPeer> {
-  const schema = createSchemaRegistry();
+  const schema = createSandboxSchema();
   const { collab, connection } = await openDocument({
     baseUrl: setup.baseUrl,
     getToken: () => person.token,
@@ -121,7 +121,12 @@ export async function openServerPeer(
     onError,
   });
   // Inkbrick's own history reverts whole blocks and would erase other people's edits: undo goes through Yjs.
-  const editor = new Editor({ schema, document: collab.createDocument(), history: { limit: 0 } });
+  const editor = new Editor({
+    schema,
+    document: collab.createDocument(),
+    history: { limit: 0 },
+    controllers: createSandboxControllers(),
+  });
 
   collab.attach(editor.store);
   connection.connect();
