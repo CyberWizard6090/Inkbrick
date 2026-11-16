@@ -1,6 +1,6 @@
 /*
  * Оболочка редактора: slash-меню, плавающий toolbar, ручка блока, меню блока, контекстное меню, индикатор
- * перетаскивания.
+ * перетаскивания, управление таблицей.
  * Каждый элемент — data-inkbrick-ui="<имя>", части — data-inkbrick-part. Состояния: data-active, data-pressed,
  * data-disabled, data-danger, data-invalid, data-position.
  * Вид — всплывающие поверхности Windows 11: рамка 1px, радиус 8px, тень 16, пункты 32px с радиусом 4px.
@@ -247,6 +247,125 @@
   :where([data-inkbrick-ui='block-handle'] > :disabled) {
     opacity: 0.35;
     cursor: default;
+  }
+
+  /* ---- Управление таблицей: полоски строки и столбца, кнопки добавления, ручки ширины ---- */
+  :where([data-inkbrick-ui='table-controls']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-handle);
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']
+  ) {
+    border-radius: 3px;
+    background: var(--inkbrick-stroke-1);
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
+    width: 8px;
+    height: 24px;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
+    width: 24px;
+    height: 8px;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-grip'],
+        [data-inkbrick-part='column-grip']
+      ):hover,
+    [data-inkbrick-ui='table-controls'][aria-expanded='true']
+  ) {
+    background: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='table-controls']:is(button):focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='add-row'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='add-column']
+  ) {
+    display: inline-grid;
+    place-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: 50%;
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-3);
+    box-shadow: var(--inkbrick-shadow-4);
+    cursor: pointer;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='add-row'],
+        [data-inkbrick-part='add-column']
+      ):hover:not(:disabled)
+  ) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='table-controls']:disabled) {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
+    width: 6px;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']::after) {
+    content: '';
+    display: block;
+    width: 2px;
+    height: 100%;
+    margin: 0 auto;
+    background: transparent;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']:is(
+        :hover,
+        :focus-visible
+      )::after
+  ) {
+    background: var(--inkbrick-brand-bg);
+  }
+
+  /* Палец не наводится: полоски крупнее, чтобы в них попадать. */
+  @media (pointer: coarse) {
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
+      width: 14px;
+      height: 32px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
+      width: 32px;
+      height: 14px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
+      width: 14px;
+    }
   }
 
   :where([data-inkbrick-ui='block-menu']) {

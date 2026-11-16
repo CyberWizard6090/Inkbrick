@@ -22,6 +22,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   and any table in an editor without `tableBlocks`, is pasted as rows of text. `toHtml`, `toMarkdown` and `toPlainText` write
   tables (`<table>`, GFM, tab-separated). New: `tableFragment(rows, options)` and `readTable`, `parseDelimited` and
   `serializeDelimited`.
+- Table controls in `@inkbrick/react`: strips at the row and column under the mouse (or the caret) open a menu (insert,
+  move, header row, delete; align column, automatic width), «+» buttons add a column or a row, and dragging a column border
+  resizes it with a live preview (arrow keys on a focused border, double click for automatic width). The menus are the
+  `BlockMenu` slot, each action is one undo step, and the controls are not part of the editable root. Strings for `en`
+  and `ru`.
 - `defineBlock({ keymap })`: key bindings of a block that need the selection and the DOM (`KeymapContext`).
 - A slash item contributed by a block is translated when the dictionary has `slash.item.<id>.*` strings.
 - `BlockSchema`: `isolating` (a block general commands never delete, merge, move or duplicate; deleting a selection

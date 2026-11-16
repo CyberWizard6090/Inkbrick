@@ -9,6 +9,11 @@ export class CaretController {
 
   has = (blockId: string): boolean => this.blockId === blockId;
 
+  /** Блок с кареткой или `null`, если выделение не свёрнуто или документ без фокуса. */
+  get current(): string | null {
+    return this.blockId;
+  }
+
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
 
