@@ -89,3 +89,40 @@ describe('TableEditor', () => {
     expect(tableValue(editor).rows).toEqual([['a', 'b']]);
   });
 });
+
+describe('TableEditor changeDelay', () => {
+  it('reports once after a pause, and flushes on unmount', () => {
+    vi.useFakeTimers();
+
+    try {
+      const onChange = vi.fn();
+      const editor = createTableEditor({ rows: [['a']] });
+      const view = render(<TableEditor editor={editor} onChange={onChange} changeDelay={200} />);
+      const cell = tableCellAt((id) => editor.document.getBlock(id), tableIdOf(editor)!, 0, 0)!;
+      const type = (text: string, at: number) =>
+        act(() => {
+          editor.dispatch({
+            type: 'replaceText',
+            payload: { blockId: cell, from: at, to: at, text },
+          });
+        });
+
+      type('b', 1);
+      type('c', 2);
+      expect(onChange).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ rows: [['abc']] }));
+
+      type('d', 3);
+      view.unmount();
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ rows: [['abcd']] }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

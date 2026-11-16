@@ -36,6 +36,11 @@ export interface TableEditorProps
   readonly editor?: Editor;
   /** Вызывается после каждой правки (и undo/redo) с текущим содержимым. */
   readonly onChange?: (value: TableValue) => void;
+  /**
+   * Задержка `onChange` в миллисекундах: значение собирается и отдаётся один раз после паузы в правках, а не на
+   * каждое нажатие клавиши (и сразу при размонтировании, если правки ещё не отданы). По умолчанию `0` — после каждой.
+   */
+  readonly changeDelay?: number;
   /** Класс контейнера. */
   readonly className?: string;
   readonly children?: ReactNode;
@@ -62,6 +67,7 @@ export function TableEditor({
   history,
   meta,
   onChange,
+  changeDelay = 0,
   className,
   label,
   children,
@@ -76,10 +82,31 @@ export function TableEditor({
 
   listener.current = onChange;
 
-  useEffect(
-    () => editor.store.subscribeChanges(() => listener.current?.(tableValue(editor))),
-    [editor],
-  );
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let pending = false;
+
+    const emit = () => {
+      timer = undefined;
+      pending = false;
+      listener.current?.(tableValue(editor));
+    };
+
+    const stop = editor.store.subscribeChanges(() => {
+      if (changeDelay <= 0) return emit();
+
+      pending = true;
+      clearTimeout(timer);
+      timer = setTimeout(emit, changeDelay);
+    });
+
+    return () => {
+      stop();
+      clearTimeout(timer);
+
+      if (pending) emit();
+    };
+  }, [editor, changeDelay]);
 
   return (
     <div className={className} data-inkbrick-table-editor="">
