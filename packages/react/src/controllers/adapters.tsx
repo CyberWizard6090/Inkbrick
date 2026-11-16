@@ -3,12 +3,14 @@ import type { ReactNode } from 'react';
 import type { Editor } from '@inkbrick/engine';
 
 import { Icon } from '../icons/Icon';
-import { ICON_SHAPES, type IconName } from '../icons/lucide';
+import { EXTRA_ICON_NAMES, ICON_SHAPES, type IconName } from '../icons/lucide';
 import type { KeyBinding, KeymapContext } from '../keymap/types';
 import type { SlashMenuItem } from '../slash/types';
 
 export function iconByName(name: string | undefined): ReactNode {
-  return name && Object.hasOwn(ICON_SHAPES, name) ? <Icon name={name as IconName} /> : undefined;
+  return name && (Object.hasOwn(ICON_SHAPES, name) || EXTRA_ICON_NAMES.includes(name)) ? (
+    <Icon name={name as IconName} />
+  ) : undefined;
 }
 
 export function controllerSlashItems(editor: Editor): SlashMenuItem[] {

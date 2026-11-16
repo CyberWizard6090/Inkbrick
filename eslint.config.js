@@ -35,6 +35,26 @@ export default [
     },
   },
   {
+    // Пространство имён z тянет весь zod (около 65 КБ gzip в приложении): внутри пакетов — только импорт по именам.
+    files: ['packages/*/src/**/*.{ts,tsx}'],
+    ignores: ['packages/document/src/index.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'zod',
+              importNames: ['z'],
+              message:
+                "Import zod functions by name (see packages/document/src/schema/zod.ts): 'z' pulls in all of zod.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['scripts/**'],
     rules: { 'no-console': 'off' },
   },

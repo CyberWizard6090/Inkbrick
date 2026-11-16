@@ -13,8 +13,9 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
 import { useEditorUI } from '../ui/EditorUIContext';
-import { FormulaPopover } from '../formula/FormulaPopover';
+import { FormulaPopoverHost } from '../formula/FormulaPopoverHost';
 import { preloadFormulaPalette } from '../formula/LazyFormulaPalette';
+import { preloadIcons } from '../icons/Icon';
 import { SlashMenuHost } from '../slash/SlashMenuHost';
 import { ToolbarHost } from '../toolbar/ToolbarHost';
 import { BlockRenderer } from './BlockRenderer';
@@ -64,7 +65,10 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
    * открытие документа, но готова к первому редактору формулы (Tab из поля кода ведёт в палитру).
    */
   useEffect(() => {
-    if (!readOnly) void preloadFormulaPalette();
+    if (!readOnly) {
+      void preloadFormulaPalette();
+      void preloadIcons();
+    }
   }, [readOnly]);
 
   return (
@@ -91,7 +95,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
       <SlashMenuHost />
       <ToolbarHost />
       <ContextMenuHost />
-      <FormulaPopover />
+      <FormulaPopoverHost />
       <BlockHandleHost />
       <DropIndicatorHost />
     </>

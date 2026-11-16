@@ -88,6 +88,23 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Size budgets lowered to keep the win: `@inkbrick/react` 75 → 65 KB gzip, the whole editor app with zod 100 → 92 KB.
+- Icons: only the 26 that blocks and the slash menu need at once stay in the main bundle; the rest (formatting, tables,
+  columns, alignment…) are a separate chunk that `<Icon>` loads by itself and the editor preloads on mount (−0.8 KB gzip).
+  `IconName` still lists every icon; `preloadIcons()` loads the rest at once.
+- The floating toolbar, the slash menu, the block handle and its menu, the inline formula popover and the image block are
+  separate chunks, loaded right after the editor mounts (the image block when the first image appears): the core of
+  `@inkbrick/react` is 62.1 KB gzip instead of 70.6. New `preloadEditorUI()` loads them all at once, for apps that need
+  them from the very first action and for tests.
+- The built-in code highlighter is loaded as a separate chunk when the first code block appears (code shows uncoloured until
+  then): `@inkbrick/react` loses 5.6 KB gzip at start. A custom `highlighter` and a direct `highlightCode` import stay
+  synchronous.
+- Packages are built with `charset: utf8`: Cyrillic and other non-ASCII strings ship as they are instead of `\uXXXX`
+  escapes. `pnpm size` has a new case, «app: editor with zod» (budget 100 KB gzip), so the weight of dependencies is
+  visible too.
+- Built-in schemas import zod functions by name instead of the `z` namespace. An editor app that does not use `z` itself is
+  65 KB gzip lighter (161.7 → 96.4 KB with zod bundled); the public `z` export of `@inkbrick/document` is unchanged.
+  A lint rule keeps `import { z } from 'zod'` out of the packages.
 - Tables: dragging the mouse from one cell to another now selects a rectangle of cells instead of a run of text in
   document order (see cell selection below). A selection that starts or ends in a cell from outside the table, or made with
   the keyboard, still works as before.

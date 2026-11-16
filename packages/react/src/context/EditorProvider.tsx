@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, type ReactNode } from 'react';
 import type { Editor } from '@inkbrick/engine';
 
 import { EditorView } from '../editing/EditorView';
-import { highlightCode } from '../code/highlight';
+import { lazyHighlightCode } from '../code/lazyHighlight';
 import type { CodeHighlighter } from '../code/types';
 import { createTranslator, resolveMessages } from '../i18n/translate';
 import { temmlRenderer, type FormulaRenderer } from '../math/renderer';
@@ -49,7 +49,7 @@ export interface EditorProviderProps {
    */
   readonly slashItems?: readonly SlashMenuItem[] | false;
   /**
-   * Подсветка синтаксиса в блоках кода. По умолчанию — встроенный `highlightCode` (без зависимостей);
+   * Подсветка синтаксиса в блоках кода. По умолчанию — встроенный `highlightCode` (без зависимостей; грузится отдельным чанком при первом блоке кода);
    * свой подсветчик (Shiki, Prism, highlight.js) — функция `(code, language) => токены`; `false` выключает подсветку.
    * Держите функцию стабильной: смена функции перерисовывает все блоки кода.
    */
@@ -148,7 +148,7 @@ export function EditorProvider({
         customSlash === false
           ? []
           : resolveSlashItems(mergeById(controllerSlashItems(editor), customSlash ?? []), t),
-      highlighter: code === false ? null : (code ?? highlightCode),
+      highlighter: code === false ? null : (code ?? lazyHighlightCode),
       formulaRenderer: math === false ? null : (math ?? temmlRenderer),
       locale: locale ?? 'en',
       t,

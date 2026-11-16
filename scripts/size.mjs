@@ -26,19 +26,28 @@ const cases = [
     code: "import { Editor } from '@inkbrick/engine'; console.log(Editor);",
   },
   {
+    // Всё, что получает приложение с редактором, вместе с zod: так виден и вес зависимостей.
+    name: 'app: editor with zod',
+    budget: 92,
+    bundled: ['zod'],
+    code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
+  },
+  {
     name: 'react: EditorProvider + DocumentView',
-    budget: 75,
+    budget: 65,
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
 ];
 
 let failed = false;
 
-for (const { name, budget, code } of cases) {
+for (const { name, budget, code, bundled = [] } of cases) {
   const result = await build({
     stdin: { contents: code, resolveDir: process.cwd(), loader: 'ts' },
     alias,
-    external,
+    external: external.filter((name) => !bundled.includes(name)),
+    // Кириллица и прочий не-ASCII текст — как есть, без \uXXXX: так же собираются пакеты (tsup).
+    charset: 'utf8',
     bundle: true,
     splitting: true,
     outdir: 'size-out',
@@ -54,7 +63,7 @@ for (const { name, budget, code } of cases) {
     result.outputFiles.map((file) => [file.path.replace(/\\/g, '/'), file.contents]),
   );
   const outputs = result.metafile.outputs;
-  const entry = Object.keys(outputs).find((path) => outputs[path].entryPoint);
+  const entry = Object.keys(outputs).find((path) => outputs[path].entryPoint === '<stdin>');
 
   // Считаем только то, что грузится сразу: точку входа и её статические импорты (ленивые чанки — отдельно).
   const eager = new Set();

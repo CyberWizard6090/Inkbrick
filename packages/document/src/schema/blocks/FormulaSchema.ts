@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from '../zod';
 import { BlockSchema } from '../BlockSchema';
 import { MAX_FORMULA_LENGTH } from '../../utils/formula';
 
