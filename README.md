@@ -104,7 +104,8 @@ API reference: `pnpm docs:api` generates it into `docs/api` from the TSDoc comme
 
 ```bash
 pnpm install
-pnpm dev              # sandbox: every block type, themes, languages, a debug panel, JSON import/export, autosave
+pnpm dev              # sandbox: every block type, themes, languages, a debug panel, JSON import/export, autosave;
+                      # `?demo=table` (or the switch in the corner) is the table editor with the same tools
 pnpm test:coverage    # unit tests with coverage thresholds
 pnpm test:e2e         # Playwright: Chromium, Firefox, WebKit
 pnpm typecheck && pnpm lint && pnpm size && pnpm audit

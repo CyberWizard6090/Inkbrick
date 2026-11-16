@@ -1,3 +1,4 @@
+import { useSandboxI18n } from '../i18n';
 import { useSyncExternalStore } from 'react';
 
 import { z, type BlockSchema } from '@inkbrick/document';
@@ -120,6 +121,7 @@ export const counterController = defineBlockController<CounterProps>({
 });
 
 function CounterView({ block, selected, readOnly }: CustomBlockViewProps<CounterProps>) {
+  const { t } = useSandboxI18n();
   const counter = useBlockController<CounterProps>(block);
   const isFocused = useSyncExternalStore(
     subscribe,
@@ -139,7 +141,7 @@ function CounterView({ block, selected, readOnly }: CustomBlockViewProps<Counter
       <div className="sandbox-counter__controls" contentEditable={false}>
         <button
           type="button"
-          aria-label="Decrease"
+          aria-label={t('counter.decrease')}
           data-testid="counter-dec"
           disabled={readOnly || !counter.can('counter.decrement')}
           onClick={() => counter.execute('counter.decrement')}
@@ -151,7 +153,7 @@ function CounterView({ block, selected, readOnly }: CustomBlockViewProps<Counter
         </output>
         <button
           type="button"
-          aria-label="Increase"
+          aria-label={t('counter.increase')}
           data-testid="counter-inc"
           disabled={readOnly}
           onClick={() => counter.execute('counter.increment')}
@@ -160,7 +162,7 @@ function CounterView({ block, selected, readOnly }: CustomBlockViewProps<Counter
         </button>
       </div>
       <div className="sandbox-counter__label">
-        <Editable block={block} placeholder="Counter label" />
+        <Editable block={block} placeholder={t('counter.label')} />
       </div>
     </div>
   );

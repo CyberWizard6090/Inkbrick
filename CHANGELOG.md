@@ -112,6 +112,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Sandbox: the table editor page has the tools of the document page — edit and read modes, data (sample, random, a large 100 × 12 table, ten more
+  rows in one undo step, empty table), the debug panel, JSON export and import, theme and language. The page switch, the table page and the
+  counter block are translated (en, ru); the switch keeps the chosen language.
 - Page layout (temporary, `docs/styling.md`): the editor root fills its container and the text column is centred with the width
   `--inkbrick-page-width` (100% by default, so nothing changes until it is set). It is a stop-gap until the document has a page
   with its own size.
