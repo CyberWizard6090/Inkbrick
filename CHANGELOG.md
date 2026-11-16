@@ -136,6 +136,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Virtual renderer: scrolling right after a click could unmount the block with the caret and lose the selection,
+  because the pinned blocks were updated only on `selectionchange`; the scroll handler now reads the selection edges
+  itself.
 - A click beside the text of blocks standing side by side (table cells) puts the caret into the nearest one, not the
   first one on that line.
 

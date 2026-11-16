@@ -13,6 +13,7 @@ import type { BlockId } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import { useEditor } from '../../hooks/useEditor';
+import { selectionEdges } from '../../editing/useSelectionState';
 import { useEditorView } from '../../hooks/useEditorView';
 import { BlockRenderer } from '../BlockRenderer';
 import type { ChildListProps } from '../DocumentRenderer';
@@ -294,6 +295,11 @@ export function VirtualChildList({
     const step = options.overscan / 4;
 
     const onScroll = () => {
+      // `selectionchange` приходит отдельной задачей и может отстать от прокрутки: блок с кареткой успел бы
+      // выгрузиться, а вместе с ним пропало бы выделение. Края читаем здесь, до перерисовки окна.
+      const root = view.getRoot();
+
+      if (root) view.viewport.setEdges(selectionEdges(root));
       if (frame) return;
 
       frame = requestAnimationFrame(() => {
@@ -318,7 +324,7 @@ export function VirtualChildList({
       window.removeEventListener('scroll', onScroll, { capture: true });
       window.removeEventListener('resize', onScroll);
     };
-  }, [windowed, options.overscan]);
+  }, [windowed, options.overscan, view]);
 
   if (!rendered || !offsets) {
     return (
