@@ -5,6 +5,8 @@ import type { BlockComponent } from '../ui/types';
 import { TocBlock } from './TocBlock';
 
 export { TocBlock } from './TocBlock';
+export { TocPanel } from './TocPanel';
+export type { TocPanelProps } from './TocPanel';
 export { useHeadings } from './useHeadings';
 export type { HeadingEntry } from './useHeadings';
 

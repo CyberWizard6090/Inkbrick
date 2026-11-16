@@ -3,6 +3,7 @@ import {
   DocumentView,
   EditorProvider,
   FindReplacePanel,
+  TocPanel,
   findReplace,
   headingFolding,
   htmlToFragment,
@@ -315,6 +316,10 @@ interface Notice {
 
 const NOTICE_MS = 6000;
 
+/** Панель оглавления: справа по умолчанию, `?toc=left` — слева, `?toc=off` — без неё. */
+const tocParam = new URLSearchParams(window.location.search).get('toc');
+const tocPanelSide = tocParam === 'off' ? null : tocParam === 'left' ? 'left' : 'right';
+
 /** Клавиши сворачивания заголовков и поиска; объект стабилен, как требует провайдер. */
 const sandboxKeymap = [...headingFolding.keymap, ...findReplace.keymap];
 
@@ -427,6 +432,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         keymap={sandboxKeymap}
       >
         <FindReplacePanel />
+        {tocPanelSide && <TocPanel side={tocPanelSide} maxLevel={3} />}
         <SandboxNav
           readOnly={readOnly}
           onReadOnlyChange={setReadOnly}
