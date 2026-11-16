@@ -269,6 +269,25 @@ export function collect(container: Node, style: Style, out: FragmentBlock[], dep
         break;
       }
 
+      case 'DETAILS': {
+        flush();
+
+        const summary = element.querySelector(':scope > summary');
+        const content: InlineNode[] = [];
+
+        summary?.childNodes.forEach((child) => inlineOf(child, next, content, depth + 1));
+
+        const toggle = block('block:toggle', cleanInline(content), {
+          open: element.hasAttribute('open'),
+        });
+        const body = element.cloneNode(true) as HTMLElement;
+
+        body.querySelector(':scope > summary')?.remove();
+        collect(body, next, toggle.children, depth + 1);
+        out.push(toggle);
+        return;
+      }
+
       case 'UL':
       case 'OL':
         flush();

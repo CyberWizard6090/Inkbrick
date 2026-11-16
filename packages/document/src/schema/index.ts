@@ -16,3 +16,4 @@ export * from './blocks/FormulaSchema';
 export * from './blocks/TableSchema';
 export * from './blocks/ColumnsSchema';
 export * from './blocks/TocSchema';
+export * from './blocks/ToggleSchema';

@@ -1,0 +1,52 @@
+# Переключатель (toggle)
+
+Строка со стрелкой и вложенными блоками: пока блок раскрыт, они видны, закрыли — спрятаны. Как `<details>` в HTML и
+«Переключатель» в Notion. Состояние лежит в документе (`open` в props блока), сохраняется вместе с ним и входит в историю правок.
+
+## Подключение
+
+Блок не входит в набор по умолчанию и подключается и к редактору, и к провайдеру:
+
+```tsx
+import { Editor } from '@inkbrick/engine';
+import { EditorProvider, DocumentView, toggleBlocks } from '@inkbrick/react';
+
+const editor = new Editor({ blocks: toggleBlocks });
+
+<EditorProvider editor={editor} blocks={toggleBlocks}>
+  <DocumentView />
+</EditorProvider>;
+```
+
+Если подключаете несколько наборов блоков, объедините массивы: `blocks: [...tableBlocks, ...toggleBlocks]`.
+
+В slash-меню появляется пункт «Переключатель» (`/toggle`). Из кода:
+
+```ts
+editor.dispatch({ type: 'insertBlock', payload: { flavour: 'block:toggle', afterId } });
+editor.dispatch({
+  type: 'insertBlock',
+  payload: { flavour: 'block:paragraph', parentId: toggleId },
+}); // вложенный блок
+editor.dispatch({ type: 'setBlockProps', payload: { blockId: toggleId, props: { open: false } } });
+```
+
+## Поведение
+
+- В переключатель вкладываются обычные блоки: абзацы, заголовки, списки, цитаты, таблицы, картинки, другие переключатели.
+  Контейнеры документа (заметка, колонки) внутрь не вкладываются.
+- `Enter` в конце раскрытого переключателя создаёт первый вложенный абзац; в середине строки делит её как обычно.
+- `Enter` в пустом последнем вложенном абзаце выводит его из переключателя — на уровень выше, под него.
+- Закрытый переключатель не рисует вложенные блоки (их нет в DOM); в модели они остаются, поэтому экспорт и undo их видят.
+- В режиме только чтения читатель может раскрывать и закрывать переключатель, но документ при этом не меняется.
+
+## Экспорт и вставка
+
+- `toHtml` и `toMarkdown` выводят `<details open><summary>…</summary>…</details>` (`open` — только у раскрытого);
+  `toPlainText` — строку и вложенные блоки с отступом.
+- Вставка HTML с `<details>` превращает его в переключатель: `<summary>` — строка, остальное — вложенные блоки.
+
+## Стили
+
+Корень — `data-inkbrick-block="toggle"` (`data-open`, когда раскрыт), стрелка — `data-inkbrick-part="toggle"`, вложенные блоки —
+`data-inkbrick-part="children"`.
