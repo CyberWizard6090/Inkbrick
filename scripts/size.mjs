@@ -26,6 +26,13 @@ const cases = [
     code: "import { Editor } from '@inkbrick/engine'; console.log(Editor);",
   },
   {
+    // Всё, что получает приложение с редактором, вместе с zod: так виден и вес зависимостей.
+    name: 'app: editor with zod',
+    budget: 100,
+    bundled: ['zod'],
+    code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
+  },
+  {
     name: 'react: EditorProvider + DocumentView',
     budget: 75,
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
@@ -34,11 +41,13 @@ const cases = [
 
 let failed = false;
 
-for (const { name, budget, code } of cases) {
+for (const { name, budget, code, bundled = [] } of cases) {
   const result = await build({
     stdin: { contents: code, resolveDir: process.cwd(), loader: 'ts' },
     alias,
-    external,
+    external: external.filter((name) => !bundled.includes(name)),
+    // Кириллица и прочий не-ASCII текст — как есть, без \uXXXX: так же собираются пакеты (tsup).
+    charset: 'utf8',
     bundle: true,
     splitting: true,
     outdir: 'size-out',

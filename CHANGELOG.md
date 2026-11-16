@@ -88,6 +88,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Packages are built with `charset: utf8`: Cyrillic and other non-ASCII strings ship as they are instead of `\uXXXX`
+  escapes. `pnpm size` has a new case, «app: editor with zod» (budget 100 KB gzip), so the weight of dependencies is
+  visible too.
 - Built-in schemas import zod functions by name instead of the `z` namespace. An editor app that does not use `z` itself is
   65 KB gzip lighter (161.7 → 96.4 KB with zod bundled); the public `z` export of `@inkbrick/document` is unchanged.
   A lint rule keeps `import { z } from 'zod'` out of the packages.
