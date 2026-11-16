@@ -1111,4 +1111,92 @@
       height: 38px;
     }
   }
+
+  /* Поиск и замена: панель в правом верхнем углу окна и подсветка совпадений в документе. */
+  :where([data-inkbrick-ui='find']) {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: var(--inkbrick-z-popup);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    padding: 6px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='row']) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  :where([data-inkbrick-ui='find'] input) {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+  }
+
+  :where([data-inkbrick-ui='find'] button) {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-fg-2);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='find'] button:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-3);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='find'] button:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='find'] button[data-active]) {
+    background: var(--inkbrick-bg-4);
+    color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='status']) {
+    min-width: 56px;
+    padding: 0 6px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='expand'][data-active]) {
+    transform: rotate(90deg);
+  }
+
+  ::highlight(inkbrick-find) {
+    background-color: rgba(255, 200, 0, 0.4);
+  }
+
+  ::highlight(inkbrick-find-current) {
+    background-color: rgba(255, 140, 0, 0.7);
+  }
 }

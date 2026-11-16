@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DocumentView,
   EditorProvider,
+  FindReplacePanel,
+  findReplace,
   headingFolding,
   htmlToFragment,
   virtualRenderer,
@@ -309,6 +311,9 @@ interface Notice {
 
 const NOTICE_MS = 6000;
 
+/** Клавиши сворачивания заголовков и поиска; объект стабилен, как требует провайдер. */
+const sandboxKeymap = [...headingFolding.keymap, ...findReplace.keymap];
+
 export function App({ initial }: { initial: RestoredEditor }) {
   const [editor, setEditor] = useState(initial.editor);
   const [session, setSession] = useState(0);
@@ -414,8 +419,10 @@ export function App({ initial }: { initial: RestoredEditor }) {
         readOnly={readOnly}
         images={demoImages}
         formatting={formatting}
-        {...headingFolding}
+        components={headingFolding.components}
+        keymap={sandboxKeymap}
       >
+        <FindReplacePanel />
         <SandboxNav
           readOnly={readOnly}
           onReadOnlyChange={setReadOnly}

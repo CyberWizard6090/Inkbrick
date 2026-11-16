@@ -7,6 +7,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Find and replace (`docs/find-replace.md`): Ctrl/Cmd+F and Ctrl/Cmd+H open a panel that finds text in all blocks, highlights the
+  matches (CSS Custom Highlight API), walks through them with Enter / Shift+Enter, matches case or whole words, replaces the current
+  match or all of them in one undo step. Opt-in: `findReplace.keymap` in the provider and `<FindReplacePanel />` next to the document.
+  New exports `findMatches`, `replaceMatches`, `searchPattern`, `useFind`, `FindController`. Works with the virtual renderer.
 - Columns (`docs/columns.md`): `block:columns` → `block:column` with ordinary blocks inside, two to six columns, slash items «2
   columns» and «3 columns», a draggable divider (or arrow keys), a toolbar to add and remove columns or turn them into plain
   blocks. Opt-in: `columnsBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `columnsBlockSchemas` from `@inkbrick/document`.

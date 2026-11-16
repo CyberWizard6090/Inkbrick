@@ -23,6 +23,16 @@ export {
 export type { TableEditorProps } from './table';
 export { columnsBlocks, ColumnsBlock, ColumnBlock } from './columns';
 export { tocBlocks, TocBlock, useHeadings } from './toc';
+export {
+  findReplace,
+  FindReplacePanel,
+  FindController,
+  findMatches,
+  replaceMatches,
+  searchPattern,
+  useFind,
+} from './find';
+export type { FindMatch, FindOptions, FindState } from './find';
 export type { HeadingEntry } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
