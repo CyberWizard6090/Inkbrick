@@ -21,6 +21,7 @@ export {
   TableEditor,
 } from './table';
 export type { TableEditorProps } from './table';
+export { columnsBlocks, ColumnsBlock, ColumnBlock } from './columns';
 export { tocBlocks, TocBlock, useHeadings } from './toc';
 export type { HeadingEntry } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
@@ -36,6 +37,7 @@ export * from './blocks/PageBlock';
 export * from './blocks/NoteBlock';
 export * from './blocks/ParagraphBlock';
 export * from './blocks/HeadingBlock';
+export { headingFolding, FoldableHeadingBlock, computeFolds, useFoldTracking } from './fold';
 export * from './blocks/ListBlock';
 export * from './blocks/QuoteBlock';
 export * from './blocks/CodeBlock';

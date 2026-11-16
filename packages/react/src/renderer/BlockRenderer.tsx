@@ -1,4 +1,4 @@
-import { memo, useSyncExternalStore } from 'react';
+import { memo, useMemo, useSyncExternalStore } from 'react';
 
 import type { BlockId } from '@inkbrick/document';
 
@@ -27,9 +27,15 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     () => view.selection.isSelected(id),
     () => false,
   );
+  const subscribeFolds = useMemo(() => view.folds.subscribe(id), [view, id]);
+  const folded = useSyncExternalStore(
+    subscribeFolds,
+    () => view.folds.isHidden(id),
+    () => false,
+  );
   const block = useBlock(id);
 
-  if (!block) {
+  if (!block || folded) {
     return null;
   }
 

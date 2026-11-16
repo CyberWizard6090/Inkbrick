@@ -3,6 +3,7 @@ import type { BlockId } from '@inkbrick/document';
 import { BlockHandleController } from '../block-handle/BlockHandleController';
 import { UploadTracker } from '../images/UploadTracker';
 import { BlockSelectionController } from './BlockSelectionController';
+import { FoldController } from './FoldController';
 import { CellSelectionController } from './CellSelectionController';
 import { ContextMenuController } from '../context-menu/ContextMenuController';
 import { FormulaController } from '../formula/FormulaController';
@@ -27,6 +28,7 @@ export class EditorView {
 
   readonly selection = new BlockSelectionController();
 
+  readonly folds = new FoldController();
   readonly cells = new CellSelectionController();
 
   readonly caret = new CaretController();

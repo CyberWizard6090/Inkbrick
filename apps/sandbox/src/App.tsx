@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DocumentView,
   EditorProvider,
+  headingFolding,
   htmlToFragment,
   virtualRenderer,
   type FormattingMode,
@@ -228,6 +229,16 @@ function loadSample(editor: Editor): void {
   after = table.id;
 
   add('block:toc');
+
+  const leftColumn = add('block:columns', undefined, ['Left column']);
+  const columnsId = editor.document.getBlock(
+    editor.document.getBlock(leftColumn)!.parentId!,
+  )!.parentId!;
+  const rightColumn = editor.document.getBlock(columnsId)!.children[1];
+
+  write(editor.document.getBlock(rightColumn)!.children[0], ['Right column']);
+  after = columnsId;
+
   add('block:paragraph', undefined, ['Last paragraph']);
 
   editor.clearHistory();
@@ -403,6 +414,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         readOnly={readOnly}
         images={demoImages}
         formatting={formatting}
+        {...headingFolding}
       >
         <SandboxNav
           readOnly={readOnly}

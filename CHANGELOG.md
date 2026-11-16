@@ -7,6 +7,15 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Columns (`docs/columns.md`): `block:columns` → `block:column` with ordinary blocks inside, two to six columns, slash items «2
+  columns» and «3 columns», a draggable divider (or arrow keys), a toolbar to add and remove columns or turn them into plain
+  blocks. Opt-in: `columnsBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `columnsBlockSchemas` from `@inkbrick/document`.
+  Commands `addColumn`, `removeColumn`, `setColumnRatios`, `unwrapColumns`. New `BlockSchema.fillWhenEmpty`: the block
+  that appears when the last child is deleted (the note and the column use it).
+- Heading folding (`docs/heading-folding.md`): an arrow on a heading hides everything up to the next heading of the same or a
+  higher level; `collapsed` is stored in the document and is undoable. Opt-in: `<EditorProvider {...headingFolding}>`;
+  `computeFolds`, `useFoldTracking`, `FoldableHeadingBlock`. Enter in a collapsed heading expands it first. Core: blocks hidden
+  through `view.folds` are not rendered.
 - Tables: merged cells (`docs/tables.md`). "Merge cells" and "Split cell" in the right-click menu, commands `mergeTableCells`
   and `splitTableCell`, `merges` in the table props. Rows and columns inserted or deleted inside a merge stretch or shrink it;
   moving and sorting are off while a table has merges. `colspan` and `rowspan` of pasted HTML tables stay merged, `toHtml`

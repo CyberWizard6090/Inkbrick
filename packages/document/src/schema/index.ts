@@ -14,4 +14,5 @@ export * from './blocks/CalloutSchema';
 export * from './blocks/ImageSchema';
 export * from './blocks/FormulaSchema';
 export * from './blocks/TableSchema';
+export * from './blocks/ColumnsSchema';
 export * from './blocks/TocSchema';

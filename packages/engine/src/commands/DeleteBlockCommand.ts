@@ -26,12 +26,14 @@ export const DeleteBlockCommand: Command<{ id: BlockId }, void> = {
 
     const parent = parentId ? transaction.getBlock(parentId) : undefined;
 
-    if (parent && parent.children.length === 0 && parent.flavour === 'block:note') {
+    const fill = parent && engine.schema.getBlockSchema(parent.flavour)?.fillWhenEmpty;
+
+    if (parent && fill && parent.children.length === 0) {
       engine.block.insert(
         transaction,
         parent.id,
         0,
-        engine.block.create({ flavour: 'block:paragraph', parentId: parent.id }),
+        engine.block.create({ flavour: fill, parentId: parent.id }),
       );
     }
   },

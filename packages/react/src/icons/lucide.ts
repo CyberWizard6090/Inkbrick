@@ -234,6 +234,10 @@ export const ICON_SHAPES = {
     ['path', { d: 'M6 10V5a2 2 0 0 1 2-2h2' }],
     ['rect', { x: '3', y: '14', width: '7', height: '7', rx: '1' }],
   ],
+  columns: [
+    ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
+    ['path', { d: 'M12 3v18' }],
+  ],
   pin: [
     ['path', { d: 'M12 17v5' }],
     [
