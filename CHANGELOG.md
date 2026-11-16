@@ -7,6 +7,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Toggle block (`docs/toggle.md`): a line with an arrow and nested blocks that are shown only while it is open; `open` is stored
+  in the document and is undoable. Opt-in: `toggleBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `toggleBlockSchemas`
+  from `@inkbrick/document`; slash item "Toggle". Enter at the end of an open toggle makes the first nested paragraph, Enter in an
+  empty last nested paragraph leaves it. Exports as `<details>` in HTML and Markdown; a pasted `<details>` becomes a toggle.
 - Columns (`docs/columns.md`): `block:columns` → `block:column` with ordinary blocks inside, two to six columns, slash items «2
   columns» and «3 columns», a draggable divider (or arrow keys), a toolbar to add and remove columns or turn them into plain
   blocks. Opt-in: `columnsBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `columnsBlockSchemas` from `@inkbrick/document`.

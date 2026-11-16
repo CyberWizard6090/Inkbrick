@@ -239,6 +239,10 @@ function loadSample(editor: Editor): void {
   write(editor.document.getBlock(rightColumn)!.children[0], ['Right column']);
   after = columnsId;
 
+  const toggle = add('block:toggle', { open: true }, ['Toggle: click the arrow']);
+
+  add('block:paragraph', undefined, ['Hidden until you open it'], toggle);
+
   add('block:paragraph', undefined, ['Last paragraph']);
 
   editor.clearHistory();

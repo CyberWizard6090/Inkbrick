@@ -223,26 +223,50 @@ export function toMarkdown(document: Document, options: ExportOptions = {}): str
     return lines.join('\n');
   };
 
-  for (const group of groupSiblings(nodes)) {
-    if (group.list) {
-      chunks.push(renderList(group.nodes, 0));
-      continue;
-    }
+  // Переключатель — `<details>`: Markdown в нём начинается после пустой строки, поэтому вложенные блоки пишутся как обычно.
+  const renderNodes = (items: readonly ExportNode[]): string[] => {
+    const out: string[] = [];
 
-    const { block, children } = group.nodes[0];
+    for (const group of groupSiblings(items)) {
+      if (group.list) {
+        out.push(renderList(group.nodes, 0));
+        continue;
+      }
 
-    chunks.push(block.flavour === 'block:table' ? renderTable(group.nodes[0]) : renderBlock(block));
+      const node = group.nodes[0];
 
-    // Потомки обычного блока бывают только у пользовательских типов: выводим их следом.
-    // У таблицы потомки — её строки и ячейки, они уже выведены.
-    if (block.flavour !== 'block:table') {
-      for (const child of children) {
-        chunks.push(
-          child.block.flavour === 'block:table' ? renderTable(child) : renderBlock(child.block),
+      if (node.block.flavour === 'block:toggle') {
+        const open = node.block.props.open === false ? '' : ' open';
+        const summary = inlineToMarkdown(node.block.content).replace(/\s*\n\s*/g, ' ');
+
+        out.push(
+          [
+            `<details${open}>`,
+            `<summary>${summary}</summary>`,
+            ...renderNodes(node.children),
+            '</details>',
+          ]
+            .filter((chunk) => chunk !== '')
+            .join('\n\n'),
         );
+        continue;
+      }
+
+      out.push(node.block.flavour === 'block:table' ? renderTable(node) : renderBlock(node.block));
+
+      if (node.block.flavour !== 'block:table') {
+        for (const child of node.children) {
+          out.push(
+            child.block.flavour === 'block:table' ? renderTable(child) : renderBlock(child.block),
+          );
+        }
       }
     }
-  }
+
+    return out;
+  };
+
+  chunks.push(...renderNodes(nodes));
 
   const result = chunks.filter((chunk) => chunk !== '').join('\n\n');
 
