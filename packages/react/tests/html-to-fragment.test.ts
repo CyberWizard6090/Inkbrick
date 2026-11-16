@@ -19,6 +19,12 @@ function outline(fragment: Fragment | null): unknown[] {
 }
 
 const parse = (html: string) => htmlToFragment(html);
+
+/** Текст ячеек таблицы по строкам. */
+const grid = (table: FragmentBlock) =>
+  table.children.map((row) =>
+    row.children.map((cell) => cell.content.map((node) => node.insert).join('')),
+  );
 const first = (html: string) => parse(html)!.blocks[0];
 
 describe('htmlToFragment: blocks', () => {
@@ -94,12 +100,20 @@ describe('htmlToFragment: blocks', () => {
     expect(fragment!.blocks[0].children[0].props).toMatchObject({ type: 'bullet' });
   });
 
-  it('tables: each row is a paragraph, cells are separated by tabs', () => {
-    expect(
-      outline(
-        parse('<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td><b>2</b></td></tr></table>'),
-      ),
-    ).toEqual(['paragraph:A\tB', 'paragraph:1\t2']);
+  it('tables: a table block with a row per <tr> and a cell per <td>', () => {
+    const table = first(
+      '<table><tr><td>A</td><td>B</td></tr><tr><td>1</td><td><b>2</b></td></tr></table>',
+    );
+
+    expect(table.flavour).toBe('block:table');
+    expect(table.props).toEqual({ header: false });
+    expect(grid(table)).toEqual([
+      ['A', 'B'],
+      ['1', '2'],
+    ]);
+    expect(table.children[1].children[1].content).toEqual([
+      { insert: '2', attributes: { bold: true } },
+    ]);
   });
 
   it('callouts round-trip through <aside data-callout>; unknown tones are dropped', () => {
@@ -263,5 +277,210 @@ describe('a large embedded image survives copy and paste through HTML', () => {
     expect(html.length).toBeLessThan(6_000_000);
     expect(embeddedFragment(html)?.blocks[0].props.src).toBe(src);
     expect(htmlToFragment(html)?.blocks[0].props.src).toBe(src);
+  });
+});
+
+describe('htmlToFragment: tables', () => {
+  it('a first row in <thead> or made of <th> is the header', () => {
+    expect(
+      first('<table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>')
+        .props,
+    ).toEqual({ header: true });
+    expect(
+      first('<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>').props,
+    ).toEqual({ header: true });
+    expect(
+      first('<table><tr><th>A</th><td>B</td></tr><tr><td>1</td><td>2</td></tr></table>').props,
+    ).toEqual({ header: false });
+    expect(
+      first('<table><tr><td>A</td><td>B</td></tr><tr><td>1</td><td>2</td></tr></table>').props,
+    ).toEqual({ header: false });
+  });
+
+  it('colspan and rowspan fill the grid: the text stays in the first cell of the area', () => {
+    const table = first(
+      '<table><tr><td colspan="2">wide</td><td rowspan="2">tall</td></tr>' +
+        '<tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td><td>e</td></tr></table>',
+    );
+
+    expect(grid(table)).toEqual([
+      ['wide', '', 'tall'],
+      ['a', 'b', ''],
+      ['c', 'd', 'e'],
+    ]);
+  });
+
+  it('rows of different length are padded; absurd spans are refused, not expanded', () => {
+    expect(
+      grid(first('<table><tr><td>a</td><td>b</td><td>c</td></tr><tr><td>d</td></tr></table>')),
+    ).toEqual([
+      ['a', 'b', 'c'],
+      ['d', '', ''],
+    ]);
+
+    // Больше предела столбцов: таблицы нет, строки приходят текстом.
+    const wide = parse(
+      '<table><tr><td colspan="99999">x</td><td>y</td></tr><tr><td>z</td></tr></table>',
+    )!;
+
+    expect(wide.blocks.every((b) => b.flavour === 'block:paragraph')).toBe(true);
+  });
+
+  it('keeps cell formatting and links, drops unsafe ones, keeps lines inside a cell', () => {
+    const table = first(
+      '<table><tr><td><i>it</i> <a href="https://x.test/">link</a> <a href="javascript:alert(1)">bad</a></td>' +
+        '<td><p>one</p><p>two</p></td><td>a<br>b</td></tr><tr><td>1</td><td>2</td><td>3</td></tr></table>',
+    );
+
+    expect(table.children[0].children[0].content).toEqual([
+      { insert: 'it', attributes: { italic: true } },
+      { insert: ' ' },
+      { insert: 'link', attributes: { link: 'https://x.test/' } },
+      { insert: ' bad' },
+    ]);
+    expect(grid(table)[0].slice(1)).toEqual(['one\ntwo', 'a\nb']);
+  });
+
+  it('reads alignment from the align attribute and from text-align', () => {
+    const table = first(
+      '<table><tr><td align="right">a</td><td style="text-align:center">b</td><td style="text-align:left">c</td><td>d</td></tr>' +
+        '<tr><td>1</td><td>2</td><td>3</td><td>4</td></tr></table>',
+    );
+
+    expect(table.children[0].children.map((cell) => cell.props.align)).toEqual([
+      'right',
+      'center',
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('a table of one cell is just text (a single cell copied from Excel); an empty one is nothing', () => {
+    expect(outline(parse('<table><tr><td><b>cell</b></td></tr></table>'))).toEqual([
+      'paragraph:cell',
+    ]);
+    expect(parse('<table><tr><td> </td></tr></table>')).toBeNull();
+    expect(parse('<table></table>')).toBeNull();
+  });
+
+  it('a table larger than the limits arrives as rows of text with tabs between the cells', () => {
+    const cells = Array.from({ length: 51 }, (_, i) => `<td>${i}</td>`).join('');
+    const fragment = parse(`<table><tr>${cells}</tr><tr>${cells}</tr></table>`)!;
+
+    expect(fragment.blocks.map((b) => b.flavour)).toEqual(['block:paragraph', 'block:paragraph']);
+    expect(fragment.blocks[0].content[0].insert).toMatch(/^0\t1\t2/);
+  });
+
+  it('a nested table is flattened into the text of its cell', () => {
+    const table = first(
+      '<table><tr><td>outer <table><tr><td>in1</td><td>in2</td></tr></table></td><td>x</td></tr>' +
+        '<tr><td>1</td><td>2</td></tr></table>',
+    );
+
+    expect(table.children[0].children[0].content.map((n) => n.insert).join('')).toContain('in1');
+    expect(table.children).toHaveLength(2);
+  });
+
+  it('Excel: class names, <col>, &nbsp; and inline styles do not matter', () => {
+    const table = first(
+      '<table border=0 cellpadding=0 cellspacing=0 width=192 style="border-collapse:collapse;width:144pt">' +
+        '<col width=64 span=3 style="width:48pt"><tr height=20 style="height:15.0pt">' +
+        '<td height=20 class=xl65 width=64 style="height:15.0pt;width:48pt">Name</td>' +
+        '<td class=xl65 width=64 style="width:48pt">Qty</td><td class=xl66 align=right>Price</td></tr>' +
+        '<tr height=20><td height=20>Apple</td><td align=right x:num>3</td><td align=right x:num>1.5</td></tr></table>',
+    );
+
+    expect(grid(table)).toEqual([
+      ['Name', 'Qty', 'Price'],
+      ['Apple', '3', '1.5'],
+    ]);
+    expect(table.children[1].children[1].props).toEqual({ align: 'right' });
+  });
+
+  it('Google Sheets: wrapper element, styles, spans and data attributes', () => {
+    const fragment = parse(
+      '<meta charset="utf-8"><google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}--></style>' +
+        '<table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" data-sheets-root="1">' +
+        '<colgroup><col width="100"><col width="100"></colgroup><tbody>' +
+        '<tr style="height:21px;"><td style="font-weight:bold;" data-sheets-value="{&quot;1&quot;:2}">Item</td><td>Total</td></tr>' +
+        '<tr><td><span style="font-style:italic;">pear</span></td><td style="text-align:right;">10</td></tr></tbody></table></google-sheets-html-origin>',
+    )!;
+    const table = fragment.blocks[0];
+
+    expect(table.flavour).toBe('block:table');
+    expect(grid(table)).toEqual([
+      ['Item', 'Total'],
+      ['pear', '10'],
+    ]);
+    expect(table.children[0].children[0].content).toEqual([
+      { insert: 'Item', attributes: { bold: true } },
+    ]);
+    expect(table.children[1].children[1].props).toEqual({ align: 'right' });
+  });
+
+  it('Word: paragraphs and <o:p> inside cells', () => {
+    const table = first(
+      '<table class=MsoTableGrid border=1><tr><td width=200 valign=top><p class=MsoNormal>First<o:p></o:p></p></td>' +
+        '<td width=200 valign=top><p class=MsoNormal>Second<o:p></o:p></p></td></tr>' +
+        '<tr><td><p class=MsoNormal>a<o:p></o:p></p><p class=MsoNormal>b<o:p></o:p></p></td><td><p class=MsoNormal><o:p>&nbsp;</o:p></p></td></tr></table>',
+    );
+
+    expect(grid(table)).toEqual([
+      ['First', 'Second'],
+      ['a\nb', ''],
+    ]);
+  });
+
+  it('a table between paragraphs keeps its place', () => {
+    expect(
+      parse('<p>before</p><table><tr><td>a</td><td>b</td></tr></table><p>after</p>')!.blocks.map(
+        (b) => b.flavour,
+      ),
+    ).toEqual(['block:paragraph', 'block:table', 'block:paragraph']);
+  });
+
+  it('our own exported HTML reads back as the same table', () => {
+    const fragment: Fragment = {
+      blocks: [
+        {
+          flavour: 'block:table',
+          props: { header: true },
+          content: [],
+          children: [
+            {
+              flavour: 'block:table-row',
+              props: {},
+              content: [],
+              children: ['A', 'B'].map((t) => ({
+                flavour: 'block:table-cell',
+                props: t === 'B' ? { align: 'center' } : {},
+                content: [{ insert: t }],
+                children: [],
+              })),
+            },
+            {
+              flavour: 'block:table-row',
+              props: {},
+              content: [],
+              children: ['1', '2'].map((t) => ({
+                flavour: 'block:table-cell',
+                props: {},
+                content: [{ insert: t }],
+                children: [],
+              })),
+            },
+          ],
+        },
+      ],
+    };
+    const back = first(fragmentToHtml(fragment));
+
+    expect(back.props).toEqual({ header: true });
+    expect(grid(back)).toEqual([
+      ['A', 'B'],
+      ['1', '2'],
+    ]);
+    // Выравнивание заголовка (<th style="text-align:center">) читается.
+    expect(back.children[0].children[1].props).toEqual({ align: 'center' });
   });
 });

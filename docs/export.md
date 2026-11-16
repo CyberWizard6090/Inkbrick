@@ -22,18 +22,19 @@ exportDocument(editor.document, 'markdown'); // 'text' | 'markdown' | 'html'
 
 ## Как блоки выглядят в каждом формате
 
-| Блок                | Markdown                                        | HTML                                                                    | Текст                  |
-| ------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- | ---------------------- |
-| paragraph           | абзац                                           | `<p>` (+ `text-align`)                                                  | абзац                  |
-| heading             | `#`…`######`                                    | `<h1>`…`<h6>`                                                           | строка                 |
-| list bullet/ordered | `- ` / `1. `, вложенность — отступом            | `<ul>` / `<ol>`, вложенные внутри `<li>`                                | `- ` / `1. `, отступ 2 |
-| list todo           | `- [ ]` / `- [x]`                               | `<input type="checkbox" disabled>`                                      | `[ ]` / `[x]`          |
-| quote               | `> `                                            | `<blockquote>`                                                          | строка                 |
-| callout             | `> [!NOTE]` (по тону: NOTE/WARNING/TIP/CAUTION) | `<aside data-callout="тон">`                                            | строка                 |
-| code                | ограждение из обратных кавычек с языком         | `<pre><code class="language-…">`                                        | как есть               |
-| divider             | `---`                                           | `<hr>`                                                                  | `---`                  |
-| image               | `![alt](src)` + подпись курсивом                | `<figure><img><figcaption>`                                             | подпись или alt        |
-| formula             | `$$` … `$$`; встроенная — `$код$`               | `<div class="math display">`, встроенная — `<span class="math inline">` | исходный LaTeX         |
+| Блок                | Markdown                                        | HTML                                                                    | Текст                          |
+| ------------------- | ----------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------ |
+| paragraph           | абзац                                           | `<p>` (+ `text-align`)                                                  | абзац                          |
+| heading             | `#`…`######`                                    | `<h1>`…`<h6>`                                                           | строка                         |
+| list bullet/ordered | `- ` / `1. `, вложенность — отступом            | `<ul>` / `<ol>`, вложенные внутри `<li>`                                | `- ` / `1. `, отступ 2         |
+| list todo           | `- [ ]` / `- [x]`                               | `<input type="checkbox" disabled>`                                      | `[ ]` / `[x]`                  |
+| quote               | `> `                                            | `<blockquote>`                                                          | строка                         |
+| callout             | `> [!NOTE]` (по тону: NOTE/WARNING/TIP/CAUTION) | `<aside data-callout="тон">`                                            | строка                         |
+| code                | ограждение из обратных кавычек с языком         | `<pre><code class="language-…">`                                        | как есть                       |
+| divider             | `---`                                           | `<hr>`                                                                  | `---`                          |
+| image               | `![alt](src)` + подпись курсивом                | `<figure><img><figcaption>`                                             | подпись или alt                |
+| formula             | `$$` … `$$`; встроенная — `$код$`               | `<div class="math display">`, встроенная — `<span class="math inline">` | исходный LaTeX                 |
+| table               | таблица GFM (`\| a \| b \|`)                    | `<table>`, `<thead>`, `<colgroup>`, `text-align` в ячейках              | строки, ячейки через табуляцию |
 
 Инлайн-форматирование: жирный, курсив, зачёркнутый, код, ссылка. Подчёркивание в Markdown выводится тегом `<u>`;
 цвета отбрасываются. Блоки неизвестных типов выводятся как текст.

@@ -1,7 +1,8 @@
-import { TABLE_CELL, TABLE_ROW, type TableProps } from '@inkbrick/document';
+import type { TableProps } from '@inkbrick/document';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
 import type { CaretResult } from '../dispatcher/Intents';
+import { addTableColumn, addTableRow } from './tableOps';
 
 type Context = BlockCommandContext<TableProps>;
 
@@ -37,18 +38,8 @@ export const InsertTableRowCommand = defineBlockCommand<TableProps, { index: num
 
   canExecute: (context, { index }) => isIndex(index, rowsOf(context)),
 
-  execute(context, { index }): CaretResult {
-    const { engine, transaction, block } = context;
-    const columns = Math.max(1, columnsOf(context));
-    const row = engine.block.create({ flavour: TABLE_ROW, parentId: block.id });
-
-    engine.block.insert(transaction, block.id, index, row);
-
-    const [first] = engine.block.build(
-      transaction,
-      row.id,
-      Array.from({ length: columns }, () => ({ flavour: TABLE_CELL })),
-    );
+  execute({ engine, transaction, block }, { index }): CaretResult {
+    const [first] = addTableRow(engine, transaction, block.id, index);
 
     return { blockId: first, offset: 0 };
   },
@@ -90,20 +81,10 @@ export const InsertTableColumnCommand = defineBlockCommand<TableProps, { index: 
 
   canExecute: (context, { index }) => isIndex(index, columnsOf(context)),
 
-  execute(context, { index }): CaretResult {
-    const { engine, transaction, block } = context;
+  execute({ engine, transaction, block }, { index }): CaretResult {
+    const [first] = addTableColumn(engine, transaction, block.id, index);
 
-    updateWidths(context, (widths) => widths.splice(index, 0, null));
-
-    const cells = block.children.map((rowId) => {
-      const cell = engine.block.create({ flavour: TABLE_CELL, parentId: rowId });
-
-      engine.block.insert(transaction, rowId, index, cell);
-
-      return cell.id;
-    });
-
-    return { blockId: cells[0], offset: 0 };
+    return { blockId: first, offset: 0 };
   },
 });
 

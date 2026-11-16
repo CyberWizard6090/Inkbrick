@@ -1,6 +1,14 @@
-import type { BaseBlock, InlineNode } from '@inkbrick/document';
+import { TABLE, type BaseBlock, type InlineNode } from '@inkbrick/document';
 
-import type { FragmentBlock } from '../clipboard/types';
+import type { Fragment, FragmentBlock } from '../clipboard/types';
+import { addTableColumn, addTableRow } from '../table/tableOps';
+import { locateTableCell, tableCellAt, tableSize } from '../table/tableGrid';
+import {
+  MAX_TABLE_CELLS,
+  MAX_TABLE_COLUMNS,
+  degradeTables,
+  readTable,
+} from '../table/tableFragment';
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, PasteFragmentPayload } from '../dispatcher/Intents';
 import { isIsolating, isTextBlock } from '../utils';
@@ -15,13 +23,17 @@ const PARAGRAPH = 'block:paragraph';
  *    средние блоки вставляются следом, последний блок получает «хвост» разделённого текста.
  *  - Пустой блок перенимает тип целиком скопированного первого блока (заголовок, список, код…).
  *  - Типы, которых нет в схеме или которые нельзя положить в этот контейнер, превращаются
- *    в параграфы — содержимое не теряется.
+ *    в параграфы — содержимое не теряется. Таблица в редакторе без таблиц — абзацы по строкам, ячейки через табуляцию.
+ *  - Таблица в ячейку таблицы: ячейки заполняются от каретки (при нехватке добавляются строки и столбцы);
+ *    любой другой фрагмент в ячейку — текстом, блоки разделяются переводом строки.
+ *  - Таблица в пустой абзац или в начало абзаца занимает его место: пустого абзаца перед ней не остаётся.
  * Возвращает позицию каретки в конце вставленного текста.
  */
 export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = {
   type: 'pasteFragment',
 
-  canExecute({ engine, transaction }, { at, fragment }) {
+  canExecute({ engine, transaction }, { at, fragment: pasted }) {
+    const fragment = supported(engine.schema.hasBlock(TABLE), pasted);
     const target = transaction.getBlock(at.blockId);
     const parent = target?.parentId ? transaction.getBlock(target.parentId) : undefined;
 
@@ -35,8 +47,9 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
     );
   },
 
-  execute(context, { at, fragment }) {
+  execute(context, { at, fragment: pasted }) {
     const { engine, transaction: tx } = context;
+    const fragment = supported(engine.schema.hasBlock(TABLE), pasted);
     const target = tx.getBlock(at.blockId)!;
     const parent = tx.getBlock(target.parentId!)!;
     const { inline } = engine;
@@ -44,6 +57,11 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
     const [head, tail] = inline.split(target.content, at.offset);
 
     if (isIsolating(engine.schema, target)) {
+      const filled =
+        fragment.blocks.length === 1 ? fillTable(context, target, fragment.blocks[0]) : undefined;
+
+      if (filled) return filled;
+
       const text = flatten(inline, fragment.blocks);
 
       engine.block.updateContent(tx, target.id, merge(inline, head, text, tail));
@@ -56,6 +74,8 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
 
     const first = fragment.blocks[0];
     const firstIsText = isTextual(context, first);
+    // Блок с потомками (таблица) создаётся заново: превратить в него пустой абзац нельзя, потомков не появится.
+    const compositeFirst = !firstIsText && first.children.length > 0;
 
     let bodyRoots: FragmentBlock[];
     let firstContent: InlineNode[] = [];
@@ -65,7 +85,7 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
       firstContent = first.content;
 
       if (targetIsEmpty && first.complete === true) adoptType(context, parent, target, first);
-    } else if (targetIsEmpty) {
+    } else if (targetIsEmpty && !compositeFirst) {
       adoptType(context, parent, target, first);
       bodyRoots = fragment.blocks.slice(1);
     } else {
@@ -136,9 +156,64 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
       }
     }
 
+    // Таблица заняла место пустой «головы»: пустой абзац перед ней не нужен (если в нём не остались потомки).
+    if (compositeFirst && head.length === 0 && current().children.length === 0) {
+      engine.block.remove(tx, target.id);
+    }
+
     return caret!;
   },
 };
+
+/** Редактор без таблиц: таблицы фрагмента — абзацы с текстом строк. */
+function supported(hasTables: boolean, fragment: Fragment): Fragment {
+  return hasTables ? fragment : { ...fragment, blocks: degradeTables(fragment.blocks) };
+}
+
+/**
+ * Таблица, вставленная в ячейку: ячейки заполняются от каретки, недостающие строки и столбцы добавляются.
+ * `undefined` — это не таблица или она не поместится в пределы размера: тогда фрагмент идёт текстом.
+ */
+function fillTable(
+  context: CommandContext,
+  cell: BaseBlock,
+  source: FragmentBlock,
+): CaretResult | undefined {
+  const { engine, transaction: tx } = context;
+  const getBlock = (id: string) => tx.getBlock(id);
+  const position = source.flavour === TABLE ? locateTableCell(getBlock, cell.id) : undefined;
+
+  if (!position) return undefined;
+
+  const { rows } = readTable(source);
+  const columns = rows[0]?.length ?? 0;
+  const needRows = position.row + rows.length;
+  const needColumns = position.column + columns;
+
+  if (columns === 0 || needColumns > MAX_TABLE_COLUMNS || needRows * needColumns > MAX_TABLE_CELLS)
+    return undefined;
+
+  let size = tableSize(getBlock, position.tableId)!;
+
+  for (; size.rows < needRows; size = tableSize(getBlock, position.tableId)!)
+    addTableRow(engine, tx, position.tableId, size.rows);
+
+  for (; size.columns < needColumns; size = tableSize(getBlock, position.tableId)!)
+    addTableColumn(engine, tx, position.tableId, size.columns);
+
+  let last: CaretResult | undefined;
+
+  rows.forEach((row, r) =>
+    row.forEach((content, c) => {
+      const id = tableCellAt(getBlock, position.tableId, position.row + r, position.column + c)!;
+
+      engine.block.updateContent(tx, id, structuredClone(content));
+      last = { blockId: id, offset: engine.inline.length(content) };
+    }),
+  );
+
+  return last;
+}
 
 function adoptType(
   context: CommandContext,
