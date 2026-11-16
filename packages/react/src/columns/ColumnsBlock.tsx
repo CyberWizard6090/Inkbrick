@@ -124,14 +124,18 @@ export function ColumnsBlock({ block, selected, readOnly }: BlockProps) {
 
   latest.current = { onDrag, onKey };
 
+  const sharesKey = shares.join(',');
+  const stableShares = useMemo(() => shares, [sharesKey]);
+
   const layout = useMemo<ColumnsLayout>(
     () => ({
       ids,
+      shares: stableShares,
       onDrag: (index, event) => latest.current.onDrag(index, event),
       onKey: (index, delta) => latest.current.onKey(index, delta),
       readOnly: readOnly === true,
     }),
-    [ids, readOnly],
+    [ids, stableShares, readOnly],
   );
 
   const template = shares.map((share) => `minmax(0, ${share}fr)`).join(' ');

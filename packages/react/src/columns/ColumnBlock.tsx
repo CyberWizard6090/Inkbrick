@@ -42,6 +42,9 @@ export function ColumnBlock({ block, selected }: BlockProps) {
         <div
           role="separator"
           aria-orientation="vertical"
+          aria-valuenow={Math.round((layout?.shares[index] ?? 0) * 100)}
+          aria-valuemin={8}
+          aria-valuemax={100}
           aria-label={t('columns.resize', { column: index + 1 })}
           tabIndex={0}
           contentEditable={false}

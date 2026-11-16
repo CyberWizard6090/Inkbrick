@@ -54,6 +54,23 @@ describe('columns', () => {
     );
   });
 
+  it('gives every divider its width as a percentage for assistive technology', () => {
+    const t = mountColumns();
+
+    expect(t.divider(0).getAttribute('aria-valuenow')).toBe('33');
+    expect(t.divider(0).getAttribute('aria-valuemin')).toBe('8');
+
+    act(() => {
+      t.editor.dispatch({
+        type: 'setColumnRatios',
+        payload: { blockId: t.columnsId, ratios: [1, 2, 1] },
+      } as never);
+    });
+
+    expect(t.divider(0).getAttribute('aria-valuenow')).toBe('25');
+    expect(t.divider(1).getAttribute('aria-valuenow')).toBe('50');
+  });
+
   it('follows the ratios', () => {
     const t = mountColumns();
 
