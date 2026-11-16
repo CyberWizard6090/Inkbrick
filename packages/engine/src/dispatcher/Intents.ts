@@ -42,6 +42,8 @@ export interface ReplaceTextPayload {
   from: number;
   to: number;
   text: string;
+  /** Вставить текст без форматирования соседних символов (по умолчанию он наследуется от символа слева). */
+  plain?: boolean;
 }
 
 export interface ToggleFormatPayload {

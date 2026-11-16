@@ -419,6 +419,71 @@
     border-top: 1px solid var(--inkbrick-stroke-2);
   }
 
+  :where([data-inkbrick-block='toc']) {
+    position: relative;
+    display: block;
+    margin: 4px 0;
+    padding: 6px 0;
+  }
+
+  :where([data-inkbrick-block='toc'] ul) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  :where([data-inkbrick-block='toc'] ul ul) {
+    padding-inline-start: 16px;
+  }
+
+  :where([data-inkbrick-block='toc'] [data-inkbrick-part='link']) {
+    display: block;
+    width: 100%;
+    padding: 2px 6px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-fg-2);
+    font: inherit;
+    text-align: start;
+    text-decoration: underline;
+    text-decoration-color: var(--inkbrick-stroke-2);
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-block='toc'] [data-inkbrick-part='link']:hover) {
+    background: var(--inkbrick-bg-3);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-block='toc'] [data-inkbrick-part='empty']) {
+    margin: 0;
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where([data-inkbrick-block='toc'] [data-inkbrick-part='levels']) {
+    position: absolute;
+    top: 4px;
+    inset-inline-end: 0;
+    padding: 0 6px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  :where(
+    [data-inkbrick-block='toc']:hover [data-inkbrick-part='levels'],
+    [data-inkbrick-block='toc'] [data-inkbrick-part='levels']:focus-visible
+  ) {
+    opacity: 1;
+  }
+
   :where([data-inkbrick-block='callout']) {
     --callout-fg: var(--inkbrick-status-info-fg);
     --callout-bg: var(--inkbrick-status-info-bg);
@@ -776,6 +841,7 @@
 
   :where([data-inkbrick-block='image'][data-selected='true']),
   :where([data-inkbrick-block='divider'][data-selected='true']),
+  :where([data-inkbrick-block='toc'][data-selected='true']),
   :where([data-inkbrick-block='formula'][data-selected='true']) {
     border-radius: var(--inkbrick-radius-control);
     outline: 2px solid var(--inkbrick-brand-bg);

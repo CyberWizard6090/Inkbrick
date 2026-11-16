@@ -130,3 +130,43 @@ export function exportTable(node: ExportNode): ExportTable {
     }),
   };
 }
+
+export const isToc = (block: BaseBlock) => block.flavour === 'block:toc';
+
+/** Заголовки документа по порядку, вместе с вложенными в другие блоки. */
+export function collectHeadings(nodes: readonly ExportNode[]): BaseBlock[] {
+  return nodes.flatMap(({ block, children }) => [
+    ...(block.flavour === 'block:heading' ? [block] : []),
+    ...collectHeadings(children),
+  ]);
+}
+
+export interface OutlineItem {
+  readonly block: BaseBlock;
+  readonly children: readonly OutlineItem[];
+}
+
+/**
+ * Заголовки оглавления деревом: заголовок следующего уровня вкладывается в предыдущий, пропущенные уровни
+ * не оставляют пустых ступеней (после `h1` сразу `h3` — вложенный пункт). Выше `maxLevel` заголовки не берутся.
+ */
+export function tocOutline(headings: readonly BaseBlock[], toc: BaseBlock): OutlineItem[] {
+  const max = typeof toc.props.maxLevel === 'number' ? Math.trunc(toc.props.maxLevel) : 6;
+  const roots: { block: BaseBlock; children: OutlineItem[]; level: number }[] = [];
+  const stack: typeof roots = [];
+
+  for (const block of headings) {
+    const level = headingLevel(block);
+
+    if (level > max) continue;
+
+    const item = { block, children: [], level };
+
+    while (stack.length > 0 && stack[stack.length - 1].level >= level) stack.pop();
+
+    (stack.length > 0 ? stack[stack.length - 1].children : roots).push(item);
+    stack.push(item);
+  }
+
+  return roots;
+}

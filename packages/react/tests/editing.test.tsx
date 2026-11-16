@@ -350,3 +350,100 @@ describe('clipboard', () => {
     expect(outline()).toEqual(['paragraph:locked']);
   });
 });
+
+describe('Markdown while typing', () => {
+  const runs = (editor: ReturnType<typeof mountEditor>['editor'], id: string) =>
+    editor.document.getBlock(id)!.content.map((node) => [node.insert, node.attributes ?? {}]);
+
+  it('turns closed inline markup into formatting and removes the markers', () => {
+    const cases: Array<[string, string, Record<string, unknown>]> = [
+      ['**bold**', 'bold', { bold: true }],
+      ['__bold__', 'bold', { bold: true }],
+      ['*it*', 'it', { italic: true }],
+      ['_it_', 'it', { italic: true }],
+      ['~~gone~~', 'gone', { strike: true }],
+      ['`a b`', 'a b', { code: true }],
+      ['[docs](https://example.com)', 'docs', { link: 'https://example.com' }],
+    ];
+
+    for (const [typed, text, attributes] of cases) {
+      const { editor, ids, caret, type, unmount } = mountEditor(['']);
+
+      caret(ids[0], 0);
+      type(`a ${typed}`);
+
+      expect(runs(editor, ids[0]), typed).toEqual([
+        ['a ', {}],
+        [text, attributes],
+      ]);
+      type('z');
+      expect(runs(editor, ids[0]).at(-1), `${typed} then text`).toEqual([
+        expect.stringMatching(/z$/),
+        {},
+      ]);
+      unmount();
+    }
+  });
+
+  it('is one undo step and leaves ordinary text alone', () => {
+    const { editor, ids, caret, type, outline } = mountEditor(['']);
+
+    caret(ids[0], 0);
+    type('2 * 3 * 4 snake_case_name');
+    expect(outline()).toEqual(['paragraph:2 * 3 * 4 snake_case_name']);
+
+    type(' **b**');
+    expect(runs(editor, ids[0]).at(-1)).toEqual(['b', { bold: true }]);
+
+    act(() => void editor.undo());
+    expect(outline()).toEqual(['paragraph:2 * 3 * 4 snake_case_name **b*']);
+  });
+
+  it('does not format inside code blocks', () => {
+    const { ids, caret, type, outline } = mountEditor(['']);
+
+    caret(ids[0], 0);
+    type('``` ');
+    type('**x**');
+    expect(outline()).toEqual(['code:**x**']);
+  });
+
+  it('adds block forms: [x], 1), ***, ```lang, and [] inside a bullet', () => {
+    const cases: Array<[string, string, Record<string, unknown>]> = [
+      ['[x] ', 'list', { type: 'todo', checked: true }],
+      ['[ ] ', 'list', { type: 'todo', checked: false }],
+      ['1) ', 'list', { type: 'ordered' }],
+      ['*** ', 'divider', {}],
+      ['___ ', 'divider', {}],
+      ['```js ', 'code', { language: 'js' }],
+    ];
+
+    for (const [shortcut, flavour, props] of cases) {
+      const { editor, ids, caret, type, outline, unmount } = mountEditor(['']);
+
+      caret(ids[0], 0);
+      type(shortcut);
+      type('x');
+
+      const flavours = outline().map((line) => line.split(':')[0]);
+
+      expect(flavours[0], shortcut).toBe(flavour);
+
+      const block = editor.document.getBlock(
+        editor.document.getBlock(editor.document.rootId)!.children[0],
+      )!;
+      const first = editor.document.getBlock(block.children[0])!;
+
+      expect(first.props, shortcut).toMatchObject(props);
+      unmount();
+    }
+
+    const { editor, ids, caret, type } = mountEditor(['']);
+
+    caret(ids[0], 0);
+    type('- ');
+    type('[] ');
+    type('x');
+    expect(editor.document.getBlock(ids[0])!.props).toMatchObject({ type: 'todo', checked: false });
+  });
+});

@@ -4,6 +4,7 @@ import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
 import { matchInlineFormula } from '../formula/actions';
 import { deleteForwardAtEnd } from './deleteAtBoundary';
+import { matchInlineMarkdown } from './markdownInline';
 import type { EditorView } from './EditorView';
 import type { InputActions } from './inputActions';
 import { readDocSelection } from './selection';
@@ -15,18 +16,35 @@ const FORMAT_BY_INPUT_TYPE: Record<string, string> = {
   formatStrikeThrough: 'strike',
 };
 
-function matchShortcut(prefix: string) {
+const TODO = /^\[( |x|X)?\]$/;
+
+function matchShortcut(prefix: string, inBulletList: boolean) {
+  const todo = TODO.exec(prefix);
+
+  if (todo) {
+    return {
+      flavour: 'block:list',
+      props: { type: 'todo', checked: todo[1] === 'x' || todo[1] === 'X' },
+    };
+  }
+
+  if (inBulletList) return null;
+
   if (/^#{1,6}$/.test(prefix)) {
     return { flavour: 'block:heading', props: { level: prefix.length } };
   }
   if (prefix === '>') return { flavour: 'block:quote', props: {} };
   if (prefix === '```') return { flavour: 'block:code', props: {} };
-  if (prefix === '---') return { flavour: 'block:divider', props: {} };
+  if (prefix === '---' || prefix === '***' || prefix === '___') {
+    return { flavour: 'block:divider', props: {} };
+  }
   if (prefix === '$$') return { flavour: 'block:formula', props: {} };
   if (/^[-*+]$/.test(prefix)) return { flavour: 'block:list', props: { type: 'bullet' } };
-  if (/^\d+\.$/.test(prefix)) return { flavour: 'block:list', props: { type: 'ordered' } };
-  if (prefix === '[]') return { flavour: 'block:list', props: { type: 'todo', checked: false } };
-  return null;
+  if (/^\d+[.)]$/.test(prefix)) return { flavour: 'block:list', props: { type: 'ordered' } };
+
+  const fence = /^```([\w+#.-]+)$/.exec(prefix);
+
+  return fence ? { flavour: 'block:code', props: { language: fence[1].toLowerCase() } } : null;
 }
 
 /**
@@ -95,8 +113,10 @@ export function applyBeforeInput(
         }
       }
 
-      if (data === ' ' && collapsed && block?.flavour === 'block:paragraph') {
-        const shortcut = matchShortcut(text.slice(0, from.offset));
+      const inBulletList = block?.flavour === 'block:list' && block.props.type === 'bullet';
+
+      if (data === ' ' && collapsed && (block?.flavour === 'block:paragraph' || inBulletList)) {
+        const shortcut = matchShortcut(text.slice(0, from.offset), inBulletList);
 
         if (shortcut) {
           run(() =>
@@ -116,6 +136,53 @@ export function applyBeforeInput(
         }
       }
 
+      if (
+        data.length === 1 &&
+        collapsed &&
+        block &&
+        block.flavour !== 'block:code' &&
+        editor.schema.getBlockSchema(block.flavour)?.inline !== false
+      ) {
+        const markdown = matchInlineMarkdown(text.slice(0, from.offset), data);
+
+        if (markdown) {
+          const { start, open, close, length, attributes } = markdown;
+          const end = start + open + length;
+
+          run(() =>
+            editor.batch(() => {
+              if (close > 0) {
+                exec({
+                  type: 'deleteText',
+                  payload: { blockId: from.blockId, from: end, to: from.offset },
+                });
+              }
+
+              exec({
+                type: 'deleteText',
+                payload: { blockId: from.blockId, from: start, to: start + open },
+              });
+              exec({
+                type: 'setInlineAttributes',
+                payload: {
+                  from: { blockId: from.blockId, offset: start },
+                  to: { blockId: from.blockId, offset: start + length },
+                  attributes,
+                },
+              });
+
+              return { blockId: from.blockId, offset: start + length };
+            }),
+          );
+          view.plainAt = {
+            blockId: from.blockId,
+            offset: start + length,
+            version: editor.store.getVersion(),
+          };
+          return;
+        }
+      }
+
       const opensSlash =
         data === '/' &&
         collapsed &&
@@ -125,7 +192,30 @@ export function applyBeforeInput(
         (from.offset === 0 || /\s/.test(text[from.offset - 1])) &&
         availableSlashItems(editor, slashItems, from.blockId).length > 0;
 
-      run(() => replaceSelection(selection, data));
+      const plain =
+        collapsed &&
+        view.plainAt?.blockId === from.blockId &&
+        view.plainAt.offset === from.offset &&
+        view.plainAt.version === editor.store.getVersion();
+
+      view.plainAt = null;
+
+      if (plain) {
+        run(() =>
+          exec<CaretResult>({
+            type: 'replaceText',
+            payload: {
+              blockId: from.blockId,
+              from: from.offset,
+              to: from.offset,
+              text: data,
+              plain,
+            },
+          }),
+        );
+      } else {
+        run(() => replaceSelection(selection, data));
+      }
 
       if (opensSlash) {
         view.slash.open(from.blockId, from.offset);
