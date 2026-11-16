@@ -65,6 +65,7 @@ export type {
   UnknownBlockViewProps,
 } from './ui/types';
 export { useEditorUI } from './ui/EditorUIContext';
+export { preloadEditorUI } from './ui/lazy';
 export { defaultBlockComponents } from './registry/defaultBlockComponents';
 export { resolveBlockComponent } from './registry/resolveBlockComponent';
 

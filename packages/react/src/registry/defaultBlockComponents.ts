@@ -8,7 +8,7 @@ import { QuoteBlock } from '../blocks/QuoteBlock';
 import { CodeBlock } from '../blocks/CodeBlock';
 import { DividerBlock } from '../blocks/DividerBlock';
 import { CalloutBlock } from '../blocks/CalloutBlock';
-import { ImageBlock } from '../blocks/ImageBlock';
+import { LazyImageBlock } from '../blocks/LazyImageBlock';
 import { FormulaBlock } from '../blocks/FormulaBlock';
 
 export const defaultBlockComponents: BlockComponentRegistry = Object.freeze({
@@ -21,6 +21,6 @@ export const defaultBlockComponents: BlockComponentRegistry = Object.freeze({
   'block:code': CodeBlock,
   'block:divider': DividerBlock,
   'block:callout': CalloutBlock,
-  'block:image': ImageBlock,
+  'block:image': LazyImageBlock,
   'block:formula': FormulaBlock,
 });

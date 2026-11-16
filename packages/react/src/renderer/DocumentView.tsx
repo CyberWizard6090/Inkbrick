@@ -13,7 +13,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
 import { useEditorUI } from '../ui/EditorUIContext';
-import { FormulaPopover } from '../formula/FormulaPopover';
+import { FormulaPopoverHost } from '../formula/FormulaPopoverHost';
 import { preloadFormulaPalette } from '../formula/LazyFormulaPalette';
 import { SlashMenuHost } from '../slash/SlashMenuHost';
 import { ToolbarHost } from '../toolbar/ToolbarHost';
@@ -91,7 +91,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
       <SlashMenuHost />
       <ToolbarHost />
       <ContextMenuHost />
-      <FormulaPopover />
+      <FormulaPopoverHost />
       <BlockHandleHost />
       <DropIndicatorHost />
     </>

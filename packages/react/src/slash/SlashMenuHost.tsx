@@ -6,14 +6,19 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { applySlashItem } from './applySlashItem';
-import { DefaultSlashMenu } from './DefaultSlashMenu';
+import { lazyModule, useLazy } from '../ui/lazy';
 import { visibleSlashItems } from './items';
+
+const defaultSlashMenu = lazyModule(() =>
+  import('./DefaultSlashMenu').then((module) => module.DefaultSlashMenu),
+);
 
 export function SlashMenuHost() {
   const editor = useEditor();
   const view = useEditorView();
   const { slots, slashItems } = useEditorUI();
   const readOnly = useReadOnly();
+  const Default = useLazy(defaultSlashMenu, slots.SlashMenu === undefined && !readOnly);
   const state = useSyncExternalStore(
     view.slash.subscribe,
     view.slash.getState,
@@ -31,7 +36,9 @@ export function SlashMenuHost() {
   }
 
   const items = visibleSlashItems(editor, slashItems, state.blockId, state.query);
-  const Menu = slots.SlashMenu ?? DefaultSlashMenu;
+  const Menu = slots.SlashMenu ?? Default;
+
+  if (!Menu) return null;
 
   return createPortal(
     <Menu

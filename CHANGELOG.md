@@ -88,6 +88,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- The floating toolbar, the slash menu, the block handle and its menu, the inline formula popover and the image block are
+  separate chunks, loaded right after the editor mounts (the image block when the first image appears): the core of
+  `@inkbrick/react` is 62.1 KB gzip instead of 70.6. New `preloadEditorUI()` loads them all at once, for apps that need
+  them from the very first action and for tests.
 - The built-in code highlighter is loaded as a separate chunk when the first code block appears (code shows uncoloured until
   then): `@inkbrick/react` loses 5.6 KB gzip at start. A custom `highlighter` and a direct `highlightCode` import stay
   synchronous.
