@@ -16,8 +16,10 @@ import type { Editor } from '@inkbrick/engine';
 import { InsertChildChange, SetBlockChange } from '@inkbrick/store';
 
 import { DebugPanel } from './components/DebugPanel';
+import { NoticeBar, type Notice } from './components/NoticeBar';
+import { DemoSwitch } from './DemoSwitch';
 import { HistoryButtons } from './components/HistoryButtons';
-import { createSandboxI18n, describe, SandboxI18nContext } from './i18n';
+import { createSandboxI18n, SandboxI18nContext } from './i18n';
 import { loadLargeDocument } from './largeDocument';
 import { SandboxNav } from './components/SandboxNav';
 import { ShortcutsHelp } from './components/ShortcutsHelp';
@@ -308,12 +310,6 @@ export const publish = (editor: Editor) => {
   };
 };
 
-/** `value` — сообщение или ошибка: переводятся при показе, поэтому смена языка меняет и видимое уведомление. */
-interface Notice {
-  value: unknown;
-  error?: boolean;
-}
-
 const NOTICE_MS = 6000;
 
 /** Панель оглавления: справа по умолчанию, `?toc=left` — слева, `?toc=off` — без неё. */
@@ -431,6 +427,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         components={headingFolding.components}
         keymap={sandboxKeymap}
       >
+        <DemoSwitch current="editor" />
         <FindReplacePanel />
         {tocPanelSide && <TocPanel side={tocPanelSide} maxLevel={3} />}
         <SandboxNav
@@ -463,18 +460,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         </div>
         {shortcuts && <ShortcutsHelp onClose={() => setShortcuts(false)} />}
       </EditorProvider>
-      {notice && (
-        <div
-          className={notice.error ? 'sandbox-notice sandbox-notice--error' : 'sandbox-notice'}
-          role={notice.error ? 'alert' : 'status'}
-          data-testid="notice"
-        >
-          <span>{describe(t, notice.value)}</span>
-          <button type="button" aria-label={t('notice.close')} onClick={() => setNotice(null)}>
-            ×
-          </button>
-        </div>
-      )}
+      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
     </SandboxI18nContext.Provider>
   );
 }
