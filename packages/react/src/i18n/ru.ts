@@ -214,4 +214,10 @@ export const ru: Messages = {
   'slash.item.table.title': 'Таблица',
   'slash.item.table.description': 'Строки и столбцы с текстом',
   'slash.item.table.keywords': 'таблица, сетка, строки, столбцы',
+  'slash.item.toc.title': 'Оглавление',
+  'slash.item.toc.description': 'Ссылки на заголовки документа',
+  'slash.item.toc.keywords': 'оглавление, содержание, toc',
+  'toc.label': 'Оглавление',
+  'toc.empty': 'Здесь появятся заголовки документа',
+  'toc.levels': 'Уровни заголовков: нажмите, чтобы изменить',
 };

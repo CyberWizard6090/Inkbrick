@@ -16,7 +16,7 @@ test.describe('Slash menu', () => {
     await page.keyboard.type('/');
 
     await expect(page.locator(menu)).toBeVisible();
-    await expect(page.locator('[role="option"]')).toHaveCount(18);
+    await expect(page.locator('[role="option"]')).toHaveCount(19);
     await expect(page.locator('[role="option"]').first()).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -40,10 +40,10 @@ test.describe('Slash menu', () => {
 
   test('Arrow keys wrap around and Tab selects', async ({ page }) => {
     await page.keyboard.type('/');
-    await page.keyboard.press('ArrowUp'); // с первого пункта — на последний (таблица, подключена в песочнице)
+    await page.keyboard.press('ArrowUp'); // с первого пункта — на последний (оглавление, подключено в песочнице)
     await expect(page.locator('[role="option"][aria-selected="true"]')).toHaveAttribute(
       'data-slash-item',
-      'table',
+      'toc',
     );
 
     await page.keyboard.press('ArrowDown');

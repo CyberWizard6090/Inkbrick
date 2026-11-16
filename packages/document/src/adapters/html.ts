@@ -5,14 +5,18 @@ import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
+  collectHeadings,
   exportTable,
   groupSiblings,
   headingLevel,
   isOrdered,
+  isToc,
   isTodo,
   stringProp,
+  tocOutline,
   type ExportNode,
   type ExportOptions,
+  type OutlineItem,
 } from './tree';
 
 const escapeHtml = (text: string) =>
@@ -150,7 +154,19 @@ function renderTable(node: ExportNode): string {
   return `<table>${columns}${head}<tbody>${body}</tbody></table>`;
 }
 
-function renderGroups(nodes: readonly ExportNode[]): string {
+function renderOutline(items: readonly OutlineItem[]): string {
+  if (items.length === 0) return '';
+
+  const list = items
+    .map(
+      ({ block, children }) => `<li>${inlineToHtml(block.content)}${renderOutline(children)}</li>`,
+    )
+    .join('');
+
+  return `<ul>${list}</ul>`;
+}
+
+function renderGroups(nodes: readonly ExportNode[], headings: readonly BaseBlock[] = []): string {
   return groupSiblings(nodes)
     .map((group) => {
       if (!group.list) {
@@ -159,7 +175,13 @@ function renderGroups(nodes: readonly ExportNode[]): string {
         // Потомки таблицы — её строки и ячейки, они выведены вместе с ней.
         if (block.flavour === 'block:table') return renderTable(group.nodes[0]);
 
-        return renderBlock(block) + renderGroups(children);
+        if (isToc(block)) {
+          const outline = renderOutline(tocOutline(headings, block));
+
+          return outline === '' ? '' : `<nav>${outline}</nav>`;
+        }
+
+        return renderBlock(block) + renderGroups(children, headings);
       }
 
       let html = '';
@@ -177,7 +199,7 @@ function renderGroups(nodes: readonly ExportNode[]): string {
               ? `<input type="checkbox" disabled${block.props.checked === true ? ' checked' : ''}> `
               : '';
 
-            return `<li${alignStyle(block)}>${checkbox}${inlineToHtml(block.content)}${renderGroups(children)}</li>`;
+            return `<li${alignStyle(block)}>${checkbox}${inlineToHtml(block.content)}${renderGroups(children, headings)}</li>`;
           })
           .join('');
 
@@ -197,7 +219,7 @@ function renderGroups(nodes: readonly ExportNode[]): string {
  */
 export function toHtml(document: Document, options: ExportOptions = {}): string {
   const { nodes, title } = buildExportTree(document, options);
-  const body = renderGroups(nodes);
+  const body = renderGroups(nodes, collectHeadings(nodes));
 
   return title ? `<h1>${escapeHtml(title)}</h1>\n${body}` : body;
 }

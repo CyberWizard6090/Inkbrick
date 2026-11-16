@@ -4,6 +4,10 @@ import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
+  collectHeadings,
+  isToc,
+  tocOutline,
+  type OutlineItem,
   exportTable,
   groupSiblings,
   headingLevel,
@@ -132,7 +136,16 @@ export function toMarkdown(document: Document, options: ExportOptions = {}): str
   const { nodes, title } = buildExportTree(document, options);
   const chunks: string[] = title ? [`# ${escapeText(title).replace(/\s*\n\s*/g, ' ')}`] : [];
 
+  const headings = collectHeadings(nodes);
+  const renderOutline = (items: readonly OutlineItem[], depth: number): string[] =>
+    items.flatMap(({ block, children }) => [
+      `${'  '.repeat(depth)}- ${inlineToMarkdown(block.content).replace(/\s*\n\s*/g, ' ')}`,
+      ...renderOutline(children, depth + 1),
+    ]);
+
   const renderBlock = (block: BaseBlock): string => {
+    if (isToc(block)) return renderOutline(tocOutline(headings, block), 0).join('\n');
+
     const text = inlineToMarkdown(block.content);
 
     switch (block.flavour) {

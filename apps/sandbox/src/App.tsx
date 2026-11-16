@@ -227,6 +227,7 @@ function loadSample(editor: Editor): void {
   );
   after = table.id;
 
+  add('block:toc');
   add('block:paragraph', undefined, ['Last paragraph']);
 
   editor.clearHistory();

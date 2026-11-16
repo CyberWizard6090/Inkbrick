@@ -21,6 +21,8 @@ export {
   TableEditor,
 } from './table';
 export type { TableEditorProps } from './table';
+export { tocBlocks, TocBlock, useHeadings } from './toc';
+export type { HeadingEntry } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
 export type { ImageOptions } from './images/types';
