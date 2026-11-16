@@ -1,2 +1,2 @@
-export { Dispatcher } from './Dispatcher';
+export { Dispatcher, PinnedBlockError } from './Dispatcher';
 export type * from './Intents';

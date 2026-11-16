@@ -8,6 +8,8 @@ import { tableKeymap } from './tableKeymap';
 
 export { TableBlock, TableCellBlock, TableRowBlock } from './TableBlock';
 export { tableKeymap } from './tableKeymap';
+export { TableEditor } from './TableEditor';
+export type { TableEditorProps } from './TableEditor';
 
 const view = (component: BlockComponent) => component as never;
 

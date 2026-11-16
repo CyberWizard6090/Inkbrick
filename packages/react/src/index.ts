@@ -12,7 +12,15 @@ export * from './hooks/useHistory';
 export * from './hooks/useReadOnly';
 export * from './hooks/useBlockController';
 export { defineBlock } from './blocks/defineBlock';
-export { tableBlocks, tableKeymap, TableBlock, TableRowBlock, TableCellBlock } from './table';
+export {
+  tableBlocks,
+  tableKeymap,
+  TableBlock,
+  TableRowBlock,
+  TableCellBlock,
+  TableEditor,
+} from './table';
+export type { TableEditorProps } from './table';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
 export type { ImageOptions } from './images/types';

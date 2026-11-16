@@ -22,6 +22,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   and any table in an editor without `tableBlocks`, is pasted as rows of text. `toHtml`, `toMarkdown` and `toPlainText` write
   tables (`<table>`, GFM, tab-separated). New: `tableFragment(rows, options)` and `readTable`, `parseDelimited` and
   `serializeDelimited`.
+- Standalone table editor (`docs/tables.md`): `<TableEditor rows onChange />` in `@inkbrick/react` is a document with one
+  pinned table: no block handle, block drag or slash menu, and the table cannot be deleted, converted or left. Without
+  React: `createTableEditor(options)`, `tableValue(editor)` and `tableIdOf(editor)` in `@inkbrick/engine`. New
+  `editor.pin(blockId)` makes any block undeletable: a command that would remove, convert or move it is rolled back whole.
 - Table controls in `@inkbrick/react`: strips at the row and column under the mouse (or the caret) open a menu (insert,
   move, header row, delete; align column, automatic width), «+» buttons add a column or a row, and dragging a column border
   resizes it with a live preview (arrow keys on a focused border, double click for automatic width). The menus are the
