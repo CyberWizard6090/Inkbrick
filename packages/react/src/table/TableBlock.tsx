@@ -1,12 +1,14 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 
 import { getBlockAlign, type TableProps } from '@inkbrick/document';
 
 import type { BlockProps } from '../blocks/BlockProps';
 import { Editable } from '../blocks/Editable';
 import { useChildren } from '../hooks/useChildren';
+import { useEditorView } from '../hooks/useEditorView';
 import { BlockRenderer } from '../renderer/BlockRenderer';
 import { TableControls } from './TableControls';
+import { useCellSelection } from './useCellSelection';
 
 function Children({ id }: { readonly id: string }) {
   return (
@@ -28,6 +30,8 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
   const table = useRef<HTMLTableElement>(null);
   // Ширина столбца, которую тянут: рисуется поверх widths, пока перетаскивание не записано в модель.
   const [preview, setPreview] = useState<{ index: number; width: number } | null>(null);
+  useCellSelection(block.id, table, !readOnly);
+
   const columns = preview
     ? Math.max(widths?.length ?? 0, preview.index + 1)
     : (widths?.length ?? 0);
@@ -70,12 +74,20 @@ export function TableRowBlock({ block }: BlockProps) {
 }
 
 export function TableCellBlock({ block, selected }: BlockProps) {
+  const view = useEditorView();
+  const picked = useSyncExternalStore(
+    view.cells.subscribe,
+    () => view.cells.isSelected(block.id),
+    () => false,
+  );
+
   return (
     <td
       data-inkbrick-block="table-cell"
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
       data-selected={selected || undefined}
+      data-cell-selected={picked || undefined}
     >
       <Editable block={block} />
     </td>

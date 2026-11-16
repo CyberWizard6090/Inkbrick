@@ -247,6 +247,7 @@ describe('table controls: row menu', () => {
         item.getAttribute('data-action'),
       ),
     ).toEqual([
+      'row-select',
       'row-insert-above',
       'row-insert-below',
       'row-move-up',

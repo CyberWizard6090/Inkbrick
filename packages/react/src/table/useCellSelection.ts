@@ -1,0 +1,228 @@
+import { useEffect, useSyncExternalStore, type RefObject } from 'react';
+import { flushSync } from 'react-dom';
+
+import {
+  FRAGMENT_MIME,
+  fragmentToHtml,
+  fragmentToPlainText,
+  locateTableCell,
+  tableCellAt,
+  tableRangeFragment,
+  tableSize,
+  type TableCellRef,
+} from '@inkbrick/engine';
+
+import { useEditor } from '../hooks/useEditor';
+import { useEditorView } from '../hooks/useEditorView';
+import { cellOfRange, clearTableCells, selectTableCells } from './cellSelection';
+
+const ARROWS: Record<string, readonly [number, number]> = {
+  ArrowUp: [-1, 0],
+  ArrowDown: [1, 0],
+  ArrowLeft: [0, -1],
+  ArrowRight: [0, 1],
+};
+
+/**
+ * Выделение ячеек таблицы: протягивание мышью от ячейки к другой, Shift+клик и Shift+стрелки расширяют его.
+ * Пока оно есть: Delete и Backspace очищают ячейки, Ctrl/Cmd+C и X кладут в буфер таблицу из выделенных ячеек,
+ * вставка идёт от верхней левой ячейки, Esc и обычная стрелка возвращают курсор в ячейку, набор символа — тоже.
+ */
+export function useCellSelection(
+  tableId: string,
+  table: RefObject<HTMLTableElement | null>,
+  enabled: boolean,
+) {
+  const editor = useEditor();
+  const view = useEditorView();
+  const active = useSyncExternalStore(
+    view.cells.subscribe,
+    () => view.cells.get()?.tableId === tableId,
+    () => false,
+  );
+
+  useEffect(() => {
+    const element = table.current;
+
+    if (!element || !enabled) return;
+
+    const getBlock = (id: string) => editor.store.getBlock(id);
+    const cellAt = (target: EventTarget | null): TableCellRef | null => {
+      const td =
+        target instanceof Element ? target.closest<HTMLElement>('td[data-block-id]') : null;
+      const position =
+        td && element.contains(td) ? locateTableCell(getBlock, td.dataset.blockId!) : undefined;
+
+      return position?.tableId === tableId ? { row: position.row, column: position.column } : null;
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0 || event.pointerType === 'touch') return;
+
+      const anchor = cellAt(event.target);
+
+      if (!anchor) return;
+
+      const current = view.cells.get();
+
+      if (event.shiftKey && current?.tableId === tableId) {
+        event.preventDefault();
+        selectTableCells(editor, view, tableId, current.anchor, anchor);
+        return;
+      }
+
+      view.cells.clear();
+
+      let dragging = false;
+
+      const move = (moved: PointerEvent) => {
+        if ((moved.buttons & 1) === 0) return finish();
+
+        const head = cellAt(document.elementFromPoint(moved.clientX, moved.clientY));
+
+        if (!head || (!dragging && head.row === anchor.row && head.column === anchor.column))
+          return;
+
+        if (!dragging) {
+          dragging = true;
+          element.dataset.cellSelecting = '';
+        }
+
+        selectTableCells(editor, view, tableId, anchor, head);
+        globalThis.getSelection()?.removeAllRanges();
+      };
+
+      const finish = () => {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', finish);
+        document.removeEventListener('pointercancel', finish);
+        delete element.dataset.cellSelecting;
+
+        if (dragging) view.getRoot()?.focus({ preventScroll: true });
+      };
+
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', finish);
+      document.addEventListener('pointercancel', finish);
+    };
+
+    element.addEventListener('pointerdown', onPointerDown);
+
+    return () => element.removeEventListener('pointerdown', onPointerDown);
+  }, [editor, view, table, tableId, enabled]);
+
+  useEffect(() => {
+    if (!active || !enabled) return;
+
+    const getBlock = (id: string) => editor.store.getBlock(id);
+    const place = (row: number, column: number) => {
+      const id = tableCellAt(getBlock, tableId, row, column);
+
+      view.cells.clear();
+
+      if (id) view.placeCaret(id, editor.engine.inline.length(getBlock(id)?.content ?? []));
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const selection = view.cells.get();
+
+      if (!selection || selection.tableId !== tableId || event.isComposing) return;
+
+      const mod = event.ctrlKey || event.metaKey;
+      const size = tableSize(getBlock, tableId);
+
+      if (!size) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        place(selection.head.row, selection.head.column);
+      } else if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        flushSync(() => clearTableCells(editor, selection.ids));
+      } else if (event.key in ARROWS && !mod && !event.altKey) {
+        const [dRow, dColumn] = ARROWS[event.key];
+        const head = {
+          row: Math.min(size.rows - 1, Math.max(0, selection.head.row + dRow)),
+          column: Math.min(size.columns - 1, Math.max(0, selection.head.column + dColumn)),
+        };
+
+        event.preventDefault();
+
+        if (event.shiftKey) selectTableCells(editor, view, tableId, selection.anchor, head);
+        else place(head.row, head.column);
+      } else if (event.key.length === 1 && !mod) {
+        place(selection.anchor.row, selection.anchor.column);
+      } else if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        place(selection.anchor.row, selection.anchor.column);
+      }
+    };
+
+    const write = (event: ClipboardEvent, cut: boolean) => {
+      const selection = view.cells.get();
+
+      if (!selection || selection.tableId !== tableId || !event.clipboardData) return;
+
+      const fragment = tableRangeFragment(getBlock, tableId, selection.range);
+
+      if (fragment.blocks.length === 0) return;
+
+      const json = JSON.stringify(fragment);
+
+      event.clipboardData.setData('text/plain', fragmentToPlainText(fragment));
+      event.clipboardData.setData('text/html', fragmentToHtml(fragment, encodeURIComponent(json)));
+      event.clipboardData.setData(FRAGMENT_MIME, json);
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (cut && !editor.readOnly) flushSync(() => clearTableCells(editor, selection.ids));
+    };
+
+    const onCopy = (event: ClipboardEvent) => write(event, false);
+    const onCut = (event: ClipboardEvent) => write(event, true);
+
+    /* Вставка идёт от верхней левой ячейки: курсор ставим туда, остальное делает обычная вставка. */
+    const onPaste = () => {
+      const selection = view.cells.get();
+
+      if (!selection || selection.tableId !== tableId) return;
+
+      const id = cellOfRange(editor, tableId, selection.range, 'start');
+
+      view.cells.clear();
+
+      if (id) view.placeCaret(id, 0);
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (target instanceof Element && target.closest('[data-inkbrick-ui]')) return;
+      if (event.shiftKey && target instanceof Element && target.closest('td[data-block-id]'))
+        return;
+
+      view.cells.clear();
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('copy', onCopy, true);
+    document.addEventListener('cut', onCut, true);
+    document.addEventListener('paste', onPaste, true);
+    document.addEventListener('pointerdown', onPointerDown, true);
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.removeEventListener('copy', onCopy, true);
+      document.removeEventListener('cut', onCut, true);
+      document.removeEventListener('paste', onPaste, true);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, [active, enabled, editor, view, tableId]);
+
+  useEffect(
+    () => () => {
+      if (view.cells.get()?.tableId === tableId) view.cells.clear();
+    },
+    [view, tableId],
+  );
+}

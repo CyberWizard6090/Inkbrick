@@ -140,6 +140,8 @@ export const ru: Messages = {
   'table.row.moveUp': 'Переместить строку выше',
   'table.row.moveDown': 'Переместить строку ниже',
   'table.row.delete': 'Удалить строку',
+  'table.row.select': 'Выделить строку',
+  'table.column.select': 'Выделить столбец',
   'table.row.freezeOn': 'Закрепить первую строку',
   'table.row.freezeOff': 'Открепить первую строку',
   'table.column.freezeOn': 'Закрепить первый столбец',

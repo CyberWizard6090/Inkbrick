@@ -3,6 +3,7 @@ import type { BlockId } from '@inkbrick/document';
 import { BlockHandleController } from '../block-handle/BlockHandleController';
 import { UploadTracker } from '../images/UploadTracker';
 import { BlockSelectionController } from './BlockSelectionController';
+import { CellSelectionController } from './CellSelectionController';
 import { ContextMenuController } from '../context-menu/ContextMenuController';
 import { FormulaController } from '../formula/FormulaController';
 import { CaretController } from './CaretController';
@@ -25,6 +26,8 @@ export class EditorView {
   readonly uploads = new UploadTracker();
 
   readonly selection = new BlockSelectionController();
+
+  readonly cells = new CellSelectionController();
 
   readonly caret = new CaretController();
 

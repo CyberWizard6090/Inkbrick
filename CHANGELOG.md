@@ -7,6 +7,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tables: cell selection (`docs/tables.md`). Drag across cells, Shift+click and Shift+arrows select a rectangle; "Select
+  row" and "Select column" are in the row and column menus. Delete clears the cells, copy and cut put the selected cells on
+  the clipboard as a table, paste starts at the top left cell. New in `@inkbrick/engine`: `tableRangeBetween`,
+  `clampTableRange`, `tableRangeCells`, `tableRangeFragment`.
 - Tables: keep the first row and the first column in view while scrolling (`freezeRow`, `freezeColumn`, items in the first row's
   and the first column's menus; `--inkbrick-table-frozen-height` limits the height). `createTableEditor` and `tableFragment`
   accept the same options. New `pin` icon.

@@ -142,6 +142,8 @@ export const en = {
   'table.row.moveUp': 'Move row up',
   'table.row.moveDown': 'Move row down',
   'table.row.delete': 'Delete row',
+  'table.row.select': 'Select row',
+  'table.column.select': 'Select column',
   'table.row.freezeOn': 'Keep first row in view',
   'table.row.freezeOff': 'Stop keeping first row in view',
   'table.column.freezeOn': 'Keep first column in view',

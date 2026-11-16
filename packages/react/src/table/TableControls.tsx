@@ -26,6 +26,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
+import { selectTableLine } from './cellSelection';
 
 interface Position {
   readonly row: number;
@@ -271,6 +272,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const rowActions = ({ row }: Position): BlockMenuAction[] => {
     const actions: BlockMenuAction[] = [
       {
+        id: 'row-select',
+        title: t('table.row.select'),
+        icon: <Icon name="select-all" />,
+        run: () => {
+          setMenu(null);
+          selectTableLine(editor, view, block.id, { row });
+        },
+      },
+      {
         id: 'row-insert-above',
         title: t('table.row.insertAbove'),
         icon: <Icon name="plus" />,
@@ -370,6 +380,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     });
 
   const columnActions = ({ column }: Position): BlockMenuAction[] => [
+    {
+      id: 'column-select',
+      title: t('table.column.select'),
+      icon: <Icon name="select-all" />,
+      run: () => {
+        setMenu(null);
+        selectTableLine(editor, view, block.id, { column });
+      },
+    },
     {
       id: 'column-insert-left',
       title: t('table.column.insertLeft'),
