@@ -146,6 +146,13 @@ export function VirtualChildList({
     () => null,
   );
 
+  // Свёрнутые заголовком блоки не занимают места: ни в оценке высоты, ни в окне отрисовки.
+  const foldVersion = useSyncExternalStore(
+    view.folds.subscribeAll,
+    () => view.folds.version,
+    () => 0,
+  );
+
   useEffect(() => (windowed ? view.viewport.attach() : undefined), [view, windowed]);
 
   const offsets = useMemo(() => {
@@ -156,6 +163,12 @@ export function VirtualChildList({
 
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
+
+      if (view.folds.isHidden(id)) {
+        result[i + 1] = result[i];
+        continue;
+      }
+
       let height = heights.get(id) ?? estimates.get(id);
 
       if (height === undefined) {
@@ -167,8 +180,18 @@ export function VirtualChildList({
     }
 
     return result;
-    // measured — версия изменяемой карты heights
-  }, [ids, windowed, measured, heights, estimates, editor, options.estimateHeight]);
+    // measured — версия изменяемой карты heights, foldVersion — набор свёрнутых блоков
+  }, [
+    ids,
+    windowed,
+    measured,
+    foldVersion,
+    heights,
+    estimates,
+    editor,
+    view,
+    options.estimateHeight,
+  ]);
 
   const rendered = useMemo(() => {
     if (!offsets) return null;
@@ -190,13 +213,15 @@ export function VirtualChildList({
 
     const result: number[] = [];
 
-    for (const i of [...pinned].sort((a, b) => a - b)) if (i < from) result.push(i);
-    for (let i = from; i <= to; i++) result.push(i);
-    for (const i of [...pinned].sort((a, b) => a - b)) if (i > to) result.push(i);
+    const shown = (i: number) => !view.folds.isHidden(ids[i]);
+
+    for (const i of [...pinned].sort((a, b) => a - b)) if (i < from && shown(i)) result.push(i);
+    for (let i = from; i <= to; i++) if (shown(i)) result.push(i);
+    for (const i of [...pinned].sort((a, b) => a - b)) if (i > to && shown(i)) result.push(i);
 
     return result;
     // pins — версия view.viewport: getPinned() меняется вместе с ней
-  }, [offsets, ids, range, options, view, editor, parentId, dragId, dropId, pins]);
+  }, [offsets, ids, range, options, view, editor, parentId, dragId, dropId, pins, foldVersion]);
 
   const observer = useRef<ResizeObserver | null>(null);
   const observed = useRef(new Map<Element, number>());
@@ -341,7 +366,9 @@ export function VirtualChildList({
   let next = 0;
 
   for (const i of rendered) {
-    if (i > next) items.push(<Spacer key={`gap:${next}`} height={offsets[i] - offsets[next]} />);
+    if (i > next && offsets[i] - offsets[next] > 0) {
+      items.push(<Spacer key={`gap:${next}`} height={offsets[i] - offsets[next]} />);
+    }
     items.push(<BlockRenderer key={ids[i]} id={ids[i]} />);
     next = i + 1;
   }

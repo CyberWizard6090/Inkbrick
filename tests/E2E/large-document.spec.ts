@@ -203,4 +203,36 @@ test.describe('Large document (virtual renderer)', () => {
       .toBe(1);
     expect(await modelIds(page)).toHaveLength(SIZE);
   });
+
+  test('a folded section takes no room: the next heading follows its heading right away', async ({
+    page,
+  }) => {
+    const total = () => page.evaluate(() => document.documentElement.scrollHeight);
+    const before = await total();
+
+    await block(page, 'large-0').locator('xpath=..').locator('[data-inkbrick-part="fold"]').click();
+
+    // Раздел «Section 0» — 99 блоков до следующего заголовка: их высота ушла и из оценки, и из распорки.
+    await expect.poll(async () => before - (await total())).toBeGreaterThan(4000);
+    await expect(block(page, 'large-100')).toBeVisible();
+
+    const gap = await page.evaluate(() => {
+      const heading = document
+        .querySelector('.editable[data-id="large-0"]')!
+        .getBoundingClientRect();
+      const next = document
+        .querySelector('.editable[data-id="large-100"]')!
+        .getBoundingClientRect();
+
+      return next.top - heading.bottom;
+    });
+
+    expect(gap).toBeLessThan(40);
+
+    const folded = await total();
+
+    await block(page, 'large-0').locator('xpath=..').locator('[data-inkbrick-part="fold"]').click();
+    // Развернули — раздел вернул своё место (до измеренных высот: оценка и измерение не совпадают в точности).
+    await expect.poll(async () => (await total()) - folded).toBeGreaterThan(4000);
+  });
 });

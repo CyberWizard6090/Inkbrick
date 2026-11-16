@@ -13,6 +13,9 @@ export class FoldController {
 
   private readonly all = new Set<() => void>();
 
+  /** Растёт при каждом изменении набора скрытых блоков: по нему подписываются те, кому нужен весь набор целиком. */
+  version = 0;
+
   isHidden = (blockId: BlockId): boolean => this.hidden.has(blockId);
 
   /** Заголовок, который скрывает блок. */
@@ -63,6 +66,7 @@ export class FoldController {
 
     this.hidden = next;
     this.hiders = new Set(next.values());
+    this.version += 1;
 
     for (const id of changed)
       for (const listener of [...(this.listeners.get(id) ?? [])]) listener();
