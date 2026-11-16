@@ -105,6 +105,13 @@ export interface MoveBlockPayload {
   position: 'before' | 'after';
 }
 
+export interface MoveBlockToSidePayload {
+  blockId: BlockId;
+  targetId: BlockId;
+  /** С какой стороны от `targetId` встанет блок: рядом, в колонках. */
+  side: 'left' | 'right';
+}
+
 export interface PasteFragmentPayload {
   at: { blockId: BlockId; offset: number };
   fragment: Fragment;
@@ -127,6 +134,7 @@ export type EditorIntent =
   | { type: 'convertBlock'; payload: ConvertBlockPayload }
   | { type: 'pasteFragment'; payload: PasteFragmentPayload }
   | { type: 'moveBlock'; payload: MoveBlockPayload }
+  | { type: 'moveBlockToSide'; payload: MoveBlockToSidePayload }
   | { type: 'duplicateBlock'; payload: BlockTargetPayload }
   | { type: 'deleteRange'; payload: DeleteRangePayload }
   | { type: 'toggleFormatRange'; payload: ToggleFormatRangePayload }

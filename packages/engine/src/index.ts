@@ -17,6 +17,7 @@ export type {
   DeleteRangePayload,
   ConvertBlockPayload,
   MoveBlockPayload,
+  MoveBlockToSidePayload,
   PasteFragmentPayload,
   ToggleFormatRangePayload,
   SetInlineAttributesPayload,
@@ -34,3 +35,4 @@ export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
 export * from './table';
 export * from './toc';
 export * from './columns';
+export * from './toggle';

@@ -33,6 +33,7 @@ export {
   useFind,
 } from './find';
 export type { FindMatch, FindOptions, FindState } from './find';
+export { toggleBlocks, ToggleBlock } from './toggle';
 export type { HeadingEntry } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
@@ -124,5 +125,6 @@ export type {
   DragState as BlockDragState,
   DropIndicatorRect,
   DropPosition,
+  DropSide,
 } from './block-handle/BlockHandleController';
 export { DefaultBlockMenu } from './block-handle/DefaultBlockMenu';

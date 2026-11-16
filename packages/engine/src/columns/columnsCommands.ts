@@ -1,7 +1,9 @@
-import { COLUMN, MAX_COLUMNS, type ColumnsProps } from '@inkbrick/document';
+import { COLUMN, MAX_COLUMNS, type BaseBlock, type ColumnsProps } from '@inkbrick/document';
+import type { Transaction } from '@inkbrick/store';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
 import type { CaretResult } from '../dispatcher/Intents';
+import type { Engine } from '../editor/Engine';
 
 type Context = BlockCommandContext<ColumnsProps>;
 
@@ -37,9 +39,14 @@ function firstTextOf(context: Context, id: string): CaretResult {
   return { blockId: id, offset: 0 };
 }
 
-/** Колонки превращаются в обычные блоки: блоки всех колонок по порядку встают на место блока колонок. */
-function unwrap(context: Context): CaretResult {
-  const { engine, transaction, block } = context;
+/**
+ * Блоки всех колонок по порядку встают на место блока колонок, сам блок удаляется. Возвращает перенесённые блоки.
+ */
+export function unwrapColumns(
+  engine: Engine,
+  transaction: Transaction,
+  block: BaseBlock,
+): string[] {
   const parentId = block.parentId!;
   const moved: string[] = [];
 
@@ -56,7 +63,14 @@ function unwrap(context: Context): CaretResult {
 
   engine.block.remove(transaction, block.id);
 
-  return firstTextOf(context, moved[0] ?? parentId);
+  return moved;
+}
+
+/** Колонки превращаются в обычные блоки: блоки всех колонок по порядку встают на место блока колонок. */
+function unwrap(context: Context): CaretResult {
+  const moved = unwrapColumns(context.engine, context.transaction, context.block);
+
+  return firstTextOf(context, moved[0] ?? context.block.parentId!);
 }
 
 /**

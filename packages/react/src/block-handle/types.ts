@@ -7,7 +7,7 @@ import type {
 
 import type { BaseBlock } from '@inkbrick/document';
 
-import type { DropIndicatorRect, DropPosition } from './BlockHandleController';
+import type { DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
 
 /**
  * Props встроенного жеста для элемента-«хваталки»: клик открывает меню, протягивание мышью
@@ -43,6 +43,8 @@ export interface DropIndicatorProps {
   readonly blockId: string;
   readonly targetId: string;
   readonly position: DropPosition;
+  /** Задана, когда блок встаёт рядом с целью (в колонки): линия вертикальная, `position` — `before` слева и `after` справа. */
+  readonly side?: DropSide;
   /** Где рисовать линию, в координатах окна (для position: fixed). */
   readonly indicator: DropIndicatorRect;
 }
