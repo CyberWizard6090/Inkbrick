@@ -11,6 +11,11 @@ export const TABLE_CELL = 'block:table-cell';
 export const TABLE_DEFAULT_ROWS = 3;
 export const TABLE_DEFAULT_COLUMNS = 3;
 
+/** Тип столбца: от него зависит сортировка (число и дата сравниваются как число и дата, а не как текст). */
+export const TABLE_COLUMN_TYPES = ['text', 'number', 'date'] as const;
+
+export type TableColumnType = (typeof TABLE_COLUMN_TYPES)[number];
+
 export const tablePropsSchema = z.object({
   /** Первая строка — заголовок. */
   header: z.boolean().default(true),
@@ -23,6 +28,8 @@ export const tablePropsSchema = z.object({
    * Длина может не совпадать с числом столбцов: лишнее игнорируется.
    */
   widths: z.array(z.number().positive().nullable()).optional(),
+  /** Типы столбцов по порядку; недостающие элементы — `text`. */
+  columnTypes: z.array(z.enum(TABLE_COLUMN_TYPES)).optional(),
 });
 
 export type TableProps = z.infer<typeof tablePropsSchema>;

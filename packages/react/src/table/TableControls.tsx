@@ -445,6 +445,31 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       icon: <Icon name="align-right" />,
       run: () => alignColumn(column, 'right'),
     },
+    ...(['text', 'number', 'date'] as const).map((type) => ({
+      id: `column-type-${type}`,
+      title: t(`table.column.type.${type}`),
+      icon: <Icon name={(props.columnTypes?.[column] ?? 'text') === type ? 'check' : 'text'} />,
+      run: () =>
+        perform(() => {
+          run('setTableColumnType', { index: column, type });
+
+          return cellAt(active.row, column);
+        }),
+    })),
+    {
+      id: 'column-sort-asc',
+      title: t('table.column.sortAsc'),
+      icon: <Icon name="arrow-up" />,
+      disabled: !can('sortTableRows', { column, direction: 'asc' }),
+      run: () => perform(() => void run('sortTableRows', { column, direction: 'asc' })),
+    },
+    {
+      id: 'column-sort-desc',
+      title: t('table.column.sortDesc'),
+      icon: <Icon name="arrow-down" />,
+      disabled: !can('sortTableRows', { column, direction: 'desc' }),
+      run: () => perform(() => void run('sortTableRows', { column, direction: 'desc' })),
+    },
     {
       id: 'column-auto-width',
       title: t('table.column.autoWidth'),

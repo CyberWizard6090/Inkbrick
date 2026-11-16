@@ -89,6 +89,12 @@ export function tableRangeFragment(
 
   return tableFragment(
     cells.map((row) => row.map((id) => getBlock(id)?.content ?? [])),
-    { header: table.props.header !== false && clamped.top === 0, align },
+    {
+      header: table.props.header !== false && clamped.top === 0,
+      align,
+      columnTypes: Array.isArray(table.props.columnTypes)
+        ? table.props.columnTypes.slice(clamped.left, clamped.right + 1)
+        : undefined,
+    },
   );
 }

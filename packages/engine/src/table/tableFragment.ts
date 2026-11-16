@@ -4,6 +4,7 @@ import {
   TABLE_ROW,
   isAlignment,
   type Alignment,
+  type TableColumnType,
   type InlineNode,
 } from '@inkbrick/document';
 
@@ -22,6 +23,8 @@ export interface TableFragmentOptions {
   /** Первая строка и первый столбец остаются на виду при прокрутке. */
   freezeRow?: boolean;
   freezeColumn?: boolean;
+  /** Типы столбцов по порядку (`text`, `number`, `date`). */
+  columnTypes?: readonly TableColumnType[];
   /** Выравнивание столбцов по порядку. */
   align?: readonly (Alignment | undefined)[];
   /** Ширины столбцов в пикселях по порядку; `null` — по содержимому. */
@@ -65,6 +68,8 @@ export function tableFragment(
 
   if (options.freezeRow) props.freezeRow = true;
   if (options.freezeColumn) props.freezeColumn = true;
+  if (options.columnTypes?.some((type) => type !== 'text'))
+    props.columnTypes = [...options.columnTypes];
 
   if (options.widths?.some((width) => width !== null)) props.widths = [...options.widths];
 

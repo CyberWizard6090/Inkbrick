@@ -1,8 +1,9 @@
-import type { TableProps } from '@inkbrick/document';
+import { TABLE_COLUMN_TYPES, type TableColumnType, type TableProps } from '@inkbrick/document';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
 import type { CaretResult } from '../dispatcher/Intents';
-import { addTableColumn, addTableRow } from './tableOps';
+import { addTableColumn, addTableRow, shiftedLists } from './tableOps';
+import { sortKey, sortedOrder } from './tableSort';
 
 type Context = BlockCommandContext<TableProps>;
 
@@ -18,15 +19,10 @@ const columnsOf = ({ block, transaction }: Context) =>
  * Меняет список ширин вместе со столбцами; пока ширины не заданы, список не появляется.
  * Вызывается до правки ячеек: индексы списка — столбцы, какими они были.
  */
-function updateWidths(context: Context, change: (widths: (number | null)[]) => void): void {
-  const { widths } = context.block.props;
+function updateWidths(context: Context, change: (list: unknown[]) => void): void {
+  const lists = shiftedLists(context.block.props, columnsOf(context), (list) => change(list));
 
-  if (!widths) return;
-
-  const next = Array.from({ length: columnsOf(context) }, (_, i) => widths[i] ?? null);
-
-  change(next);
-  context.setProps({ widths: next });
+  if (lists) context.setProps(lists as Partial<TableProps>);
 }
 
 /**
@@ -149,6 +145,71 @@ export const SetTableColumnWidthCommand = defineBlockCommand<
   },
 });
 
+/** Задаёт тип столбца (`text`, `number`, `date`): от него зависит сортировка. */
+export const SetTableColumnTypeCommand = defineBlockCommand<
+  TableProps,
+  { index: number; type: TableColumnType }
+>({
+  type: 'setTableColumnType',
+
+  canExecute: (context, { index, type }) =>
+    isIndex(index, columnsOf(context) - 1) && TABLE_COLUMN_TYPES.includes(type),
+
+  execute(context, { index, type }) {
+    const types = Array.from(
+      { length: columnsOf(context) },
+      (_, i) => context.block.props.columnTypes?.[i] ?? 'text',
+    );
+
+    types[index] = type;
+    context.setProps({ columnTypes: types.some((value) => value !== 'text') ? types : undefined });
+  },
+});
+
+/** Строки таблицы и их порядок после сортировки по столбцу; заголовок остаётся первым. */
+function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
+  const { block, transaction } = context;
+  const fixed = block.props.header === false ? 0 : 1;
+  const type = block.props.columnTypes?.[column] ?? 'text';
+  const rows = block.children.slice(fixed);
+  const keys = rows.map((rowId) => {
+    const cell = transaction.getBlock(transaction.getBlock(rowId)?.children[column] ?? '');
+
+    return sortKey(context.engine.inline.toPlainText(cell?.content ?? []), type);
+  });
+
+  return { fixed, rows, order: sortedOrder(keys, direction) };
+}
+
+/**
+ * Сортирует строки по столбцу по его типу: текст — по алфавиту с числами как числами, число и дата — по значению.
+ * Пустые и неразобранные значения идут в конец, заголовок остаётся на месте. Один шаг undo.
+ */
+export const SortTableRowsCommand = defineBlockCommand<
+  TableProps,
+  { column: number; direction: 'asc' | 'desc' }
+>({
+  type: 'sortTableRows',
+
+  canExecute(context, { column, direction }) {
+    if (!isIndex(column, columnsOf(context) - 1) || (direction !== 'asc' && direction !== 'desc'))
+      return false;
+
+    return sortPlan(context, column, direction).order.some((from, to) => from !== to);
+  },
+
+  execute(context, { column, direction }) {
+    const { engine, transaction, block } = context;
+    const { fixed, rows, order } = sortPlan(context, column, direction);
+
+    order.forEach((from, to) => {
+      if (transaction.getBlock(block.id)!.children[fixed + to] !== rows[from]) {
+        engine.block.move(transaction, rows[from], block.id, fixed + to);
+      }
+    });
+  },
+});
+
 export const tableCommands = [
   InsertTableRowCommand,
   DeleteTableRowCommand,
@@ -157,4 +218,6 @@ export const tableCommands = [
   DeleteTableColumnCommand,
   MoveTableColumnCommand,
   SetTableColumnWidthCommand,
+  SetTableColumnTypeCommand,
+  SortTableRowsCommand,
 ] as const;

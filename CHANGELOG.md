@@ -7,6 +7,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tables: column types (`text`, `number`, `date`) and sorting from the column menu (`docs/tables.md`). Commands
+  `setTableColumnType` and `sortTableRows`; types follow their columns. New exports `parseNumber`, `parseDate`, `sortKey`,
+  `sortedOrder`, `TABLE_COLUMN_TYPES`.
 - Tables: cell selection (`docs/tables.md`). Drag across cells, Shift+click and Shift+arrows select a rectangle; "Select
   row" and "Select column" are in the row and column menus. Delete clears the cells, copy and cut put the selected cells on
   the clipboard as a table, paste starts at the top left cell. New in `@inkbrick/engine`: `tableRangeBetween`,

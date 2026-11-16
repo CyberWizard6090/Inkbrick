@@ -75,6 +75,7 @@ function mountTable(props: Parameters<typeof mountEditor>[1] = {}) {
       header: boolean;
       freezeRow?: boolean;
       freezeColumn?: boolean;
+      columnTypes?: string[];
       widths?: (number | null)[];
     };
 
@@ -306,6 +307,24 @@ describe('table controls: row menu', () => {
     expect(first.action('row-header').textContent).toContain('header');
     first.click(first.action('row-header'));
     expect(first.tableProps().header).toBe(true);
+  });
+
+  it('sets the column type and sorts the rows by it from the column menu', () => {
+    const t = mountTable();
+
+    openColumn(t, 1);
+    expect(t.action('column-type-text').querySelector('svg')).not.toBeNull();
+    t.click(t.action('column-type-number'));
+    expect(t.tableProps().columnTypes).toEqual(['text', 'number', 'text']);
+
+    openColumn(t, 1);
+    t.click(t.action('column-sort-desc'));
+    expect(t.grid().map((row) => row[1])).toEqual(['01', '21', '11']);
+
+    openColumn(t, 1);
+    expect(t.action('column-sort-desc').getAttribute('aria-disabled')).toBe('true');
+    t.click(t.action('column-sort-asc'));
+    expect(t.grid().map((row) => row[1])).toEqual(['01', '11', '21']);
   });
 
   it('keeps the first row and the first column in view, from their own menus', () => {
