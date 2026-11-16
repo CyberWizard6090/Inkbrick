@@ -74,6 +74,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Tables: dragging the mouse from one cell to another now selects a rectangle of cells instead of a run of text in
   document order (see cell selection below). A selection that starts or ends in a cell from outside the table, or made with
   the keyboard, still works as before.
+- Bundle size budget of `@inkbrick/react` raised from 70 KB to 75 KB gzip (tables, the table of contents, columns and heading
+  folding grew the shared core).
 - Bundle size budgets raised: `@inkbrick/react` from 64 KB to 70 KB, `@inkbrick/engine` from 16 KB to 18 KB.
 - `sanitizeFragment` refuses the whole fragment when its block budget runs out inside a nested block instead of silently
   cutting the nested blocks off.
