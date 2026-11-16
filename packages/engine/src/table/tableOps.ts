@@ -2,6 +2,38 @@ import { TABLE, TABLE_CELL, TABLE_ROW, type BlockId, type TableProps } from '@in
 import type { Transaction } from '@inkbrick/store';
 
 import type { Engine } from '../editor/Engine';
+import { mergesAfterInsert, normalizeMerges } from './tableMerge';
+
+/** Списки по столбцам в props таблицы (ширины, типы) и чем дополнять короткий список. */
+export const COLUMN_LISTS = [
+  { key: 'widths', fill: null },
+  { key: 'columnTypes', fill: 'text' },
+] as const;
+
+/**
+ * Копии списков по столбцам, дополненные до числа столбцов и изменённые `change(list, fill)`.
+ * `undefined`, если у таблицы нет ни одного списка. Индексы списков — столбцы, какими они были до правки.
+ */
+export function shiftedLists(
+  props: TableProps,
+  columns: number,
+  change: (list: unknown[], fill: unknown) => void,
+): Partial<Record<(typeof COLUMN_LISTS)[number]['key'], unknown[]>> | undefined {
+  const result: Partial<Record<(typeof COLUMN_LISTS)[number]['key'], unknown[]>> = {};
+
+  for (const { key, fill } of COLUMN_LISTS) {
+    const list = props[key] as unknown[] | undefined;
+
+    if (!list) continue;
+
+    const next = Array.from({ length: columns }, (_, i) => list[i] ?? fill);
+
+    change(next, fill);
+    result[key] = next;
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
 
 const columnsIn = (tx: Transaction, tableId: BlockId): number =>
   tx.getBlock(tx.getBlock(tableId)?.children[0] ?? '')?.children.length ?? 0;
@@ -16,6 +48,19 @@ export function addTableRow(
   // Ширина — до вставки: новая строка, вставленная первой, ещё пуста.
   const columns = Math.max(1, columnsIn(tx, tableId));
   const row = engine.block.create({ flavour: TABLE_ROW, parentId: tableId });
+  const table = tx.getBlock(tableId)!;
+  const merges = normalizeMerges(
+    (table.props as TableProps).merges,
+    table.children.length,
+    columns,
+  );
+
+  if (merges.length > 0) {
+    engine.block.morph(tx, tableId, TABLE, {
+      ...table.props,
+      merges: mergesAfterInsert(merges, 'row', index),
+    });
+  }
 
   engine.block.insert(tx, tableId, index, row);
 
@@ -36,15 +81,19 @@ export function addTableColumn(
   const table = tx.getBlock(tableId)!;
   const props = table.props as TableProps;
 
-  if (props.widths) {
-    // Список ширин может быть короче числа столбцов — дополняем, чтобы индексы совпали со столбцами.
-    const widths = Array.from(
-      { length: columnsIn(tx, tableId) },
-      (_, i) => props.widths![i] ?? null,
-    );
+  const lists = shiftedLists(props, columnsIn(tx, tableId), (list, fill) =>
+    list.splice(index, 0, fill),
+  );
 
-    widths.splice(index, 0, null);
-    engine.block.morph(tx, tableId, TABLE, { ...table.props, widths });
+  const columns = columnsIn(tx, tableId);
+  const merges = normalizeMerges(props.merges, table.children.length, columns);
+
+  if (lists || merges.length > 0) {
+    engine.block.morph(tx, tableId, TABLE, {
+      ...table.props,
+      ...lists,
+      ...(merges.length > 0 ? { merges: mergesAfterInsert(merges, 'column', index) } : {}),
+    } as TableProps);
   }
 
   return table.children.map((rowId) => {

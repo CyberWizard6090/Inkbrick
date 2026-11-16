@@ -1,4 +1,6 @@
 import type { Document } from '../document';
+import type { TableMerge } from '../schema/blocks/TableSchema';
+import { normalizeMerges } from '../utils/tableMerges';
 import type { BaseBlock, BlockId, InlineNode } from '../model';
 import type { SchemaRegistry } from '../schema';
 import { isFormulaNode } from '../utils/formula';
@@ -106,6 +108,8 @@ export interface ExportTable {
   /** Строки; во всех строках поровну ячеек (недостающие — `undefined`, их выводят пустыми). */
   readonly rows: readonly (readonly (BaseBlock | undefined)[])[];
   readonly widths: readonly (number | null)[];
+  /** Объединённые ячейки: пригодные к использованию, без пересечений. */
+  readonly merges: readonly TableMerge[];
 }
 
 /** Таблица для экспорта: строки и ячейки по порядку. Лишние потомки (не строки, не ячейки) пропускаются. */
@@ -122,6 +126,7 @@ export function exportTable(node: ExportNode): ExportTable {
 
   return {
     header: node.block.props.header !== false,
+    merges: normalizeMerges(node.block.props.merges, rows.length, columns),
     rows: rows.map((row) => Array.from({ length: columns }, (_, index) => row[index])),
     widths: Array.from({ length: columns }, (_, index) => {
       const width = Array.isArray(widths) ? widths[index] : null;

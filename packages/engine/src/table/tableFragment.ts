@@ -4,6 +4,8 @@ import {
   TABLE_ROW,
   isAlignment,
   type Alignment,
+  type TableColumnType,
+  type TableMerge,
   type InlineNode,
 } from '@inkbrick/document';
 
@@ -19,6 +21,13 @@ export type TableCellInput = string | readonly InlineNode[];
 export interface TableFragmentOptions {
   /** Первая строка — заголовок (по умолчанию да). */
   header?: boolean;
+  /** Первая строка и первый столбец остаются на виду при прокрутке. */
+  freezeRow?: boolean;
+  freezeColumn?: boolean;
+  /** Типы столбцов по порядку (`text`, `number`, `date`). */
+  columnTypes?: readonly TableColumnType[];
+  /** Объединённые ячейки. */
+  merges?: readonly TableMerge[];
   /** Выравнивание столбцов по порядку. */
   align?: readonly (Alignment | undefined)[];
   /** Ширины столбцов в пикселях по порядку; `null` — по содержимому. */
@@ -59,6 +68,12 @@ export function tableFragment(
   if (rows.length === 0 || columns === 0) return { blocks: [] };
 
   const props: Record<string, unknown> = { header: options.header ?? true };
+
+  if (options.freezeRow) props.freezeRow = true;
+  if (options.freezeColumn) props.freezeColumn = true;
+  if (options.merges?.length) props.merges = options.merges.map((merge) => ({ ...merge }));
+  if (options.columnTypes?.some((type) => type !== 'text'))
+    props.columnTypes = [...options.columnTypes];
 
   if (options.widths?.some((width) => width !== null)) props.widths = [...options.widths];
 

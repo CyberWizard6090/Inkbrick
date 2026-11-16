@@ -135,21 +135,45 @@ function renderBlock(block: BaseBlock): string {
 }
 
 function renderTable(node: ExportNode): string {
-  const { header, rows, widths } = exportTable(node);
+  const { header, rows, widths, merges } = exportTable(node);
 
   if (rows.length === 0) return '';
 
-  const cellHtml = (cell: BaseBlock | undefined, tag: 'td' | 'th') =>
-    `<${tag}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${tag}>`;
-  const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th') =>
-    `<tr>${cells.map((cell) => cellHtml(cell, tag)).join('')}</tr>`;
+  const cellHtml = (
+    cell: BaseBlock | undefined,
+    tag: 'td' | 'th',
+    rowIndex: number,
+    columnIndex: number,
+  ) => {
+    const found = merges.find(
+      (merge) =>
+        rowIndex >= merge.row &&
+        rowIndex < merge.row + merge.rows &&
+        columnIndex >= merge.column &&
+        columnIndex < merge.column + merge.columns,
+    );
+
+    if (found && (found.row !== rowIndex || found.column !== columnIndex)) return '';
+
+    const spans =
+      (found && found.columns > 1 ? ` colspan="${found.columns}"` : '') +
+      (found && found.rows > 1 ? ` rowspan="${found.rows}"` : '');
+
+    return `<${tag}${spans}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${tag}>`;
+  };
+  const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th', rowIndex: number) =>
+    `<tr>${cells.map((cell, columnIndex) => cellHtml(cell, tag, rowIndex, columnIndex)).join('')}</tr>`;
   const columns = widths.some((width) => width !== null)
     ? `<colgroup>${widths
         .map((width) => (width === null ? '<col>' : `<col style="width:${width}px">`))
         .join('')}</colgroup>`
     : '';
-  const head = header ? `<thead>${row(rows[0], 'th')}</thead>` : '';
-  const body = (header ? rows.slice(1) : rows).map((cells) => row(cells, 'td')).join('');
+  const head = header ? `<thead>${row(rows[0], 'th', 0)}</thead>` : '';
+  const offset = header ? 1 : 0;
+  const body = rows
+    .slice(offset)
+    .map((cells, index) => row(cells, 'td', index + offset))
+    .join('');
 
   return `<table>${columns}${head}<tbody>${body}</tbody></table>`;
 }

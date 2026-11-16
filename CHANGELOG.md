@@ -7,6 +7,21 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tables: merged cells (`docs/tables.md`). "Merge cells" and "Split cell" in the right-click menu, commands `mergeTableCells`
+  and `splitTableCell`, `merges` in the table props. Rows and columns inserted or deleted inside a merge stretch or shrink it;
+  moving and sorting are off while a table has merges. `colspan` and `rowspan` of pasted HTML tables stay merged, `toHtml`
+  writes them. New exports `normalizeMerges`, `mergeAt`, `mergesAfterInsert`, `mergesAfterDelete`, `expandRangeToMerges`,
+  `mergesWithin`, `mergesAfterKeeping`.
+- Tables: column types (`text`, `number`, `date`) and sorting from the column menu (`docs/tables.md`). Commands
+  `setTableColumnType` and `sortTableRows`; types follow their columns. New exports `parseNumber`, `parseDate`, `sortKey`,
+  `sortedOrder`, `TABLE_COLUMN_TYPES`.
+- Tables: cell selection (`docs/tables.md`). Drag across cells, Shift+click and Shift+arrows select a rectangle; "Select
+  row" and "Select column" are in the row and column menus. Delete clears the cells, copy and cut put the selected cells on
+  the clipboard as a table, paste starts at the top left cell. New in `@inkbrick/engine`: `tableRangeBetween`,
+  `clampTableRange`, `tableRangeCells`, `tableRangeFragment`.
+- Tables: keep the first row and the first column in view while scrolling (`freezeRow`, `freezeColumn`, items in the first row's
+  and the first column's menus; `--inkbrick-table-frozen-height` limits the height). `createTableEditor` and `tableFragment`
+  accept the same options. New `pin` icon.
 - Table of contents (`docs/toc.md`): `block:toc` lists the headings of the document as nested links and stays current as
   the document changes; click takes the caret to the heading, a small button picks the depth (`H1`…`H1–H6`). Opt-in:
   `tocBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `tocBlockSchemas` from `@inkbrick/document`; `useHeadings`
@@ -64,6 +79,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Tables: dragging the mouse from one cell to another now selects a rectangle of cells instead of a run of text in
+  document order (see cell selection below). A selection that starts or ends in a cell from outside the table, or made with
+  the keyboard, still works as before.
+- Bundle size budget of `@inkbrick/react` raised from 70 KB to 75 KB gzip (tables, the table of contents, columns and heading
+  folding grew the shared core).
 - Bundle size budgets raised: `@inkbrick/react` from 64 KB to 70 KB, `@inkbrick/engine` from 16 KB to 18 KB.
 - `sanitizeFragment` refuses the whole fragment when its block budget runs out inside a nested block instead of silently
   cutting the nested blocks off.
