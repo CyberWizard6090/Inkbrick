@@ -8,14 +8,20 @@ import { blockElement } from './geometry';
 import type { DropIndicatorProps } from './types';
 import { useBlockDragState } from './useBlockDrag';
 
-export function DefaultDropIndicator({ indicator, position }: DropIndicatorProps) {
+export function DefaultDropIndicator({ indicator, position, side }: DropIndicatorProps) {
   return (
     <div
       className="inkbrick-drop-indicator"
       data-inkbrick-ui="drop-indicator"
       data-testid="drop-indicator"
       data-position={position}
-      style={{ left: indicator.left, top: indicator.top, width: indicator.width }}
+      data-side={side}
+      style={{
+        left: indicator.left,
+        top: indicator.top,
+        width: indicator.width,
+        height: indicator.height,
+      }}
     />
   );
 }
@@ -51,6 +57,7 @@ export function DropIndicatorHost() {
       blockId={drag.blockId}
       targetId={drag.targetId}
       position={drag.position}
+      side={drag.side ?? undefined}
       indicator={drag.indicator}
     />,
     document.body,

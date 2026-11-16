@@ -7,6 +7,12 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Columns by dragging (`docs/columns.md`): drag a block by its handle to the left or right edge of another block (the last 24 px of
+  its row) and they stand side by side. A vertical line shows the drop; the target already in a column gets a new column next to
+  it (up to six), a column that lost its last block disappears. New command `moveBlockToSide`, `BlockDragApi.moveToSide`,
+  `BlockDropTarget.side`, `DragState.side`, `DropIndicatorProps.side`, `DropIndicatorRect.height`, type `DropSide`. Needs
+  `columnsBlocks`; without them nothing changes.
+- Size budget of `@inkbrick/engine` raised from 18 KB to 19 KB for the new command.
 - Columns (`docs/columns.md`): `block:columns` → `block:column` with ordinary blocks inside, two to six columns, slash items «2
   columns» and «3 columns», a draggable divider (or arrow keys), a toolbar to add and remove columns or turn them into plain
   blocks. Opt-in: `columnsBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `columnsBlockSchemas` from `@inkbrick/document`.

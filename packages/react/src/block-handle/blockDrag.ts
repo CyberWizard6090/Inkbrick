@@ -3,12 +3,15 @@ import { flushSync } from 'react-dom';
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
-import type { DragState, DropIndicatorRect, DropPosition } from './BlockHandleController';
+import type { DragState, DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
 import { blockAtPoint, blockElement, probePoint, rowRect } from './geometry';
 
 export interface BlockDropTarget {
   readonly targetId: string;
+  /** `before`/`after`; у цели со `side` — `before` слева и `after` справа. */
   readonly position: DropPosition;
+  /** Задана, когда блок встаёт рядом с целью (в колонки), а не до или после неё: нужны колонки (`columnsBlocks`). */
+  readonly side?: DropSide;
   readonly indicator: DropIndicatorRect;
 }
 
@@ -43,6 +46,8 @@ export interface BlockDragApi {
   drop(): boolean;
   cancel(): void;
 
+  /** Ставит блок рядом с `targetId`, в колонки: слева или справа. Один шаг undo. Нужны колонки (`columnsBlocks`). */
+  moveToSide(blockId: string, targetId: string, side: DropSide): boolean;
   /** Переносит блок сразу, без жеста (например, из своего DnD без линии вставки). Один шаг undo. */
   move(blockId: string, targetId: string, position: DropPosition): boolean;
   autoScroll(clientY: number): void;
@@ -52,6 +57,8 @@ export interface BlockDragApi {
 }
 
 const EDGE = 56;
+/** Полоса у левого и правого края строки блока (не шире пятой части строки), где блок встаёт рядом, а не до или после. */
+const SIDE_ZONE = 24;
 
 const cache = new WeakMap<EditorView, BlockDragApi>();
 
@@ -81,6 +88,9 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
   const canMove = (blockId: string, targetId: string, position: DropPosition) =>
     blockId !== targetId && editor.can('moveBlock', { blockId, targetId, position });
 
+  const canMoveToSide = (blockId: string, targetId: string, side: DropSide) =>
+    blockId !== targetId && editor.can('moveBlockToSide', { blockId, targetId, side });
+
   const blockRects = (blockId: string): BlockRects | null => {
     const wrapper = blockElement(view, blockId);
     const row = rowRect(view, blockId);
@@ -105,6 +115,29 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
       if (!targetId || !rects) return null;
 
       const { row, box } = rects;
+      const zone = Math.min(SIDE_ZONE, row.width * 0.2);
+      // Слева от текста — полоса ручки: там обычная вставка до/после; сторона — только внутри строки.
+      const side: DropSide | null =
+        x >= row.left && x < row.left + zone
+          ? 'left'
+          : x > row.right - zone && x <= row.right
+            ? 'right'
+            : null;
+
+      if (side && canMoveToSide(blockId, targetId, side)) {
+        return {
+          targetId,
+          position: side === 'left' ? 'before' : 'after',
+          side,
+          indicator: {
+            left: side === 'left' ? box.left - 2 : box.right - 1,
+            top: box.top,
+            width: 3,
+            height: box.height,
+          },
+        };
+      }
+
       const position: DropPosition = y < row.top + row.height / 2 ? 'before' : 'after';
 
       if (!canMove(blockId, targetId, position)) return null;
@@ -131,14 +164,21 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
 
       if (!drag) return;
 
-      if (!target || !canMove(drag.blockId, target.targetId, target.position)) {
-        controller.updateDrag({ targetId: null, position: null, indicator: null });
+      const allowed = target
+        ? target.side
+          ? canMoveToSide(drag.blockId, target.targetId, target.side)
+          : canMove(drag.blockId, target.targetId, target.position)
+        : false;
+
+      if (!target || !allowed) {
+        controller.updateDrag({ targetId: null, position: null, side: null, indicator: null });
         return;
       }
 
       controller.updateDrag({
         targetId: target.targetId,
         position: target.position,
+        side: target.side ?? null,
         indicator: target.indicator,
       });
     },
@@ -165,12 +205,26 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
 
       if (!drag?.targetId || !drag.position) return false;
 
-      return api.move(drag.blockId, drag.targetId, drag.position);
+      return drag.side
+        ? api.moveToSide(drag.blockId, drag.targetId, drag.side)
+        : api.move(drag.blockId, drag.targetId, drag.position);
     },
 
     cancel() {
       controller.endDrag();
       markBody(false);
+    },
+
+    moveToSide(blockId, targetId, side) {
+      if (!canMoveToSide(blockId, targetId, side)) return false;
+
+      flushSync(() => {
+        editor.dispatch({ type: 'moveBlockToSide', payload: { blockId, targetId, side } });
+      });
+
+      controller.setHover(null);
+
+      return true;
     },
 
     move(blockId, targetId, position) {

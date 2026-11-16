@@ -14,6 +14,7 @@ import { InsertBlockCommand } from './InsertBlockCommand';
 import { DeleteRangeCommand } from './DeleteRangeCommand';
 import { ConvertBlockCommand } from './ConvertBlockCommand';
 import { MoveBlockCommand } from './MoveBlockCommand';
+import { MoveBlockToSideCommand } from '../columns/moveToSide';
 import { PasteFragmentCommand } from './PasteFragmentCommand';
 import { DuplicateBlockCommand } from './DuplicateBlockCommand';
 import { ToggleFormatRangeCommand } from './ToggleFormatRangeCommand';
@@ -40,6 +41,7 @@ export {
   DeleteRangeCommand,
   ConvertBlockCommand,
   MoveBlockCommand,
+  MoveBlockToSideCommand,
   PasteFragmentCommand,
   DuplicateBlockCommand,
   ToggleFormatRangeCommand,
@@ -66,6 +68,7 @@ export const builtinCommands: readonly Command<any, any>[] = [
   DeleteRangeCommand,
   ConvertBlockCommand,
   MoveBlockCommand,
+  MoveBlockToSideCommand,
   PasteFragmentCommand,
   DuplicateBlockCommand,
   ToggleFormatRangeCommand,

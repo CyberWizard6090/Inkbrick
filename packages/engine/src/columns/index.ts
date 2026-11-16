@@ -4,6 +4,7 @@ import type { BlockDefinition } from '../controller/BlockController';
 import { columnsCommands } from './columnsCommands';
 
 export * from './columnsCommands';
+export { MoveBlockToSideCommand } from './moveToSide';
 
 /**
  * Колонки для редактора: схемы `block:columns` и `block:column` и команды добавления, удаления колонок и их ширины.
