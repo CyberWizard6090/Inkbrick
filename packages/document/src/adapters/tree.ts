@@ -97,3 +97,36 @@ export function groupSiblings(
 
   return groups;
 }
+
+export const isTable = (block: BaseBlock) => block.flavour === 'block:table';
+
+export interface ExportTable {
+  /** Первая строка — заголовок. */
+  readonly header: boolean;
+  /** Строки; во всех строках поровну ячеек (недостающие — `undefined`, их выводят пустыми). */
+  readonly rows: readonly (readonly (BaseBlock | undefined)[])[];
+  readonly widths: readonly (number | null)[];
+}
+
+/** Таблица для экспорта: строки и ячейки по порядку. Лишние потомки (не строки, не ячейки) пропускаются. */
+export function exportTable(node: ExportNode): ExportTable {
+  const rows = node.children
+    .filter(({ block }) => block.flavour === 'block:table-row')
+    .map((row) =>
+      row.children
+        .filter(({ block }) => block.flavour === 'block:table-cell')
+        .map(({ block }) => block),
+    );
+  const columns = Math.max(1, ...rows.map((row) => row.length));
+  const widths = node.block.props.widths;
+
+  return {
+    header: node.block.props.header !== false,
+    rows: rows.map((row) => Array.from({ length: columns }, (_, index) => row[index])),
+    widths: Array.from({ length: columns }, (_, index) => {
+      const width = Array.isArray(widths) ? widths[index] : null;
+
+      return typeof width === 'number' && width > 0 ? width : null;
+    }),
+  };
+}

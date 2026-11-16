@@ -13,6 +13,7 @@ export { ALIGNMENTS, isAlignment, isAlignable, getBlockAlign, alignProps } from 
 export type { Alignment } from './utils/align';
 export { FORMULA_CHAR, MAX_FORMULA_LENGTH, isFormulaNode } from './utils/formula';
 export { MAX_NESTING_DEPTH } from './utils/nesting';
+export { serializeDelimited, parseDelimited, MAX_DELIMITED_CELLS } from './utils/delimited';
 export { isSafeUrl, normalizeLinkUrl, isSafeImageUrl, MAX_DATA_IMAGE_LENGTH } from './utils/url';
 export {
   serializeDocument,

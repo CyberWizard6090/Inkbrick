@@ -5,6 +5,7 @@ import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
+  exportTable,
   groupSiblings,
   headingLevel,
   isOrdered,
@@ -129,11 +130,34 @@ function renderBlock(block: BaseBlock): string {
   }
 }
 
+function renderTable(node: ExportNode): string {
+  const { header, rows, widths } = exportTable(node);
+
+  if (rows.length === 0) return '';
+
+  const cellHtml = (cell: BaseBlock | undefined, tag: 'td' | 'th') =>
+    `<${tag}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${tag}>`;
+  const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th') =>
+    `<tr>${cells.map((cell) => cellHtml(cell, tag)).join('')}</tr>`;
+  const columns = widths.some((width) => width !== null)
+    ? `<colgroup>${widths
+        .map((width) => (width === null ? '<col>' : `<col style="width:${width}px">`))
+        .join('')}</colgroup>`
+    : '';
+  const head = header ? `<thead>${row(rows[0], 'th')}</thead>` : '';
+  const body = (header ? rows.slice(1) : rows).map((cells) => row(cells, 'td')).join('');
+
+  return `<table>${columns}${head}<tbody>${body}</tbody></table>`;
+}
+
 function renderGroups(nodes: readonly ExportNode[]): string {
   return groupSiblings(nodes)
     .map((group) => {
       if (!group.list) {
         const { block, children } = group.nodes[0];
+
+        // Потомки таблицы — её строки и ячейки, они выведены вместе с ней.
+        if (block.flavour === 'block:table') return renderTable(group.nodes[0]);
 
         return renderBlock(block) + renderGroups(children);
       }
@@ -167,7 +191,8 @@ function renderGroups(nodes: readonly ExportNode[]): string {
 }
 
 /**
- * HTML-фрагмент (без `<html>`/`<body>`): семантические теги без классов и стилей, кроме выравнивания.
+ * HTML-фрагмент (без `<html>`/`<body>`): семантические теги без классов и стилей, кроме выравнивания (и ширины
+ * столбцов таблицы).
  * Весь текст и атрибуты экранируются, небезопасные ссылки и адреса картинок отбрасываются.
  */
 export function toHtml(document: Document, options: ExportOptions = {}): string {
