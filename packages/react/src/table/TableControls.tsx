@@ -453,14 +453,22 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     const startX = event.clientX;
     const startWidth = widthOf(column);
     let width = startWidth;
+    let frame = 0;
 
     frozen.current = true;
 
     const move = (moved: PointerEvent) => {
       width = clamp(startWidth + moved.clientX - startX, MIN_WIDTH, MAX_WIDTH);
-      onPreview({ index: column, width });
+
+      if (frame) return;
+
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        onPreview({ index: column, width });
+      });
     };
     const finish = () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', finish);
       document.removeEventListener('pointercancel', finish);
