@@ -88,6 +88,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- The built-in code highlighter is loaded as a separate chunk when the first code block appears (code shows uncoloured until
+  then): `@inkbrick/react` loses 5.6 KB gzip at start. A custom `highlighter` and a direct `highlightCode` import stay
+  synchronous.
 - Packages are built with `charset: utf8`: Cyrillic and other non-ASCII strings ship as they are instead of `\uXXXX`
   escapes. `pnpm size` has a new case, «app: editor with zod» (budget 100 KB gzip), so the weight of dependencies is
   visible too.

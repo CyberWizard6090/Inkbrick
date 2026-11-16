@@ -8,6 +8,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
+import { isDefaultHighlighterLoaded, subscribeDefaultHighlighter } from '../code/lazyHighlight';
 import { useEditorUI } from '../ui/EditorUIContext';
 
 export interface EditableProps {
@@ -43,6 +44,12 @@ export function Editable({ block, placeholder }: EditableProps) {
   useLayoutEffect(() => view.register(block.id, ref.current!), [view, block.id]);
 
   const isCode = block.flavour === 'block:code';
+  // Встроенный подсветчик грузится отдельным чанком: когда он появится, блок кода перерисуется с раскраской.
+  const highlighterReady = useSyncExternalStore(
+    subscribeDefaultHighlighter,
+    isDefaultHighlighterLoaded,
+    isDefaultHighlighterLoaded,
+  );
   const language = typeof block.props.language === 'string' ? block.props.language : 'plain';
 
   useLayoutEffect(() => {
@@ -64,7 +71,7 @@ export function Editable({ block, placeholder }: EditableProps) {
     } else {
       renderInline(ref.current!, block.content, { formulaRenderer });
     }
-  }, [block.content, isCode, language, highlighter, formulaRenderer]);
+  }, [block.content, isCode, language, highlighter, formulaRenderer, highlighterReady]);
 
   const isEmpty = block.content.every((node) => node.insert.length === 0);
 
