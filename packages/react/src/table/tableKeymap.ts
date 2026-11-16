@@ -1,4 +1,11 @@
-import { locateTableCell, tableCellAt, tableSize, type CaretResult } from '@inkbrick/engine';
+import { normalizeMerges } from '@inkbrick/document';
+import {
+  locateTableCell,
+  mergeAt,
+  tableCellAt,
+  tableSize,
+  type CaretResult,
+} from '@inkbrick/engine';
 
 import type { KeyBinding, KeymapContext } from '../keymap/types';
 
@@ -19,7 +26,15 @@ const step = (direction: 1 | -1) => (context: KeymapContext) => {
 
   if (!cell || !size) return false;
 
-  const index = cell.row * size.columns + cell.column + direction;
+  const merges = normalizeMerges(getBlock(cell.tableId)?.props.merges, size.rows, size.columns);
+  const covered = (at: number) => {
+    const found = mergeAt(merges, Math.floor(at / size.columns), at % size.columns);
+
+    return !!found && !found.origin;
+  };
+  let index = cell.row * size.columns + cell.column + direction;
+
+  while (index >= 0 && index < size.rows * size.columns && covered(index)) index += direction;
 
   if (index < 0) return;
 

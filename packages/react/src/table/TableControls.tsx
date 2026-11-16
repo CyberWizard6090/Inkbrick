@@ -26,6 +26,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
+import { selectTableLine } from './cellSelection';
 
 interface Position {
   readonly row: number;
@@ -44,7 +45,7 @@ interface Layout {
   readonly row: Box;
   readonly cell: Box;
   /** Правые края столбцов (по ячейкам первой строки). */
-  readonly edges: readonly number[];
+  readonly edges: readonly Edge[];
 }
 
 interface MenuState {
@@ -78,6 +79,59 @@ function boxOf(element: Element): Box {
   return { left, top, width, height };
 }
 
+interface Edge {
+  readonly x: number;
+  readonly top: number;
+  readonly height: number;
+}
+
+/**
+ * Правые границы столбцов и участок, где граница настоящая. Скрытые (перекрытые) ячейки остаются в `row.cells`, поэтому
+ * номер ячейки — это столбец; объединённая ячейка даёт границу только своего последнего столбца. Участок — самая длинная
+ * непрерывная цепочка строк с такой границей: ручка не лежит поверх текста объединённых ячеек.
+ */
+function columnEdges(table: HTMLTableElement): Edge[] {
+  const columns = table.rows[0]?.cells.length ?? 0;
+  const found: { x: number; top: number; bottom: number }[][] = Array.from(
+    { length: columns },
+    () => [],
+  );
+
+  for (const row of Array.from(table.rows)) {
+    Array.from(row.cells).forEach((cell, index) => {
+      const last = index + Math.max(1, cell.colSpan) - 1;
+
+      if (cell.hidden || last >= columns) return;
+
+      const { right, top, bottom } = cell.getBoundingClientRect();
+
+      found[last].push({ x: right, top, bottom });
+    });
+  }
+
+  const bounds = table.getBoundingClientRect();
+  let previous = bounds.left;
+
+  return found.map((segments) => {
+    const runs: { x: number; top: number; bottom: number }[] = [];
+
+    for (const segment of segments.sort((a, b) => a.top - b.top)) {
+      const run = runs[runs.length - 1];
+
+      if (run && segment.top - run.bottom <= 2) run.bottom = Math.max(run.bottom, segment.bottom);
+      else runs.push({ ...segment });
+    }
+
+    const best = runs.sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
+
+    previous = best?.x ?? previous;
+
+    return best
+      ? { x: best.x, top: best.top, height: best.bottom - best.top }
+      : { x: previous, top: bounds.top, height: bounds.height };
+  });
+}
+
 function measure(table: HTMLTableElement, position: Position): Layout | null {
   const row = table.rows[position.row];
   const cell = row?.cells[position.column];
@@ -89,7 +143,7 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
     table: boxOf(table),
     row: boxOf(row),
     cell: boxOf(cell),
-    edges: Array.from(first.cells, (item) => item.getBoundingClientRect().right),
+    edges: columnEdges(table),
   };
 }
 
@@ -271,6 +325,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const rowActions = ({ row }: Position): BlockMenuAction[] => {
     const actions: BlockMenuAction[] = [
       {
+        id: 'row-select',
+        title: t('table.row.select'),
+        icon: <Icon name="select-all" />,
+        run: () => {
+          setMenu(null);
+          selectTableLine(editor, view, block.id, { row });
+        },
+      },
+      {
         id: 'row-insert-above',
         title: t('table.row.insertAbove'),
         icon: <Icon name="plus" />,
@@ -327,6 +390,23 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       });
     }
 
+    if (row === 0) {
+      actions.push({
+        id: 'row-freeze',
+        title: t(props.freezeRow ? 'table.row.freezeOff' : 'table.row.freezeOn'),
+        icon: <Icon name="pin" />,
+        run: () =>
+          perform(() => {
+            editor.dispatch({
+              type: 'setBlockProps',
+              payload: { blockId: block.id, props: { freezeRow: !props.freezeRow } },
+            });
+
+            return cellAt(0, active.column);
+          }),
+      });
+    }
+
     actions.push({
       id: 'row-delete',
       title: t('table.row.delete'),
@@ -353,6 +433,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     });
 
   const columnActions = ({ column }: Position): BlockMenuAction[] => [
+    {
+      id: 'column-select',
+      title: t('table.column.select'),
+      icon: <Icon name="select-all" />,
+      run: () => {
+        setMenu(null);
+        selectTableLine(editor, view, block.id, { column });
+      },
+    },
     {
       id: 'column-insert-left',
       title: t('table.column.insertLeft'),
@@ -409,6 +498,31 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       icon: <Icon name="align-right" />,
       run: () => alignColumn(column, 'right'),
     },
+    ...(['text', 'number', 'date'] as const).map((type) => ({
+      id: `column-type-${type}`,
+      title: t(`table.column.type.${type}`),
+      icon: <Icon name={(props.columnTypes?.[column] ?? 'text') === type ? 'check' : 'text'} />,
+      run: () =>
+        perform(() => {
+          run('setTableColumnType', { index: column, type });
+
+          return cellAt(active.row, column);
+        }),
+    })),
+    {
+      id: 'column-sort-asc',
+      title: t('table.column.sortAsc'),
+      icon: <Icon name="arrow-up" />,
+      disabled: !can('sortTableRows', { column, direction: 'asc' }),
+      run: () => perform(() => void run('sortTableRows', { column, direction: 'asc' })),
+    },
+    {
+      id: 'column-sort-desc',
+      title: t('table.column.sortDesc'),
+      icon: <Icon name="arrow-down" />,
+      disabled: !can('sortTableRows', { column, direction: 'desc' }),
+      run: () => perform(() => void run('sortTableRows', { column, direction: 'desc' })),
+    },
     {
       id: 'column-auto-width',
       title: t('table.column.autoWidth'),
@@ -421,6 +535,24 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           return cellAt(active.row, column);
         }),
     },
+    ...(column === 0
+      ? [
+          {
+            id: 'column-freeze',
+            title: t(props.freezeColumn ? 'table.column.freezeOff' : 'table.column.freezeOn'),
+            icon: <Icon name="pin" />,
+            run: () =>
+              perform(() => {
+                editor.dispatch({
+                  type: 'setBlockProps',
+                  payload: { blockId: block.id, props: { freezeColumn: !props.freezeColumn } },
+                });
+
+                return cellAt(active.row, 0);
+              }),
+          },
+        ]
+      : []),
     {
       id: 'column-delete',
       title: t('table.column.delete'),
@@ -569,7 +701,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           aria-label={t('table.resize', { column: column + 1 })}
           tabIndex={0}
           data-inkbrick-part="resize"
-          style={{ left: edge - 3, top: table.top, height: table.height }}
+          style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
           onPointerDown={(event) => resize(column, event)}
           onKeyDown={(event) => resizeByKey(column, event)}
           onDoubleClick={() => {

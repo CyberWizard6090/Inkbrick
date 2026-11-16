@@ -45,7 +45,7 @@ function cellContent(cell: HTMLElement, style: Style, depth: number): InlineNode
 }
 
 /**
- * `<table>` → таблица Inkbrick. Объединённые ячейки раскладываются по сетке: текст остаётся в первой ячейке
+ * `<table>` → таблица Inkbrick. Объединённые ячейки (`colspan`, `rowspan`) остаются объединёнными: текст в первой ячейке
  * области, остальные пусты. Первая строка — заголовок, если она в `<thead>` или состоит из `<th>`.
  *
  * Результат: `[таблица]`; таблица из одной ячейки — абзац с её текстом (так вставляется копия одной ячейки
@@ -61,6 +61,7 @@ export function importTable(
   if (rows.length === 0 || rows.length > MAX_TABLE_CELLS) return null;
 
   const grid: (Slot | undefined)[][] = [];
+  const merges: { row: number; column: number; rows: number; columns: number }[] = [];
 
   for (let r = 0; r < rows.length; r++) {
     grid[r] ??= [];
@@ -74,6 +75,8 @@ export function importTable(
       const height = Math.min(span(cell, 'rowspan'), rows.length - r);
 
       if (column + columns > MAX_TABLE_COLUMNS) return null;
+
+      if (columns > 1 || height > 1) merges.push({ row: r, column, rows: height, columns });
 
       const slot: Slot = { content: cellContent(cell, style, depth), align: alignOf(cell) };
 
@@ -107,7 +110,7 @@ export function importTable(
   return [
     block(
       'block:table',
-      { header },
+      merges.length > 0 ? { header, merges } : { header },
       [],
       grid.map((row) =>
         block(

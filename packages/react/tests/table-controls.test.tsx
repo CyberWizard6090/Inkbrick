@@ -71,7 +71,13 @@ function mountTable(props: Parameters<typeof mountEditor>[1] = {}) {
   const action = (id: string) => menu()!.querySelector<HTMLElement>(`[data-action="${id}"]`)!;
   const click = (element: HTMLElement) => act(() => void fireEvent.click(element));
   const tableProps = () =>
-    getBlock(tableId)!.props as { header: boolean; widths?: (number | null)[] };
+    getBlock(tableId)!.props as {
+      header: boolean;
+      freezeRow?: boolean;
+      freezeColumn?: boolean;
+      columnTypes?: string[];
+      widths?: (number | null)[];
+    };
 
   return {
     ...mounted,
@@ -222,6 +228,11 @@ describe('table controls: add buttons', () => {
 });
 
 describe('table controls: row menu', () => {
+  const openColumn = (t: ReturnType<typeof mountTable>, column: number) => {
+    t.focus(1, column);
+    t.click(t.$('column-grip')!);
+  };
+
   const open = (t: ReturnType<typeof mountTable>, row: number) => {
     t.focus(row, 1);
     t.click(t.$('row-grip')!);
@@ -237,11 +248,13 @@ describe('table controls: row menu', () => {
         item.getAttribute('data-action'),
       ),
     ).toEqual([
+      'row-select',
       'row-insert-above',
       'row-insert-below',
       'row-move-up',
       'row-move-down',
       'row-header',
+      'row-freeze',
       'row-delete',
     ]);
     // У первой строки нельзя подняться выше; «заголовок» есть только у неё.
@@ -294,6 +307,49 @@ describe('table controls: row menu', () => {
     expect(first.action('row-header').textContent).toContain('header');
     first.click(first.action('row-header'));
     expect(first.tableProps().header).toBe(true);
+  });
+
+  it('sets the column type and sorts the rows by it from the column menu', () => {
+    const t = mountTable();
+
+    openColumn(t, 1);
+    expect(t.action('column-type-text').querySelector('svg')).not.toBeNull();
+    t.click(t.action('column-type-number'));
+    expect(t.tableProps().columnTypes).toEqual(['text', 'number', 'text']);
+
+    openColumn(t, 1);
+    t.click(t.action('column-sort-desc'));
+    expect(t.grid().map((row) => row[1])).toEqual(['01', '21', '11']);
+
+    openColumn(t, 1);
+    expect(t.action('column-sort-desc').getAttribute('aria-disabled')).toBe('true');
+    t.click(t.action('column-sort-asc'));
+    expect(t.grid().map((row) => row[1])).toEqual(['01', '11', '21']);
+  });
+
+  it('keeps the first row and the first column in view, from their own menus', () => {
+    const t = mountTable();
+    const frozen = (name: string) =>
+      document.querySelector('[data-inkbrick-block="table"]')!.hasAttribute(name);
+
+    open(t, 0);
+    expect(t.action('row-freeze').textContent).toBe('Keep first row in view');
+    t.click(t.action('row-freeze'));
+    expect(t.tableProps().freezeRow).toBe(true);
+    expect(frozen('data-freeze-row')).toBe(true);
+
+    open(t, 0);
+    expect(t.action('row-freeze').textContent).toBe('Stop keeping first row in view');
+    t.click(t.action('row-freeze'));
+    expect(frozen('data-freeze-row')).toBe(false);
+
+    openColumn(t, 0);
+    t.click(t.action('column-freeze'));
+    expect(t.tableProps().freezeColumn).toBe(true);
+    expect(frozen('data-freeze-column')).toBe(true);
+
+    openColumn(t, 1);
+    expect(t.menu()!.querySelector('[data-action="column-freeze"]')).toBeNull();
   });
 
   it('deletes the row, but not the last one', () => {

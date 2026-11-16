@@ -106,7 +106,7 @@ test.describe('Table', () => {
     await expect(page.locator(cells).first().locator('strong')).toHaveText('bold');
   });
 
-  test('deleting a selection across cells clears text and keeps the grid', async ({ page }) => {
+  test('deleting a rectangle of cells clears their text and keeps the grid', async ({ page }) => {
     await insertTable(page);
     await fill(page, ['a', 'b', 'c', 'd', 'e', 'f']);
 
@@ -123,10 +123,8 @@ test.describe('Table', () => {
 
     const rows = await grid(page);
 
-    expect(rows[0][0]).toBe('a');
-    expect(rows[0][2]).toBe('');
-    expect(rows[1][0]).toBe('');
-    expect(rows[1][2]).toBe('f');
+    expect(rows[0]).toEqual(['a', '', 'c']);
+    expect(rows[1]).toEqual(['d', '', 'f']);
   });
 
   test('the block handle belongs to the whole table; undo removes the table in one step', async ({
