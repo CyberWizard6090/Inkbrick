@@ -63,7 +63,7 @@ for (const { name, budget, code, bundled = [] } of cases) {
     result.outputFiles.map((file) => [file.path.replace(/\\/g, '/'), file.contents]),
   );
   const outputs = result.metafile.outputs;
-  const entry = Object.keys(outputs).find((path) => outputs[path].entryPoint);
+  const entry = Object.keys(outputs).find((path) => outputs[path].entryPoint === '<stdin>');
 
   // Считаем только то, что грузится сразу: точку входа и её статические импорты (ленивые чанки — отдельно).
   const eager = new Set();
