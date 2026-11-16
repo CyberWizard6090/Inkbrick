@@ -158,6 +158,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Styles: the highlight rules of find and replace are wrapped in `:where()` like every other rule, which the styles contract test (and CI) requires.
 - Virtual renderer: scrolling right after a click could unmount the block with the caret and lose the selection,
   because the pinned blocks were updated only on `selectionchange`; the scroll handler now reads the selection edges
   itself.
