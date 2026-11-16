@@ -88,6 +88,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Size budgets lowered to keep the win: `@inkbrick/react` 75 → 65 KB gzip, the whole editor app with zod 100 → 92 KB.
 - Icons: only the 26 that blocks and the slash menu need at once stay in the main bundle; the rest (formatting, tables,
   columns, alignment…) are a separate chunk that `<Icon>` loads by itself and the editor preloads on mount (−0.8 KB gzip).
   `IconName` still lists every icon; `preloadIcons()` loads the rest at once.

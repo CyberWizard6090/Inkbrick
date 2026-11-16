@@ -28,13 +28,13 @@ const cases = [
   {
     // Всё, что получает приложение с редактором, вместе с zod: так виден и вес зависимостей.
     name: 'app: editor with zod',
-    budget: 100,
+    budget: 92,
     bundled: ['zod'],
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
   {
     name: 'react: EditorProvider + DocumentView',
-    budget: 75,
+    budget: 65,
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
 ];
