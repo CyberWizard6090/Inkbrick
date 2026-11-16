@@ -264,6 +264,7 @@ export const ru: Messages = {
   'find.replace': 'Заменить',
   'find.replaceAll': 'Заменить все',
   'find.none': 'Нет совпадений',
+  'toc.panel': 'На этой странице',
   'toc.empty': 'Здесь появятся заголовки документа',
   'toc.levels': 'Уровни заголовков: нажмите, чтобы изменить',
 };

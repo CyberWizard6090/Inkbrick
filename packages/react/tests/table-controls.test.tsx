@@ -564,13 +564,14 @@ describe('table controls: resizing', () => {
     const cols = () =>
       [...t.root.querySelectorAll<HTMLElement>('col')].map((col) => col.style.width);
 
-    expect(cols()).toEqual(['', '160px']);
+    // Тянут границу между вторым и третьим столбцами: меняются только они, первый стоит.
+    expect(cols()).toEqual(['100px', '160px', '40px']);
     expect(t.tableProps().widths).toBeUndefined();
 
     act(() => void document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })));
 
-    expect(t.tableProps().widths).toEqual([null, 160, null]);
-    expect(cols()).toEqual(['', '160px', '']);
+    expect(t.tableProps().widths).toEqual([100, 160, 40]);
+    expect(cols()).toEqual(['100px', '160px', '40px']);
 
     t.editor.undo();
     expect(t.tableProps().widths).toBeUndefined();
@@ -582,13 +583,45 @@ describe('table controls: resizing', () => {
     const t = mountTable();
 
     t.focus(0, 0);
+    drag(t, 2, -500);
+    act(() => void document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })));
+    expect(t.tableProps().widths?.[2]).toBe(40);
+
+    drag(t, 2, 5000);
+    act(() => void document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })));
+    expect(t.tableProps().widths?.[2]).toBe(1200);
+  });
+
+  it('a border between columns moves width only between its two neighbours', () => {
+    stubWidth();
+
+    const t = mountTable();
+
+    t.focus(0, 0);
     drag(t, 0, -500);
     act(() => void document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })));
-    expect(t.tableProps().widths?.[0]).toBe(40);
+    // Первый столбец не уже 40, второй получил всё освобождённое, третий не тронут; сумма прежняя.
+    expect(t.tableProps().widths).toEqual([40, 160, 100]);
 
     drag(t, 0, 5000);
     act(() => void document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })));
-    expect(t.tableProps().widths?.[0]).toBe(1200);
+    // Второй столбец не уже 40: первый забирает остальное.
+    expect(t.tableProps().widths).toEqual([160, 40, 100]);
+  });
+
+  it('the table is as wide as its columns once all of them have a width', () => {
+    stubWidth();
+
+    const t = mountTable();
+
+    t.focus(0, 0);
+    drag(t, 2, 50);
+    act(() => void document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })));
+
+    const grid = t.root.querySelector<HTMLElement>('[data-inkbrick-part="grid"]')!;
+
+    // 100 + 100 + 150: растянули край последнего столбца — выросла и таблица.
+    expect(grid.style.width).toBe('350px');
   });
 
   it('a click without movement changes nothing', () => {
@@ -620,7 +653,7 @@ describe('table controls: resizing', () => {
 
     drag(t, 0, 30);
     act(() => void document.dispatchEvent(new MouseEvent('pointercancel', { bubbles: true })));
-    expect(t.tableProps().widths).toEqual([130, null, null]);
+    expect(t.tableProps().widths).toEqual([130, 70, 100]);
   });
 
   it('arrow keys change the width by ten pixels and a double click resets it', () => {
@@ -630,20 +663,25 @@ describe('table controls: resizing', () => {
 
     t.focus(0, 0);
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowRight' }));
-    expect(t.tableProps().widths).toEqual([null, 110, null]);
+    expect(t.tableProps().widths).toEqual([100, 110, 90]);
 
     // Ширина читается с экрана (в заглушке всегда 100), поэтому второй шаг считается от неё же.
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowLeft' }));
-    expect(t.tableProps().widths?.[1]).toBe(90);
+    expect(t.tableProps().widths).toEqual([100, 90, 110]);
 
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'a' }));
-    expect(t.tableProps().widths?.[1]).toBe(90);
+    expect(t.tableProps().widths).toEqual([100, 90, 110]);
 
     act(() => void fireEvent.doubleClick(t.$$('resize')[1]));
-    expect(t.tableProps().widths).toBeUndefined();
+    expect(t.tableProps().widths).toEqual([100, null, 110]);
 
     // Без заданной ширины двойной клик ничего не делает.
-    act(() => void fireEvent.doubleClick(t.$$('resize')[0]));
-    expect(t.tableProps().widths).toBeUndefined();
+    cleanup();
+
+    const fresh = mountTable();
+
+    fresh.focus(0, 0);
+    act(() => void fireEvent.doubleClick(fresh.$$('resize')[0]));
+    expect(fresh.tableProps().widths).toBeUndefined();
   });
 });
