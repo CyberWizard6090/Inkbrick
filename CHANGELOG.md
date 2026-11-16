@@ -88,6 +88,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Icons: only the 26 that blocks and the slash menu need at once stay in the main bundle; the rest (formatting, tables,
+  columns, alignment…) are a separate chunk that `<Icon>` loads by itself and the editor preloads on mount (−0.8 KB gzip).
+  `IconName` still lists every icon; `preloadIcons()` loads the rest at once.
 - The floating toolbar, the slash menu, the block handle and its menu, the inline formula popover and the image block are
   separate chunks, loaded right after the editor mounts (the image block when the first image appears): the core of
   `@inkbrick/react` is 62.1 KB gzip instead of 70.6. New `preloadEditorUI()` loads them all at once, for apps that need

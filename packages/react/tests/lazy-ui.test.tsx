@@ -65,3 +65,16 @@ describe('lazy parts of the interface', () => {
     expect(module.get()).toBe('x');
   });
 });
+
+describe('icons from the separate chunk', () => {
+  it('an icon outside the main set draws once its chunk is loaded', async () => {
+    const { Icon, preloadIcons } = await import('../src/icons/Icon');
+    const view = render(<Icon name="table" />);
+
+    await act(async () => {
+      await preloadIcons();
+    });
+
+    expect(view.container.querySelector('svg[data-inkbrick-icon="table"] *')).not.toBeNull();
+  });
+});

@@ -83,7 +83,7 @@ export { en } from './i18n/en';
 export type { MessageKey, Messages, PartialMessages } from './i18n/en';
 export { ru } from './i18n/ru';
 
-export { Icon } from './icons/Icon';
+export { Icon, preloadIcons } from './icons/Icon';
 export type { IconName, IconProps } from './icons/Icon';
 
 export type { KeyBinding, KeymapContext } from './keymap/types';
