@@ -7,6 +7,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Table of contents panel (`docs/toc.md`): `<TocPanel side maxLevel />` shows the headings beside the document, marks the current
+  section while scrolling and goes to a heading on click. Not shown unless you place it; `side` is `'left'` or `'right'`; hidden
+  in windows narrower than 1100 px. The `block:toc` block stays.
 - Find and replace (`docs/find-replace.md`): Ctrl/Cmd+F and Ctrl/Cmd+H open a panel that finds text in all blocks, highlights the
   matches (CSS Custom Highlight API), walks through them with Enter / Shift+Enter, matches case or whole words, replaces the current
   match or all of them in one undo step. Opt-in: `findReplace.keymap` in the provider and `<FindReplacePanel />` next to the document.

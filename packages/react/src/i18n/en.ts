@@ -260,6 +260,7 @@ export const en = {
   'find.replace': 'Replace',
   'find.replaceAll': 'Replace all',
   'find.none': 'No results',
+  'toc.panel': 'On this page',
   'toc.empty': 'Headings of the document will appear here',
   'toc.levels': 'Heading levels shown: click to change',
 } as const;
