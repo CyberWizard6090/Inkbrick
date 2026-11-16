@@ -95,6 +95,21 @@ export class Editor {
     this.controllers.start();
   }
 
+  /**
+   * Закрепляет блок: удалить его, превратить в другой тип или вынести из родителя не получится ни командой,
+   * ни выделением, захватывающим его целиком — такая команда ничего не меняет. Содержимое блока правится как обычно.
+   * `null` снимает закрепление.
+   */
+  pin(blockId: string | null): void {
+    const block = blockId === null ? undefined : this.store.getBlock(blockId);
+
+    if (blockId !== null && !block) throw new Error(`Editor.pin: no block "${blockId}"`);
+
+    this.engine.pinned = block
+      ? { id: block.id, parentId: block.parentId, flavour: block.flavour }
+      : null;
+  }
+
   dispatch(intent: EditorIntent): unknown {
     return this.dispatcher.dispatch(intent);
   }

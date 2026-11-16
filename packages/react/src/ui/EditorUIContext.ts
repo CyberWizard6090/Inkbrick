@@ -18,6 +18,7 @@ export const EMPTY_UI_CONFIG: EditorUIConfig = Object.freeze({
   t: defaultT,
   images: Object.freeze({}),
   formatting: 'context-menu',
+  contextMenu: Object.freeze([]),
 });
 
 export const EditorUIContext = createContext<EditorUIConfig>(EMPTY_UI_CONFIG);

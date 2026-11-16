@@ -456,13 +456,46 @@ describe('table controls: resizing', () => {
     const handle = t.$$('resize')[column];
 
     act(() => void fireEvent.pointerDown(handle, { button: 0, clientX: 300, clientY: 50 }));
+    const frame = vi
+      .spyOn(globalThis, 'requestAnimationFrame')
+      .mockImplementation((callback) => (callback(0), 1));
+
     act(
       () =>
         void document.dispatchEvent(
           new MouseEvent('pointermove', { bubbles: true, clientX: 300 + dx }),
         ),
     );
+    frame.mockRestore();
   };
+
+  it('coalesces pointer moves into one preview per frame', () => {
+    stubWidth();
+
+    const t = mountTable();
+
+    t.focus(0, 0);
+
+    const callbacks: FrameRequestCallback[] = [];
+    const frame = vi
+      .spyOn(globalThis, 'requestAnimationFrame')
+      .mockImplementation((callback) => callbacks.push(callback));
+
+    act(() => void fireEvent.pointerDown(t.$$('resize')[1], { button: 0, clientX: 300 }));
+    act(() => {
+      for (const dx of [10, 20, 30])
+        document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 300 + dx }));
+    });
+
+    expect(callbacks).toHaveLength(1);
+
+    act(() => callbacks[0](0));
+    frame.mockRestore();
+
+    const widths = [...document.querySelectorAll<HTMLElement>('col')].map((col) => col.style.width);
+
+    expect(widths.some((width) => width.endsWith('px'))).toBe(true);
+  });
 
   it('dragging a handle previews the width and writes it on release in one undo step', () => {
     stubWidth();

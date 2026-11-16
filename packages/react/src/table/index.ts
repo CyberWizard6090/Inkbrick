@@ -4,10 +4,13 @@ import { tableCommands } from '@inkbrick/engine';
 import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';
 import { TableBlock, TableCellBlock, TableRowBlock } from './TableBlock';
+import { tableContextMenu } from './tableContextMenu';
 import { tableKeymap } from './tableKeymap';
 
 export { TableBlock, TableCellBlock, TableRowBlock } from './TableBlock';
 export { tableKeymap } from './tableKeymap';
+export { TableEditor } from './TableEditor';
+export type { TableEditorProps } from './TableEditor';
 
 const view = (component: BlockComponent) => component as never;
 
@@ -40,6 +43,7 @@ export const tableBlocks: readonly ReactBlockDefinition<any>[] = [
       ],
     },
     keymap: tableKeymap,
+    contextMenu: tableContextMenu,
   }),
   defineBlock({ schema: TableRowSchema, component: view(TableRowBlock) }),
   defineBlock({ schema: TableCellSchema, component: view(TableCellBlock) }),

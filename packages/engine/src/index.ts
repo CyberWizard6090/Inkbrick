@@ -1,7 +1,7 @@
 export { Editor } from './editor';
 export type { EditorOptions, HistoryResult } from './editor';
 export { Engine } from './editor';
-export { Dispatcher } from './dispatcher';
+export { Dispatcher, PinnedBlockError } from './dispatcher';
 export type {
   EditorIntent,
   CaretResult,
