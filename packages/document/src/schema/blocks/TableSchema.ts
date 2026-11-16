@@ -14,6 +14,10 @@ export const TABLE_DEFAULT_COLUMNS = 3;
 export const tablePropsSchema = z.object({
   /** Первая строка — заголовок. */
   header: z.boolean().default(true),
+  /** Первая строка остаётся на виду при прокрутке таблицы. */
+  freezeRow: z.boolean().default(false),
+  /** Первый столбец остаётся на виду при горизонтальной прокрутке. */
+  freezeColumn: z.boolean().default(false),
   /**
    * Ширины столбцов в пикселях по порядку; `null` или отсутствующий элемент — ширина по содержимому.
    * Длина может не совпадать с числом столбцов: лишнее игнорируется.

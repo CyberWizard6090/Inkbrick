@@ -327,6 +327,23 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       });
     }
 
+    if (row === 0) {
+      actions.push({
+        id: 'row-freeze',
+        title: t(props.freezeRow ? 'table.row.freezeOff' : 'table.row.freezeOn'),
+        icon: <Icon name="pin" />,
+        run: () =>
+          perform(() => {
+            editor.dispatch({
+              type: 'setBlockProps',
+              payload: { blockId: block.id, props: { freezeRow: !props.freezeRow } },
+            });
+
+            return cellAt(0, active.column);
+          }),
+      });
+    }
+
     actions.push({
       id: 'row-delete',
       title: t('table.row.delete'),
@@ -421,6 +438,24 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           return cellAt(active.row, column);
         }),
     },
+    ...(column === 0
+      ? [
+          {
+            id: 'column-freeze',
+            title: t(props.freezeColumn ? 'table.column.freezeOff' : 'table.column.freezeOn'),
+            icon: <Icon name="pin" />,
+            run: () =>
+              perform(() => {
+                editor.dispatch({
+                  type: 'setBlockProps',
+                  payload: { blockId: block.id, props: { freezeColumn: !props.freezeColumn } },
+                });
+
+                return cellAt(active.row, 0);
+              }),
+          },
+        ]
+      : []),
     {
       id: 'column-delete',
       title: t('table.column.delete'),

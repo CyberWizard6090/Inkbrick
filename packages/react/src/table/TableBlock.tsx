@@ -24,7 +24,7 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
-  const { header, widths } = block.props as TableProps;
+  const { header, widths, freezeRow, freezeColumn } = block.props as TableProps;
   const table = useRef<HTMLTableElement>(null);
   // Ширина столбца, которую тянут: рисуется поверх widths, пока перетаскивание не записано в модель.
   const [preview, setPreview] = useState<{ index: number; width: number } | null>(null);
@@ -39,6 +39,8 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-block-id={block.id}
       data-selected={selected || undefined}
       data-header={header || undefined}
+      data-freeze-row={freezeRow || undefined}
+      data-freeze-column={freezeColumn || undefined}
     >
       <table ref={table} data-inkbrick-part="grid">
         {columns > 0 && (

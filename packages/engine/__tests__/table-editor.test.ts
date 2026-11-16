@@ -72,6 +72,14 @@ describe('createTableEditor', () => {
     expect(tableValue(editor).rows).toEqual([['a']]);
   });
 
+  it('can start with the first row and column kept in view', () => {
+    const editor = createTableEditor({ rows: [['a', 'b']], freezeRow: true, freezeColumn: true });
+    const table = editor.document.getBlock(tableIdOf(editor)!)!;
+
+    expect(table.props).toMatchObject({ freezeRow: true, freezeColumn: true });
+    expect(validateSnapshot(editor.serialize(), editor.schema)).toEqual([]);
+  });
+
   it('can be unpinned', () => {
     const editor = createTableEditor();
 
