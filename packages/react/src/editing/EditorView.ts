@@ -43,6 +43,9 @@ export class EditorView {
 
   pointerDown = false;
 
+  /** Место сразу после строчной Markdown-разметки: первый набранный там символ не наследует форматирование. */
+  plainAt: { blockId: BlockId; offset: number; version: number } | null = null;
+
   /** Чем последний раз нажимали в документе: от этого зависит, показывать ли плавающий toolbar. */
   lastPointerType: 'mouse' | 'pen' | 'touch' =
     typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse';

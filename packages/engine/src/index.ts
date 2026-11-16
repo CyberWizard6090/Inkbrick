@@ -32,3 +32,4 @@ export type { Fragment, FragmentBlock } from './clipboard/types';
 export { sanitizeFragment } from './clipboard/sanitize';
 export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
 export * from './table';
+export * from './toc';

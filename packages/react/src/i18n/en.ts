@@ -229,6 +229,12 @@ export const en = {
   'slash.item.table.title': 'Table',
   'slash.item.table.description': 'Rows and columns of text',
   'slash.item.table.keywords': 'table, grid, rows, columns',
+  'slash.item.toc.title': 'Table of contents',
+  'slash.item.toc.description': 'Links to the headings of the document',
+  'slash.item.toc.keywords': 'toc, contents, outline',
+  'toc.label': 'Table of contents',
+  'toc.empty': 'Headings of the document will appear here',
+  'toc.levels': 'Heading levels shown: click to change',
 } as const;
 
 export type MessageKey = keyof typeof en;

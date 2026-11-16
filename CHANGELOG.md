@@ -22,6 +22,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Tables: keep the first row and the first column in view while scrolling (`freezeRow`, `freezeColumn`, items in the first row's
   and the first column's menus; `--inkbrick-table-frozen-height` limits the height). `createTableEditor` and `tableFragment`
   accept the same options. New `pin` icon.
+- Table of contents (`docs/toc.md`): `block:toc` lists the headings of the document as nested links and stays current as
+  the document changes; click takes the caret to the heading, a small button picks the depth (`H1`…`H1–H6`). Opt-in:
+  `tocBlocks` from `@inkbrick/react` / `@inkbrick/engine`, `tocBlockSchemas` from `@inkbrick/document`; `useHeadings`
+  for custom renderings. `toHtml`, `toMarkdown` and `toPlainText` write it as a nested list of headings.
+- Markdown while typing (`docs/slash-menu.md`): `**bold**`, `__bold__`, `*italic*`, `_italic_`, `~~strike~~`, `` `code` `` and
+  `[text](url)` turn into formatting when the closing character is typed (one undo step; text typed right after is plain).
+  New block forms: `[x] `, `[ ] ` (also inside a bullet), `1) `, `*** `, `___ ` and a language after the fence (` ```js `).
+  `replaceText` takes `plain: true` to insert text without inheriting the neighbour's formatting.
 - Tables, engine part (`docs/tables.md`): `block:table` → `block:table-row` → `block:table-cell`, where a cell is a
   text block. Opt-in: `new Editor({ blocks: tableBlocks })`. Commands `insertTableRow`, `deleteTableRow`,
   `moveTableRow`, `insertTableColumn`, `deleteTableColumn`, `moveTableColumn`, `setTableColumnWidth`; helpers
