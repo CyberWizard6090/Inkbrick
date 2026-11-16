@@ -7,6 +7,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Table of contents panel (`docs/toc.md`): `<TocPanel side maxLevel />` shows the headings beside the document, marks the current
+  section while scrolling and goes to a heading on click. Not shown unless you place it; `side` is `'left'` or `'right'`; hidden
+  in windows narrower than 1100 px. The `block:toc` block stays.
 - Find and replace (`docs/find-replace.md`): Ctrl/Cmd+F and Ctrl/Cmd+H open a panel that finds text in all blocks, highlights the
   matches (CSS Custom Highlight API), walks through them with Enter / Shift+Enter, matches case or whole words, replaces the current
   match or all of them in one undo step. Opt-in: `findReplace.keymap` in the provider and `<FindReplacePanel />` next to the document.
@@ -102,6 +105,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Page layout (temporary, `docs/styling.md`): the editor root fills its container and the text column is centred with the width
+  `--inkbrick-page-width` (100% by default, so nothing changes until it is set). It is a stop-gap until the document has a page
+  with its own size.
+- Table columns: a border between columns moves width only between its two neighbours (the others keep their width), and only
+  the right edge of the last column changes the width of the table. Once any column is resized, all columns get a width, so a table
+  that has been resized has an explicit width per column; a double click on a border still sets that column back to automatic.
+- Heading folding: the arrow stands after the heading text instead of before it, so folding headings start where paragraphs start.
+- Sandbox: a switch between the editor and the table editor.
 - Size budgets lowered to keep the win: `@inkbrick/react` 75 → 65 KB gzip, the whole editor app with zod 100 → 92 KB.
 - Icons: only the 26 that blocks and the slash menu need at once stay in the main bundle; the rest (formatting, tables,
   columns, alignment…) are a separate chunk that `<Icon>` loads by itself and the editor preloads on mount (−0.8 KB gzip).

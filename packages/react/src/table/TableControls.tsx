@@ -59,7 +59,8 @@ export interface TableControlsProps {
   readonly block: BaseBlock;
   readonly tableRef: RefObject<HTMLTableElement | null>;
   /** Ширина столбца, которую тянут сейчас; `null` — не тянут. Таблица рисует её, пока модель не изменилась. */
-  readonly onPreview: (preview: { index: number; width: number } | null) => void;
+  /** Ширины всех столбцов, пока границу тянут (рисуются поверх модели); `null` — перетаскивание закончено. */
+  readonly onPreview: (widths: readonly number[] | null) => void;
 }
 
 /** На сколько пикселей за краем таблицы управление остаётся доступным: с каждой стороны своё (кнопки добавления). */
@@ -572,9 +573,58 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         : { kind, position: active, x, y },
     );
 
-  /** Ширина столбца в пикселях, как она сейчас на экране. */
-  const widthOf = (column: number) =>
-    tableRef.current?.rows[0]?.cells[column]?.getBoundingClientRect().width ?? MIN_WIDTH;
+  /**
+   * Ширины всех столбцов в пикселях, как они сейчас на экране (по первой строке; объединённая ячейка делится поровну
+   * между своими столбцами, скрытая берёт долю той, что её накрывает).
+   */
+  const widthsNow = (): number[] => {
+    const cells = [...(tableRef.current?.rows[0]?.cells ?? [])];
+    const result: number[] = [];
+    let share = MIN_WIDTH;
+    let left = 0;
+
+    for (const cell of cells) {
+      if (!cell.hidden) {
+        left = Math.max(1, cell.colSpan);
+        share = cell.getBoundingClientRect().width / left || MIN_WIDTH;
+      }
+
+      result.push(left > 0 ? share : MIN_WIDTH);
+      left -= 1;
+    }
+
+    return result;
+  };
+
+  /**
+   * Новые ширины при смещении правой границы столбца `column` на `delta`: у границы между столбцами меняются только два
+   * соседних (сумма та же, остальные стоят), у правого края последнего столбца меняется он один, а с ним и таблица.
+   */
+  const resized = (start: readonly number[], column: number, delta: number): number[] => {
+    const next = [...start];
+    const neighbour = column + 1 < start.length ? column + 1 : -1;
+
+    if (neighbour < 0) {
+      next[column] = clamp(start[column] + delta, MIN_WIDTH, MAX_WIDTH);
+
+      return next;
+    }
+
+    const total = start[column] + start[neighbour];
+
+    next[column] = clamp(start[column] + delta, MIN_WIDTH, Math.max(MIN_WIDTH, total - MIN_WIDTH));
+    next[neighbour] = total - next[column];
+
+    return next;
+  };
+
+  /** Записывает все ширины одним шагом истории: столбцы, которых не тянули, фиксируются как есть. */
+  const writeWidths = (widths: readonly number[]) =>
+    editor.batch(() => {
+      widths.forEach((width, index) =>
+        run('setTableColumnWidth', { index, width: Math.round(width) }),
+      );
+    });
 
   const resize = (column: number, event: ReactPointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
@@ -583,20 +633,20 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     event.stopPropagation();
 
     const startX = event.clientX;
-    const startWidth = widthOf(column);
-    let width = startWidth;
+    const start = widthsNow();
+    let widths = start;
     let frame = 0;
 
     frozen.current = true;
 
     const move = (moved: PointerEvent) => {
-      width = clamp(startWidth + moved.clientX - startX, MIN_WIDTH, MAX_WIDTH);
+      widths = resized(start, column, moved.clientX - startX);
 
       if (frame) return;
 
       frame = requestAnimationFrame(() => {
         frame = 0;
-        onPreview({ index: column, width });
+        onPreview(widths);
       });
     };
     const finish = () => {
@@ -606,13 +656,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       document.removeEventListener('pointercancel', finish);
       frozen.current = false;
 
-      const changed = Math.abs(width - startWidth) >= 1;
+      const changed = widths.some((width, index) => Math.abs(width - start[index]) >= 1);
 
       // Предпросмотр снимается вместе с записью в модель: таблица не дёргается между двумя отрисовками.
       flushSync(() => {
         if (changed) {
           editor.sealHistory();
-          run('setTableColumnWidth', { index: column, width: Math.round(width) });
+          writeWidths(widths);
         }
 
         onPreview(null);
@@ -630,12 +680,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (step === 0) return;
 
     event.preventDefault();
-    perform(() => {
-      run('setTableColumnWidth', {
-        index: column,
-        width: Math.round(clamp(widthOf(column) + step, MIN_WIDTH, MAX_WIDTH)),
-      });
-    });
+    perform(() => writeWidths(resized(widthsNow(), column, step)));
   };
 
   const { table, row, cell, edges } = layout;

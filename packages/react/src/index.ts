@@ -22,7 +22,7 @@ export {
 } from './table';
 export type { TableEditorProps } from './table';
 export { columnsBlocks, ColumnsBlock, ColumnBlock } from './columns';
-export { tocBlocks, TocBlock, useHeadings } from './toc';
+export { tocBlocks, TocBlock, TocPanel, useHeadings } from './toc';
 export {
   findReplace,
   FindReplacePanel,
@@ -34,7 +34,7 @@ export {
 } from './find';
 export type { FindMatch, FindOptions, FindState } from './find';
 export { toggleBlocks, ToggleBlock } from './toggle';
-export type { HeadingEntry } from './toc';
+export type { HeadingEntry, TocPanelProps } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
 export type { ImageOptions } from './images/types';
