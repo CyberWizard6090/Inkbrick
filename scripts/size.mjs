@@ -27,7 +27,7 @@ const cases = [
   },
   {
     name: 'react: EditorProvider + DocumentView',
-    budget: 68,
+    budget: 70,
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
 ];

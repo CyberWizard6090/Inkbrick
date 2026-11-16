@@ -14,8 +14,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   `repairSnapshot` pads short rows.
 - Tables in `@inkbrick/react`: `tableBlocks` (pass it to both `new Editor({ blocks })` and `<EditorProvider blocks>`)
   renders a real `<table>`, adds the «Table» slash item, and binds Tab / Shift+Tab to the next and previous cell; Tab
-  in the last cell adds a row. Rows and cells have no block handle of their own. Export to Markdown and HTML still
-  writes a table as paragraphs.
+  in the last cell adds a row. Rows and cells have no block handle of their own.
+- Table clipboard and export (`docs/tables.md`). Copying a selection that touches a table puts a `<table>`, tab-separated
+  text (RFC 4180 quoting, readable by Excel and Google Sheets) and the exact fragment on the clipboard; pasting HTML tables
+  from Excel, Google Sheets, Word and the web (colspan and rowspan laid out on the grid) or tab-separated text makes a table,
+  and a table pasted into a table fills its cells from the caret, adding rows and columns. A table over 2000 cells or 50 columns,
+  and any table in an editor without `tableBlocks`, is pasted as rows of text. `toHtml`, `toMarkdown` and `toPlainText` write
+  tables (`<table>`, GFM, tab-separated). New: `tableFragment(rows, options)` and `readTable`, `parseDelimited` and
+  `serializeDelimited`.
 - `defineBlock({ keymap })`: key bindings of a block that need the selection and the DOM (`KeymapContext`).
 - A slash item contributed by a block is translated when the dictionary has `slash.item.<id>.*` strings.
 - `BlockSchema`: `isolating` (a block general commands never delete, merge, move or duplicate; deleting a selection
@@ -38,7 +44,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
-- Bundle size budget of `@inkbrick/react` raised from 64 KB to 66 KB.
+- Bundle size budgets raised: `@inkbrick/react` from 64 KB to 70 KB, `@inkbrick/engine` from 16 KB to 18 KB.
+- `sanitizeFragment` refuses the whole fragment when its block budget runs out inside a nested block instead of silently
+  cutting the nested blocks off.
+- Pasting HTML tables into an editor without `tableBlocks` is unchanged (a paragraph per row, cells separated by tabs);
+  `htmlToFragment` itself now returns a table block, and the paste command turns it into paragraphs there.
 
 - **Breaking:** formatting moved from the floating toolbar to the context menu by default: on desktop many browsers
   (Yandex Browser, Edge) draw their own popup over a selection and it covered the toolbar. After a touch the
