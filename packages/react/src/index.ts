@@ -115,5 +115,6 @@ export type {
   DragState as BlockDragState,
   DropIndicatorRect,
   DropPosition,
+  DropSide,
 } from './block-handle/BlockHandleController';
 export { DefaultBlockMenu } from './block-handle/DefaultBlockMenu';

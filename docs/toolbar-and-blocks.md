@@ -100,7 +100,7 @@ const drag = useBlockDrag(); // внутри <EditorProvider>, стабильн�
 drag.blockAtPoint(x, y); // блок с ручкой под точкой окна (полоса слева от текста тоже считается)
 drag.blockRects(blockId); // { row, box }: строка блока и весь блок с вложенными
 drag.canMove(blockId, targetId, 'before'); // = editor.can('moveBlock', …): схема, вложенность, глубина
-drag.dropTargetAt(blockId, x, y); // { targetId, position, indicator } или null
+drag.dropTargetAt(blockId, x, y); // { targetId, position, side?, indicator } или null; side — у края блока, если подключены колонки
 
 drag.start(blockId); // начать: закрыть меню, затемнить блок, отключить выделение текста
 drag.update(x, y); // найти цель под точкой, нарисовать линию, прокрутить у края окна
@@ -108,8 +108,9 @@ drag.setTarget(target); // или задать цель самому (недоп
 drag.drop(); // перенести к текущей цели одним шагом undo → true/false
 drag.cancel(); // отменить без изменений
 drag.move(blockId, targetId, 'after'); // перенос без жеста, один шаг undo
+drag.moveToSide(blockId, targetId, 'right'); // блок встаёт рядом, в колонки (нужны columnsBlocks)
 
-useBlockDragState(); // текущий перенос { blockId, targetId, position, indicator } или null
+useBlockDragState(); // текущий перенос { blockId, targetId, position, side?, indicator } или null
 ```
 
 Линию места вставки рисует редактор по состоянию API — и для встроенного, и для своего переноса, даже при

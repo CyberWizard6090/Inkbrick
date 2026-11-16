@@ -22,7 +22,7 @@ const cases = [
   },
   {
     name: 'engine (headless editor)',
-    budget: 18,
+    budget: 19,
     code: "import { Editor } from '@inkbrick/engine'; console.log(Editor);",
   },
   {

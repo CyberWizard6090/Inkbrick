@@ -17,6 +17,7 @@ export type {
   DeleteRangePayload,
   ConvertBlockPayload,
   MoveBlockPayload,
+  MoveBlockToSidePayload,
   PasteFragmentPayload,
   ToggleFormatRangePayload,
   SetInlineAttributesPayload,
