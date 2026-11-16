@@ -22,12 +22,12 @@ const cases = [
   },
   {
     name: 'engine (headless editor)',
-    budget: 16,
+    budget: 18,
     code: "import { Editor } from '@inkbrick/engine'; console.log(Editor);",
   },
   {
     name: 'react: EditorProvider + DocumentView',
-    budget: 66,
+    budget: 68,
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
 ];

@@ -543,8 +543,8 @@ describe('table: clipboard', () => {
     expect(valid()).toEqual([]);
   });
 
-  it('cells copied out of a table paste elsewhere as paragraphs', () => {
-    const { editor, cell, fill, firstId, noteId, get, valid } = setup();
+  it('cells copied out of a table paste elsewhere as a smaller table', () => {
+    const { editor, cell, fill, firstId, noteId, get, text, valid } = setup();
 
     fill();
 
@@ -558,9 +558,21 @@ describe('table: clipboard', () => {
       payload: { at: { blockId: firstId, offset: 0 }, fragment },
     });
 
-    const flavours = get(noteId).children.map((id) => get(id).flavour);
+    // Выделение шло по порядку документа: ячейки не из выделения в прямоугольнике — пустые.
+    const [pasted, tail, original] = get(noteId).children.map((id) => get(id));
 
-    expect(flavours.filter((flavour) => flavour === 'block:table')).toHaveLength(1);
+    // Пустой абзац, куда вставляли, заняла таблица; за ней — абзац для продолжения ввода.
+    expect([pasted.flavour, tail.flavour, original.flavour]).toEqual([
+      'block:table',
+      'block:paragraph',
+      'block:table',
+    ]);
+    expect(
+      pasted.children.map((rowId) => get(rowId).children.map((cellId) => text(cellId))),
+    ).toEqual([
+      ['', 'r0c1', 'r0c2'],
+      ['r1c0', '', ''],
+    ]);
     expect(valid()).toEqual([]);
   });
 });
