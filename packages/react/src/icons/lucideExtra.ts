@@ -109,6 +109,7 @@ export const EXTRA_ICON_SHAPES = {
     ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
     ['path', { d: 'M12 3v18' }],
   ],
+  'chevron-right': [['path', { d: 'm9 18 6-6-6-6' }]],
   pin: [
     ['path', { d: 'M12 17v5' }],
     [
