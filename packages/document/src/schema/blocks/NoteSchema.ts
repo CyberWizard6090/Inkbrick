@@ -11,6 +11,7 @@ export const NoteSchema: BlockSchema<typeof notePropsSchema> = {
   allowedParents: ['block:page'],
   // Любой блок, который сам разрешает note в allowedParents (включая пользовательские).
   allowedChildren: '*',
+  fillWhenEmpty: 'block:paragraph',
 
   commands: [],
   shortcuts: [],

@@ -1,5 +1,7 @@
 import type { BaseBlock, BlockId } from '@inkbrick/document';
 
+import type { Transaction } from '@inkbrick/store';
+
 import type { Command, CommandContext } from './Command';
 import type { CaretResult, DeleteRangePayload } from '../dispatcher/Intents';
 import { isIsolating, isTextBlock, orderRange } from '../utils';
@@ -217,6 +219,11 @@ function plan(
   const end = blocks[blocks.length - 1];
   const between = blocks.slice(1, -1);
 
+  /* Колонки не склеиваются: выделение, которое начинается в одной колонке, а кончается вне её, не удаляется. */
+  if (start.id !== end.id && columnOf(transaction, start) !== columnOf(transaction, end)) {
+    return undefined;
+  }
+
   if (between.some((block) => !engine.schema.hasBlock(block.flavour))) return undefined;
 
   const clear =
@@ -249,4 +256,17 @@ function plan(
       clear,
     },
   };
+}
+
+/** Колонка, в которой лежит блок (на любой глубине), или `undefined`, если блок вне колонок. */
+function columnOf(transaction: Transaction, block: BaseBlock): BlockId | undefined {
+  for (
+    let current = block.parentId ? transaction.getBlock(block.parentId) : undefined;
+    current;
+    current = current.parentId ? transaction.getBlock(current.parentId) : undefined
+  ) {
+    if (current.flavour === 'block:column') return current.id;
+  }
+
+  return undefined;
 }

@@ -229,6 +229,16 @@ function loadSample(editor: Editor): void {
   after = table.id;
 
   add('block:toc');
+
+  const leftColumn = add('block:columns', undefined, ['Left column']);
+  const columnsId = editor.document.getBlock(
+    editor.document.getBlock(leftColumn)!.parentId!,
+  )!.parentId!;
+  const rightColumn = editor.document.getBlock(columnsId)!.children[1];
+
+  write(editor.document.getBlock(rightColumn)!.children[0], ['Right column']);
+  after = columnsId;
+
   add('block:paragraph', undefined, ['Last paragraph']);
 
   editor.clearHistory();

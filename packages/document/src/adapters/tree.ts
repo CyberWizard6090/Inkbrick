@@ -18,7 +18,7 @@ export interface ExportNode {
   readonly children: readonly ExportNode[];
 }
 
-const DEFAULT_CONTAINERS = new Set(['block:page', 'block:note']);
+const DEFAULT_CONTAINERS = new Set(['block:page', 'block:note', 'block:columns', 'block:column']);
 
 export function buildExportTree(
   document: Document,

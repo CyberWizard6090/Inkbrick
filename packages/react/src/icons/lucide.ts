@@ -234,6 +234,10 @@ export const ICON_SHAPES = {
     ['path', { d: 'M6 10V5a2 2 0 0 1 2-2h2' }],
     ['rect', { x: '3', y: '14', width: '7', height: '7', rx: '1' }],
   ],
+  columns: [
+    ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
+    ['path', { d: 'M12 3v18' }],
+  ],
   'refresh-cw': [
     ['path', { d: 'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8' }],
     ['path', { d: 'M21 3v5h-5' }],
