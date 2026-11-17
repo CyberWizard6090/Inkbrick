@@ -112,6 +112,12 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Process: work accumulates in `develop` (pull requests are squashed into it) and goes to `master` in one release pull request
+  merged with a merge commit; CI also runs on pushes to `develop` (`CONTRIBUTING.md`, «Branching»).
+- Repository checks (`scripts/`): `pnpm check:i18n` verifies the dictionaries (same keys in en and ru, `{placeholders}`, no
+  empty or untranslated strings, the German example is a subset, editor and sandbox keys do not overlap); a boundary test and
+  ESLint keep the library from importing the sandbox and the sandbox from reaching into package internals. «Where things live»
+  in `CONTRIBUTING.md` says what belongs to the library and what to the sandbox.
 - Sandbox: the large document (50,000 blocks) has six heading levels (part, section and four deeper levels), quotes and callouts besides paragraphs,
   lists and code, so folding hides from tens to a thousand blocks and the outline is nested.
 - Sandbox: the table editor page has the tools of the document page — edit and read modes, data (sample, random, a large 100 × 12 table, ten more

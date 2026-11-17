@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   pull_request:
 
 concurrency:
@@ -26,6 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - run: pnpm check:i18n
       - run: pnpm test:coverage
       - run: pnpm size
       - run: pnpm build:packages
