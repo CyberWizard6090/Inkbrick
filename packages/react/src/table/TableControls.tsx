@@ -24,6 +24,7 @@ import type { BlockMenuAction } from '../block-handle/types';
 import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { ColumnPropertiesDialog } from './ColumnPropertiesDialog';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableLine } from './cellSelection';
@@ -157,7 +158,37 @@ const sameLayout = (a: Layout | null, b: Layout | null) =>
  * корня: так выделение и буфер обмена не видят этих элементов. Показывается, пока над таблицей мышь или в ней каретка;
  * в режиме только чтения не показывается.
  */
-export function TableControls({ block, tableRef, onPreview }: TableControlsProps) {
+/**
+ * Управление таблицей. Окно свойств столбца живёт здесь, а не в самих элементах управления: когда фокус уходит в окно,
+ * каретка покидает таблицу и они скрываются, а окно должно остаться.
+ */
+export function TableControls(props: TableControlsProps) {
+  const [propertiesOf, setPropertiesOf] = useState<number | null>(null);
+  const view = useEditorView();
+
+  return (
+    <>
+      <TableControlsLayer {...props} onProperties={setPropertiesOf} />
+      {propertiesOf !== null && (
+        <ColumnPropertiesDialog
+          block={props.block}
+          column={propertiesOf}
+          onClose={() => {
+            setPropertiesOf(null);
+            view.getRoot()?.focus({ preventScroll: true });
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function TableControlsLayer({
+  block,
+  tableRef,
+  onPreview,
+  onProperties,
+}: TableControlsProps & { readonly onProperties: (column: number) => void }) {
   const editor = useEditor();
   const view = useEditorView();
   const { slots, t } = useEditorUI();
@@ -510,6 +541,12 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           return cellAt(active.row, column);
         }),
     })),
+    {
+      id: 'column-properties',
+      title: t('table.column.properties'),
+      icon: <Icon name="columns" />,
+      run: () => onProperties(column),
+    },
     {
       id: 'column-sort-asc',
       title: t('table.column.sortAsc'),

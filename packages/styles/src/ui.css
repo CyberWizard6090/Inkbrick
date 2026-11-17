@@ -1124,6 +1124,155 @@
     }
   }
 
+  /* Столбцы таблицы: список вариантов у ячейки выбора и окно свойств столбца. */
+  :where([data-inkbrick-ui='options-picker']) {
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    min-width: 180px;
+    max-height: 280px;
+    padding: 4px;
+    overflow-y: auto;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+    outline: none;
+  }
+
+  :where([data-inkbrick-ui='options-picker'] [data-inkbrick-part='option']),
+  :where([data-inkbrick-ui='options-picker'] [data-inkbrick-part='clear']) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='options-picker'] [data-inkbrick-part='option'][data-active]),
+  :where([data-inkbrick-ui='options-picker'] [data-inkbrick-part='clear']:hover) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-ui='options-picker'] [data-inkbrick-part='clear']) {
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where([data-inkbrick-ui='options-picker'] [data-inkbrick-part='empty']) {
+    padding: 8px;
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where([data-inkbrick-ui='column-properties-backdrop']) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--inkbrick-z-popup);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  :where([data-inkbrick-ui='column-properties']) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    max-height: 80vh;
+    padding: 16px;
+    overflow-y: auto;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='column-properties'] h3) {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='field']),
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='options']) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='option-row']) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] select),
+  :where([data-inkbrick-ui='column-properties'] input[type='text']) {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] input[type='text']) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] input[aria-invalid='true']) {
+    border-color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='error']) {
+    flex-basis: 100%;
+    color: var(--inkbrick-status-danger-fg);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-ui='column-properties'] button) {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] button:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-ui='column-properties'] button:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='apply']) {
+    border-color: var(--inkbrick-brand-bg);
+    background: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-on-brand);
+  }
+
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='actions']) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
   /* Палитра команд: окно по центру сверху над затемнением, список разделами. */
   :where([data-inkbrick-ui='palette-backdrop']) {
     position: fixed;

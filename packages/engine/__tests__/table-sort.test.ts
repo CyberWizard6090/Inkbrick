@@ -136,3 +136,86 @@ describe('table column types and sorting', () => {
     );
   });
 });
+
+describe('column types: checkbox, select and options', () => {
+  const make = () =>
+    createTableEditor({
+      rows: [
+        ['Task', 'Done', 'Tag'],
+        ['a', 'true', 'x'],
+        ['b', '', 'y'],
+        ['c', 'true', ''],
+      ],
+    });
+  const run = (editor: ReturnType<typeof make>, type: string, payload: Record<string, unknown>) =>
+    editor.dispatch({ type, payload: { blockId: tableIdOf(editor), ...payload } } as never);
+  const props = (editor: ReturnType<typeof make>) =>
+    editor.document.getBlock(tableIdOf(editor)!)!.props;
+  const colors = [
+    { label: 'Open', color: 'green' },
+    { label: 'Closed', color: 'gray' },
+  ];
+
+  it('sorts a checkbox column: unchecked (including empty) before checked, in both directions', () => {
+    expect(['true', '', 'TRUE', 'false'].map((text) => sortKey(text, 'checkbox'))).toEqual([
+      1, 0, 1, 0,
+    ]);
+
+    const editor = make();
+
+    run(editor, 'setTableColumnType', { index: 1, type: 'checkbox' });
+    run(editor, 'sortTableRows', { column: 1, direction: 'asc' });
+    expect(tableValue(editor).rows.map((row) => row[0])).toEqual(['Task', 'b', 'a', 'c']);
+
+    run(editor, 'sortTableRows', { column: 1, direction: 'desc' });
+    expect(tableValue(editor).rows.map((row) => row[0])).toEqual(['Task', 'a', 'c', 'b']);
+  });
+
+  it('stores options per column and clears them with an empty list', () => {
+    const editor = make();
+
+    run(editor, 'setTableColumnOptions', { index: 2, options: colors });
+    expect(props(editor).columnOptions).toEqual([null, null, colors]);
+
+    run(editor, 'setTableColumnOptions', { index: 2, options: [] });
+    expect(props(editor).columnOptions).toBeUndefined();
+  });
+
+  it('keeps options with their columns when columns are added, moved and deleted', () => {
+    const editor = make();
+
+    run(editor, 'setTableColumnOptions', { index: 2, options: colors });
+
+    run(editor, 'insertTableColumn', { index: 0 });
+    expect(props(editor).columnOptions).toEqual([null, null, null, colors]);
+
+    run(editor, 'moveTableColumn', { from: 3, to: 0 });
+    expect(props(editor).columnOptions).toEqual([colors, null, null, null]);
+
+    run(editor, 'deleteTableColumn', { index: 0 });
+    expect(props(editor).columnOptions).toEqual([null, null, null]);
+  });
+
+  it('rejects empty, duplicate, comma and unknown-colour options and a missing column', () => {
+    const editor = make();
+    const tableId = tableIdOf(editor)!;
+    const can = (index: number, options: unknown) =>
+      editor.can('setTableColumnOptions', { blockId: tableId, index, options } as never);
+
+    expect(can(0, [{ label: 'A' }])).toBe(true);
+    expect(can(0, [{ label: ' ' }])).toBe(false);
+    expect(can(0, [{ label: 'A' }, { label: 'A' }])).toBe(false);
+    expect(can(0, [{ label: 'A, B' }])).toBe(false);
+    expect(can(0, [{ label: 'A', color: 'teal' }])).toBe(false);
+    expect(can(9, [{ label: 'A' }])).toBe(false);
+    expect(can(0, 'A')).toBe(false);
+  });
+
+  it('setting options is one undo step', () => {
+    const editor = make();
+
+    run(editor, 'setTableColumnOptions', { index: 2, options: colors });
+    editor.store.undo();
+    expect(props(editor).columnOptions).toBeUndefined();
+  });
+});

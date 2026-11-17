@@ -5,6 +5,7 @@ import {
   isAlignment,
   type Alignment,
   type TableColumnType,
+  type TableOption,
   type TableMerge,
   type InlineNode,
 } from '@inkbrick/document';
@@ -24,8 +25,10 @@ export interface TableFragmentOptions {
   /** Первая строка и первый столбец остаются на виду при прокрутке. */
   freezeRow?: boolean;
   freezeColumn?: boolean;
-  /** Типы столбцов по порядку (`text`, `number`, `date`). */
+  /** Типы столбцов по порядку (`text`, `number`, `date`, `checkbox`, `select`, …). */
   columnTypes?: readonly TableColumnType[];
+  /** Варианты списка по столбцам (`select`, `multiselect`). */
+  columnOptions?: readonly (readonly TableOption[] | null | undefined)[];
   /** Объединённые ячейки. */
   merges?: readonly TableMerge[];
   /** Выравнивание столбцов по порядку. */
@@ -74,6 +77,11 @@ export function tableFragment(
   if (options.merges?.length) props.merges = options.merges.map((merge) => ({ ...merge }));
   if (options.columnTypes?.some((type) => type !== 'text'))
     props.columnTypes = [...options.columnTypes];
+
+  if (options.columnOptions?.some((list) => list?.length))
+    props.columnOptions = options.columnOptions.map((list) =>
+      list?.length ? list.map((option) => ({ ...option })) : null,
+    );
 
   if (options.widths?.some((width) => width !== null)) props.widths = [...options.widths];
 

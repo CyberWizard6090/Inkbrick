@@ -208,6 +208,98 @@
     text-align: start;
   }
 
+  /* Столбцы со свойствами: текст ячейки флажка и выбора остаётся в документе (клавиатура, копирование), но не виден. */
+  :where(
+    [data-inkbrick-block='table-cell'][data-column-type='checkbox'] [data-inkbrick-part='content'],
+    [data-inkbrick-block='table-cell'][data-column-type='select'] [data-inkbrick-part='content'],
+    [data-inkbrick-block='table-cell'][data-column-type='multiselect']
+      [data-inkbrick-part='content']
+  ) {
+    height: 0;
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  :where([data-inkbrick-part='cell-checkbox']) {
+    margin: 4px 0;
+    cursor: pointer;
+    accent-color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='cell-chips']) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 24px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='cell-chips']:disabled) {
+    cursor: default;
+  }
+
+  :where([data-inkbrick-part='chip']) {
+    padding: 0 8px;
+    border-radius: 4px;
+    background: var(--inkbrick-highlight-gray);
+    color: var(--inkbrick-fg-1);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 20px;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='brown']) {
+    background: var(--inkbrick-highlight-brown);
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='orange']) {
+    background: var(--inkbrick-highlight-orange);
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='yellow']) {
+    background: var(--inkbrick-highlight-yellow);
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='green']) {
+    background: var(--inkbrick-highlight-green);
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='blue']) {
+    background: var(--inkbrick-highlight-blue);
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='purple']) {
+    background: var(--inkbrick-highlight-purple);
+  }
+
+  :where([data-inkbrick-part='chip'][data-color='pink']) {
+    background: var(--inkbrick-highlight-pink);
+  }
+
+  :where([data-inkbrick-part='cell-link']),
+  :where([data-inkbrick-part='cell-invalid']) {
+    display: inline-block;
+    margin-inline-start: 4px;
+    color: var(--inkbrick-brand-bg);
+    font-size: var(--inkbrick-font-size-caption);
+    vertical-align: middle;
+  }
+
+  :where([data-inkbrick-part='cell-invalid']) {
+    color: var(--inkbrick-status-danger-fg);
+    font-weight: var(--inkbrick-font-weight-semibold);
+    cursor: help;
+  }
+
   :where(
     [data-inkbrick-block='table'][data-header]
       [data-inkbrick-block='table-row']:first-child

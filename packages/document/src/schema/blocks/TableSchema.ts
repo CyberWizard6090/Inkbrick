@@ -11,10 +11,46 @@ export const TABLE_CELL = 'block:table-cell';
 export const TABLE_DEFAULT_ROWS = 3;
 export const TABLE_DEFAULT_COLUMNS = 3;
 
-/** Тип столбца: от него зависит сортировка (число и дата сравниваются как число и дата, а не как текст). */
-export const TABLE_COLUMN_TYPES = ['text', 'number', 'date'] as const;
+/**
+ * Тип столбца: от него зависят сортировка (число и дата сравниваются как число и дата, а не как текст), отображение и
+ * ввод. Значение любого типа хранится текстом в ячейке: `checkbox` — `true` или пусто, `select` — название варианта,
+ * `multiselect` — названия через запятую; `url`, `email`, `phone` — как написано.
+ */
+export const TABLE_COLUMN_TYPES = [
+  'text',
+  'number',
+  'date',
+  'checkbox',
+  'select',
+  'multiselect',
+  'url',
+  'email',
+  'phone',
+] as const;
 
 export type TableColumnType = (typeof TABLE_COLUMN_TYPES)[number];
+
+/** Цвета вариантов выбора (названия цветов текста редактора). */
+export const TABLE_OPTION_COLORS = [
+  'gray',
+  'brown',
+  'orange',
+  'yellow',
+  'green',
+  'blue',
+  'purple',
+  'pink',
+] as const;
+
+export type TableOptionColor = (typeof TABLE_OPTION_COLORS)[number];
+
+/** Вариант списка для столбцов `select` и `multiselect`. */
+export const tableOptionSchema = z.object({
+  label: z.string().min(1).max(100),
+  color: z.enum(TABLE_OPTION_COLORS).optional(),
+});
+
+export type TableOption = z.infer<typeof tableOptionSchema>;
 
 /** Объединённые ячейки: прямоугольник `rows` × `columns` с началом в `row`, `column` (с нуля); текст хранит верхняя левая. */
 export const tableMergeSchema = z.object({
@@ -40,6 +76,8 @@ export const tablePropsSchema = z.object({
   widths: z.array(z.number().positive().nullable()).optional(),
   /** Типы столбцов по порядку; недостающие элементы — `text`. */
   columnTypes: z.array(z.enum(TABLE_COLUMN_TYPES)).optional(),
+  /** Варианты списка по столбцам (`select`, `multiselect`); `null` или отсутствующий элемент — вариантов нет. */
+  columnOptions: z.array(z.array(tableOptionSchema).nullable()).optional(),
   /** Объединённые ячейки. Сетка остаётся прямоугольной: перекрытые ячейки есть в документе, но пусты и не показываются. */
   merges: z.array(tableMergeSchema).optional(),
 });

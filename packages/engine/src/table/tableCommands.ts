@@ -1,4 +1,10 @@
-import { TABLE_COLUMN_TYPES, type TableColumnType, type TableProps } from '@inkbrick/document';
+import {
+  TABLE_COLUMN_TYPES,
+  TABLE_OPTION_COLORS,
+  type TableColumnType,
+  type TableOption,
+  type TableProps,
+} from '@inkbrick/document';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
 import type { CaretResult } from '../dispatcher/Intents';
@@ -179,7 +185,7 @@ export const SetTableColumnWidthCommand = defineBlockCommand<
   },
 });
 
-/** Задаёт тип столбца (`text`, `number`, `date`): от него зависит сортировка. */
+/** Задаёт тип столбца (`text`, `number`, `date`, `checkbox`, `select`, …): от него зависят сортировка и отображение. */
 export const SetTableColumnTypeCommand = defineBlockCommand<
   TableProps,
   { index: number; type: TableColumnType }
@@ -197,6 +203,47 @@ export const SetTableColumnTypeCommand = defineBlockCommand<
 
     types[index] = type;
     context.setProps({ columnTypes: types.some((value) => value !== 'text') ? types : undefined });
+  },
+});
+
+const MAX_OPTIONS = 100;
+
+/** Варианты списка в порядке показа: непустые названия без повторов (регистр различается), цвет из набора. */
+const validOptions = (options: unknown): options is TableOption[] =>
+  Array.isArray(options) &&
+  options.length <= MAX_OPTIONS &&
+  options.every(
+    (option) =>
+      !!option &&
+      typeof option.label === 'string' &&
+      option.label.trim() !== '' &&
+      option.label.length <= 100 &&
+      !option.label.includes(',') &&
+      (option.color === undefined || TABLE_OPTION_COLORS.includes(option.color)),
+  ) &&
+  new Set(options.map((option) => option.label)).size === options.length;
+
+/**
+ * Задаёт варианты списка столбца (`select`, `multiselect`); пустой список убирает их. Названия не содержат запятую:
+ * ею разделены значения `multiselect` в ячейке. Уже записанные в ячейках значения не меняются.
+ */
+export const SetTableColumnOptionsCommand = defineBlockCommand<
+  TableProps,
+  { index: number; options: readonly TableOption[] }
+>({
+  type: 'setTableColumnOptions',
+
+  canExecute: (context, { index, options }) =>
+    isIndex(index, columnsOf(context) - 1) && validOptions(options),
+
+  execute(context, { index, options }) {
+    const lists = Array.from(
+      { length: columnsOf(context) },
+      (_, i) => context.block.props.columnOptions?.[i] ?? null,
+    );
+
+    lists[index] = options.length > 0 ? options.map((option) => ({ ...option })) : null;
+    context.setProps({ columnOptions: lists.some((list) => list) ? lists : undefined });
   },
 });
 
@@ -377,6 +424,7 @@ export const tableCommands = [
   MoveTableColumnCommand,
   SetTableColumnWidthCommand,
   SetTableColumnTypeCommand,
+  SetTableColumnOptionsCommand,
   SortTableRowsCommand,
   MergeTableCellsCommand,
   SplitTableCellCommand,

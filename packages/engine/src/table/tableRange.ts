@@ -96,6 +96,9 @@ export function tableRangeFragment(
       columnTypes: Array.isArray(table.props.columnTypes)
         ? table.props.columnTypes.slice(clamped.left, clamped.right + 1)
         : undefined,
+      columnOptions: Array.isArray(table.props.columnOptions)
+        ? table.props.columnOptions.slice(clamped.left, clamped.right + 1)
+        : undefined,
       merges: mergesWithin(
         normalizeMerges(
           table.props.merges,
