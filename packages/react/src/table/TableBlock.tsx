@@ -23,7 +23,8 @@ import {
   TableHiddenRowsContext,
   type TableColumns,
 } from './TableColumnContext';
-import { filteredRowIds } from './tableFilter';
+import { filteredRowIds, sortedRowIds } from './tableFilter';
+import { isCustomized, useActiveView } from './views';
 import { TableViewBar } from './TableViewBar';
 import { TableControls } from './TableControls';
 import { TableMergeContext, type MergedCell } from './TableMergeContext';
@@ -61,6 +62,19 @@ function mergedCells(editor: Editor, table: BaseBlock): ReadonlyMap<string, Merg
   return map;
 }
 
+const plainText = (cell: BaseBlock) => cell.content.map((node) => node.insert).join('');
+
+/** Строки таблицы в заданном порядке (сортировка вида). */
+function Rows({ ids }: { readonly ids: readonly string[] }) {
+  return (
+    <>
+      {ids.map((id) => (
+        <BlockRenderer key={id} id={id} />
+      ))}
+    </>
+  );
+}
+
 function Children({ id }: { readonly id: string }) {
   return (
     <>
@@ -77,16 +91,11 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
-  const {
-    header,
-    widths,
-    freezeRow,
-    freezeColumn,
-    columnTypes,
-    columnOptions,
-    columnHidden,
-    columnFilters,
-  } = block.props as TableProps;
+  const { header, widths, freezeRow, freezeColumn, columnTypes, columnOptions } =
+    block.props as TableProps;
+  const { views, active, select } = useActiveView(block);
+  const columnHidden = active.hidden;
+  const columnFilters = active.filters;
   const editor = useEditor();
   const table = useRef<HTMLTableElement>(null);
   const merged = useMemo(() => mergedCells(editor, block), [editor, block]);
@@ -111,14 +120,15 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
   const hiddenRows = useMemo(
     () =>
       columnFilters?.some(Boolean)
-        ? filteredRowIds(
-            block,
-            (id) => editor.store.getBlock(id),
-            (cell) => cell.content.map((node) => node.insert).join(''),
-          )
+        ? filteredRowIds(block, (id) => editor.store.getBlock(id), plainText, columnFilters)
         : NO_ROWS,
     // `block` меняется вместе с составом строк и свойствами таблицы.
     [editor, block, columnFilters],
+  );
+  // Порядок показа строк вида; пересчитывается так же, как скрытые строки.
+  const rowOrder = useMemo(
+    () => sortedRowIds(block, (id) => editor.store.getBlock(id), plainText, active.sort),
+    [editor, block, active.sort],
   );
   const hiddenColumns = columnHidden?.filter(Boolean).length ?? 0;
   const filtered = columnFilters?.filter(Boolean).length ?? 0;
@@ -142,9 +152,12 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
     >
-      {(hiddenColumns > 0 || filtered > 0) && (
+      {(views.length > 1 || isCustomized(active)) && (
         <TableViewBar
           block={block}
+          views={views}
+          active={active}
+          onSelect={select}
           hiddenColumns={hiddenColumns}
           filters={filtered}
           hiddenRows={hiddenRows.size}
@@ -166,13 +179,21 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
           <TableMergeContext.Provider value={merged}>
             <TableColumnContext.Provider value={columnKinds}>
               <TableHiddenRowsContext.Provider value={hiddenRows}>
-                <Children id={block.id} />
+                {rowOrder ? <Rows ids={rowOrder} /> : <Children id={block.id} />}
               </TableHiddenRowsContext.Provider>
             </TableColumnContext.Provider>
           </TableMergeContext.Provider>
         </tbody>
       </table>
-      {!readOnly && <TableControls block={block} tableRef={table} onPreview={setPreview} />}
+      {!readOnly && (
+        <TableControls
+          block={block}
+          tableRef={table}
+          activeView={active}
+          onSelectView={select}
+          onPreview={setPreview}
+        />
+      )}
     </div>
   );
 }

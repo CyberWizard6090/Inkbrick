@@ -32,16 +32,20 @@ const step = (direction: 1 | -1) => (context: KeymapContext) => {
 
     return !!found && !found.origin;
   };
-  const hiddenColumns = getBlock(cell.tableId)?.props.columnHidden as boolean[] | undefined;
   const rowIds = getBlock(cell.tableId)?.children ?? [];
-  // Скрытые фильтром строки читаются из разметки: то, что пользователь не видит, Tab пропускает.
-  const hiddenRow = (row: number) =>
-    !!context.view
-      .getRoot()
-      ?.querySelector(`[data-inkbrick-block="table-row"][data-block-id="${rowIds[row]}"]`)
-      ?.hasAttribute('hidden');
-  const skipped = (at: number) =>
-    covered(at) || !!hiddenColumns?.[at % size.columns] || hiddenRow(Math.floor(at / size.columns));
+  // Скрытое видом (фильтр, скрытый столбец) читается из разметки: то, что пользователь не видит, Tab пропускает.
+  const root = context.view.getRoot();
+  const hiddenIn = (selector: string) => !!root?.querySelector(selector)?.hasAttribute('hidden');
+  const skipped = (at: number) => {
+    const row = Math.floor(at / size.columns);
+    const target = tableCellAt(getBlock, cell.tableId, row, at % size.columns);
+
+    return (
+      covered(at) ||
+      hiddenIn(`[data-inkbrick-block="table-row"][data-block-id="${rowIds[row]}"]`) ||
+      (!!target && hiddenIn(`[data-inkbrick-block="table-cell"][data-block-id="${target}"]`))
+    );
+  };
   let index = cell.row * size.columns + cell.column + direction;
 
   while (index >= 0 && index < size.rows * size.columns && skipped(index)) index += direction;

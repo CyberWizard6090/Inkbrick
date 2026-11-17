@@ -5,6 +5,7 @@ import {
   type TableColumnType,
   type TableFilter,
   type TableOption,
+  type TableView,
   type TableProps,
 } from '@inkbrick/document';
 
@@ -249,67 +250,68 @@ export const SetTableColumnOptionsCommand = defineBlockCommand<
   },
 });
 
-/** Фильтры и скрытие столбцов — вид таблицы: с объединёнными ячейками они разошлись бы с сеткой, поэтому там недоступны. */
-const canChangeView = (context: Context) => !hasMerges(context);
+const MAX_VIEWS = 20;
+
+const isFilter = (filter: unknown): boolean =>
+  filter === null ||
+  (!!filter &&
+    TABLE_FILTER_OPS.includes((filter as TableFilter).op) &&
+    ((filter as TableFilter).value === undefined ||
+      (typeof (filter as TableFilter).value === 'string' &&
+        ((filter as TableFilter).value as string).length <= 200)));
+
+/** Настроен ли вид: скрытые столбцы, фильтры или сортировка. */
+const customized = (view: TableView) =>
+  !!view.hidden?.some(Boolean) || !!view.filters?.some(Boolean) || !!view.sort;
 
 /**
- * Скрывает или показывает столбец: данные остаются, ячейки не рисуются. Последний видимый столбец скрыть нельзя.
+ * Виды таблицы целиком: список заменяется одной правкой (один шаг undo), пустой список возвращает таблицу к одному виду
+ * без настроек. Проверяется: уникальные коды, столбцы существуют, хотя бы один столбец виден, условия фильтров из
+ * набора. Скрытие, фильтры и сортировка недоступны в таблице с объединёнными ячейками — сетка разошлась бы.
  */
-export const SetTableColumnHiddenCommand = defineBlockCommand<
-  TableProps,
-  { index: number; hidden: boolean }
->({
-  type: 'setTableColumnHidden',
+export const SetTableViewsCommand = defineBlockCommand<TableProps, { views: readonly TableView[] }>(
+  {
+    type: 'setTableViews',
 
-  canExecute: (context, { index, hidden }) => {
-    const columns = columnsOf(context);
-    const current = context.block.props.columnHidden ?? [];
+    canExecute: (context, { views }) => {
+      if (!Array.isArray(views) || views.length > MAX_VIEWS) return false;
 
-    return (
-      canChangeView(context) &&
-      isIndex(index, columns - 1) &&
-      typeof hidden === 'boolean' &&
-      (!hidden || Array.from({ length: columns }).some((_, i) => i !== index && !current[i]))
-    );
+      const columns = columnsOf(context);
+      const merged = hasMerges(context);
+
+      return (
+        new Set(views.map((view) => view?.id)).size === views.length &&
+        views.every(
+          (view) =>
+            !!view &&
+            typeof view.id === 'string' &&
+            view.id !== '' &&
+            view.id.length <= 64 &&
+            (view.name === undefined ||
+              (typeof view.name === 'string' && view.name.length <= 60)) &&
+            (!merged || !customized(view)) &&
+            (view.hidden === undefined ||
+              (Array.isArray(view.hidden) &&
+                view.hidden.length <= columns &&
+                Array.from({ length: columns }).some((_, i) => !view.hidden![i]))) &&
+            (view.filters === undefined ||
+              (Array.isArray(view.filters) &&
+                view.filters.length <= columns &&
+                view.filters.every(isFilter))) &&
+            (view.sort === undefined ||
+              (isIndex(view.sort.column, columns - 1) &&
+                (view.sort.direction === 'asc' || view.sort.direction === 'desc'))),
+        )
+      );
+    },
+
+    execute(context, { views }) {
+      context.setProps({
+        views: views.length > 0 ? views.map((view) => ({ ...view })) : undefined,
+      });
+    },
   },
-
-  execute(context, { index, hidden }) {
-    const list = Array.from(
-      { length: columnsOf(context) },
-      (_, i) => context.block.props.columnHidden?.[i] ?? false,
-    );
-
-    list[index] = hidden;
-    context.setProps({ columnHidden: list.some(Boolean) ? list : undefined });
-  },
-});
-
-/** Задаёт фильтр столбца (`null` снимает): строки, не подходящие фильтрам, скрываются, данные не меняются. */
-export const SetTableColumnFilterCommand = defineBlockCommand<
-  TableProps,
-  { index: number; filter: TableFilter | null }
->({
-  type: 'setTableColumnFilter',
-
-  canExecute: (context, { index, filter }) =>
-    canChangeView(context) &&
-    isIndex(index, columnsOf(context) - 1) &&
-    (filter === null ||
-      (!!filter &&
-        TABLE_FILTER_OPS.includes(filter.op) &&
-        (filter.value === undefined ||
-          (typeof filter.value === 'string' && filter.value.length <= 200)))),
-
-  execute(context, { index, filter }) {
-    const list = Array.from(
-      { length: columnsOf(context) },
-      (_, i) => context.block.props.columnFilters?.[i] ?? null,
-    );
-
-    list[index] = filter ? { ...filter } : null;
-    context.setProps({ columnFilters: list.some(Boolean) ? list : undefined });
-  },
-});
+);
 
 /** Строки таблицы и их порядок после сортировки по столбцу; заголовок остаётся первым. */
 function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
@@ -489,8 +491,7 @@ export const tableCommands = [
   SetTableColumnWidthCommand,
   SetTableColumnTypeCommand,
   SetTableColumnOptionsCommand,
-  SetTableColumnHiddenCommand,
-  SetTableColumnFilterCommand,
+  SetTableViewsCommand,
   SortTableRowsCommand,
   MergeTableCellsCommand,
   SplitTableCellCommand,

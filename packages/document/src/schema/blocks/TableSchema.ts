@@ -79,6 +79,24 @@ export const tableFilterSchema = z.object({
 
 export type TableFilter = z.infer<typeof tableFilterSchema>;
 
+/** Вид таблицы. Списки по столбцам идут по порядку столбцов; недостающие элементы — столбец виден, фильтра нет. */
+export const tableViewSchema = z.object({
+  /** Уникальный в таблице код вида. */
+  id: z.string().min(1).max(64),
+  /** Название; без него показывается стандартное («Таблица»). */
+  name: z.string().max(60).optional(),
+  /** Скрытые столбцы: ячейки не рисуются, данные остаются. Хотя бы один столбец остаётся видимым. */
+  hidden: z.array(z.boolean()).optional(),
+  /** Фильтры столбцов (`null` — без фильтра): строка видна, если подходит всем; заголовок не фильтруется. */
+  filters: z.array(tableFilterSchema.nullable()).optional(),
+  /** Порядок показа строк по столбцу; порядок строк в документе не меняется. */
+  sort: z
+    .object({ column: z.number().int().min(0), direction: z.enum(['asc', 'desc']) })
+    .optional(),
+});
+
+export type TableView = z.infer<typeof tableViewSchema>;
+
 /** Объединённые ячейки: прямоугольник `rows` × `columns` с началом в `row`, `column` (с нуля); текст хранит верхняя левая. */
 export const tableMergeSchema = z.object({
   row: z.number().int().min(0),
@@ -105,13 +123,12 @@ export const tablePropsSchema = z.object({
   columnTypes: z.array(z.enum(TABLE_COLUMN_TYPES)).optional(),
   /** Варианты списка по столбцам (`select`, `multiselect`); `null` или отсутствующий элемент — вариантов нет. */
   columnOptions: z.array(z.array(tableOptionSchema).nullable()).optional(),
-  /** Скрытые столбцы по порядку: в таблице их не видно, данные остаются. */
-  columnHidden: z.array(z.boolean()).optional(),
   /**
-   * Фильтры столбцов по порядку (`null` — без фильтра); строка показывается, если подходит всем фильтрам. Заголовок
-   * не фильтруется. Фильтр скрывает строки, но не меняет данные.
+   * Виды таблицы: у каждого свои скрытые столбцы, фильтры и сортировка. Данные у всех видов одни; вид решает, что из них
+   * показать. Нет списка — один вид без настроек. Какой вид открыт, хранится не в документе, а в окне (у каждого читателя
+   * свой).
    */
-  columnFilters: z.array(tableFilterSchema.nullable()).optional(),
+  views: z.array(tableViewSchema).min(1).optional(),
   /** Объединённые ячейки. Сетка остаётся прямоугольной: перекрытые ячейки есть в документе, но пусты и не показываются. */
   merges: z.array(tableMergeSchema).optional(),
 });
