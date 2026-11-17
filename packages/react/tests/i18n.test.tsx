@@ -17,7 +17,7 @@ import {
   ru,
 } from '../src';
 import { formatImageError, ImageError } from '../src/images/ImageError';
-import { interpolate } from '../src/i18n/translate';
+import { interpolate, type TFunction } from '../src/i18n/translate';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
 
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
@@ -119,7 +119,9 @@ describe('createTranslator', () => {
 });
 
 describe('slash items', () => {
-  const t = createTranslator(resolveMessages({ locale: 'ru' }));
+  // Русский словарь грузится в setup (`beforeAll`), уже после сбора файла: переводчик собираем в тесте, а не в describe.
+  const t: TFunction = (key, params) =>
+    createTranslator(resolveMessages({ locale: 'ru' }))(key, params);
 
   it('are localized, keep English search words and are found by Russian ones', () => {
     const items = resolveSlashItems(undefined, t);
@@ -154,7 +156,8 @@ describe('slash items', () => {
 });
 
 describe('image errors', () => {
-  const tRu = createTranslator(resolveMessages({ locale: 'ru' }));
+  const tRu: TFunction = (key, params) =>
+    createTranslator(resolveMessages({ locale: 'ru' }))(key, params);
 
   it('are shown translated by code, with parameters', () => {
     const error = new ImageError('type', 'Unsupported image type "image/svg+xml"', {

@@ -136,6 +136,8 @@ importers:
         specifier: workspace:*
         version: link:../store
 
+  packages/locales: {}
+
   packages/react:
     dependencies:
       '@inkbrick/document':
@@ -144,6 +146,9 @@ importers:
       '@inkbrick/engine':
         specifier: workspace:*
         version: link:../engine
+      '@inkbrick/locales':
+        specifier: workspace:*
+        version: link:../locales
       temml:
         specifier: ^0.14.0
         version: 0.14.0

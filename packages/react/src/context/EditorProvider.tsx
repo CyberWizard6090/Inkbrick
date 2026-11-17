@@ -1,11 +1,16 @@
-import { useLayoutEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 
 import type { Editor } from '@inkbrick/engine';
 
 import { EditorView } from '../editing/EditorView';
 import { lazyHighlightCode } from '../code/lazyHighlight';
 import type { CodeHighlighter } from '../code/types';
-import { createTranslator, resolveMessages } from '../i18n/translate';
+import {
+  createTranslator,
+  isLocaleLoaded,
+  preloadLocale,
+  resolveMessages,
+} from '../i18n/translate';
 import { temmlRenderer, type FormulaRenderer } from '../math/renderer';
 import type { PartialMessages } from '../i18n/en';
 import { resolveKeymap } from '../keymap/keymap';
@@ -125,9 +130,33 @@ export function EditorProvider({
     return () => editor.setReadOnly(previous);
   }, [editor, readOnly]);
 
+  // Язык, который грузится по требованию (`ru`), приходит отдельным чанком: до него интерфейс на английском, потом перевод.
+  const [loadedLocales, setLoadedLocales] = useState(0);
+
+  useEffect(() => {
+    if (!locale || isLocaleLoaded(locale)) return;
+
+    const own = Object.keys(locales ?? {}).some(
+      (code) => code.trim().toLowerCase() === locale.trim().toLowerCase(),
+    );
+
+    if (own) return;
+
+    let live = true;
+
+    void preloadLocale(locale).then(() => {
+      if (live) setLoadedLocales((count) => count + 1);
+    });
+
+    return () => {
+      live = false;
+    };
+  }, [locale, locales]);
+
   const t = useMemo(
     () => createTranslator(resolveMessages({ locale, locales, messages })),
-    [locale, locales, messages],
+    // loadedLocales — язык догрузился: словарь стал доступен, перевод надо собрать заново
+    [locale, locales, messages, loadedLocales],
   );
 
   const ui = useMemo(() => {

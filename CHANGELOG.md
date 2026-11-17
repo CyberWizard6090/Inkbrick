@@ -125,6 +125,12 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Dictionaries moved to the new package `@inkbrick/locales` (`en`, the types `MessageKey`, `Messages`, `PartialMessages`, and the Russian
+  dictionary as `@inkbrick/locales/ru`); `@inkbrick/react` depends on it and still exports `en`, `ru` and the types. English is always bundled
+  (the other languages fall back to it), Russian is a separate chunk loaded when `locale="ru"` asks for it, so the core of
+  `@inkbrick/react` is about 3.8 KB gzip lighter (64.5 → 60.7 KB). `preloadLocale(code)` and `isLocaleLoaded(code)` are new; `getLocales()`
+  lists the languages that load on demand too. Until a language arrives the interface is in English, call `preloadLocale` before the first
+  render to avoid that frame (the sandbox does). A dictionary registered with `registerLocale` is never overwritten by a loaded one.
 - Code and formula blocks load as separate chunks (`LazyCodeBlock`, `LazyFormulaBlock`, like the image block); `CodeBlock` and `FormulaBlock` are still exported
   for your own component registries. The chunks are requested right after an editable editor mounts (`preloadSoon`), so a block that
   appears on Enter or `/` normally takes input at once; until then a placeholder stands in (the code as plain text for a code block). The core of
