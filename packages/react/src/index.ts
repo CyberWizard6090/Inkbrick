@@ -51,6 +51,8 @@ export {
   useFind,
 } from './find';
 export type { FindMatch, FindOptions, FindState } from './find';
+export { CommandPalette, commandPalette, useCommandPalette } from './palette';
+export type { CommandPaletteProps, PaletteCommand, PaletteContext, PaletteState } from './palette';
 export { toggleBlocks, ToggleBlock } from './toggle';
 export type { HeadingEntry, TocPanelProps } from './toc';
 export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';

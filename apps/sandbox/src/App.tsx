@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CommandPalette,
   DocumentView,
   EditorProvider,
   FindReplacePanel,
   TagHighlights,
   TocPanel,
   WordCount,
+  commandPalette,
   findReplace,
   folding,
   htmlToFragment,
   preloadLocale,
   virtualRenderer,
   type FormattingMode,
+  type PaletteCommand,
   type ImageOptions,
 } from '@inkbrick/react';
 import { type DocumentSnapshot, type TextAttributes } from '@inkbrick/document';
@@ -320,7 +323,7 @@ const tocParam = new URLSearchParams(window.location.search).get('toc');
 const tocPanelSide = tocParam === 'off' ? null : tocParam === 'left' ? 'left' : 'right';
 
 /** Клавиши сворачивания заголовков и поиска; объект стабилен, как требует провайдер. */
-const sandboxKeymap = [...folding.keymap, ...findReplace.keymap];
+const sandboxKeymap = [...folding.keymap, ...findReplace.keymap, ...commandPalette.keymap];
 
 export function App({ initial }: { initial: RestoredEditor }) {
   const [editor, setEditor] = useState(initial.editor);
@@ -336,6 +339,24 @@ export function App({ initial }: { initial: RestoredEditor }) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const i18n = useMemo(() => createSandboxI18n(locale), [locale]);
   const { t } = i18n;
+  const paletteCommands = useMemo<PaletteCommand[]>(
+    () => [
+      ...findReplace.commands,
+      {
+        id: 'sandbox.readOnly',
+        title: t('commands.readOnly'),
+        group: t('commands.group'),
+        run: () => setReadOnly((value) => !value),
+      },
+      {
+        id: 'sandbox.debug',
+        title: t('commands.debug'),
+        group: t('commands.group'),
+        run: () => setDebug((value) => !value),
+      },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     applyTheme(theme);
@@ -433,6 +454,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
       >
         <DemoSwitch current="editor" />
         <FindReplacePanel />
+        <CommandPalette commands={paletteCommands} />
         <TagHighlights
           onTagClick={(tag) => setNotice({ value: { key: 'notice.tagClicked', params: { tag } } })}
         />

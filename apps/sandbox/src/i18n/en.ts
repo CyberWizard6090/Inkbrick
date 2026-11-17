@@ -48,6 +48,9 @@ export const en = {
   'error.notSnapshot': 'This is not a Inkbrick document snapshot: rootId and blocks are missing',
   'error.cannotOpen': 'The document could not be opened: {reason}',
 
+  'commands.group': 'Sandbox',
+  'commands.readOnly': 'Toggle read-only mode',
+  'commands.debug': 'Toggle the Debug panel',
   'shortcuts.title': 'Keyboard shortcuts',
   'shortcuts.close': 'Close',
   'shortcuts.section.format': 'Text formatting',
