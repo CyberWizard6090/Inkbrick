@@ -1,4 +1,6 @@
 import * as z from '../zod';
+
+import { BLOCK_BACKGROUNDS } from '../../utils/colors';
 import { BlockSchema } from '../BlockSchema';
 
 export const headingPropsSchema = z.object({
@@ -6,6 +8,8 @@ export const headingPropsSchema = z.object({
     .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)])
     .default(1),
   align: z.enum(['left', 'center', 'right', 'justify']).default('left'),
+  /** Цвет фона блока (`BLOCK_BACKGROUNDS`); без него фона нет. */
+  background: z.enum(BLOCK_BACKGROUNDS).optional(),
   /** Блоки после заголовка до следующего заголовка того же или более высокого уровня скрыты (сворачивание). */
   collapsed: z.boolean().optional(),
 });

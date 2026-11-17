@@ -19,6 +19,24 @@ export const COLOR_NAMES = [
 
 export type ColorName = (typeof COLOR_NAMES)[number];
 
+/** Цвета фона блока: названия цветов без чёрного и белого (они не дают читаемого фона в обеих темах). */
+export const BLOCK_BACKGROUNDS = [
+  'gray',
+  'brown',
+  'orange',
+  'yellow',
+  'green',
+  'blue',
+  'purple',
+  'pink',
+  'red',
+] as const;
+
+export type BlockBackground = (typeof BLOCK_BACKGROUNDS)[number];
+
+export const isBlockBackground = (value: unknown): value is BlockBackground =>
+  typeof value === 'string' && (BLOCK_BACKGROUNDS as readonly string[]).includes(value);
+
 export const isColorName = (value: unknown): value is ColorName =>
   typeof value === 'string' && (COLOR_NAMES as readonly string[]).includes(value);
 
@@ -38,6 +56,12 @@ export const COLOR_HEX: Readonly<Record<ColorName, { text: string; background: s
 };
 
 const CSS_COLOR = /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%/-]+\)|[a-z]{3,20})$/i;
+
+/** Фон блока из его props или `undefined`, если фона нет или значение не из набора. */
+export const getBlockBackground = (block: {
+  props: Readonly<Record<string, unknown>>;
+}): BlockBackground | undefined =>
+  isBlockBackground(block.props.background) ? block.props.background : undefined;
 
 /** Безопасный CSS-цвет (hex, rgb/hsl, имя): без `url()`, `;` и прочего, что могло бы протащить стили. */
 export function safeCssColor(value: unknown): string | null {

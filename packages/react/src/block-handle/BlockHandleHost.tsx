@@ -104,6 +104,7 @@ export function BlockHandleHost() {
           position={{ x: menu.x, y: menu.y }}
           actions={menuContent.actions}
           turnInto={menuContent.turnInto}
+          background={menuContent.background}
           onClose={() => {
             view.blocks.closeMenu();
             view.getRoot()?.focus({ preventScroll: true });

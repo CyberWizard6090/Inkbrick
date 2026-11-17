@@ -1,5 +1,7 @@
 import * as z from '../zod';
 
+import { BLOCK_BACKGROUNDS } from '../../utils/colors';
+
 import type { BlockSchema } from '../BlockSchema';
 
 export const TOGGLE = 'block:toggle';
@@ -7,6 +9,8 @@ export const TOGGLE = 'block:toggle';
 export const togglePropsSchema = z.object({
   /** Раскрыт ли блок: вложенные блоки видны только в раскрытом. По умолчанию раскрыт. */
   open: z.boolean().optional(),
+  /** Цвет фона блока (`BLOCK_BACKGROUNDS`); без него фона нет. */
+  background: z.enum(BLOCK_BACKGROUNDS).optional(),
 });
 
 export type ToggleProps = z.infer<typeof togglePropsSchema>;

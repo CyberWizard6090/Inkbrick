@@ -1,6 +1,6 @@
 import type { Document } from '../document';
 import type { BaseBlock, InlineNode } from '../model';
-import { exportColor } from '../utils/colors';
+import { exportColor, isBlockBackground } from '../utils/colors';
 import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
@@ -29,10 +29,18 @@ const escapeHtml = (text: string) =>
 
 const ALIGNED = new Set(['center', 'right', 'justify']);
 
+/** `style` блока: выравнивание и фон (оттенок светлой темы: в экспорте переменных темы нет). */
 function alignStyle(block: BaseBlock): string {
   const align = block.props.alignment ?? block.props.align;
+  const background = isBlockBackground(block.props.background)
+    ? exportColor(block.props.background, 'background')
+    : null;
+  const style = [
+    typeof align === 'string' && ALIGNED.has(align) && `text-align:${align}`,
+    background && `background-color:${background}`,
+  ].filter(Boolean);
 
-  return typeof align === 'string' && ALIGNED.has(align) ? ` style="text-align:${align}"` : '';
+  return style.length > 0 ? ` style="${style.join(';')}"` : '';
 }
 
 function inlineToHtml(nodes: readonly InlineNode[], inCode = false): string {

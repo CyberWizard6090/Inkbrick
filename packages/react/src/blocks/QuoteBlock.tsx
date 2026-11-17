@@ -1,4 +1,4 @@
-import { getBlockAlign } from '@inkbrick/document';
+import { getBlockAlign, getBlockBackground } from '@inkbrick/document';
 
 import { Editable } from './Editable';
 import type { BlockProps } from './BlockProps';
@@ -9,6 +9,7 @@ export function QuoteBlock({ block, selected }: BlockProps) {
       className="block block-quote"
       data-inkbrick-block="quote"
       data-align={getBlockAlign(block) ?? 'left'}
+      data-background={getBlockBackground(block)}
       data-block-id={block.id}
       data-selected={selected || undefined}
     >

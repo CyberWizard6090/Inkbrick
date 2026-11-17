@@ -1,4 +1,4 @@
-import { getBlockAlign } from '@inkbrick/document';
+import { getBlockAlign, getBlockBackground } from '@inkbrick/document';
 
 import { Editable } from './Editable';
 import type { BlockProps } from './BlockProps';
@@ -15,6 +15,7 @@ export function HeadingBlock({ block, selected }: BlockProps) {
       data-block-id={block.id}
       data-selected={selected || undefined}
       data-align={align}
+      data-background={getBlockBackground(block)}
     >
       <Editable block={block} />
     </div>

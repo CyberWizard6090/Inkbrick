@@ -1,8 +1,12 @@
 import * as z from '../zod';
+
+import { BLOCK_BACKGROUNDS } from '../../utils/colors';
 import { BlockSchema } from '../BlockSchema';
 
 export const paragraphPropsSchema = z.object({
   alignment: z.enum(['left', 'center', 'right', 'justify']).default('left'),
+  /** Цвет фона блока (`BLOCK_BACKGROUNDS`); без него фона нет. */
+  background: z.enum(BLOCK_BACKGROUNDS).optional(),
 });
 
 export const ParagraphSchema: BlockSchema<typeof paragraphPropsSchema> = {

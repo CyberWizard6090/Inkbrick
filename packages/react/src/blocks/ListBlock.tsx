@@ -1,4 +1,4 @@
-import { getBlockAlign } from '@inkbrick/document';
+import { getBlockAlign, getBlockBackground } from '@inkbrick/document';
 
 import { BlockChildren } from './BlockChildren';
 import { useBlock } from '../hooks/useBlock';
@@ -54,6 +54,7 @@ export function ListItem({
       className="block-list-item"
       data-inkbrick-block="list"
       data-align={getBlockAlign(block) ?? 'left'}
+      data-background={getBlockBackground(block)}
       data-block-id={block.id}
       data-list-type={type}
       data-checked={type === 'todo' ? block.props.checked === true : undefined}

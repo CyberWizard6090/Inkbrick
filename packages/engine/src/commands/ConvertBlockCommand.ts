@@ -25,7 +25,14 @@ export const ConvertBlockCommand: Command<ConvertBlockPayload, CaretResult> = {
     const target = engine.schema.requireBlockSchema(payload.flavour);
 
     if (target.inline !== false) {
-      engine.block.morph(transaction, block.id, payload.flavour, payload.props);
+      // Фон блока остаётся при превращении в тип, у которого он есть (абзац в заголовок, список в цитату).
+      const background = block.props.background;
+      const props =
+        background !== undefined && payload.props?.background === undefined
+          ? { ...payload.props, background }
+          : payload.props;
+
+      engine.block.morph(transaction, block.id, payload.flavour, props);
 
       const length = engine.inline.length(transaction.getBlock(block.id)!.content);
 

@@ -1,4 +1,4 @@
-import { getBlockAlign } from '@inkbrick/document';
+import { getBlockAlign, getBlockBackground } from '@inkbrick/document';
 
 import { Editable } from '../blocks/Editable';
 import type { BlockProps } from '../blocks/BlockProps';
@@ -35,6 +35,7 @@ export function FoldableHeadingBlock({ block, selected }: BlockProps) {
       data-block-id={block.id}
       data-selected={selected || undefined}
       data-align={align}
+      data-background={getBlockBackground(block)}
       data-foldable=""
       data-collapsed={collapsed || undefined}
     >

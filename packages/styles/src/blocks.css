@@ -1623,4 +1623,48 @@
     outline: 2px solid var(--inkbrick-stroke-focus-2);
     outline-offset: 1px;
   }
+
+  /* Фон блока (prop `background`): оттенок подсветки темы, разбавленный, чтобы текст оставался читаемым в обеих темах. Поля
+     вынесены наружу, поэтому текст стоит там же, где у блоков без фона. */
+  :where([data-background]) {
+    margin-inline: -8px;
+    padding-inline: 8px;
+    border-radius: var(--inkbrick-radius-control);
+  }
+
+  :where([data-background='gray']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-gray) 35%, transparent);
+  }
+
+  :where([data-background='brown']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-brown) 35%, transparent);
+  }
+
+  :where([data-background='orange']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-orange) 35%, transparent);
+  }
+
+  :where([data-background='yellow']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-yellow) 35%, transparent);
+  }
+
+  :where([data-background='green']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-green) 35%, transparent);
+  }
+
+  :where([data-background='blue']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-blue) 35%, transparent);
+  }
+
+  :where([data-background='purple']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-purple) 35%, transparent);
+  }
+
+  :where([data-background='pink']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-pink) 35%, transparent);
+  }
+
+  :where([data-background='red']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, transparent);
+  }
 }
