@@ -130,6 +130,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   Custom view — `slots.ContextMenu`; `null` keeps the browser menu.
 - `EditorProvider` `formatting` option: `'context-menu'` (default), `'toolbar'` or `'both'`.
 
+- Spell check (`docs/spellcheck.md`): `EditorProvider` option `spellcheck` (`true` or `{ lang }`, off by default) turns on the browser's spell checker for the document; the root gets `lang` (the interface language unless another is given). Code blocks, formulas, code spans, links and the cells of url, email and phone columns are excluded; off in read-only mode. The sandbox turns it on (`?spellcheck=off`, a switch in Settings). The root had `spellcheck="false"` before; that is still what you get without the option.
+
 ### Changed
 
 - Adding a language to `@inkbrick/locales` is mechanical: a new `src/<code>.ts` plus one line in `localeLoaders`. The package `exports` (`./*`) and the `tsup` entries use a mask, and `pnpm check:i18n` and the package tests walk every language file (same keys and placeholders as English, a loader for every file).

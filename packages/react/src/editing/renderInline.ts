@@ -13,9 +13,15 @@ export interface RenderInlineOptions {
   readonly formulaRenderer?: FormulaRenderer | null;
 }
 
+/** Фрагменты, которые не проверяются на орфографию: код, ссылки, формулы. */
+const NO_SPELLCHECK = new Set<keyof HTMLElementTagNameMap>(['code', 'a']);
+
 function wrap(node: Node, tag: keyof HTMLElementTagNameMap): HTMLElement {
   const element = globalThis.document.createElement(tag);
+
+  if (NO_SPELLCHECK.has(tag)) element.setAttribute('spellcheck', 'false');
   element.appendChild(node);
+
   return element;
 }
 
@@ -32,6 +38,7 @@ function renderFormulaAtom(latex: string, options: RenderInlineOptions): HTMLEle
   host.setAttribute('data-inkbrick-part', 'formula-inline');
   host.setAttribute('data-latex', latex);
   host.setAttribute('contenteditable', 'false');
+  host.setAttribute('spellcheck', 'false');
   host.textContent = FORMULA_CHAR;
 
   const view = doc.createElement('span');

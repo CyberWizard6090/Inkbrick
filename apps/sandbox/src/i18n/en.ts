@@ -12,6 +12,9 @@ export const en = {
   'app.title': 'Editor playground',
 
   'settings.theme': 'Theme',
+  'settings.spellcheck': 'Spell check',
+  'settings.spellcheckOn': 'On',
+  'settings.spellcheckOff': 'Off',
   'settings.language': 'Language',
   'theme.auto': 'System',
   'theme.light': 'Light',

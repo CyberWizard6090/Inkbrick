@@ -15,6 +15,9 @@ interface SettingsMenuProps {
   locale: string;
   locales: readonly string[];
   onLocaleChange(locale: string): void;
+  /** Переключатель проверки орфографии; нет — раздела нет (у страницы без текстового редактора). */
+  spellcheck?: boolean;
+  onSpellcheckChange?(enabled: boolean): void;
 }
 
 export function SettingsMenu({
@@ -23,6 +26,8 @@ export function SettingsMenu({
   locale,
   locales,
   onLocaleChange,
+  spellcheck,
+  onSpellcheckChange,
 }: SettingsMenuProps) {
   const { t } = useSandboxI18n();
 
@@ -79,6 +84,21 @@ export function SettingsMenu({
               ))}
             </div>
           </section>
+          {onSpellcheckChange && (
+            <section>
+              <h4>{t('settings.spellcheck')}</h4>
+              <div className="settings-menu__row" role="group" data-testid="spellcheck-switch">
+                <button
+                  type="button"
+                  className={spellcheck ? 'is-active' : ''}
+                  aria-pressed={!!spellcheck}
+                  onClick={() => onSpellcheckChange(!spellcheck)}
+                >
+                  {t(spellcheck ? 'settings.spellcheckOn' : 'settings.spellcheckOff')}
+                </button>
+              </div>
+            </section>
+          )}
         </>
       )}
     </Dropdown>

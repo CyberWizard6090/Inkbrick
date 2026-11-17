@@ -98,6 +98,12 @@ export interface EditorProviderProps {
    * `'toolbar'` — плавающий toolbar над выделением, `'both'` — оба. На сенсорном экране toolbar есть всегда.
    */
   readonly formatting?: FormattingMode;
+  /**
+   * Проверка орфографии браузера (красное подчёркивание, исправления в контекстном меню браузера). `true` — включить,
+   * `{ lang }` — включить для другого языка текста, чем язык интерфейса (`locale`). Не проверяются код, формулы, ссылки
+   * и ячейки таблицы с адресами, почтой и телефонами. В режиме чтения выключена. По умолчанию выключена.
+   */
+  readonly spellcheck?: boolean | { readonly lang?: string };
 }
 
 export function EditorProvider({
@@ -117,6 +123,7 @@ export function EditorProvider({
   readOnly,
   images,
   formatting,
+  spellcheck,
 }: EditorProviderProps) {
   const view = useMemo(() => new EditorView(), [editor]);
 
@@ -180,6 +187,9 @@ export function EditorProvider({
       highlighter: code === false ? null : (code ?? lazyHighlightCode),
       formulaRenderer: math === false ? null : (math ?? temmlRenderer),
       locale: locale ?? 'en',
+      spellcheck: spellcheck
+        ? { lang: (typeof spellcheck === 'object' ? spellcheck.lang : undefined) ?? locale ?? 'en' }
+        : (false as const),
       t,
       keymap: resolveKeymap(mergeById(controllerKeymap(editor), customKeys, 'preferred-first')),
       images: images ?? {},
@@ -204,6 +214,7 @@ export function EditorProvider({
     readOnly,
     images,
     formatting,
+    spellcheck,
   ]);
 
   return (

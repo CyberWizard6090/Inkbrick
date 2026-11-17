@@ -20,6 +20,8 @@ interface SandboxNavProps {
   locale: string;
   locales: readonly string[];
   onLocaleChange(locale: string): void;
+  spellcheck?: boolean;
+  onSpellcheckChange?(enabled: boolean): void;
 }
 
 export function SandboxNav({
@@ -39,6 +41,8 @@ export function SandboxNav({
   locale,
   locales,
   onLocaleChange,
+  spellcheck,
+  onSpellcheckChange,
 }: SandboxNavProps) {
   return (
     <nav className="sandbox-nav" data-testid="sandbox-nav">
@@ -60,6 +64,8 @@ export function SandboxNav({
         locale={locale}
         locales={locales}
         onLocaleChange={onLocaleChange}
+        spellcheck={spellcheck}
+        onSpellcheckChange={onSpellcheckChange}
       />
     </nav>
   );

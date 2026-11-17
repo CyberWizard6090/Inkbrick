@@ -9,6 +9,9 @@ export const ru: Readonly<Record<SandboxKey, string>> = {
   'app.title': 'Тестирование редактора',
 
   'settings.theme': 'Тема',
+  'settings.spellcheck': 'Проверка орфографии',
+  'settings.spellcheckOn': 'Включена',
+  'settings.spellcheckOff': 'Выключена',
   'settings.language': 'Язык',
   'theme.auto': 'Системная',
   'theme.light': 'Светлая',

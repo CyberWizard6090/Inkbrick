@@ -15,6 +15,7 @@ export const EMPTY_UI_CONFIG: EditorUIConfig = Object.freeze({
   highlighter: lazyHighlightCode,
   formulaRenderer: temmlRenderer,
   locale: 'en',
+  spellcheck: false,
   t: defaultT,
   images: Object.freeze({}),
   formatting: 'context-menu',
