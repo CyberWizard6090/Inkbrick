@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import type { KeyBinding } from '../keymap/types';
+import type { PaletteCommand } from '../palette/types';
 import { getFindController, type FindController, type FindState } from './FindController';
 
 export { FindReplacePanel } from './FindReplacePanel';
@@ -50,10 +51,31 @@ const open =
  *
  * Если у провайдера уже есть свои клавиши: `keymap={[...findReplace.keymap, ...mine]}`.
  */
-export const findReplace: { readonly keymap: readonly KeyBinding[] } = {
+export const findReplace: {
+  readonly keymap: readonly KeyBinding[];
+  /** Команды «Найти» и «Заменить» для палитры: `<CommandPalette commands={findReplace.commands} />`. */
+  readonly commands: readonly PaletteCommand[];
+} = {
   keymap: [
     { id: 'find.open', keys: 'Mod-f', run: open(false) },
     { id: 'find.replace', keys: 'Mod-h', run: open(true) },
+  ],
+  commands: [
+    {
+      id: 'find.open',
+      title: (t) => t('find.query'),
+      group: (t) => t('palette.group.document'),
+      shortcut: 'Mod-F',
+      run: ({ editor, view }) => getFindController(editor, view).open(false),
+    },
+    {
+      id: 'find.replace',
+      title: (t) => t('find.label'),
+      group: (t) => t('palette.group.document'),
+      shortcut: 'Mod-H',
+      when: ({ readOnly }) => !readOnly,
+      run: ({ editor, view }) => getFindController(editor, view).open(true),
+    },
   ],
 };
 

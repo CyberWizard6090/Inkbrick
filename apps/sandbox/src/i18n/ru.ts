@@ -45,6 +45,9 @@ export const ru: Readonly<Record<SandboxKey, string>> = {
   'error.notSnapshot': 'Это не снимок документа Inkbrick: нет полей rootId и blocks',
   'error.cannotOpen': 'Документ не удалось открыть: {reason}',
 
+  'commands.group': 'Песочница',
+  'commands.readOnly': 'Переключить режим чтения',
+  'commands.debug': 'Показать или скрыть Debug-панель',
   'shortcuts.title': 'Горячие клавиши',
   'shortcuts.close': 'Закрыть',
   'shortcuts.section.format': 'Форматирование текста',

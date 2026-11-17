@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Command palette (`docs/command-palette.md`): `<CommandPalette commands={…} />` and `commandPalette.keymap` (Ctrl/Cmd+Shift+P; Ctrl+P is the browser's print). Built-in commands: undo and redo, formatting of the selection, «Turn into» and «Insert» for every slash-menu item that fits the current block. The app adds its own (`PaletteCommand`: `id`, `title`, `group`, `keywords`, `shortcut`, `when`, `run`), `findReplace.commands` adds Find and Replace; `useCommandPalette()` opens it from code. The selection at opening is restored before a command runs. Combobox ARIA, English and Russian.
+
 - Tags (`docs/tags.md`): `<TagHighlights onTagClick suggestions suggest />` highlights `#tag` (letters of any alphabet, digits, `_`, `-`, nested
   `#a/b`; not `#123`, not inside code, links or formulas) with the CSS Custom Highlight API, offers the tags of the document and of the
   application while `#` is typed (arrows, Enter or Tab, Esc) and reports Ctrl/Cmd+click to the application. A tag stays plain text, so the

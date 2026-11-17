@@ -1124,6 +1124,97 @@
     }
   }
 
+  /* Палитра команд: окно по центру сверху над затемнением, список разделами. */
+  :where([data-inkbrick-ui='palette-backdrop']) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--inkbrick-z-popup);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 12vh;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  :where([data-inkbrick-ui='palette']) {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: 60vh;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+    overflow: hidden;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='query']) {
+    height: 44px;
+    padding: 0 16px;
+    border: none;
+    border-bottom: 1px solid var(--inkbrick-stroke-2);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='list']) {
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='group']) {
+    padding: 8px 12px 4px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='empty']) {
+    padding: 16px;
+    color: var(--inkbrick-fg-3);
+    text-align: center;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='option']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='option'][aria-selected='true']) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='title']) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='description']) {
+    margin-inline-start: 8px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='shortcut']) {
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
   /* Поиск и замена: панель в правом верхнем углу окна и подсветка совпадений в документе. */
   :where([data-inkbrick-ui='find']) {
     position: fixed;
