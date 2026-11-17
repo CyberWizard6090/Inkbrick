@@ -58,10 +58,19 @@ export interface BlockMenuAction {
   readonly run: () => void;
 }
 
+/** Фон блока в меню: доступные цвета, текущий и выбор (`null` снимает фон). Нет у блоков, которым фон не положен. */
+export interface BlockMenuBackground {
+  readonly current: string | undefined;
+  readonly options: readonly string[];
+  readonly onPick: (color: string | null) => void;
+}
+
 export interface BlockMenuProps {
   readonly block: BaseBlock;
   readonly position: { readonly x: number; readonly y: number };
   readonly actions: readonly BlockMenuAction[];
   readonly turnInto: readonly BlockMenuAction[];
+  /** Ряд цветов фона блока; свои меню (`slots.BlockMenu`) могут его не показывать. */
+  readonly background?: BlockMenuBackground;
   readonly onClose: () => void;
 }

@@ -1,9 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { useT } from '../hooks/useT';
+import type { MessageKey } from '../i18n/en';
+import { Icon } from '../icons/Icon';
 import type { BlockMenuAction, BlockMenuProps } from './types';
 
-export function DefaultBlockMenu({ position, actions, turnInto, onClose }: BlockMenuProps) {
+export function DefaultBlockMenu({
+  position,
+  actions,
+  turnInto,
+  background,
+  onClose,
+}: BlockMenuProps) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
@@ -101,6 +109,43 @@ export function DefaultBlockMenu({ position, actions, turnInto, onClose }: Block
             {t('menu.turnInto')}
           </div>
           {turnInto.map(renderItem)}
+        </>
+      )}
+
+      {background && (
+        <>
+          <div className="inkbrick-block-menu__label" data-inkbrick-part="label" role="separator">
+            {t('menu.background')}
+          </div>
+          <div data-inkbrick-part="swatches" role="group" aria-label={t('menu.background')}>
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={background.current === undefined}
+              data-inkbrick-part="swatch"
+              data-color=""
+              data-action="background-none"
+              aria-label={t('menu.background.none')}
+              title={t('menu.background.none')}
+              onClick={() => background.onPick(null)}
+            >
+              <Icon name="x" />
+            </button>
+            {background.options.map((color) => (
+              <button
+                key={color}
+                type="button"
+                role="menuitemradio"
+                aria-checked={background.current === color}
+                data-inkbrick-part="swatch"
+                data-color={color}
+                data-action={`background-${color}`}
+                aria-label={t(`color.${color}` as MessageKey)}
+                title={t(`color.${color}` as MessageKey)}
+                onClick={() => background.onPick(color)}
+              />
+            ))}
+          </div>
         </>
       )}
 

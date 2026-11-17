@@ -9,7 +9,9 @@ import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
 import { syncSlashMenu } from '../slash/syncSlashMenu';
 import { iconByName } from '../controllers/adapters';
-import type { BlockMenuAction } from './types';
+import { BLOCK_BACKGROUNDS, getBlockBackground } from '@inkbrick/document';
+
+import type { BlockMenuAction, BlockMenuBackground } from './types';
 
 const isCaret = (value: unknown): value is CaretResult =>
   typeof value === 'object' && value !== null && 'blockId' in value && 'offset' in value;
@@ -36,7 +38,11 @@ export function buildBlockActions(
   blockId: string,
   slashItems: readonly SlashMenuItem[],
   t: TFunction,
-): { actions: BlockMenuAction[]; turnInto: BlockMenuAction[] } {
+): {
+  actions: BlockMenuAction[];
+  turnInto: BlockMenuAction[];
+  background?: BlockMenuBackground;
+} {
   const previous = editor.document.getPreviousSibling(blockId);
   const next = editor.document.getNextSibling(blockId);
   const perform = (fn: () => unknown) => () => performBlockAction(view, fn);
@@ -107,7 +113,23 @@ export function buildBlockActions(
       ),
     }));
 
-  return { actions, turnInto };
+  // Фон есть у текстовых блоков, чья схема его допускает: движок проверяет props, так что свои блоки без фона его не покажут.
+  const background: BlockMenuBackground | undefined =
+    block && editor.can('setBlockProps', { blockId, props: { background: BLOCK_BACKGROUNDS[0] } })
+      ? {
+          current: getBlockBackground(block),
+          options: BLOCK_BACKGROUNDS,
+          onPick: (color) =>
+            performBlockAction(view, () =>
+              editor.dispatch({
+                type: 'setBlockProps',
+                payload: { blockId, props: { background: color ?? undefined } as never },
+              }),
+            ),
+        }
+      : undefined;
+
+  return { actions, turnInto, background };
 }
 
 export function addBlockBelow(

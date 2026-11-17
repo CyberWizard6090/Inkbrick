@@ -127,6 +127,8 @@ export const ru: Messages = {
   'menu.moveUp': 'Переместить вверх',
   'menu.moveDown': 'Переместить вниз',
   'menu.delete': 'Удалить',
+  'menu.background': 'Фон',
+  'menu.background.none': 'Без фона',
   'menu.turnInto': 'Превратить в',
   'menu.empty': 'Нет действий',
 

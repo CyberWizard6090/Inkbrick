@@ -7,8 +7,17 @@ export type { ExportOptions, ExportFormat } from './adapters';
 export type { CreateDocumentOptions } from './createDocument';
 export * from './utils/InlineNodeUtils';
 export { createId } from './utils/id';
-export { COLOR_NAMES, COLOR_HEX, isColorName, safeCssColor, exportColor } from './utils/colors';
-export type { ColorName } from './utils/colors';
+export {
+  COLOR_NAMES,
+  COLOR_HEX,
+  BLOCK_BACKGROUNDS,
+  isColorName,
+  isBlockBackground,
+  getBlockBackground,
+  safeCssColor,
+  exportColor,
+} from './utils/colors';
+export type { ColorName, BlockBackground } from './utils/colors';
 export { ALIGNMENTS, isAlignment, isAlignable, getBlockAlign, alignProps } from './utils/align';
 export type { Alignment } from './utils/align';
 export { FORMULA_CHAR, MAX_FORMULA_LENGTH, isFormulaNode } from './utils/formula';

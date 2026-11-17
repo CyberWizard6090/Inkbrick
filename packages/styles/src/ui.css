@@ -1124,6 +1124,75 @@
     }
   }
 
+  /* Меню блока: ряд цветов фона. */
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatches']) {
+    display: grid;
+    grid-template-columns: repeat(5, 28px);
+    gap: 4px;
+    padding: 4px 8px 8px;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch']) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-fg-2);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch']:hover),
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch']:focus-visible) {
+    border-color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][aria-checked='true']) {
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='gray']) {
+    background: var(--inkbrick-highlight-gray);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='brown']) {
+    background: var(--inkbrick-highlight-brown);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='orange']) {
+    background: var(--inkbrick-highlight-orange);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='yellow']) {
+    background: var(--inkbrick-highlight-yellow);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='green']) {
+    background: var(--inkbrick-highlight-green);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='blue']) {
+    background: var(--inkbrick-highlight-blue);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='purple']) {
+    background: var(--inkbrick-highlight-purple);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='pink']) {
+    background: var(--inkbrick-highlight-pink);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='red']) {
+    background: var(--inkbrick-highlight-red);
+  }
+
   /* Столбцы таблицы: список вариантов у ячейки выбора и окно свойств столбца. */
   :where([data-inkbrick-ui='options-picker']) {
     z-index: var(--inkbrick-z-popup);

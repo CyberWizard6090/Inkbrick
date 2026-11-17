@@ -1,4 +1,6 @@
 import * as z from '../zod';
+
+import { BLOCK_BACKGROUNDS } from '../../utils/colors';
 import { BlockSchema } from '../BlockSchema';
 
 export const listPropsSchema = z.object({
@@ -7,6 +9,8 @@ export const listPropsSchema = z.object({
   /** Вложенные блоки пункта скрыты (сворачивание пунктов списка). Хранится в документе и входит в историю правок. */
   collapsed: z.boolean().optional(),
   align: z.enum(['left', 'center', 'right', 'justify']).optional(),
+  /** Цвет фона блока (`BLOCK_BACKGROUNDS`); без него фона нет. */
+  background: z.enum(BLOCK_BACKGROUNDS).optional(),
 });
 
 export type ListProps = z.infer<typeof listPropsSchema>;

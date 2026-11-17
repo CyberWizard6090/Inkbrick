@@ -24,6 +24,11 @@ export const SetBlockPropsCommand: Command<SetBlockPropsPayload, void> = {
   execute({ engine, transaction }, { blockId, props }) {
     const block = transaction.getBlock(blockId)!;
 
-    engine.block.morph(transaction, blockId, block.flavour, { ...block.props, ...props });
+    // `undefined` убирает свойство (например, фон блока), а не оставляет ключ с пустым значением.
+    const next = { ...block.props, ...props };
+
+    for (const key of Object.keys(next)) if (next[key] === undefined) delete next[key];
+
+    engine.block.morph(transaction, blockId, block.flavour, next);
   },
 };

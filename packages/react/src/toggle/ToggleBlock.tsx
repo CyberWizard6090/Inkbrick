@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { getBlockAlign } from '@inkbrick/document';
+import { getBlockAlign, getBlockBackground } from '@inkbrick/document';
 
 import { BlockChildren } from '../blocks/BlockChildren';
 import { Editable } from '../blocks/Editable';
@@ -41,6 +41,7 @@ export function ToggleBlock({ block, selected, readOnly }: BlockProps) {
       data-inkbrick-block="toggle"
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
+      data-background={getBlockBackground(block)}
       data-open={open || undefined}
       data-selected={selected || undefined}
     >

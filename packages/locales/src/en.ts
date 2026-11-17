@@ -129,6 +129,8 @@ export const en = {
   'menu.moveUp': 'Move up',
   'menu.moveDown': 'Move down',
   'menu.delete': 'Delete',
+  'menu.background': 'Background',
+  'menu.background.none': 'No background',
   'menu.turnInto': 'Turn into',
   'menu.empty': 'No actions',
 
