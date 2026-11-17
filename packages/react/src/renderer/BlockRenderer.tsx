@@ -1,4 +1,4 @@
-import { memo, useMemo, useSyncExternalStore } from 'react';
+import { memo, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
 
 import type { BlockId } from '@inkbrick/document';
 
@@ -33,7 +33,21 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     () => view.folds.isHidden(id),
     () => false,
   );
+  const picked = useSyncExternalStore(
+    view.picked.subscribe,
+    () => view.picked.has(id),
+    () => false,
+  );
   const block = useBlock(id);
+
+  // Блок выбран целиком (Esc, рамка): отметка ставится на его элемент, компоненты блоков про неё не знают.
+  useLayoutEffect(() => {
+    const element = view
+      .getRoot()
+      ?.querySelector(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
+
+    element?.toggleAttribute('data-picked', picked);
+  }, [view, id, picked, block]);
 
   if (!block || folded) {
     return null;

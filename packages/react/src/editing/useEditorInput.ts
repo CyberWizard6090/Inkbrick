@@ -94,6 +94,19 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
         toggleFormat,
       });
 
+      // Блоки выбраны целиком: набор текста и прочие клавиши, которым нет дела до блоков, ничего не вставляют в
+      // «припаркованную» невидимую каретку.
+      if (
+        !handled &&
+        view.picked.size > 0 &&
+        event.key.length === 1 &&
+        !event.ctrlKey &&
+        !event.metaKey
+      ) {
+        event.preventDefault();
+        return;
+      }
+
       // Перемещение курсора — граница шага undo: следующий набор текста начнёт новый шаг.
       if (!handled && NAVIGATION_KEYS.has(event.key)) editor.sealHistory();
     };
@@ -152,6 +165,8 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
         view.lastPointerType = event.pointerType;
 
       view.pointerDown = true;
+      // Клик в документе снимает выбор блоков (выделение текста ставит сам браузер).
+      view.picked.clear();
       view.contextMenu.close();
       view.toolbar.closeLink();
       view.toolbar.hide();

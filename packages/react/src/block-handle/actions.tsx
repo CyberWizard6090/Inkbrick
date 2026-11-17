@@ -11,6 +11,7 @@ import { syncSlashMenu } from '../slash/syncSlashMenu';
 import { iconByName } from '../controllers/adapters';
 import { BLOCK_BACKGROUNDS, getBlockBackground } from '@inkbrick/document';
 
+import { deleteBlocks, duplicateBlocks, moveBlocks, targetsOf } from '../pick/actions';
 import type { BlockMenuAction, BlockMenuBackground } from './types';
 
 const isCaret = (value: unknown): value is CaretResult =>
@@ -43,12 +44,21 @@ export function buildBlockActions(
   turnInto: BlockMenuAction[];
   background?: BlockMenuBackground;
 } {
-  const previous = editor.document.getPreviousSibling(blockId);
-  const next = editor.document.getNextSibling(blockId);
+  const group = targetsOf(view, blockId);
+  const previous = editor.document.getPreviousSibling(group[0]);
+  const next = editor.document.getNextSibling(group.at(-1)!);
   const perform = (fn: () => unknown) => () => performBlockAction(view, fn);
 
-  const moveUp = previous && { blockId, targetId: previous.id, position: 'before' as const };
-  const moveDown = next && { blockId, targetId: next.id, position: 'after' as const };
+  const moveUp = previous && {
+    blockId: group[0],
+    targetId: previous.id,
+    position: 'before' as const,
+  };
+  const moveDown = next && {
+    blockId: group.at(-1)!,
+    targetId: next.id,
+    position: 'after' as const,
+  };
 
   const block = editor.store.getBlock(blockId);
   const controller = block && editor.controllers.get(block.flavour);
@@ -65,35 +75,60 @@ export function buildBlockActions(
     };
   });
 
+  // Блок в выбранном ряду (несколько блоков выбраны целиком): дублирование, перенос и удаление относятся ко всему ряду.
+  const several = group.length > 1;
+
   const actions: BlockMenuAction[] = [
     ...own,
     {
       id: 'duplicate',
       title: t('menu.duplicate'),
       icon: <Icon name="copy" />,
-      disabled: !editor.can('duplicateBlock', { blockId }),
-      run: perform(() => editor.dispatch({ type: 'duplicateBlock', payload: { blockId } })),
+      disabled: several
+        ? !group.some((id) => editor.can('duplicateBlock', { blockId: id }))
+        : !editor.can('duplicateBlock', { blockId }),
+      run: several
+        ? () => {
+            duplicateBlocks(editor, view, group);
+            view.blocks.closeMenu();
+          }
+        : perform(() => editor.dispatch({ type: 'duplicateBlock', payload: { blockId } })),
     },
     {
       id: 'move-up',
       title: t('menu.moveUp'),
       icon: <Icon name="arrow-up" />,
       disabled: !moveUp || !editor.can('moveBlock', moveUp),
-      run: perform(() => moveUp && editor.dispatch({ type: 'moveBlock', payload: moveUp })),
+      run: several
+        ? () => {
+            moveBlocks(editor, view, group, -1);
+            view.blocks.closeMenu();
+          }
+        : perform(() => moveUp && editor.dispatch({ type: 'moveBlock', payload: moveUp })),
     },
     {
       id: 'move-down',
       title: t('menu.moveDown'),
       icon: <Icon name="arrow-down" />,
       disabled: !moveDown || !editor.can('moveBlock', moveDown),
-      run: perform(() => moveDown && editor.dispatch({ type: 'moveBlock', payload: moveDown })),
+      run: several
+        ? () => {
+            moveBlocks(editor, view, group, 1);
+            view.blocks.closeMenu();
+          }
+        : perform(() => moveDown && editor.dispatch({ type: 'moveBlock', payload: moveDown })),
     },
     {
       id: 'delete',
       title: t('menu.delete'),
       icon: <Icon name="trash" />,
       danger: true,
-      run: perform(() => editor.execute('delete-block', { id: blockId })),
+      run: several
+        ? () => {
+            deleteBlocks(editor, view, group);
+            view.blocks.closeMenu();
+          }
+        : perform(() => editor.execute('delete-block', { id: blockId })),
     },
   ];
 

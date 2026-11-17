@@ -4,6 +4,7 @@ import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
 import type { DragState, DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
+import { targetsOf } from '../pick/actions';
 import { blockAtPoint, blockElement, probePoint, rowRect } from './geometry';
 
 export interface BlockDropTarget {
@@ -85,8 +86,15 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     else document.body.removeAttribute('data-inkbrick-dragging');
   };
 
-  const canMove = (blockId: string, targetId: string, position: DropPosition) =>
-    blockId !== targetId && editor.can('moveBlock', { blockId, targetId, position });
+  // Перетаскивание блока из выбранного ряда переносит весь ряд одним жестом; цель внутри ряда недопустима.
+  const canMove = (blockId: string, targetId: string, position: DropPosition) => {
+    const group = targetsOf(view, blockId);
+
+    return (
+      !group.includes(targetId) &&
+      group.every((id) => editor.can('moveBlock', { blockId: id, targetId, position }))
+    );
+  };
 
   const canMoveToSide = (blockId: string, targetId: string, side: DropSide) =>
     blockId !== targetId && editor.can('moveBlockToSide', { blockId, targetId, side });
@@ -124,7 +132,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
             ? 'right'
             : null;
 
-      if (side && canMoveToSide(blockId, targetId, side)) {
+      if (side && targetsOf(view, blockId).length === 1 && canMoveToSide(blockId, targetId, side)) {
         return {
           targetId,
           position: side === 'left' ? 'before' : 'after',
@@ -230,11 +238,17 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     move(blockId, targetId, position) {
       if (!canMove(blockId, targetId, position)) return false;
 
-      const payload = { blockId, targetId, position };
+      // Ряд выбранных блоков: перед целью — по порядку, после неё — с конца, порядок внутри ряда сохраняется.
+      const group = targetsOf(view, blockId);
+      const order = position === 'before' ? group : [...group].reverse();
 
-      // Синхронно обновляем DOM: сразу после переноса можно мерить блоки на новых местах.
+      // Синхронно обновляем DOM: сразу после переноса можно мерить блоки на новых местах. Один шаг undo.
       flushSync(() => {
-        editor.dispatch({ type: 'moveBlock', payload });
+        editor.batch(() => {
+          for (const id of order) {
+            editor.dispatch({ type: 'moveBlock', payload: { blockId: id, targetId, position } });
+          }
+        });
       });
 
       controller.setHover(null);
