@@ -24,6 +24,22 @@ export type { TableEditorProps } from './table';
 export { columnsBlocks, ColumnsBlock, ColumnBlock } from './columns';
 export { tocBlocks, TocBlock, TocPanel, useHeadings } from './toc';
 export {
+  WordCount,
+  useWordCount,
+  countCharacters,
+  countWords,
+  documentStats,
+  selectionStats,
+  statsOf,
+} from './stats';
+export type {
+  StatsOptions,
+  TextStats,
+  WordCountOptions,
+  WordCountProps,
+  WordCountState,
+} from './stats';
+export {
   findReplace,
   FindReplacePanel,
   FindController,

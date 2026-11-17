@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { TableEditor, useHistory } from '@inkbrick/react';
+import { TableEditor, useHistory, WordCount } from '@inkbrick/react';
 import { toMarkdown } from '@inkbrick/document';
 import {
   createTableEditor,
@@ -191,6 +191,9 @@ export function TableDemo() {
           label={t('table.label')}
         >
           <HistoryBar />
+          <div className="playground-stats">
+            <WordCount />
+          </div>
           {debug && <DebugPanel />}
         </TableEditor>
         <h2>{t('table.value')}</h2>

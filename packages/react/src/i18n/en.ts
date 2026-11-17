@@ -267,6 +267,11 @@ export const en = {
   'find.replaceAll': 'Replace all',
   'find.none': 'No results',
   'toc.panel': 'On this page',
+  'stats.words': 'Words: {count}',
+  'stats.wordsOf': 'Words: {count} of {total}',
+  'stats.characters': 'Characters: {count}',
+  'stats.charactersOf': 'Characters: {count} of {total}',
+  'stats.charactersNoSpaces': 'Characters without spaces: {count}',
   'toc.empty': 'Headings of the document will appear here',
   'toc.levels': 'Heading levels shown: click to change',
 } as const;

@@ -265,6 +265,11 @@ export const ru: Messages = {
   'find.replaceAll': 'Заменить все',
   'find.none': 'Нет совпадений',
   'toc.panel': 'На этой странице',
+  'stats.words': 'Слов: {count}',
+  'stats.wordsOf': 'Слов: {count} из {total}',
+  'stats.characters': 'Символов: {count}',
+  'stats.charactersOf': 'Символов: {count} из {total}',
+  'stats.charactersNoSpaces': 'Символов без пробелов: {count}',
   'toc.empty': 'Здесь появятся заголовки документа',
   'toc.levels': 'Уровни заголовков: нажмите, чтобы изменить',
 };

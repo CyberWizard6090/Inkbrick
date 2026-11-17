@@ -4,6 +4,7 @@ import {
   EditorProvider,
   FindReplacePanel,
   TocPanel,
+  WordCount,
   findReplace,
   headingFolding,
   htmlToFragment,
@@ -454,6 +455,9 @@ export function App({ initial }: { initial: RestoredEditor }) {
             <HistoryButtons />
             <div className="playground-content">
               <DocumentView renderer={renderer} />
+            </div>
+            <div className="playground-stats">
+              <WordCount />
             </div>
             {debug && <DebugPanel />}
           </div>

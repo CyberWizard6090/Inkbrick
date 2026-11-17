@@ -1316,4 +1316,19 @@
     color: var(--inkbrick-fg-1);
     font-weight: var(--inkbrick-font-weight-semibold);
   }
+
+  /* Счётчик слов и символов: строка состояния рядом с документом. */
+  :where([data-inkbrick-ui='word-count']) {
+    display: inline-flex;
+    gap: 12px;
+    color: var(--inkbrick-fg-3);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :where([data-inkbrick-ui='word-count'][data-selection]) {
+    color: var(--inkbrick-fg-2);
+  }
 }
