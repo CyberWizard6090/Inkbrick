@@ -446,3 +446,33 @@ describe('nesting and Tab', () => {
     expect(s.editor.dispatch({ type: 'outdentBlock', payload: { blockId: s.a } })).toBeUndefined();
   });
 });
+
+describe('splitBlock and collapsed', () => {
+  it('the new block starts expanded: collapsed stays with the part that keeps the nested blocks', () => {
+    const editor = new Editor();
+    const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+    const first = editor.document.getBlock(note)!.children[0];
+
+    editor.dispatch({
+      type: 'convertBlock',
+      payload: {
+        blockId: first,
+        flavour: 'block:list',
+        props: { type: 'bullet', collapsed: true },
+      },
+    });
+    editor.dispatch({
+      type: 'replaceText',
+      payload: { blockId: first, from: 0, to: 0, text: 'ab' },
+    });
+
+    const caret = editor.dispatch({
+      type: 'splitBlock',
+      payload: { blockId: first, offset: 2 },
+    }) as { blockId: string };
+
+    expect(editor.document.getBlock(first)!.props.collapsed).toBe(true);
+    expect(editor.document.getBlock(caret.blockId)!.props.collapsed).toBeUndefined();
+    expect(editor.document.getBlock(caret.blockId)!.props.type).toBe('bullet');
+  });
+});

@@ -7,6 +7,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- List item folding (`docs/list-folding.md`): an arrow on a list item with nested blocks hides and shows them, Ctrl/Cmd+Enter does the same;
+  `collapsed` is stored in the document and is undoable. Opt-in: `<EditorProvider {...listFolding}>` (or `{...folding}` for headings and list
+  items); `FoldableListBlock`, `ListBlock` gets the `ListItem` view with an optional `fold`. A caret inside the hidden blocks moves to the item,
+  Tab into a collapsed item expands it first, readers can fold in read-only mode without changing the document.
 - Word and character counter (`docs/word-count.md`): `<WordCount />` shows words and characters of the document and, with a selection,
   of the selection against the whole («Words: 12 of 120»); the tooltip has the characters without spaces. Opt-in, `code` leaves code
   blocks out, `delay` debounces the recount. `documentStats`, `selectionStats`, `countWords`, `countCharacters`, `useWordCount`. Words are
@@ -184,6 +188,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Enter in a list item no longer copies `collapsed` to the new item: the new one starts expanded and the nested blocks stay with the first part.
+- Virtual renderer: the nested blocks of a closed toggle (and of a collapsed list item) are no longer counted in the height estimate, so they leave
+  no empty room in the scroll area.
 - Virtual renderer: the limit of the rendered window (`maxRendered`) counted the indexes of blocks hidden by folded headings, so after a few
   folded sections the next heading, which stood on the screen right behind them, was not drawn (an empty gap, later it vanished). The limit now
   counts only the blocks that are drawn.

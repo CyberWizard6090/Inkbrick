@@ -63,7 +63,9 @@ export const SplitBlockCommand: Command<SplitBlockPayload, CaretResult> = {
     const [left, right] = engine.inline.split(block.content, offset);
 
     const flavour = rule.nextFlavour ?? block.flavour;
-    const props = flavour === block.flavour ? block.props : undefined;
+    // Новый блок начинается развёрнутым: `collapsed` относится к вложенным блокам, а они остаются у левой части.
+    const { collapsed: _collapsed, ...inherited } = block.props;
+    const props = flavour === block.flavour ? inherited : undefined;
 
     const created = engine.block.create({ flavour, parentId: parent.id, props, content: right });
 

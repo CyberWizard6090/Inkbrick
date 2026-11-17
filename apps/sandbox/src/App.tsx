@@ -6,7 +6,7 @@ import {
   TocPanel,
   WordCount,
   findReplace,
-  headingFolding,
+  folding,
   htmlToFragment,
   virtualRenderer,
   type FormattingMode,
@@ -318,7 +318,7 @@ const tocParam = new URLSearchParams(window.location.search).get('toc');
 const tocPanelSide = tocParam === 'off' ? null : tocParam === 'left' ? 'left' : 'right';
 
 /** Клавиши сворачивания заголовков и поиска; объект стабилен, как требует провайдер. */
-const sandboxKeymap = [...headingFolding.keymap, ...findReplace.keymap];
+const sandboxKeymap = [...folding.keymap, ...findReplace.keymap];
 
 export function App({ initial }: { initial: RestoredEditor }) {
   const [editor, setEditor] = useState(initial.editor);
@@ -425,7 +425,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         readOnly={readOnly}
         images={demoImages}
         formatting={formatting}
-        components={headingFolding.components}
+        components={folding.components}
         keymap={sandboxKeymap}
       >
         <DemoSwitch current="editor" />

@@ -55,6 +55,15 @@ export function estimateSubtree(
 
     if (!block) continue;
     total += estimate(block);
+
+    // Вложенные блоки свёрнутого пункта и закрытого переключателя не рисуются и места не занимают.
+    if (
+      block.props.collapsed === true ||
+      (block.flavour === 'block:toggle' && block.props.open === false)
+    ) {
+      continue;
+    }
+
     for (const child of block.children) queue.push(child);
   }
 

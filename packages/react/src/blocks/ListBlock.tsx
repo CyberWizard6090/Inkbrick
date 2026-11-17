@@ -5,6 +5,7 @@ import { useBlock } from '../hooks/useBlock';
 import { useChildren } from '../hooks/useChildren';
 import { useEditor } from '../hooks/useEditor';
 import { useT } from '../hooks/useT';
+import { Icon } from '../icons/Icon';
 import { Editable } from './Editable';
 import type { BlockProps } from './BlockProps';
 
@@ -27,7 +28,20 @@ function useOrderedNumber(block: BlockProps['block']): number {
   return number;
 }
 
-export function ListBlock({ block, selected, readOnly }: BlockProps) {
+/** Сворачивание пункта: подключается компонентом `FoldableListBlock`, в обычном `ListBlock` его нет. */
+export interface ListFold {
+  readonly collapsed: boolean;
+  readonly label: string;
+  readonly toggle: () => void;
+}
+
+/** Пункт списка; `fold` добавляет стрелку и прячет вложенные блоки, пока пункт свёрнут. */
+export function ListItem({
+  block,
+  selected,
+  readOnly,
+  fold,
+}: BlockProps & { readonly fold?: ListFold }) {
   const editor = useEditor();
   const t = useT();
   const children = useChildren(block.id);
@@ -43,6 +57,8 @@ export function ListBlock({ block, selected, readOnly }: BlockProps) {
       data-block-id={block.id}
       data-list-type={type}
       data-checked={type === 'todo' ? block.props.checked === true : undefined}
+      data-foldable={fold ? '' : undefined}
+      data-collapsed={fold?.collapsed || undefined}
       data-selected={selected || undefined}
     >
       <div className="block block-list" data-inkbrick-part="row" data-list-type={type}>
@@ -74,13 +90,31 @@ export function ListBlock({ block, selected, readOnly }: BlockProps) {
         )}
 
         <Editable block={block} />
+        {fold && children.length > 0 && (
+          <button
+            type="button"
+            contentEditable={false}
+            data-inkbrick-part="fold"
+            aria-expanded={!fold.collapsed}
+            aria-label={fold.label}
+            title={fold.label}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={fold.toggle}
+          >
+            <Icon name="chevron-down" />
+          </button>
+        )}
       </div>
 
-      {children.length > 0 && (
+      {children.length > 0 && !fold?.collapsed && (
         <div className="block-nested-children" data-inkbrick-part="children">
           <BlockChildren id={block.id} />
         </div>
       )}
     </div>
   );
+}
+
+export function ListBlock(props: BlockProps) {
+  return <ListItem {...props} />;
 }
