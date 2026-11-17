@@ -92,6 +92,8 @@ export function Editable({ block, placeholder }: EditableProps) {
       data-focused={focused || undefined}
       data-hint={hinted ? t('editor.hint') : undefined}
       data-placeholder={placeholder}
+      // Код не проверяется на орфографию: подчёркивание имён и ключевых слов только мешало бы.
+      spellCheck={isCode ? false : undefined}
     />
   );
 }

@@ -47,7 +47,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
   const view = useEditorView();
   const ref = useRef<HTMLDivElement>(null);
 
-  const { slots, formatting } = useEditorUI();
+  const { slots, formatting, spellcheck } = useEditorUI();
 
   const readOnly = useReadOnly();
   const t = useT();
@@ -83,7 +83,8 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
         data-inkbrick-root=""
         contentEditable={!readOnly}
         suppressContentEditableWarning
-        spellCheck={false}
+        spellCheck={!readOnly && !!spellcheck}
+        lang={spellcheck ? spellcheck.lang : undefined}
         role="textbox"
         aria-multiline="true"
         aria-label={label ?? t('editor.label')}

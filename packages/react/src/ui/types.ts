@@ -67,6 +67,8 @@ export interface EditorUIConfig {
   readonly highlighter: CodeHighlighter | null;
   readonly formulaRenderer: FormulaRenderer | null;
   readonly locale: string;
+  /** Проверка орфографии браузера включена; `lang` — язык документа для неё (по умолчанию язык интерфейса). */
+  readonly spellcheck: { readonly lang: string } | false;
   readonly t: TFunction;
   readonly keymap: readonly KeyBinding[];
   readonly images: ImageOptions;

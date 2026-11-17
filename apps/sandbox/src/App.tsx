@@ -337,6 +337,10 @@ export function App({ initial }: { initial: RestoredEditor }) {
   const [shortcuts, setShortcuts] = useState(false);
   const [locale, setLocale] = useState(initialLocale);
   const [theme, setTheme] = useState<Theme>(initialTheme);
+  // Проверка орфографии браузера: включена, `?spellcheck=off` отключает её при загрузке.
+  const [spellcheck, setSpellcheck] = useState(
+    () => new URLSearchParams(window.location.search).get('spellcheck') !== 'off',
+  );
   const i18n = useMemo(() => createSandboxI18n(locale), [locale]);
   const { t } = i18n;
   const paletteCommands = useMemo<PaletteCommand[]>(
@@ -451,6 +455,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         formatting={formatting}
         components={folding.components}
         keymap={sandboxKeymap}
+        spellcheck={spellcheck}
       >
         <DemoSwitch current="editor" />
         <FindReplacePanel />
@@ -476,6 +481,8 @@ export function App({ initial }: { initial: RestoredEditor }) {
           locale={locale}
           locales={availableLocales()}
           onLocaleChange={changeLocale}
+          spellcheck={spellcheck}
+          onSpellcheckChange={setSpellcheck}
         />
         <div className="playground-root" data-inkbrick-surface="">
           <div className="playground-editor">

@@ -259,6 +259,8 @@ export function TableCellBlock({ block, selected, readOnly }: BlockProps) {
       hidden={column?.hidden || undefined}
       data-align={getBlockAlign(block) ?? 'left'}
       data-column-type={column && column.type !== 'text' ? column.type : undefined}
+      // Адреса, почта, телефоны, числа и метки не проверяются на орфографию.
+      spellCheck={column && column.type !== 'text' ? false : undefined}
       data-selected={selected || undefined}
       data-cell-selected={picked || undefined}
       colSpan={merge && merge.colSpan > 1 ? merge.colSpan : undefined}
