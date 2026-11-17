@@ -16,7 +16,7 @@ test.describe('Slash menu', () => {
     await page.keyboard.type('/');
 
     await expect(page.locator(menu)).toBeVisible();
-    await expect(page.locator('[role="option"]')).toHaveCount(22);
+    await expect(page.locator('[role="option"]')).toHaveCount(23);
     await expect(page.locator('[role="option"]').first()).toHaveAttribute('aria-selected', 'true');
   });
 

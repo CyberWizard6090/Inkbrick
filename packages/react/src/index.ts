@@ -58,6 +58,7 @@ export {
   FootnoteIndex,
   getFootnoteIndex,
   insertFootnote,
+  createFootnote,
   canInsertFootnote,
   goToFootnote,
   goToReference,
