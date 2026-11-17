@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 
-import type { Alignment, BaseBlock, TableProps } from '@inkbrick/document';
+import type { Alignment, BaseBlock, TableProps, TableView } from '@inkbrick/document';
 import {
   MAX_TABLE_CELLS,
   MAX_TABLE_COLUMNS,
@@ -25,6 +25,7 @@ import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { ColumnPropertiesDialog } from './ColumnPropertiesDialog';
+import { canUpdateView, newViewId, setAt, updateView, updateViews } from './views';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableLine } from './cellSelection';
@@ -58,6 +59,9 @@ interface MenuState {
 
 export interface TableControlsProps {
   readonly block: BaseBlock;
+  /** Открытый вид: «Скрыть столбец», сортировка вида и фильтры относятся к нему. */
+  readonly activeView: TableView;
+  readonly onSelectView: (id: string) => void;
   readonly tableRef: RefObject<HTMLTableElement | null>;
   /** Ширина столбца, которую тянут сейчас; `null` — не тянут. Таблица рисует её, пока модель не изменилась. */
   /** Ширины всех столбцов, пока границу тянут (рисуются поверх модели); `null` — перетаскивание закончено. */
@@ -72,6 +76,18 @@ const MAX_WIDTH = 1200;
 const KEY_STEP = 10;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+/** Сортировка вида по столбцу: по возрастанию, по убыванию, снять. */
+const nextSort = (view: TableView, column: number): TableView => {
+  const current = view.sort;
+
+  if (!current || current.column !== column) return { ...view, sort: { column, direction: 'asc' } };
+  if (current.direction === 'asc') return { ...view, sort: { column, direction: 'desc' } };
+
+  const { sort: _sort, ...rest } = view;
+
+  return rest;
+};
 
 const prevent = (event: { preventDefault(): void }) => event.preventDefault();
 
@@ -174,6 +190,7 @@ export function TableControls(props: TableControlsProps) {
       {propertiesOf !== null && (
         <ColumnPropertiesDialog
           block={props.block}
+          view={props.activeView}
           column={propertiesOf}
           onClose={() => {
             setPropertiesOf(null);
@@ -188,6 +205,8 @@ export function TableControls(props: TableControlsProps) {
 function TableControlsLayer({
   block,
   tableRef,
+  activeView,
+  onSelectView,
   onPreview,
   onProperties,
 }: TableControlsProps & { readonly onProperties: (column: number) => void }) {
@@ -556,8 +575,45 @@ function TableControlsLayer({
       id: 'column-hide',
       title: t('table.column.hide'),
       icon: <Icon name="x" />,
-      disabled: !can('setTableColumnHidden', { index: column, hidden: true }),
-      run: () => perform(() => void run('setTableColumnHidden', { index: column, hidden: true })),
+      disabled: !canUpdateView(editor, block, activeView.id, (view) => ({
+        ...view,
+        hidden: setAt(view.hidden, column, true, false),
+      })),
+      run: () =>
+        perform(
+          () =>
+            void updateView(editor, block, activeView.id, (view) => ({
+              ...view,
+              hidden: setAt(view.hidden, column, true, false),
+            })),
+        ),
+    },
+    {
+      id: 'column-view-sort',
+      title: t(
+        activeView.sort?.column !== column
+          ? 'table.column.viewSortAsc'
+          : activeView.sort.direction === 'asc'
+            ? 'table.column.viewSortDesc'
+            : 'table.column.viewSortOff',
+      ),
+      icon: <Icon name={activeView.sort?.column === column ? 'arrow-down' : 'arrow-up'} />,
+      disabled: !canUpdateView(editor, block, activeView.id, (view) => nextSort(view, column)),
+      run: () =>
+        perform(
+          () => void updateView(editor, block, activeView.id, (view) => nextSort(view, column)),
+        ),
+    },
+    {
+      id: 'view-add',
+      title: t('table.view.add'),
+      icon: <Icon name="plus" />,
+      run: () =>
+        perform(() => {
+          const id = newViewId();
+
+          if (updateViews(editor, block, (views) => [...views, { id }])) onSelectView(id);
+        }),
     },
     {
       id: 'column-sort-asc',
@@ -787,7 +843,7 @@ function TableControlsLayer({
         <Icon name="plus" />
       </button>
       {edges.map((edge, column) =>
-        props.columnHidden?.[column] ? null : (
+        activeView.hidden?.[column] ? null : (
           <div
             {...control}
             key={column}

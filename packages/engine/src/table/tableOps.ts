@@ -1,4 +1,11 @@
-import { TABLE, TABLE_CELL, TABLE_ROW, type BlockId, type TableProps } from '@inkbrick/document';
+import {
+  TABLE,
+  TABLE_CELL,
+  TABLE_ROW,
+  type BlockId,
+  type TableProps,
+  type TableView,
+} from '@inkbrick/document';
 import type { Transaction } from '@inkbrick/store';
 
 import type { Engine } from '../editor/Engine';
@@ -9,8 +16,6 @@ export const COLUMN_LISTS = [
   { key: 'widths', fill: null },
   { key: 'columnTypes', fill: 'text' },
   { key: 'columnOptions', fill: null },
-  { key: 'columnHidden', fill: false },
-  { key: 'columnFilters', fill: null },
 ] as const;
 
 /**
@@ -21,8 +26,12 @@ export function shiftedLists(
   props: TableProps,
   columns: number,
   change: (list: unknown[], fill: unknown) => void,
-): Partial<Record<(typeof COLUMN_LISTS)[number]['key'], unknown[]>> | undefined {
-  const result: Partial<Record<(typeof COLUMN_LISTS)[number]['key'], unknown[]>> = {};
+):
+  | (Partial<Record<(typeof COLUMN_LISTS)[number]['key'], unknown[]>> & { views?: TableView[] })
+  | undefined {
+  const result: Partial<Record<(typeof COLUMN_LISTS)[number]['key'], unknown[]>> & {
+    views?: TableView[];
+  } = {};
 
   for (const { key, fill } of COLUMN_LISTS) {
     const list = props[key] as unknown[] | undefined;
@@ -33,6 +42,36 @@ export function shiftedLists(
 
     change(next, fill);
     result[key] = next;
+  }
+
+  // Виды: скрытые столбцы и фильтры — те же списки по столбцам, а столбец сортировки переезжает вместе со своим.
+  if (props.views) {
+    const moved = Array.from({ length: columns }, (_, i) => i);
+
+    change(moved, -1);
+
+    result.views = props.views.map((view): TableView => {
+      const next: TableView = { id: view.id };
+      const shift = <T>(list: readonly T[] | undefined, fill: T) => {
+        if (!list) return undefined;
+
+        const copy = Array.from({ length: columns }, (_, i) => list[i] ?? fill);
+
+        change(copy, fill);
+
+        return copy;
+      };
+      const hidden = shift(view.hidden, false);
+      const filters = shift(view.filters, null);
+      const column = view.sort ? moved.indexOf(view.sort.column) : -1;
+
+      if (view.name !== undefined) next.name = view.name;
+      if (hidden) next.hidden = hidden;
+      if (filters) next.filters = filters;
+      if (view.sort && column >= 0) next.sort = { ...view.sort, column };
+
+      return next;
+    });
   }
 
   return Object.keys(result).length > 0 ? result : undefined;

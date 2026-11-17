@@ -9,6 +9,7 @@ import {
   type TableFilter,
   type TableOption,
   type TableProps,
+  type TableView,
 } from '@inkbrick/document';
 
 import { useEditor } from '../hooks/useEditor';
@@ -16,9 +17,12 @@ import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import { isSelectType } from './columnTypes';
 import { filterNeedsValue, filterOpsFor } from './tableFilter';
+import { canUpdateView, setAt, updateView } from './views';
 
 export interface ColumnPropertiesDialogProps {
   readonly block: BaseBlock;
+  /** Открытый вид: фильтр столбца относится к нему. */
+  readonly view: TableView;
   readonly column: number;
   readonly onClose: () => void;
 }
@@ -27,7 +31,12 @@ export interface ColumnPropertiesDialogProps {
  * Свойства столбца: тип и, для выбора и мультивыбора, варианты списка с цветом. Изменения применяются кнопкой
  * «Готово» одним шагом отмены; Esc и «Отмена» закрывают без изменений.
  */
-export function ColumnPropertiesDialog({ block, column, onClose }: ColumnPropertiesDialogProps) {
+export function ColumnPropertiesDialog({
+  block,
+  view,
+  column,
+  onClose,
+}: ColumnPropertiesDialogProps) {
   const editor = useEditor();
   const t = useT();
   const props = block.props as TableProps;
@@ -35,14 +44,13 @@ export function ColumnPropertiesDialog({ block, column, onClose }: ColumnPropert
   const [options, setOptions] = useState<TableOption[]>(
     () => props.columnOptions?.[column]?.map((option) => ({ ...option })) ?? [],
   );
-  const [filter, setFilter] = useState<TableFilter | null>(props.columnFilters?.[column] ?? null);
+  const [filter, setFilter] = useState<TableFilter | null>(view.filters?.[column] ?? null);
   const first = useRef<HTMLSelectElement>(null);
   // Фильтры и скрытие недоступны в таблице с объединёнными ячейками.
-  const canFilter = editor.can('setTableColumnFilter', {
-    blockId: block.id,
-    index: column,
-    filter: null,
-  } as never);
+  const canFilter = canUpdateView(editor, block, view.id, (current) => ({
+    ...current,
+    filters: setAt(current.filters, column, { op: 'empty' }, null),
+  }));
   const ops = filterOpsFor(type);
   // Условие, которого нет у нового типа столбца, не остаётся: «больше» для флажка было бы бессмысленно.
   const activeFilter = filter && ops.includes(filter.op) ? filter : null;
@@ -80,10 +88,10 @@ export function ColumnPropertiesDialog({ block, column, onClose }: ColumnPropert
       } as never);
 
       if (canFilter) {
-        editor.dispatch({
-          type: 'setTableColumnFilter',
-          payload: { blockId: block.id, index: column, filter: activeFilter },
-        } as never);
+        updateView(editor, block, view.id, (current) => ({
+          ...current,
+          filters: setAt(current.filters, column, activeFilter, null),
+        }));
       }
     });
     onClose();

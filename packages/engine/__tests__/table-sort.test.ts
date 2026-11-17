@@ -220,7 +220,7 @@ describe('column types: checkbox, select and options', () => {
   });
 });
 
-describe('table view: hidden columns and filters', () => {
+describe('table views', () => {
   const make = () =>
     createTableEditor({
       rows: [
@@ -228,68 +228,97 @@ describe('table view: hidden columns and filters', () => {
         ['1', '2', '3'],
       ],
     });
-  const run = (editor: ReturnType<typeof make>, type: string, payload: Record<string, unknown>) =>
-    editor.dispatch({ type, payload: { blockId: tableIdOf(editor), ...payload } } as never);
-  const can = (editor: ReturnType<typeof make>, type: string, payload: Record<string, unknown>) =>
-    editor.can(type as never, { blockId: tableIdOf(editor), ...payload } as never);
+  const run = (editor: ReturnType<typeof make>, views: unknown) =>
+    editor.dispatch({
+      type: 'setTableViews',
+      payload: { blockId: tableIdOf(editor), views },
+    } as never);
+  const can = (editor: ReturnType<typeof make>, views: unknown) =>
+    editor.can('setTableViews' as never, { blockId: tableIdOf(editor), views } as never);
   const props = (editor: ReturnType<typeof make>) =>
     editor.document.getBlock(tableIdOf(editor)!)!.props;
+  const column = (editor: ReturnType<typeof make>, type: string, payload: object) =>
+    editor.dispatch({ type, payload: { blockId: tableIdOf(editor), ...payload } } as never);
 
-  it('hides and shows columns, keeps the list with the columns and never hides the last visible one', () => {
+  it('replaces the views in one undo step and an empty list returns to a single plain view', () => {
     const editor = make();
+    const views = [
+      { id: 'a', name: 'All' },
+      { id: 'b', hidden: [false, true, false], sort: { column: 0, direction: 'desc' } },
+    ];
 
-    run(editor, 'setTableColumnHidden', { index: 1, hidden: true });
-    expect(props(editor).columnHidden).toEqual([false, true, false]);
+    run(editor, views);
+    expect(props(editor).views).toEqual(views);
 
-    run(editor, 'insertTableColumn', { index: 0 });
-    expect(props(editor).columnHidden).toEqual([false, false, true, false]);
+    editor.store.undo();
+    expect(props(editor).views).toBeUndefined();
 
-    run(editor, 'moveTableColumn', { from: 2, to: 0 });
-    expect(props(editor).columnHidden).toEqual([true, false, false, false]);
-
-    run(editor, 'setTableColumnHidden', { index: 0, hidden: false });
-    expect(props(editor).columnHidden).toBeUndefined();
-
-    run(editor, 'setTableColumnHidden', { index: 0, hidden: true });
-    run(editor, 'setTableColumnHidden', { index: 1, hidden: true });
-    run(editor, 'setTableColumnHidden', { index: 2, hidden: true });
-    expect(can(editor, 'setTableColumnHidden', { index: 3, hidden: true })).toBe(false);
-    expect(can(editor, 'setTableColumnHidden', { index: 3, hidden: false })).toBe(true);
-    expect(can(editor, 'setTableColumnHidden', { index: 9, hidden: true })).toBe(false);
+    run(editor, views);
+    run(editor, []);
+    expect(props(editor).views).toBeUndefined();
   });
 
-  it('stores filters per column, clears them with null and moves them with their columns', () => {
+  it('moves hidden columns, filters and the sort column with their columns in every view', () => {
     const editor = make();
     const filter = { op: 'contains', value: 'x' };
 
-    run(editor, 'setTableColumnFilter', { index: 2, filter });
-    expect(props(editor).columnFilters).toEqual([null, null, filter]);
+    run(editor, [
+      { id: 'a', hidden: [false, true, false], filters: [null, null, filter] },
+      { id: 'b', sort: { column: 2, direction: 'asc' } },
+    ]);
 
-    run(editor, 'insertTableColumn', { index: 0 });
-    expect(props(editor).columnFilters).toEqual([null, null, null, filter]);
+    column(editor, 'insertTableColumn', { index: 0 });
+    expect(props(editor).views).toEqual([
+      { id: 'a', hidden: [false, false, true, false], filters: [null, null, null, filter] },
+      { id: 'b', sort: { column: 3, direction: 'asc' } },
+    ]);
 
-    run(editor, 'setTableColumnFilter', { index: 3, filter: null });
-    expect(props(editor).columnFilters).toBeUndefined();
+    column(editor, 'moveTableColumn', { from: 3, to: 0 });
+    expect(props(editor).views).toEqual([
+      { id: 'a', hidden: [false, false, false, true], filters: [filter, null, null, null] },
+      { id: 'b', sort: { column: 0, direction: 'asc' } },
+    ]);
+
+    column(editor, 'deleteTableColumn', { index: 0 });
+    expect((props(editor).views as { sort?: unknown }[])[1].sort).toBeUndefined();
+    expect((props(editor).views as { filters?: unknown[] }[])[0].filters).toEqual([
+      null,
+      null,
+      null,
+    ]);
   });
 
-  it('rejects unknown conditions, a missing column and a view change on merged cells; one undo step', () => {
+  it('rejects duplicate codes, unknown columns and conditions, and a view with no visible column', () => {
     const editor = make();
 
-    expect(can(editor, 'setTableColumnFilter', { index: 0, filter: { op: 'like' } })).toBe(false);
-    expect(can(editor, 'setTableColumnFilter', { index: 9, filter: null })).toBe(false);
+    expect(can(editor, [{ id: 'a' }, { id: 'a' }])).toBe(false);
+    expect(can(editor, [{ id: '' }])).toBe(false);
+    expect(can(editor, [{ id: 'a', hidden: [true, true, true] }])).toBe(false);
+    expect(can(editor, [{ id: 'a', hidden: [true, true, false] }])).toBe(true);
+    expect(can(editor, [{ id: 'a', hidden: [false, false, false, true] }])).toBe(false);
+    expect(can(editor, [{ id: 'a', filters: [{ op: 'like' }] }])).toBe(false);
+    expect(can(editor, [{ id: 'a', filters: [{ op: 'equals', value: 'a'.repeat(300) }] }])).toBe(
+      false,
+    );
+    expect(can(editor, [{ id: 'a', sort: { column: 9, direction: 'asc' } }])).toBe(false);
+    expect(can(editor, [{ id: 'a', sort: { column: 0, direction: 'up' } }])).toBe(false);
+    expect(can(editor, 'views')).toBe(false);
     expect(
-      can(editor, 'setTableColumnFilter', {
-        index: 0,
-        filter: { op: 'equals', value: 'a'.repeat(300) },
-      }),
+      can(
+        editor,
+        Array.from({ length: 21 }, (_, i) => ({ id: `v${i}` })),
+      ),
     ).toBe(false);
+  });
 
-    run(editor, 'setTableColumnFilter', { index: 0, filter: { op: 'empty' } });
-    editor.store.undo();
-    expect(props(editor).columnFilters).toBeUndefined();
+  it('with merged cells views may exist but cannot hide, filter or sort', () => {
+    const editor = make();
 
-    run(editor, 'mergeTableCells', { range: { top: 0, left: 0, bottom: 0, right: 1 } });
-    expect(can(editor, 'setTableColumnHidden', { index: 2, hidden: true })).toBe(false);
-    expect(can(editor, 'setTableColumnFilter', { index: 0, filter: null })).toBe(false);
+    column(editor, 'mergeTableCells', { range: { top: 0, left: 0, bottom: 0, right: 1 } });
+
+    expect(can(editor, [{ id: 'a' }, { id: 'b', name: 'Two' }])).toBe(true);
+    expect(can(editor, [{ id: 'a', hidden: [false, false, true] }])).toBe(false);
+    expect(can(editor, [{ id: 'a', filters: [{ op: 'empty' }] }])).toBe(false);
+    expect(can(editor, [{ id: 'a', sort: { column: 0, direction: 'asc' } }])).toBe(false);
   });
 });

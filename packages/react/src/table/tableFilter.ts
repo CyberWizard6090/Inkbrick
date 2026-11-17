@@ -4,9 +4,10 @@ import type {
   TableColumnType,
   TableFilter,
   TableProps,
+  TableView,
 } from '@inkbrick/document';
 
-import { parseDate, parseNumber } from '@inkbrick/engine';
+import { parseDate, parseNumber, sortKey, sortedOrder } from '@inkbrick/engine';
 
 /** Какие условия имеет смысл предлагать для типа столбца. */
 export function filterOpsFor(type: TableColumnType): readonly TableFilter['op'][] {
@@ -80,22 +81,18 @@ export function matchesFilter(text: string, type: TableColumnType, filter: Table
   }
 }
 
-/** Есть ли у таблицы действующие фильтры. */
-export const hasFilters = (props: TableProps): boolean =>
-  !!props.columnFilters?.some((filter) => filter);
-
 /**
- * Строки таблицы, скрытые фильтрами (id строк). Заголовок не фильтруется; строка скрыта, если не подходит хотя бы
- * одному фильтру. `textOf` — текст ячейки по её id.
+ * Строки таблицы, скрытые фильтрами вида (id строк). Заголовок не фильтруется; строка скрыта, если не подходит хотя бы
+ * одному фильтру. `textOf` — текст ячейки.
  */
 export function filteredRowIds(
   table: BaseBlock,
   getBlock: (id: BlockId) => BaseBlock | undefined,
   textOf: (cell: BaseBlock) => string,
+  filters: readonly (TableFilter | null | undefined)[] | undefined,
 ): Set<BlockId> {
   const props = table.props as TableProps;
   const hidden = new Set<BlockId>();
-  const filters = props.columnFilters;
 
   if (!filters?.some((filter) => filter)) return hidden;
 
@@ -118,4 +115,32 @@ export function filteredRowIds(
   }
 
   return hidden;
+}
+
+/**
+ * Порядок показа строк вида: заголовок первым, остальные по столбцу сортировки (как при сортировке данных, но порядок в
+ * документе не меняется). `null` — порядок документа.
+ */
+export function sortedRowIds(
+  table: BaseBlock,
+  getBlock: (id: BlockId) => BaseBlock | undefined,
+  textOf: (cell: BaseBlock) => string,
+  sort: TableView['sort'],
+): BlockId[] | null {
+  if (!sort) return null;
+
+  const props = table.props as TableProps;
+  const fixed = props.header === false ? 0 : 1;
+  const rows = table.children.slice(fixed);
+  const type = props.columnTypes?.[sort.column] ?? 'text';
+  const keys = rows.map((rowId) => {
+    const cell = getBlock(getBlock(rowId)?.children[sort.column] ?? '');
+
+    return sortKey(cell ? textOf(cell) : '', type);
+  });
+
+  return [
+    ...table.children.slice(0, fixed),
+    ...sortedOrder(keys, sort.direction).map((index) => rows[index]),
+  ];
 }
