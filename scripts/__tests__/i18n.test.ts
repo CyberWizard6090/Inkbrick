@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { en as editorEn } from '../../packages/locales/src/en';
-import { ru as editorRu } from '../../packages/locales/src/ru';
 import { en as sandboxEn } from '../../apps/sandbox/src/i18n/en';
 import { ru as sandboxRu } from '../../apps/sandbox/src/i18n/ru';
 import { de } from '../../apps/sandbox/src/locales/de';
@@ -28,8 +27,27 @@ interface Pair {
   readonly ru: Dictionary;
 }
 
+/** Все языки пакета словарей: файл `packages/locales/src/<код>.ts` с экспортом `<код>`. Новый язык проверяется сам. */
+const editorLanguages = import.meta.glob<Record<string, Dictionary>>(
+  '../../packages/locales/src/*.ts',
+  {
+    eager: true,
+  },
+);
+
 const PAIRS: readonly Pair[] = [
-  { name: 'editor (@inkbrick/react)', en: editorEn, ru: editorRu },
+  ...Object.entries(editorLanguages)
+    .map(([path, module]) => ({
+      code: path.slice(path.lastIndexOf('/') + 1, -'.ts'.length),
+      module,
+    }))
+    .filter(({ code }) => code !== 'index' && code !== 'en')
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .map(({ code, module }) => ({
+      name: `editor (@inkbrick/locales, ${code})`,
+      en: editorEn,
+      ru: module[code],
+    })),
   { name: 'sandbox (apps/sandbox)', en: sandboxEn, ru: sandboxRu },
 ];
 
