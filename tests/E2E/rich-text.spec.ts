@@ -109,6 +109,8 @@ test.describe('Block formula', () => {
 
   test('an empty formula block can be left and is shown as a prompt', async ({ page }) => {
     await typeLine(page, '$$ ');
+    // Escape уходит из поля, поэтому ждём, пока блок станет формулой и поле получит фокус: нажатие раньше попадало бы в документ.
+    await expect(page.locator('[data-inkbrick-part="formula-source"]')).toBeFocused();
     await page.keyboard.press('Escape');
 
     await expect(page.locator('[data-inkbrick-part="formula-empty"]')).toBeVisible();
