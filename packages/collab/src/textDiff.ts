@@ -76,7 +76,20 @@ function runAt(runs: readonly Run[], index: number): TextAttributes {
  *  3. Вставка передаёт полный набор атрибутов (снятые — `null`): без этого Yjs наследует атрибуты соседа.
  *  4. Во всём тексте атрибуты сравниваются по отрезкам; отличия пишутся `text.format`.
  */
-export function applyContent(text: Y.Text, content: readonly InlineNode[]): void {
+export interface ApplyOptions {
+  /** Самая длинная вставка в единицах UTF-16; длиннее режется на несколько. По умолчанию не режется. */
+  chunk?: number;
+  /** Каждая запись в `Y.Text` выполняется через неё (своя транзакция на каждую, чтобы обновления вышли небольшими). */
+  wrap?: (write: () => void) => void;
+}
+
+export function applyContent(
+  text: Y.Text,
+  content: readonly InlineNode[],
+  options: ApplyOptions = {},
+): void {
+  const perform = options.wrap ?? ((write: () => void) => write());
+  const chunk = options.chunk ?? Number.POSITIVE_INFINITY;
   const target = normalizeInlineNodes(
     content.map((node) => {
       const attributes = cleanAttrs(node.attributes);
@@ -109,7 +122,7 @@ export function applyContent(text: Y.Text, content: readonly InlineNode[]): void
 
     const removed = before.length - prefix - suffix;
 
-    if (removed > 0) text.delete(prefix, removed);
+    if (removed > 0) perform(() => text.delete(prefix, removed));
 
     const insertEnd = after.length - suffix;
 
@@ -132,8 +145,23 @@ export function applyContent(text: Y.Text, content: readonly InlineNode[]): void
 
         for (const key of keys) full[key] = (run.attrs as Attrs)[key] ?? null;
 
-        text.insert(cursor, after.slice(from, to), full);
-        cursor += to - from;
+        const value = after.slice(from, to);
+
+        for (let start = 0; start < value.length;) {
+          let end = Math.min(value.length, start + chunk);
+
+          // Пару суррогатов не разрезаем: иначе Yjs заменит половинки на U+FFFD.
+          if (end < value.length && end - start > 1 && isHighSurrogate(value.charCodeAt(end - 1))) {
+            end--;
+          }
+
+          const piece = value.slice(start, end);
+          const at = cursor;
+
+          perform(() => text.insert(at, piece, full));
+          cursor += piece.length;
+          start = end;
+        }
       }
     }
   }
@@ -160,7 +188,7 @@ export function applyContent(text: Y.Text, content: readonly InlineNode[]): void
       if (want[key] !== have[key]) change[key] = want[key] ?? null;
     }
 
-    if (Object.keys(change).length > 0) text.format(from, to - from, change);
+    if (Object.keys(change).length > 0) perform(() => text.format(from, to - from, change));
   }
 }
 

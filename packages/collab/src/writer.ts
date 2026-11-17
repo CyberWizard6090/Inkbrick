@@ -4,7 +4,7 @@ import type { BaseBlock, BlockId } from '@inkbrick/document';
 
 import { deepEqual } from './equal';
 import { readPlace, type Place, type YBlock } from './format';
-import { compareOrder, keyBetween } from './order';
+import { compareOrder, keysBetween } from './order';
 import { applyContent, inlineEquals, readInline } from './textDiff';
 
 /**
@@ -12,7 +12,18 @@ import { applyContent, inlineEquals, readInline } from './textDiff';
  * Вызывается внутри транзакции Yjs. Блок создаётся сразу с `text` (даже пустым): иначе два клиента, создавшие
  * текст одного блока независимо, получили бы два текста.
  */
-export function writeBlockData(blocks: Y.Map<YBlock>, block: BaseBlock): void {
+export interface WriteOptions {
+  /** Не записывать `place`: блок без него остальные не видят (правило 1 проекции), он появится при `ensurePlace`. */
+  deferPlace?: boolean;
+  /** Не записывать текст: его запишут отдельно по частям. */
+  skipText?: boolean;
+}
+
+export function writeBlockData(
+  blocks: Y.Map<YBlock>,
+  block: BaseBlock,
+  options: WriteOptions = {},
+): void {
   let yblock = blocks.get(block.id);
 
   if (!(yblock instanceof Y.Map)) {
@@ -48,7 +59,18 @@ export function writeBlockData(blocks: Y.Map<YBlock>, block: BaseBlock): void {
 
   const ytext = text as Y.Text;
 
-  if (!inlineEquals(readInline(ytext), block.content)) applyContent(ytext, block.content);
+  if (!options.skipText && !inlineEquals(readInline(ytext), block.content)) {
+    applyContent(ytext, block.content);
+  }
+
+  if (!options.deferPlace) ensurePlace(blocks, block);
+}
+
+/** Родитель блока в `place`; порядок среди соседей назначает `reconcileChildren`. */
+export function ensurePlace(blocks: Y.Map<YBlock>, block: BaseBlock): void {
+  const yblock = blocks.get(block.id);
+
+  if (!(yblock instanceof Y.Map)) return;
 
   const place = readPlace(yblock.get('place'));
 
@@ -118,6 +140,7 @@ export function reconcileChildren(
   blocks: Y.Map<YBlock>,
   parentId: BlockId,
   desired: readonly BlockId[],
+  options: ReconcileOptions = {},
 ): void {
   const ids = desired.filter((id) => blocks.get(id) instanceof Y.Map);
   // Блок без ключа (только что создан) ещё не стоит на месте: порядок ему назначается ниже.
@@ -147,17 +170,44 @@ export function reconcileChildren(
     if (kept.has(i)) following = keyOf.get(ids[i])!;
   }
 
+  const assignments: Array<[BlockId, string]> = [];
+  let index = 0;
   let previousKey: string | null = null;
 
-  ids.forEach((id, index) => {
+  while (index < ids.length) {
     if (kept.has(index)) {
-      previousKey = keyOf.get(id)!;
-      return;
+      previousKey = keyOf.get(ids[index])!;
+      index++;
+      continue;
     }
 
-    const key = keyBetween(previousKey, nextKept[index]);
+    // Серия блоков без ключа между двумя сохранёнными: ключи делятся поровну, а не наращиваются по одному.
+    let end = index;
 
-    (blocks.get(id) as YBlock).set('place', { p: parentId, k: key } satisfies Place);
-    previousKey = key;
-  });
+    while (end < ids.length && !kept.has(end)) end++;
+
+    const keys = keysBetween(previousKey, nextKept[index], end - index);
+
+    keys.forEach((key, offset) => assignments.push([ids[index + offset], key]));
+    previousKey = keys[keys.length - 1];
+    index = end;
+  }
+
+  // Ключи посчитаны целиком, поэтому запись по группам даёт тот же порядок, что и одной транзакцией.
+  const perform = options.wrap ?? ((write: () => void) => write());
+  const group = options.group ?? Math.max(1, assignments.length);
+
+  for (let start = 0; start < assignments.length; start += group) {
+    perform(() => {
+      for (const [id, key] of assignments.slice(start, start + group)) {
+        (blocks.get(id) as YBlock).set('place', { p: parentId, k: key } satisfies Place);
+      }
+    });
+  }
+}
+
+export interface ReconcileOptions {
+  /** Запись выполняется через неё, группами по `group` блоков (для большой вставки: каждая группа в своей транзакции). */
+  wrap?: (write: () => void) => void;
+  group?: number;
 }

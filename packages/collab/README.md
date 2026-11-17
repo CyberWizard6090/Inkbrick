@@ -95,3 +95,17 @@ never see different or broken documents:
 
 `schema/blocks.json` lists the nesting rules of all editor blocks (the server reads it). After a change of schemas:
 `UPDATE_SCHEMA_JSON=1 pnpm vitest run packages/collab/__tests__/exportSchema.test.ts`.
+
+## Big pastes
+
+A paste of hundreds of thousands of characters, or thousands of blocks, is not sent as one update (the server takes up to
+512 KiB). The bridge writes it in several transactions, each producing its own update of about 200 KiB or less: the text of a
+huge block in pieces, new blocks in batches without a `place` (other people do not see them yet), and the places last, in
+groups. The paste appears for others when its places arrive and is undone in one step. The pieces keep their order on the way
+to the server, and the connection keeps them apart instead of merging them above 400 KiB.
+
+A single value that cannot be cut (a property of one block that is itself larger than the limit) is still refused with
+`UPDATE_TOO_LARGE`.
+
+Order keys of blocks added in a row are spread evenly (`keysBetween`), so a thousand paragraphs do not get keys of hundreds of
+characters.

@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import type { BaseBlock } from '@inkbrick/document';
 
 import { renderCode } from '../editing/renderCode';
+import { mapOffset, restoreSelectionIn, saveSelectionIn } from '../editing/preserveSelection';
 import { renderInline } from '../editing/renderInline';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -52,7 +53,17 @@ export function Editable({ block, placeholder }: EditableProps) {
   );
   const language = typeof block.props.language === 'string' ? block.props.language : 'plain';
 
+  // Текст, который сейчас нарисован: по нему видно, насколько сдвинулся текст при перерисовке из модели.
+  const drawn = useRef<string | null>(null);
+
   useLayoutEffect(() => {
+    const element = ref.current!;
+    const drawnText = block.content.map((node) => node.insert).join('');
+    // Перерисовка заменяет весь DOM блока, и браузер уводит каретку в его начало. Каретка запоминается и ставится на место с учётом сдвига. Своя правка тоже проходит
+    // здесь, но после неё команда сама ставит каретку (`placeCaret`) и перекрывает это.
+    const saved = drawn.current !== null ? saveSelectionIn(element) : null;
+    const previous = drawn.current;
+
     const plain = block.content.every((node) => !node.attributes);
 
     // Код — простой текст: подсветка только оборачивает его в <span data-inkbrick-token>, не меняя символов.
@@ -71,6 +82,15 @@ export function Editable({ block, placeholder }: EditableProps) {
     } else {
       renderInline(ref.current!, block.content, { formulaRenderer });
     }
+
+    if (saved && previous !== null) {
+      restoreSelectionIn(element, {
+        anchor: mapOffset(previous, drawnText, saved.anchor),
+        focus: mapOffset(previous, drawnText, saved.focus),
+      });
+    }
+
+    drawn.current = drawnText;
   }, [block.content, isCode, language, highlighter, formulaRenderer, highlighterReady]);
 
   const isEmpty = block.content.every((node) => node.insert.length === 0);

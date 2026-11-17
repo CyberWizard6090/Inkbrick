@@ -16,6 +16,7 @@ import {
   type DocumentStore,
 } from '@inkbrick/store';
 
+import { BATCH_BYTES, CHUNK_UNITS, PLACES_PER_BATCH, needsBatches, writeWeight } from './batches';
 import { deepEqual } from './equal';
 import { COLLAB_ORIGIN, getBlocks, isInitialized, readPlace, type YBlock } from './format';
 import { normalizeSnapshot, project } from './project';
@@ -26,8 +27,13 @@ import {
   type SharedSelection,
 } from './selection';
 import { captureForeign, dropReturned, rescueForeign, type Rescued } from './rescue';
-import { inlineEquals } from './textDiff';
-import { reconcileChildren, writeBlockData } from './writer';
+import { applyContent, inlineEquals } from './textDiff';
+import {
+  reconcileChildren,
+  writeBlockData,
+  type ReconcileOptions,
+  type WriteOptions,
+} from './writer';
 
 /** Метка обновлений, пришедших снаружи: их не нужно отправлять обратно. */
 export const REMOTE_ORIGIN = 'inkbrick-remote';
@@ -385,62 +391,28 @@ export class Collab {
 
     if (!store) return;
 
-    this.ydoc.transact(() => {
-      const blocks = getBlocks(this.ydoc);
-      const present: BaseBlock[] = [];
-      const removed: BlockId[] = [];
+    const blocks = getBlocks(this.ydoc);
+    const present: BaseBlock[] = [];
+    const removed: BlockId[] = [];
 
-      for (const id of ids) {
-        const block = store.getBlock(id);
+    for (const id of ids) {
+      const block = store.getBlock(id);
 
-        if (block) present.push(block);
-        else removed.push(id);
-      }
+      if (block) present.push(block);
+      else removed.push(id);
+    }
 
-      if (removed.length > 0) this.removeSubtrees(blocks, removed, store);
+    if (needsBatches(blocks, present)) {
+      this.pushInBatches(blocks, present, removed, store);
+    } else {
+      this.ydoc.transact(() => {
+        if (removed.length > 0) this.removeSubtrees(blocks, removed, store);
 
-      for (const block of present) {
-        // Предки, достроенные правилом 4 (строка, которой ещё нет в Y.Doc), становятся настоящими вместе с блоком,
-        // иначе блок остался бы без родителя и проекция отбросила бы его.
-        const missing: BaseBlock[] = [];
+        for (const block of present) this.writeWithAncestors(blocks, block, store, {});
 
-        for (
-          let parent = block.parentId ? store.getBlock(block.parentId) : undefined;
-          parent && !(blocks.get(parent.id) instanceof Y.Map);
-          parent = parent.parentId ? store.getBlock(parent.parentId) : undefined
-        ) {
-          missing.push(parent);
-        }
-
-        for (const parent of missing.reverse()) writeBlockData(blocks, parent);
-
-        writeBlockData(blocks, block);
-      }
-
-      const parents = new Set<BlockId>();
-
-      for (const block of present) {
-        parents.add(block.id);
-
-        if (block.parentId) parents.add(block.parentId);
-      }
-
-      for (const parentId of parents) {
-        const parent = store.getBlock(parentId);
-
-        if (!parent) continue;
-
-        // Блоки, которых нет в Y.Doc, но которые уже лежат в хранилище, — достроенные правилом 4 (ячейка в короткой
-        // строке, абзац в пустой колонке). Правка рядом с ними делает их настоящими, чтобы у всех было одно и то же.
-        for (const childId of parent.children) {
-          const child = store.getBlock(childId);
-
-          if (child && !(blocks.get(childId) instanceof Y.Map)) writeBlockData(blocks, child);
-        }
-
-        reconcileChildren(blocks, parentId, parent.children);
-      }
-    }, COLLAB_ORIGIN);
+        this.reconcileParents(blocks, present, store);
+      }, COLLAB_ORIGIN);
+    }
 
     // Удалённый блок мог занимать идентификатор, который правило 4 выдаёт достроенному блоку (`<родитель>~paragraph0`):
     // тогда достроенный блок получил запасной идентификатор и теперь должен вернуться к основному.
@@ -465,6 +437,123 @@ export class Collab {
         break;
       }
     }
+  }
+
+  /** Записывает блок; предки, которых ещё нет в `Y.Doc` (достроены правилом 4), становятся настоящими вместе с ним. */
+  private writeWithAncestors(
+    blocks: Y.Map<YBlock>,
+    block: BaseBlock,
+    store: DocumentStore,
+    options: WriteOptions,
+  ): void {
+    // Иначе блок остался бы без родителя и проекция отбросила бы его.
+    const missing: BaseBlock[] = [];
+
+    for (
+      let parent = block.parentId ? store.getBlock(block.parentId) : undefined;
+      parent && !(blocks.get(parent.id) instanceof Y.Map);
+      parent = parent.parentId ? store.getBlock(parent.parentId) : undefined
+    ) {
+      missing.push(parent);
+    }
+
+    for (const parent of missing.reverse()) writeBlockData(blocks, parent, options);
+
+    writeBlockData(blocks, block, options);
+  }
+
+  /** Порядок потомков у родителей записанных блоков. */
+  private reconcileParents(
+    blocks: Y.Map<YBlock>,
+    present: readonly BaseBlock[],
+    store: DocumentStore,
+    options: ReconcileOptions = {},
+  ): void {
+    const perform = options.wrap ?? ((write: () => void) => write());
+
+    const parents = new Set<BlockId>();
+
+    for (const block of present) {
+      parents.add(block.id);
+
+      if (block.parentId) parents.add(block.parentId);
+    }
+
+    for (const parentId of parents) {
+      const parent = store.getBlock(parentId);
+
+      if (!parent) continue;
+
+      // Блоки, которых нет в Y.Doc, но которые уже лежат в хранилище, — достроенные правилом 4 (ячейка в короткой
+      // строке, абзац в пустой колонке). Правка рядом с ними делает их настоящими, чтобы у всех было одно и то же.
+      for (const childId of parent.children) {
+        const child = store.getBlock(childId);
+
+        if (child && !(blocks.get(childId) instanceof Y.Map)) {
+          perform(() => writeBlockData(blocks, child));
+        }
+      }
+
+      reconcileChildren(blocks, parentId, parent.children, options);
+    }
+  }
+
+  /**
+   * Большая вставка: блоки пишутся пакетами, текст огромного блока — кусками, каждый кусок в своей транзакции, и
+   * каждая транзакция даёт обновление, которое пролезает на сервер. Новые блоки пишутся без `place`, поэтому остальные
+   * участники их не видят, пока последняя транзакция не поставит их на места; вставка появляется целиком.
+   */
+  private pushInBatches(
+    blocks: Y.Map<YBlock>,
+    present: readonly BaseBlock[],
+    removed: readonly BlockId[],
+    store: DocumentStore,
+  ): void {
+    const wrap = (write: () => void): void => this.ydoc.transact(write, COLLAB_ORIGIN);
+    const deferred = { deferPlace: true } satisfies WriteOptions;
+    let batch: BaseBlock[] = [];
+    let weight = 0;
+
+    const flush = (): void => {
+      const group = batch;
+
+      batch = [];
+      weight = 0;
+
+      if (group.length === 0) return;
+
+      wrap(() => {
+        for (const block of group) this.writeWithAncestors(blocks, block, store, deferred);
+      });
+    };
+
+    for (const block of present) {
+      const cost = writeWeight(blocks, block);
+
+      if (cost > BATCH_BYTES) {
+        flush();
+        wrap(() =>
+          this.writeWithAncestors(blocks, block, store, { deferPlace: true, skipText: true }),
+        );
+
+        const ytext = (blocks.get(block.id) as YBlock).get('text') as Y.Text;
+
+        applyContent(ytext, block.content, { chunk: CHUNK_UNITS, wrap });
+        continue;
+      }
+
+      if (weight + cost > BATCH_BYTES) flush();
+
+      batch.push(block);
+      weight += cost;
+    }
+
+    flush();
+
+    if (removed.length > 0) wrap(() => this.removeSubtrees(blocks, removed, store));
+
+    // Позиции получают все записанные блоки: новые у расстановки порядка не «сохранены» и ключ берут отсюда.
+    this.reconcileParents(blocks, present, store, { wrap, group: PLACES_PER_BATCH });
   }
 
   /**

@@ -38,6 +38,20 @@ export function keyBetween(a: string | null, b: string | null): string {
   return midpoint(lower, b);
 }
 
+/**
+ * `count` возрастающих ключей строго между `a` и `b`. Ключи делят промежуток пополам рекурсивно, поэтому их длина
+ * растёт как логарифм `count`; `count` вызовов `keyBetween(prev, null)` подряд дают ключи, которые удлиняются на знак
+ * за три-четыре блока (4000 абзацев подряд дали бы ключи по тысяче знаков).
+ */
+export function keysBetween(a: string | null, b: string | null, count: number): string[] {
+  if (count <= 0) return [];
+
+  const middle = Math.floor((count - 1) / 2);
+  const key = keyBetween(a, b);
+
+  return [...keysBetween(a, key, middle), key, ...keysBetween(key, b, count - 1 - middle)];
+}
+
 /** Порядок потомков: сначала ключ, при равенстве идентификатор блока. */
 export function compareOrder(a: { k: string; id: string }, b: { k: string; id: string }): number {
   if (a.k !== b.k) return a.k < b.k ? -1 : 1;

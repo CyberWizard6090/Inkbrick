@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Editor } from '@inkbrick/engine';
 
 import {
+  COLLAB_ORIGIN,
   DocumentConnection,
   createCollab,
   loadDocument,
@@ -322,17 +323,39 @@ describe('DocumentConnection', () => {
     expect([...server.sockets][0].received.filter((frame) => frame.type === 'update')).toEqual([]);
   });
 
-  it('never sends an update larger than the server accepts', async () => {
+  it('sends a huge paste in pieces that fit, and the other person gets all of it', async () => {
     const server = newServer();
     const ann = await client(server, 'ann', true, 0);
     const bob = await client(server, 'bob', true, 0);
+    const body = 'ж'.repeat(300_000);
 
-    // 300 000 Cyrillic characters are about 600 KiB as an update: over the limit of 512 KiB.
-    ann.type('ж'.repeat(300_000));
+    // 300 000 Cyrillic characters are about 600 KiB as one update, over the limit of 512 KiB.
+    ann.type(body);
+    await until(() => bob.text() === body, 'the whole paste to arrive', 10_000);
+    await until(() => ann.connection.unsent === 0, 'the acknowledgements');
+
+    expect(ann.errors).toEqual([]);
+    expect(
+      [...server.sockets][0].received.filter((frame) => frame.type === 'update').length,
+    ).toBeGreaterThan(1);
+  });
+
+  it('never sends one update larger than the server accepts, and says so', async () => {
+    const server = newServer();
+    const ann = await client(server, 'ann', true, 0);
+    const bob = await client(server, 'bob', true, 0);
+    const block =
+      Object.keys(ann.collab.snapshot().blocks).find((id) => id === 'p1') ??
+      Object.keys(ann.collab.snapshot().blocks)[2];
+    const props = (ann.collab.ydoc.getMap('blocks').get(block) as Y.Map<unknown>).get(
+      'props',
+    ) as Y.Map<unknown>;
+
+    // A single value cannot be cut in pieces: 400 000 Cyrillic characters in one property.
+    ann.collab.ydoc.transact(() => props.set('big', 'я'.repeat(400_000)), COLLAB_ORIGIN);
     await until(() => ann.errors.length > 0, 'the report');
 
     expect(ann.errors[0]).toMatchObject({ code: 'UPDATE_TOO_LARGE', status: 413 });
-    expect(ann.connection.unsent).toBe(0);
     expect(ann.connection.status).toBe('online');
     expect([...server.sockets][0].received.filter((frame) => frame.type === 'update')).toEqual([]);
     expect(bob.text()).toBe('');
