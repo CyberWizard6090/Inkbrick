@@ -34,6 +34,7 @@ export const ru: Readonly<Record<SandboxKey, string>> = {
   'tools.reset': 'Сбросить данные',
   'tools.resetHint': 'Документ, тема и язык; перезагрузка страницы',
 
+  'notice.tagClicked': 'Нажат тег: #{tag}',
   'notice.close': 'Закрыть',
   'notice.imported': 'Документ «{name}» загружен',
   'notice.importedFixed': 'Документ «{name}» загружен, исправлено: {count}',

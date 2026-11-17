@@ -272,6 +272,7 @@ export const ru: Messages = {
   'stats.characters': 'Символов: {count}',
   'stats.charactersOf': 'Символов: {count} из {total}',
   'stats.charactersNoSpaces': 'Символов без пробелов: {count}',
+  'tags.suggestions': 'Подсказки тегов',
   'toc.empty': 'Здесь появятся заголовки документа',
   'toc.levels': 'Уровни заголовков: нажмите, чтобы изменить',
 };
