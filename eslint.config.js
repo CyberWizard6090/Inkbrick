@@ -50,6 +50,31 @@ export default [
                 "Import zod functions by name (see packages/document/src/schema/zod.ts): 'z' pulls in all of zod.",
             },
           ],
+          patterns: [
+            {
+              group: ['**/apps/**', 'sandbox'],
+              message:
+                'The library does not know about the sandbox (see CONTRIBUTING.md, "Where things live").',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Песочница — потребитель библиотеки: только публичный вход пакетов (`@inkbrick/react`), без путей внутрь.
+    files: ['apps/sandbox/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/packages/**', '@inkbrick/*/*'],
+              message:
+                'The sandbox uses the public entry of a package only: import from "@inkbrick/react", not from its internals.',
+            },
+          ],
         },
       ],
     },
