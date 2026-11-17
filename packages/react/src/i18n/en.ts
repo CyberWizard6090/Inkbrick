@@ -251,6 +251,8 @@ export const en = {
   'columns.remove': 'Remove the last column',
   'columns.unwrap': 'Turn the columns into plain blocks',
   'columns.resize': 'Resize column {column}',
+  'fold.listCollapse': 'Collapse nested items',
+  'fold.listExpand': 'Expand nested items',
   'fold.collapse': 'Collapse the section',
   'fold.expand': 'Expand the section',
   'toc.label': 'Table of contents',

@@ -249,6 +249,8 @@ export const ru: Messages = {
   'columns.remove': 'Убрать последнюю колонку',
   'columns.unwrap': 'Развернуть колонки в обычные блоки',
   'columns.resize': 'Ширина колонки {column}',
+  'fold.listCollapse': 'Свернуть вложенные пункты',
+  'fold.listExpand': 'Развернуть вложенные пункты',
   'fold.collapse': 'Свернуть раздел',
   'fold.expand': 'Развернуть раздел',
   'toc.label': 'Оглавление',

@@ -4,6 +4,8 @@ import { BlockSchema } from '../BlockSchema';
 export const listPropsSchema = z.object({
   type: z.enum(['bullet', 'ordered', 'todo']).default('bullet'),
   checked: z.boolean().optional(),
+  /** Вложенные блоки пункта скрыты (сворачивание пунктов списка). Хранится в документе и входит в историю правок. */
+  collapsed: z.boolean().optional(),
   align: z.enum(['left', 'center', 'right', 'justify']).optional(),
 });
 

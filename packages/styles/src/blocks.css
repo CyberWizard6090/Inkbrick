@@ -461,7 +461,10 @@
     min-width: 0;
   }
 
-  :where([data-inkbrick-block='heading'] [data-inkbrick-part='fold']) {
+  :where(
+    [data-inkbrick-block='heading'] [data-inkbrick-part='fold'],
+    [data-inkbrick-block='list'] > [data-inkbrick-part='row'] > [data-inkbrick-part='fold']
+  ) {
     display: inline-flex;
     flex: none;
     align-items: center;
@@ -483,17 +486,33 @@
   :where(
     [data-inkbrick-block='heading']:hover [data-inkbrick-part='fold'],
     [data-inkbrick-block='heading'][data-collapsed] [data-inkbrick-part='fold'],
-    [data-inkbrick-block='heading'] [data-inkbrick-part='fold']:focus-visible
+    [data-inkbrick-block='heading'] [data-inkbrick-part='fold']:focus-visible,
+    [data-inkbrick-block='list'] > [data-inkbrick-part='row']:hover > [data-inkbrick-part='fold'],
+    [data-inkbrick-block='list'][data-collapsed]
+      > [data-inkbrick-part='row']
+      > [data-inkbrick-part='fold'],
+    [data-inkbrick-block='list']
+      > [data-inkbrick-part='row']
+      > [data-inkbrick-part='fold']:focus-visible
   ) {
     opacity: 1;
   }
 
-  :where([data-inkbrick-block='heading'] [data-inkbrick-part='fold']:hover) {
+  :where(
+    [data-inkbrick-block='heading'] [data-inkbrick-part='fold']:hover,
+    [data-inkbrick-block='list'] > [data-inkbrick-part='row'] > [data-inkbrick-part='fold']:hover
+  ) {
     background: var(--inkbrick-bg-3);
     color: var(--inkbrick-fg-1);
   }
 
-  :where([data-inkbrick-block='heading'][data-collapsed] [data-inkbrick-part='fold'] svg) {
+  :where(
+    [data-inkbrick-block='heading'][data-collapsed] [data-inkbrick-part='fold'] svg,
+    [data-inkbrick-block='list'][data-collapsed]
+      > [data-inkbrick-part='row']
+      > [data-inkbrick-part='fold']
+      svg
+  ) {
     transform: rotate(-90deg);
   }
 
