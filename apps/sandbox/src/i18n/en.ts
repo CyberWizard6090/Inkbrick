@@ -37,6 +37,7 @@ export const en = {
   'tools.reset': 'Reset data',
   'tools.resetHint': 'Document, theme and language; reloads the page',
 
+  'notice.tagClicked': 'Tag clicked: #{tag}',
   'notice.close': 'Close',
   'notice.imported': 'Document “{name}” loaded',
   'notice.importedFixed': 'Document “{name}” loaded, fixed: {count}',

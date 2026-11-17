@@ -3,6 +3,7 @@ import {
   DocumentView,
   EditorProvider,
   FindReplacePanel,
+  TagHighlights,
   TocPanel,
   WordCount,
   findReplace,
@@ -430,6 +431,9 @@ export function App({ initial }: { initial: RestoredEditor }) {
       >
         <DemoSwitch current="editor" />
         <FindReplacePanel />
+        <TagHighlights
+          onTagClick={(tag) => setNotice({ value: { key: 'notice.tagClicked', params: { tag } } })}
+        />
         {tocPanelSide && <TocPanel side={tocPanelSide} maxLevel={3} />}
         <SandboxNav
           readOnly={readOnly}

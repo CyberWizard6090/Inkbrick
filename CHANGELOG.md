@@ -7,6 +7,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tags (`docs/tags.md`): `<TagHighlights onTagClick suggestions suggest />` highlights `#tag` (letters of any alphabet, digits, `_`, `-`, nested
+  `#a/b`; not `#123`, not inside code, links or formulas) with the CSS Custom Highlight API, offers the tags of the document and of the
+  application while `#` is typed (arrows, Enter or Tab, Esc) and reports Ctrl/Cmd+click to the application. A tag stays plain text, so the
+  document model, export and paste do not change; opt-in and outside the core bundle. `collectTags`, `findTags`, `blockTags`.
 - List item folding (`docs/list-folding.md`): an arrow on a list item with nested blocks hides and shows them, Ctrl/Cmd+Enter does the same;
   `collapsed` is stored in the document and is undoable. Opt-in: `<EditorProvider {...listFolding}>` (or `{...folding}` for headings and list
   items); `FoldableListBlock`, `ListBlock` gets the `ListItem` view with an optional `fold`. A caret inside the hidden blocks moves to the item,

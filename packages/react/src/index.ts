@@ -39,6 +39,8 @@ export type {
   WordCountProps,
   WordCountState,
 } from './stats';
+export { TagHighlights, collectTags, findTags, blockTags } from './tags';
+export type { TagHighlightsProps, TagCount, TagMatch } from './tags';
 export {
   findReplace,
   FindReplacePanel,

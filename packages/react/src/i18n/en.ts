@@ -274,6 +274,7 @@ export const en = {
   'stats.characters': 'Characters: {count}',
   'stats.charactersOf': 'Characters: {count} of {total}',
   'stats.charactersNoSpaces': 'Characters without spaces: {count}',
+  'tags.suggestions': 'Tag suggestions',
   'toc.empty': 'Headings of the document will appear here',
   'toc.levels': 'Heading levels shown: click to change',
 } as const;
