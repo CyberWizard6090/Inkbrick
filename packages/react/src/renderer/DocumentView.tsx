@@ -15,6 +15,7 @@ import { useT } from '../hooks/useT';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { FormulaPopoverHost } from '../formula/FormulaPopoverHost';
 import { preloadFormulaPalette } from '../formula/LazyFormulaPalette';
+import { preloadSoon } from '../ui/lazy';
 import { preloadIcons } from '../icons/Icon';
 import { SlashMenuHost } from '../slash/SlashMenuHost';
 import { ToolbarHost } from '../toolbar/ToolbarHost';
@@ -65,10 +66,13 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
    * открытие документа, но готова к первому редактору формулы (Tab из поля кода ведёт в палитру).
    */
   useEffect(() => {
-    if (!readOnly) {
-      void preloadFormulaPalette();
-      void preloadIcons();
-    }
+    if (readOnly) return;
+
+    void preloadFormulaPalette();
+    void preloadIcons();
+
+    // Блоки кода и формулы тоже отдельные чанки: подгружаем их сразу после отрисовки, чтобы новый блок принимал ввод.
+    return preloadSoon();
   }, [readOnly]);
 
   return (
