@@ -129,4 +129,16 @@ describe('<WordCount />', () => {
     await later();
     expect(text()).toBe('Слов: 2Символов: 7');
   });
+
+  it('is a plain element, not a live region: it must not add a "status" role to the page', async () => {
+    mountEditor(['one two'], { extra: <WordCount delay={0} /> });
+
+    await later();
+
+    const element = document.querySelector('[data-testid="word-count"]')!;
+
+    expect(element.tagName).toBe('SPAN');
+    expect(element.getAttribute('role')).toBeNull();
+    expect(document.querySelectorAll('output, [role="status"], [aria-live]')).toHaveLength(0);
+  });
 });

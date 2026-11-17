@@ -9,6 +9,9 @@ export interface WordCountProps extends WordCountOptions {
  * Счётчик слов и символов: «Слов: 120 · Символов: 780». Когда есть выделение, показывает и его: «Слов: 12 из 120».
  * В подсказке (title) — символы без пробелов. Кладётся в `<EditorProvider>` рядом с документом.
  *
+ * Это обычный `<span>`, а не `<output>`: у `<output>` неявная роль `status` (живая область), а счётчик ничего не объявляет —
+ * экранный чтец не должен читать его на каждую букву, а на странице должна оставаться одна область `status` приложения.
+ *
  * ```tsx
  * <EditorProvider editor={editor}>
  *   <DocumentView />
@@ -29,16 +32,15 @@ export function WordCount({ className, ...options }: WordCountProps) {
   const noSpaces = selection ? selection.charactersNoSpaces : document.charactersNoSpaces;
 
   return (
-    <output
+    <span
       className={className ? `inkbrick-word-count ${className}` : 'inkbrick-word-count'}
       data-inkbrick-ui="word-count"
       data-testid="word-count"
       data-selection={selection ? '' : undefined}
       title={t('stats.charactersNoSpaces', { count: noSpaces })}
-      aria-live="off"
     >
       <span data-inkbrick-part="words">{words}</span>
       <span data-inkbrick-part="characters">{characters}</span>
-    </output>
+    </span>
   );
 }

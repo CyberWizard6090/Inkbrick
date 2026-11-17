@@ -46,4 +46,13 @@ test.describe('Word count', () => {
     await page.goto('/?demo=table&lang=en');
     await expect(page.locator(counter)).toContainText('Words: 6');
   });
+
+  test('does not take the "status" role: pages with their own status region keep exactly one', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await expect(page.locator(counter)).toBeVisible();
+
+    await expect(page.getByRole('status')).toHaveCount(0);
+  });
 });
