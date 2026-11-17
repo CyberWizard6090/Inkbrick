@@ -132,6 +132,11 @@ export class Collab {
 
   private touched: string[] = [];
 
+  /** Во время сверки с проекцией её изменения вызвали ещё одну сверку. */
+  private pullAgain = false;
+
+  private pullDepth = 0;
+
   /** Чужой текст, спасённый при undo и ещё лежащий в новом месте. */
   private rescued: Rescued[] = [];
 
@@ -210,7 +215,25 @@ export class Collab {
   private withRescue(run: () => void): void {
     const before = captureForeign(this.ydoc);
 
-    run();
+    try {
+      run();
+    } catch (error) {
+      // Yjs не смог откатить: его элемент ссылается на данные, которых в документе ещё нет (чужое обновление
+      // удерживается или не дошло целиком). История, которая на это опиралась, больше не годится: она очищается, а
+      // документ остаётся таким, каким он стал, и сходится с остальными участниками как обычно.
+      this.undoManager.clear();
+
+      const failure = new Error(
+        'undo failed and was dropped: the edit it relies on is not in the document yet',
+        {
+          cause: error,
+        },
+      );
+
+      if (this.options.onError) this.options.onError(failure);
+
+      return;
+    }
 
     // A block that came back (redo) brings its text with it: the copy made by an earlier undo goes away.
     if (this.rescued.length > 0)
@@ -376,7 +399,23 @@ export class Collab {
 
       if (removed.length > 0) this.removeSubtrees(blocks, removed, store);
 
-      for (const block of present) writeBlockData(blocks, block);
+      for (const block of present) {
+        // Предки, достроенные правилом 4 (строка, которой ещё нет в Y.Doc), становятся настоящими вместе с блоком,
+        // иначе блок остался бы без родителя и проекция отбросила бы его.
+        const missing: BaseBlock[] = [];
+
+        for (
+          let parent = block.parentId ? store.getBlock(block.parentId) : undefined;
+          parent && !(blocks.get(parent.id) instanceof Y.Map);
+          parent = parent.parentId ? store.getBlock(parent.parentId) : undefined
+        ) {
+          missing.push(parent);
+        }
+
+        for (const parent of missing.reverse()) writeBlockData(blocks, parent);
+
+        writeBlockData(blocks, block);
+      }
 
       const parents = new Set<BlockId>();
 
@@ -402,6 +441,10 @@ export class Collab {
         reconcileChildren(blocks, parentId, parent.children);
       }
     }, COLLAB_ORIGIN);
+
+    // Удалённый блок мог занимать идентификатор, который правило 4 выдаёт достроенному блоку (`<родитель>~paragraph0`):
+    // тогда достроенный блок получил запасной идентификатор и теперь должен вернуться к основному.
+    if (ids.some((id) => id.includes('~') && !store.getBlock(id))) this.pull();
 
     // Правило 4 проекции: если локальная правка создала то, что схема не допускает, у всех остальных проекция это
     // исправит, поэтому и здесь хранилище приводится к проекции.
@@ -498,7 +541,14 @@ export class Collab {
   private pull(): void {
     const store = this.store;
 
-    if (!store || this.applying) return;
+    if (!store) return;
+
+    if (this.applying) {
+      // Изменения самой сверки вызвали ещё одну (лечение достроенных блоков): она выполнится, когда закончится эта.
+      this.pullAgain = true;
+
+      return;
+    }
 
     try {
       const snapshot = this.snapshot();
@@ -518,6 +568,7 @@ export class Collab {
       if (changes.length === 0) return;
 
       this.applying = true;
+      this.pullAgain = false;
 
       try {
         store.transact(
@@ -528,6 +579,18 @@ export class Collab {
         );
       } finally {
         this.applying = false;
+      }
+
+      // Не бесконечно: если проекция и хранилище не сходятся за несколько кругов, это ошибка, а не цикл.
+      if (this.pullAgain && this.pullDepth < 5) {
+        this.pullAgain = false;
+        this.pullDepth++;
+
+        try {
+          this.pull();
+        } finally {
+          this.pullDepth--;
+        }
       }
     } catch (error) {
       this.applying = false;
