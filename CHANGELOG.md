@@ -7,6 +7,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Tags (`docs/tags.md`): `<TagHighlights onTagClick suggestions suggest />` highlights `#tag` (letters of any alphabet, digits, `_`, `-`, nested
+  `#a/b`; not `#123`, not inside code, links or formulas) with the CSS Custom Highlight API, offers the tags of the document and of the
+  application while `#` is typed (arrows, Enter or Tab, Esc) and reports Ctrl/Cmd+click to the application. A tag stays plain text, so the
+  document model, export and paste do not change; opt-in and outside the core bundle. `collectTags`, `findTags`, `blockTags`.
 - List item folding (`docs/list-folding.md`): an arrow on a list item with nested blocks hides and shows them, Ctrl/Cmd+Enter does the same;
   `collapsed` is stored in the document and is undoable. Opt-in: `<EditorProvider {...listFolding}>` (or `{...folding}` for headings and list
   items); `FoldableListBlock`, `ListBlock` gets the `ListItem` view with an optional `fold`. A caret inside the hidden blocks moves to the item,
@@ -127,6 +131,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   `@inkbrick/react` is about 3.8 KB gzip lighter (64.5 → 60.7 KB). `preloadLocale(code)` and `isLocaleLoaded(code)` are new; `getLocales()`
   lists the languages that load on demand too. Until a language arrives the interface is in English, call `preloadLocale` before the first
   render to avoid that frame (the sandbox does). A dictionary registered with `registerLocale` is never overwritten by a loaded one.
+- Code and formula blocks load as separate chunks (`LazyCodeBlock`, `LazyFormulaBlock`, like the image block); `CodeBlock` and `FormulaBlock` are still exported
+  for your own component registries. The chunks are requested right after an editable editor mounts (`preloadSoon`), so a block that
+  appears on Enter or `/` normally takes input at once; until then a placeholder stands in (the code as plain text for a code block). The core of
+  `@inkbrick/react` is about 3.3 KB gzip lighter (64.5 → 61.2 KB). Total transfer is the same: the chunks leave the initial bundle, they do not wait for the first use. A block created within the first moments after mount, before its chunk has arrived, shows the placeholder and cannot take input until it does.
 - Process: work accumulates in `develop` (pull requests are squashed into it) and goes to `master` in one release pull request
   merged with a merge commit; CI also runs on pushes to `develop` (`CONTRIBUTING.md`, «Branching»).
 - Repository checks (`scripts/`): `pnpm check:i18n` verifies the dictionaries (same keys in en and ru, `{placeholders}`, no
