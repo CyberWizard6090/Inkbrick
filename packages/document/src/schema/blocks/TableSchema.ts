@@ -52,6 +52,33 @@ export const tableOptionSchema = z.object({
 
 export type TableOption = z.infer<typeof tableOptionSchema>;
 
+/**
+ * Условие фильтра столбца. Для текста, выбора и ссылок сравнивается текст (без учёта регистра; у мультивыбора `equals`
+ * ищет значение среди выбранных), для числа и даты — число и дата, для флажка — отметка.
+ */
+export const TABLE_FILTER_OPS = [
+  'contains',
+  'notContains',
+  'equals',
+  'notEquals',
+  'gt',
+  'lt',
+  'empty',
+  'notEmpty',
+  'checked',
+  'unchecked',
+] as const;
+
+export type TableFilterOp = (typeof TABLE_FILTER_OPS)[number];
+
+export const tableFilterSchema = z.object({
+  op: z.enum(TABLE_FILTER_OPS),
+  /** Значение для сравнения; у `empty`, `notEmpty`, `checked`, `unchecked` не нужно. */
+  value: z.string().max(200).optional(),
+});
+
+export type TableFilter = z.infer<typeof tableFilterSchema>;
+
 /** Объединённые ячейки: прямоугольник `rows` × `columns` с началом в `row`, `column` (с нуля); текст хранит верхняя левая. */
 export const tableMergeSchema = z.object({
   row: z.number().int().min(0),
@@ -78,6 +105,13 @@ export const tablePropsSchema = z.object({
   columnTypes: z.array(z.enum(TABLE_COLUMN_TYPES)).optional(),
   /** Варианты списка по столбцам (`select`, `multiselect`); `null` или отсутствующий элемент — вариантов нет. */
   columnOptions: z.array(z.array(tableOptionSchema).nullable()).optional(),
+  /** Скрытые столбцы по порядку: в таблице их не видно, данные остаются. */
+  columnHidden: z.array(z.boolean()).optional(),
+  /**
+   * Фильтры столбцов по порядку (`null` — без фильтра); строка показывается, если подходит всем фильтрам. Заголовок
+   * не фильтруется. Фильтр скрывает строки, но не меняет данные.
+   */
+  columnFilters: z.array(tableFilterSchema.nullable()).optional(),
   /** Объединённые ячейки. Сетка остаётся прямоугольной: перекрытые ячейки есть в документе, но пусты и не показываются. */
   merges: z.array(tableMergeSchema).optional(),
 });

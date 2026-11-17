@@ -1208,6 +1208,17 @@
     gap: 6px;
   }
 
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='filter']) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='filter-row']) {
+    display: flex;
+    gap: 4px;
+  }
+
   :where([data-inkbrick-ui='column-properties'] [data-inkbrick-part='option-row']) {
     display: flex;
     flex-wrap: wrap;

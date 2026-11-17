@@ -1,7 +1,9 @@
 import {
   TABLE_COLUMN_TYPES,
+  TABLE_FILTER_OPS,
   TABLE_OPTION_COLORS,
   type TableColumnType,
+  type TableFilter,
   type TableOption,
   type TableProps,
 } from '@inkbrick/document';
@@ -247,6 +249,68 @@ export const SetTableColumnOptionsCommand = defineBlockCommand<
   },
 });
 
+/** Фильтры и скрытие столбцов — вид таблицы: с объединёнными ячейками они разошлись бы с сеткой, поэтому там недоступны. */
+const canChangeView = (context: Context) => !hasMerges(context);
+
+/**
+ * Скрывает или показывает столбец: данные остаются, ячейки не рисуются. Последний видимый столбец скрыть нельзя.
+ */
+export const SetTableColumnHiddenCommand = defineBlockCommand<
+  TableProps,
+  { index: number; hidden: boolean }
+>({
+  type: 'setTableColumnHidden',
+
+  canExecute: (context, { index, hidden }) => {
+    const columns = columnsOf(context);
+    const current = context.block.props.columnHidden ?? [];
+
+    return (
+      canChangeView(context) &&
+      isIndex(index, columns - 1) &&
+      typeof hidden === 'boolean' &&
+      (!hidden || Array.from({ length: columns }).some((_, i) => i !== index && !current[i]))
+    );
+  },
+
+  execute(context, { index, hidden }) {
+    const list = Array.from(
+      { length: columnsOf(context) },
+      (_, i) => context.block.props.columnHidden?.[i] ?? false,
+    );
+
+    list[index] = hidden;
+    context.setProps({ columnHidden: list.some(Boolean) ? list : undefined });
+  },
+});
+
+/** Задаёт фильтр столбца (`null` снимает): строки, не подходящие фильтрам, скрываются, данные не меняются. */
+export const SetTableColumnFilterCommand = defineBlockCommand<
+  TableProps,
+  { index: number; filter: TableFilter | null }
+>({
+  type: 'setTableColumnFilter',
+
+  canExecute: (context, { index, filter }) =>
+    canChangeView(context) &&
+    isIndex(index, columnsOf(context) - 1) &&
+    (filter === null ||
+      (!!filter &&
+        TABLE_FILTER_OPS.includes(filter.op) &&
+        (filter.value === undefined ||
+          (typeof filter.value === 'string' && filter.value.length <= 200)))),
+
+  execute(context, { index, filter }) {
+    const list = Array.from(
+      { length: columnsOf(context) },
+      (_, i) => context.block.props.columnFilters?.[i] ?? null,
+    );
+
+    list[index] = filter ? { ...filter } : null;
+    context.setProps({ columnFilters: list.some(Boolean) ? list : undefined });
+  },
+});
+
 /** Строки таблицы и их порядок после сортировки по столбцу; заголовок остаётся первым. */
 function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
   const { block, transaction } = context;
@@ -425,6 +489,8 @@ export const tableCommands = [
   SetTableColumnWidthCommand,
   SetTableColumnTypeCommand,
   SetTableColumnOptionsCommand,
+  SetTableColumnHiddenCommand,
+  SetTableColumnFilterCommand,
   SortTableRowsCommand,
   MergeTableCellsCommand,
   SplitTableCellCommand,

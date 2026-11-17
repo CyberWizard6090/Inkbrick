@@ -6,6 +6,7 @@ import {
   TABLE_OPTION_COLORS,
   type BaseBlock,
   type TableColumnType,
+  type TableFilter,
   type TableOption,
   type TableProps,
 } from '@inkbrick/document';
@@ -14,6 +15,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import { isSelectType } from './columnTypes';
+import { filterNeedsValue, filterOpsFor } from './tableFilter';
 
 export interface ColumnPropertiesDialogProps {
   readonly block: BaseBlock;
@@ -33,7 +35,17 @@ export function ColumnPropertiesDialog({ block, column, onClose }: ColumnPropert
   const [options, setOptions] = useState<TableOption[]>(
     () => props.columnOptions?.[column]?.map((option) => ({ ...option })) ?? [],
   );
+  const [filter, setFilter] = useState<TableFilter | null>(props.columnFilters?.[column] ?? null);
   const first = useRef<HTMLSelectElement>(null);
+  // Фильтры и скрытие недоступны в таблице с объединёнными ячейками.
+  const canFilter = editor.can('setTableColumnFilter', {
+    blockId: block.id,
+    index: column,
+    filter: null,
+  } as never);
+  const ops = filterOpsFor(type);
+  // Условие, которого нет у нового типа столбца, не остаётся: «больше» для флажка было бы бессмысленно.
+  const activeFilter = filter && ops.includes(filter.op) ? filter : null;
 
   useEffect(() => first.current?.focus(), []);
 
@@ -66,6 +78,13 @@ export function ColumnPropertiesDialog({ block, column, onClose }: ColumnPropert
           options: withOptions ? options.map((o) => ({ ...o, label: o.label.trim() })) : [],
         },
       } as never);
+
+      if (canFilter) {
+        editor.dispatch({
+          type: 'setTableColumnFilter',
+          payload: { blockId: block.id, index: column, filter: activeFilter },
+        } as never);
+      }
     });
     onClose();
   };
@@ -169,6 +188,42 @@ export function ColumnPropertiesDialog({ block, column, onClose }: ColumnPropert
             >
               <Icon name="plus" /> {t('table.props.addOption')}
             </button>
+          </div>
+        )}
+        {canFilter && (
+          <div data-inkbrick-part="filter">
+            <span>{t('table.filter.title')}</span>
+            <div data-inkbrick-part="filter-row">
+              <select
+                data-inkbrick-part="filter-op"
+                value={activeFilter?.op ?? ''}
+                aria-label={t('table.filter.title')}
+                onChange={(event) =>
+                  setFilter(
+                    event.target.value
+                      ? { op: event.target.value as TableFilter['op'], value: filter?.value }
+                      : null,
+                  )
+                }
+              >
+                <option value="">{t('table.filter.none')}</option>
+                {ops.map((op) => (
+                  <option key={op} value={op}>
+                    {t(`table.filter.op.${op}`)}
+                  </option>
+                ))}
+              </select>
+              {activeFilter && filterNeedsValue(activeFilter.op) && (
+                <input
+                  data-inkbrick-part="filter-value"
+                  type="text"
+                  value={activeFilter.value ?? ''}
+                  maxLength={200}
+                  aria-label={t('table.filter.value')}
+                  onChange={(event) => setFilter({ ...activeFilter, value: event.target.value })}
+                />
+              )}
+            </div>
           </div>
         )}
         <div data-inkbrick-part="actions">

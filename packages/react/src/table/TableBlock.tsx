@@ -18,12 +18,19 @@ import { useEditorView } from '../hooks/useEditorView';
 import { BlockRenderer } from '../renderer/BlockRenderer';
 import { CheckboxControl, ChipsControl, LinkControl } from './ColumnCell';
 import { isSelectType } from './columnTypes';
-import { TableColumnContext, type TableColumns } from './TableColumnContext';
+import {
+  TableColumnContext,
+  TableHiddenRowsContext,
+  type TableColumns,
+} from './TableColumnContext';
+import { filteredRowIds } from './tableFilter';
+import { TableViewBar } from './TableViewBar';
 import { TableControls } from './TableControls';
 import { TableMergeContext, type MergedCell } from './TableMergeContext';
 import { useCellSelection } from './useCellSelection';
 
 const NO_MERGES: ReadonlyMap<string, MergedCell> = new Map();
+const NO_ROWS: ReadonlySet<string> = new Set();
 
 /** Карта объединённых ячеек таблицы по id ячейки. */
 function mergedCells(editor: Editor, table: BaseBlock): ReadonlyMap<string, MergedCell> {
@@ -70,22 +77,51 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
-  const { header, widths, freezeRow, freezeColumn, columnTypes, columnOptions } =
-    block.props as TableProps;
+  const {
+    header,
+    widths,
+    freezeRow,
+    freezeColumn,
+    columnTypes,
+    columnOptions,
+    columnHidden,
+    columnFilters,
+  } = block.props as TableProps;
   const editor = useEditor();
   const table = useRef<HTMLTableElement>(null);
   const merged = useMemo(() => mergedCells(editor, block), [editor, block]);
   // Ширины, пока границу тянут: рисуются поверх widths, пока перетаскивание не записано в модель.
   const [preview, setPreview] = useState<readonly number[] | null>(null);
   useCellSelection(block.id, table, !readOnly);
-  // Только текстовые столбцы — ячейки рисуются как раньше и ничего не ищут.
+  // Только обычные текстовые столбцы — ячейки рисуются как раньше и ничего не ищут.
   const columnKinds = useMemo<TableColumns | null>(
     () =>
-      columnTypes?.some((type) => type && type !== 'text')
-        ? { header: header !== false, types: columnTypes, options: columnOptions ?? [] }
+      columnTypes?.some((type) => type && type !== 'text') || columnHidden?.some(Boolean)
+        ? {
+            header: header !== false,
+            types: columnTypes ?? [],
+            options: columnOptions ?? [],
+            hidden: columnHidden ?? [],
+          }
         : null,
-    [header, columnTypes, columnOptions],
+    [header, columnTypes, columnOptions, columnHidden],
   );
+  // Строки, скрытые фильтрами. Считается при смене фильтров и состава строк, а не при каждой правке текста: строка,
+  // которую правят, не пропадает из-под рук; в следующий раз она учтётся заново.
+  const hiddenRows = useMemo(
+    () =>
+      columnFilters?.some(Boolean)
+        ? filteredRowIds(
+            block,
+            (id) => editor.store.getBlock(id),
+            (cell) => cell.content.map((node) => node.insert).join(''),
+          )
+        : NO_ROWS,
+    // `block` меняется вместе с составом строк и свойствами таблицы.
+    [editor, block, columnFilters],
+  );
+  const hiddenColumns = columnHidden?.filter(Boolean).length ?? 0;
+  const filtered = columnFilters?.filter(Boolean).length ?? 0;
 
   const shown: readonly (number | null | undefined)[] = preview ?? widths ?? [];
   const columns = shown.length;
@@ -93,7 +129,7 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
   // остальные границы перераспределяют ширину между соседями. Пока у столбца ширины нет, он занимает остаток.
   const total =
     columns > 0 && shown.every((width): width is number => typeof width === 'number' && width > 0)
-      ? shown.reduce((sum, width) => sum + width, 0)
+      ? shown.reduce((sum, width, index) => sum + (columnHidden?.[index] ? 0 : width), 0)
       : undefined;
 
   return (
@@ -106,18 +142,32 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
     >
+      {(hiddenColumns > 0 || filtered > 0) && (
+        <TableViewBar
+          block={block}
+          hiddenColumns={hiddenColumns}
+          filters={filtered}
+          hiddenRows={hiddenRows.size}
+          readOnly={!!readOnly}
+        />
+      )}
       <table ref={table} data-inkbrick-part="grid" style={total ? { width: total } : undefined}>
         {columns > 0 && (
           <colgroup>
             {shown.map((width, index) => (
-              <col key={index} style={width ? { width } : undefined} />
+              <col
+                key={index}
+                style={columnHidden?.[index] ? { display: 'none' } : width ? { width } : undefined}
+              />
             ))}
           </colgroup>
         )}
         <tbody>
           <TableMergeContext.Provider value={merged}>
             <TableColumnContext.Provider value={columnKinds}>
-              <Children id={block.id} />
+              <TableHiddenRowsContext.Provider value={hiddenRows}>
+                <Children id={block.id} />
+              </TableHiddenRowsContext.Provider>
             </TableColumnContext.Provider>
           </TableMergeContext.Provider>
         </tbody>
@@ -128,8 +178,15 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
 }
 
 export function TableRowBlock({ block }: BlockProps) {
+  const hidden = useContext(TableHiddenRowsContext).has(block.id);
+
   return (
-    <tr data-inkbrick-block="table-row" data-block-id={block.id}>
+    <tr
+      data-inkbrick-block="table-row"
+      data-block-id={block.id}
+      hidden={hidden || undefined}
+      data-filtered={hidden || undefined}
+    >
       <Children id={block.id} />
     </tr>
   );
@@ -139,6 +196,7 @@ export function TableRowBlock({ block }: BlockProps) {
 function useCellColumn(block: BaseBlock): {
   type: TableColumnType;
   options: readonly TableOption[] | null | undefined;
+  hidden: boolean;
 } | null {
   const editor = useEditor();
   const columns = useContext(TableColumnContext);
@@ -148,12 +206,15 @@ function useCellColumn(block: BaseBlock): {
   const row = block.parentId ? editor.store.getBlock(block.parentId) : undefined;
   const table = row?.parentId ? editor.store.getBlock(row.parentId) : undefined;
   const column = row ? row.children.indexOf(block.id) : -1;
-  const type = columns.types[column];
+  const hidden = !!columns.hidden[column];
+  const type = columns.types[column] ?? 'text';
 
-  if (!row || !table || column < 0 || !type || type === 'text') return null;
-  if (columns.header && table.children[0] === row.id) return null;
+  if (!row || !table || column < 0) return null;
+  // Заголовок остаётся текстом, но скрытый столбец скрывает и его.
+  if (columns.header && table.children[0] === row.id)
+    return { type: 'text', options: null, hidden };
 
-  return { type, options: columns.options[column] };
+  return { type, options: columns.options[column], hidden };
 }
 
 export function TableCellBlock({ block, selected, readOnly }: BlockProps) {
@@ -174,8 +235,9 @@ export function TableCellBlock({ block, selected, readOnly }: BlockProps) {
     <td
       data-inkbrick-block="table-cell"
       data-block-id={block.id}
+      hidden={column?.hidden || undefined}
       data-align={getBlockAlign(block) ?? 'left'}
-      data-column-type={column?.type}
+      data-column-type={column && column.type !== 'text' ? column.type : undefined}
       data-selected={selected || undefined}
       data-cell-selected={picked || undefined}
       colSpan={merge && merge.colSpan > 1 ? merge.colSpan : undefined}
@@ -191,7 +253,7 @@ export function TableCellBlock({ block, selected, readOnly }: BlockProps) {
         />
       )}
       <Editable block={block} />
-      {column && <LinkControl block={block} type={column.type} />}
+      {column && column.type !== 'text' && <LinkControl block={block} type={column.type} />}
     </td>
   );
 }
