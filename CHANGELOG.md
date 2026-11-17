@@ -125,6 +125,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Adding a language to `@inkbrick/locales` is mechanical: a new `src/<code>.ts` plus one line in `localeLoaders`. The package `exports` (`./*`) and the `tsup` entries use a mask, and `pnpm check:i18n` and the package tests walk every language file (same keys and placeholders as English, a loader for every file).
 - Dictionaries moved to the new package `@inkbrick/locales` (`en`, the types `MessageKey`, `Messages`, `PartialMessages`, and the Russian
   dictionary as `@inkbrick/locales/ru`); `@inkbrick/react` depends on it and still exports `en`, `ru` and the types. English is always bundled
   (the other languages fall back to it), Russian is a separate chunk loaded when `locale="ru"` asks for it, so the core of

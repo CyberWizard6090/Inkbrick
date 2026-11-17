@@ -1,8 +1,9 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  // Каждый язык — свой файл: приложение подгружает только нужный (`import('@inkbrick/locales/ru')`).
-  entry: ['src/index.ts', 'src/ru.ts'],
+  // Каждый файл `src/<код>.ts` — отдельный вход и отдельный чанк: приложение подгружает только нужный язык
+  // (`import('@inkbrick/locales/ru')`). Новый язык подхватывается сам, список здесь править не нужно.
+  entry: ['src/*.ts'],
   format: ['esm'],
   target: 'es2022',
   dts: true,
