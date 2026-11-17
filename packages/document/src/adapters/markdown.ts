@@ -1,5 +1,6 @@
 import type { Document } from '../document';
 import type { BaseBlock, InlineNode } from '../model';
+import { isFootnoteNode } from '../utils/footnote';
 import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
@@ -9,6 +10,7 @@ import {
   tocOutline,
   type OutlineItem,
   exportTable,
+  footnoteLabel,
   groupSiblings,
   headingLevel,
   isOrdered,
@@ -43,6 +45,10 @@ function inlineToMarkdown(nodes: readonly InlineNode[]): string {
       const { insert, attributes } = node;
 
       if (insert === '') return '';
+
+      if (isFootnoteNode(node)) {
+        return `[^${footnoteLabel(String(attributes!.footnote))}]`.repeat(insert.length);
+      }
 
       if (isFormulaNode(node)) {
         const latex = String(attributes!.formula).trim();
@@ -172,6 +178,8 @@ export function toMarkdown(document: Document, options: ExportOptions = {}): str
       }
       case 'block:divider':
         return '---';
+      case 'block:footnote':
+        return `[^${footnoteLabel(stringProp(block, 'id'))}]: ${text.replace(/\s*\n\s*/g, ' ')}`;
       case 'block:formula': {
         const latex = stringProp(block, 'latex').trim();
 

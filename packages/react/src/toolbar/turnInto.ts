@@ -37,6 +37,8 @@ export function turnIntoFor(
   if (!block || editor.schema.getBlockSchema(block.flavour)?.inline === false) return undefined;
 
   const options = availableSlashItems(editor, slashItems, blockId)
+    // Действия (вставить сноску) блок не превращают.
+    .filter((item) => !item.run)
     .map((item) => ({ item, active: matches(item, block) }))
     .filter(
       ({ item, active }) =>

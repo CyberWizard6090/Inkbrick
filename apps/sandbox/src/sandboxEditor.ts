@@ -7,7 +7,13 @@ import {
   type SchemaRegistry,
 } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
-import { columnsBlocks, tableBlocks, tocBlocks, toggleBlocks } from '@inkbrick/react';
+import {
+  columnsBlocks,
+  footnoteBlocks,
+  tableBlocks,
+  tocBlocks,
+  toggleBlocks,
+} from '@inkbrick/react';
 
 import { counterBlock } from './blocks/counter';
 import { SandboxError } from './i18n';
@@ -18,6 +24,7 @@ export const customBlocks = [
   ...tocBlocks,
   ...columnsBlocks,
   ...toggleBlocks,
+  ...footnoteBlocks,
 ];
 
 export const createSandboxSchema = (): SchemaRegistry =>

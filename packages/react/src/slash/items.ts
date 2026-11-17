@@ -15,10 +15,13 @@ export function availableSlashItems(
   if (!block || !parent) return [];
 
   return orderByGroup(
-    items.filter(
-      (item) =>
-        editor.schema.hasBlock(item.flavour) &&
-        editor.schema.validateRelation(parent.flavour, item.flavour),
+    items.filter((item) =>
+      !editor.schema.hasBlock(item.flavour)
+        ? false
+        : // Действие выполняется внутри блока, где набран «/», и не создаёт блок рядом: схема родителя не важна.
+          item.run
+          ? (item.canRun?.({ editor, blockId }) ?? true)
+          : editor.schema.validateRelation(parent.flavour, item.flavour),
     ),
   );
 }

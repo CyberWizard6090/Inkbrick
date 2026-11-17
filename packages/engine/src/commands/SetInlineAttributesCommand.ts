@@ -1,4 +1,5 @@
 import {
+  FOOTNOTE_ID,
   FORMULA_CHAR,
   MAX_FORMULA_LENGTH,
   isColorName,
@@ -52,6 +53,23 @@ export const SetInlineAttributesCommand: Command<SetInlineAttributesPayload, voi
       );
 
       if (!onlyFormulas) return false;
+    }
+
+    // Ссылка на сноску — тоже только символ-объект с допустимым кодом; снять атрибут нельзя, удалите символ.
+    if ('footnote' in attributes) {
+      const id = attributes.footnote;
+
+      if (typeof id !== 'string' || !FOOTNOTE_ID.test(id)) return false;
+
+      const onlyObjects = segments.every(({ block, start, end }) =>
+        engine.inline
+          .toPlainText(block.content)
+          .slice(start, end)
+          .split('')
+          .every((char) => char === FORMULA_CHAR),
+      );
+
+      if (!onlyObjects) return false;
     }
 
     return segments.length > 0;

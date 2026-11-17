@@ -133,6 +133,7 @@ export function buildBlockActions(
   ];
 
   const turnInto = availableSlashItems(editor, slashItems, blockId)
+    .filter((item) => !item.run)
     .filter((item) =>
       editor.can('convertBlock', { blockId, flavour: item.flavour, props: item.props }),
     )

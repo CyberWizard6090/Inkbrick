@@ -174,7 +174,7 @@ function isAfter(root: HTMLElement, a: string, b: string): boolean {
 }
 
 function outsideFormula(node: Node, offset: number): { node: Node; offset: number } {
-  const host = node.parentElement?.closest('[data-inkbrick-formula]');
+  const host = node.parentElement?.closest('[data-inkbrick-formula], [data-inkbrick-footnote]');
   const parent = host?.parentNode;
 
   if (!host || !parent) return { node, offset };

@@ -7,6 +7,7 @@ import {
   tocOutline,
   type OutlineItem,
   exportTable,
+  footnoteLabel,
   groupSiblings,
   isOrdered,
   isTodo,
@@ -94,6 +95,9 @@ export function toPlainText(document: Document, options: ExportOptions = {}): st
         break;
       case 'block:formula':
         text = stringProp(block, 'latex');
+        break;
+      case 'block:footnote':
+        text = `[${footnoteLabel(stringProp(block, 'id'))}] ${plainOf(block.content)}`;
         break;
       default:
         text = plainOf(block.content);

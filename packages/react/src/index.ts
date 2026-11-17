@@ -52,6 +52,16 @@ export {
 } from './find';
 export type { FindMatch, FindOptions, FindState } from './find';
 export { CommandPalette, commandPalette, useCommandPalette } from './palette';
+export {
+  footnoteBlocks,
+  FootnoteBlock,
+  FootnoteIndex,
+  getFootnoteIndex,
+  insertFootnote,
+  canInsertFootnote,
+  goToFootnote,
+  goToReference,
+} from './footnote';
 export type { CommandPaletteProps, PaletteCommand, PaletteContext, PaletteState } from './palette';
 export { toggleBlocks, ToggleBlock } from './toggle';
 export type { HeadingEntry, TocPanelProps } from './toc';

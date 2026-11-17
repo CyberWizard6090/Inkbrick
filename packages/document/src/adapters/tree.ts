@@ -3,6 +3,7 @@ import type { TableMerge } from '../schema/blocks/TableSchema';
 import { normalizeMerges } from '../utils/tableMerges';
 import type { BaseBlock, BlockId, InlineNode } from '../model';
 import type { SchemaRegistry } from '../schema';
+import { footnoteNumbers, isFootnoteNode } from '../utils/footnote';
 import { isFormulaNode } from '../utils/formula';
 
 export interface ExportOptions {
@@ -49,6 +50,17 @@ export function buildExportTree(
   };
 
   const nodes = collect(start);
+
+  // Номера сносок для вывода ссылок и текстов сносок: порядок первой ссылки в обходе документа.
+  const ordered: BaseBlock[] = [];
+  const walk = (items: readonly ExportNode[]) =>
+    items.forEach(({ block, children }) => {
+      ordered.push(block);
+      walk(children);
+    });
+
+  walk(nodes);
+  numbers = footnoteNumbers(ordered);
   const title =
     options.title !== false && startId === document.rootId && typeof start.props.title === 'string'
       ? start.props.title
@@ -57,12 +69,20 @@ export function buildExportTree(
   return { nodes, title: title === '' ? undefined : title };
 }
 
+/** Номера сносок последнего собранного дерева экспорта (экспорт синхронный: дерево и вывод идут подряд). */
+let numbers: ReadonlyMap<string, number> = new Map();
+
+/** Метка сноски: её номер, а у сноски без ссылки — код. */
+export const footnoteLabel = (id: string): string => String(numbers.get(id) ?? id);
+
 export const plainOf = (content: readonly InlineNode[]): string =>
   content
     .map((node) =>
-      isFormulaNode(node)
-        ? String(node.attributes!.formula).repeat(node.insert.length)
-        : node.insert,
+      isFootnoteNode(node)
+        ? `[${footnoteLabel(String(node.attributes!.footnote))}]`.repeat(node.insert.length)
+        : isFormulaNode(node)
+          ? String(node.attributes!.formula).repeat(node.insert.length)
+          : node.insert,
     )
     .join('');
 

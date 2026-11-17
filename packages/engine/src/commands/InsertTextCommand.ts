@@ -14,7 +14,7 @@ export const InsertTextCommand: Command<InsertTextPayload, CaretResult> = {
 
     // Новый текст наследует форматирование символа слева (кроме ссылки).
     const inherited = engine.inline.attributesBefore(block.content, offset);
-    const { link: _link, formula: _formula, ...attributes } = inherited ?? {};
+    const { link: _link, formula: _formula, footnote: _footnote, ...attributes } = inherited ?? {};
 
     engine.block.updateContent(
       transaction,

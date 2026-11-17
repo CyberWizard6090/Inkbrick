@@ -26,6 +26,23 @@ export function applySlashItem(editor: Editor, view: EditorView, item: SlashMenu
 
   view.slash.close();
 
+  if (item.run) {
+    // Действие вместо превращения: «/запрос» удаляется, действие получает освободившееся место.
+    let target: CaretResult | undefined;
+
+    flushSync(() => {
+      editor.batch(() => {
+        editor.dispatch({ type: 'deleteText', payload: { blockId, from: slashOffset, to: end } });
+        target = item.run!({ editor, view, blockId, offset: slashOffset }) || undefined;
+      });
+    });
+
+    // Каретка — после отрисовки: новый блок появился в DOM только сейчас.
+    if (target) view.placeCaret(target.blockId, target.offset);
+
+    return;
+  }
+
   let caret: CaretResult | undefined;
 
   try {

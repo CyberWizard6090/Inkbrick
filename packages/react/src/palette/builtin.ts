@@ -103,6 +103,45 @@ export function builtinCommands(
   ];
 
   for (const item of slashItems) {
+    // Пункт-действие (вставить сноску) — команда сама по себе: выполняется на месте каретки.
+    if (item.run) {
+      commands.push({
+        id: `action.${item.id}`,
+        title: t('palette.insert', { name: item.title }),
+        group: t('palette.group.insert'),
+        keywords: [item.title, ...(item.keywords ?? [])],
+        when: (context) => {
+          const selection = context.selection;
+
+          return (
+            editable(context) &&
+            !!selection &&
+            availableSlashItems(context.editor, [item], selection.from.blockId).length > 0
+          );
+        },
+        run: (context) => {
+          const selection = context.selection;
+
+          if (!selection) return;
+
+          let target: CaretResult | undefined;
+
+          flushSync(() => {
+            target =
+              item.run!({
+                editor: context.editor,
+                view: context.view,
+                blockId: selection.to.blockId,
+                offset: selection.to.offset,
+              }) || undefined;
+          });
+
+          if (target) context.view.placeCaret(target.blockId, target.offset);
+        },
+      });
+      continue;
+    }
+
     commands.push(
       {
         id: `turn.${item.id}`,

@@ -9,6 +9,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
 import { isDefaultHighlighterLoaded, subscribeDefaultHighlighter } from '../code/lazyHighlight';
+import { getFootnoteIndex } from '../footnote/FootnoteIndex';
 import { useEditorUI } from '../ui/EditorUIContext';
 
 export interface EditableProps {
@@ -69,9 +70,14 @@ export function Editable({ block, placeholder }: EditableProps) {
 
       renderCode(ref.current!, text, tokens);
     } else {
-      renderInline(ref.current!, block.content, { formulaRenderer });
+      // Индекс сносок нужен, только когда в тексте есть ссылки на них.
+      const footnotes = block.content.some((node) => node.attributes?.footnote !== undefined)
+        ? getFootnoteIndex(editor)
+        : undefined;
+
+      renderInline(ref.current!, block.content, { formulaRenderer, footnotes });
     }
-  }, [block.content, isCode, language, highlighter, formulaRenderer, highlighterReady]);
+  }, [editor, block.content, isCode, language, highlighter, formulaRenderer, highlighterReady]);
 
   const isEmpty = block.content.every((node) => node.insert.length === 0);
 

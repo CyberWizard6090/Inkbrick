@@ -1,4 +1,5 @@
 import {
+  FOOTNOTE_ID,
   FORMULA_CHAR,
   MAX_FORMULA_LENGTH,
   isSafeUrl,
@@ -37,6 +38,10 @@ function sanitizeAttributes(input: unknown): TextAttributes | undefined {
     if (typeof value === 'string' && COLOR.test(value.trim())) result[key] = value.trim();
   }
 
+  // Ссылка на сноску: только допустимый код (он попадает в разметку и в Markdown).
+  if (typeof input.footnote === 'string' && FOOTNOTE_ID.test(input.footnote))
+    result.footnote = input.footnote;
+
   if (
     typeof input.formula === 'string' &&
     input.formula.trim() !== '' &&
@@ -50,7 +55,8 @@ function sanitizeAttributes(input: unknown): TextAttributes | undefined {
 
 /** Формула — это только символы-объекты; «осиротевшие» символы-объекты без формулы из текста убираются. */
 function sanitizeInsert(insert: string, attributes: TextAttributes | undefined): string {
-  const isFormula = typeof attributes?.formula === 'string';
+  const isFormula =
+    typeof attributes?.formula === 'string' || typeof attributes?.footnote === 'string';
 
   if (isFormula) return /^\uFFFC+$/.test(insert) ? insert : insert.split(FORMULA_CHAR).join('');
 
@@ -105,8 +111,11 @@ function sanitizeBlock(input: unknown, depth: number, budget: Budget): FragmentB
     let attributes = sanitizeAttributes(node.attributes);
     const insert = sanitizeInsert(node.insert, attributes);
 
-    if (attributes?.formula !== undefined && !/^\uFFFC+$/.test(insert)) {
-      const { formula: _formula, ...rest } = attributes;
+    if (
+      (attributes?.formula !== undefined || attributes?.footnote !== undefined) &&
+      !/^\uFFFC+$/.test(insert)
+    ) {
+      const { formula: _formula, footnote: _footnote, ...rest } = attributes;
 
       attributes = Object.keys(rest).length > 0 ? rest : undefined;
     }

@@ -1,5 +1,6 @@
 import {
   exportColor,
+  isFootnoteNode,
   isFormulaNode,
   isSafeImageUrl,
   isSafeUrl,
@@ -16,9 +17,11 @@ const escapeHtml = (text: string) =>
 const plain = (nodes: InlineNode[]) =>
   nodes
     .map((node) =>
-      isFormulaNode(node)
-        ? String(node.attributes!.formula).repeat(node.insert.length)
-        : node.insert,
+      isFootnoteNode(node)
+        ? ''
+        : isFormulaNode(node)
+          ? String(node.attributes!.formula).repeat(node.insert.length)
+          : node.insert,
     )
     .join('');
 
@@ -62,6 +65,9 @@ function inlineToHtml(nodes: InlineNode[], inCode: boolean): string {
   return nodes
     .map((node) => {
       const { insert, attributes } = node;
+
+      // Ссылка на сноску без самой сноски в чужом приложении ничего не значит: в текст и HTML она не попадает.
+      if (isFootnoteNode(node)) return '';
 
       if (isFormulaNode(node)) {
         return `<span class="math inline">\\(${escapeHtml(String(attributes!.formula))}\\)</span>`.repeat(
