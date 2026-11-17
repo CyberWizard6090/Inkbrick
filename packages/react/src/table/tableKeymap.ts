@@ -32,9 +32,19 @@ const step = (direction: 1 | -1) => (context: KeymapContext) => {
 
     return !!found && !found.origin;
   };
+  const hiddenColumns = getBlock(cell.tableId)?.props.columnHidden as boolean[] | undefined;
+  const rowIds = getBlock(cell.tableId)?.children ?? [];
+  // Скрытые фильтром строки читаются из разметки: то, что пользователь не видит, Tab пропускает.
+  const hiddenRow = (row: number) =>
+    !!context.view
+      .getRoot()
+      ?.querySelector(`[data-inkbrick-block="table-row"][data-block-id="${rowIds[row]}"]`)
+      ?.hasAttribute('hidden');
+  const skipped = (at: number) =>
+    covered(at) || !!hiddenColumns?.[at % size.columns] || hiddenRow(Math.floor(at / size.columns));
   let index = cell.row * size.columns + cell.column + direction;
 
-  while (index >= 0 && index < size.rows * size.columns && covered(index)) index += direction;
+  while (index >= 0 && index < size.rows * size.columns && skipped(index)) index += direction;
 
   if (index < 0) return;
 

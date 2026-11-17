@@ -100,6 +100,8 @@ function columnEdges(table: HTMLTableElement): Edge[] {
   );
 
   for (const row of Array.from(table.rows)) {
+    if (row.hidden) continue;
+
     Array.from(row.cells).forEach((cell, index) => {
       const last = index + Math.max(1, cell.colSpan) - 1;
 
@@ -139,7 +141,8 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
   const cell = row?.cells[position.column];
   const first = table.rows[0];
 
-  if (!row || !cell || !first) return null;
+  // Скрытая строка или столбец (фильтр, скрытие столбца) не измеряются: управлять нечем.
+  if (!row || !cell || !first || row.hidden || cell.hidden) return null;
 
   return {
     table: boxOf(table),
@@ -157,10 +160,9 @@ const sameLayout = (a: Layout | null, b: Layout | null) =>
  * и ручки ширины столбцов. Рисуется поверх документа (портал в `body`, `position: fixed`), а не внутри редактируемого
  * корня: так выделение и буфер обмена не видят этих элементов. Показывается, пока над таблицей мышь или в ней каретка;
  * в режиме только чтения не показывается.
- */
-/**
- * Управление таблицей. Окно свойств столбца живёт здесь, а не в самих элементах управления: когда фокус уходит в окно,
- * каретка покидает таблицу и они скрываются, а окно должно остаться.
+ *
+ * Окно свойств столбца живёт здесь, а не в самих элементах управления: когда фокус уходит в окно, каретка покидает
+ * таблицу и они скрываются, а окно должно остаться.
  */
 export function TableControls(props: TableControlsProps) {
   const [propertiesOf, setPropertiesOf] = useState<number | null>(null);
@@ -545,7 +547,17 @@ function TableControlsLayer({
       id: 'column-properties',
       title: t('table.column.properties'),
       icon: <Icon name="columns" />,
-      run: () => onProperties(column),
+      run: () => {
+        setMenu(null);
+        onProperties(column);
+      },
+    },
+    {
+      id: 'column-hide',
+      title: t('table.column.hide'),
+      icon: <Icon name="x" />,
+      disabled: !can('setTableColumnHidden', { index: column, hidden: true }),
+      run: () => perform(() => void run('setTableColumnHidden', { index: column, hidden: true })),
     },
     {
       id: 'column-sort-asc',
@@ -774,29 +786,31 @@ function TableControlsLayer({
       >
         <Icon name="plus" />
       </button>
-      {edges.map((edge, column) => (
-        <div
-          {...control}
-          key={column}
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={t('table.resize', { column: column + 1 })}
-          tabIndex={0}
-          data-inkbrick-part="resize"
-          style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
-          onPointerDown={(event) => resize(column, event)}
-          onKeyDown={(event) => resizeByKey(column, event)}
-          onDoubleClick={() => {
-            if (
-              can('setTableColumnWidth', { index: column, width: null }) &&
-              props.widths?.[column]
-            )
-              perform(() => {
-                run('setTableColumnWidth', { index: column, width: null });
-              });
-          }}
-        />
-      ))}
+      {edges.map((edge, column) =>
+        props.columnHidden?.[column] ? null : (
+          <div
+            {...control}
+            key={column}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('table.resize', { column: column + 1 })}
+            tabIndex={0}
+            data-inkbrick-part="resize"
+            style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
+            onPointerDown={(event) => resize(column, event)}
+            onKeyDown={(event) => resizeByKey(column, event)}
+            onDoubleClick={() => {
+              if (
+                can('setTableColumnWidth', { index: column, width: null }) &&
+                props.widths?.[column]
+              )
+                perform(() => {
+                  run('setTableColumnWidth', { index: column, width: null });
+                });
+            }}
+          />
+        ),
+      )}
       {menu && (
         <Menu
           block={block}

@@ -9,6 +9,8 @@ export const COLUMN_LISTS = [
   { key: 'widths', fill: null },
   { key: 'columnTypes', fill: 'text' },
   { key: 'columnOptions', fill: null },
+  { key: 'columnHidden', fill: false },
+  { key: 'columnFilters', fill: null },
 ] as const;
 
 /**

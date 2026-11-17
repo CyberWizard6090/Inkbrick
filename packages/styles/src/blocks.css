@@ -208,6 +208,36 @@
     text-align: start;
   }
 
+  /* Вид таблицы: полоса над таблицей, пока часть её скрыта фильтрами или скрытием столбцов. */
+  :where([data-inkbrick-block='table'] > [data-inkbrick-part='view-bar']) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 0 6px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-part='view-reset']) {
+    padding: 0 6px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-brand-fg);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='view-reset']:hover) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-block='table-row'][hidden]),
+  :where([data-inkbrick-block='table-cell'][hidden]) {
+    display: none;
+  }
+
   /* Столбцы со свойствами: текст ячейки флажка и выбора остаётся в документе (клавиатура, копирование), но не виден. */
   :where(
     [data-inkbrick-block='table-cell'][data-column-type='checkbox'] [data-inkbrick-part='content'],
