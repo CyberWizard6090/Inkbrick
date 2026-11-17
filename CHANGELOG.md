@@ -125,6 +125,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Code and formula blocks load as separate chunks (`LazyCodeBlock`, `LazyFormulaBlock`, like the image block); `CodeBlock` and `FormulaBlock` are still exported
+  for your own component registries. The chunks are requested right after an editable editor mounts (`preloadSoon`), so a block that
+  appears on Enter or `/` normally takes input at once; until then a placeholder stands in (the code as plain text for a code block). The core of
+  `@inkbrick/react` is about 3.3 KB gzip lighter (64.5 → 61.2 KB). Total transfer is the same: the chunks leave the initial bundle, they do not wait for the first use. A block created within the first moments after mount, before its chunk has arrived, shows the placeholder and cannot take input until it does.
 - Process: work accumulates in `develop` (pull requests are squashed into it) and goes to `master` in one release pull request
   merged with a merge commit; CI also runs on pushes to `develop` (`CONTRIBUTING.md`, «Branching»).
 - Repository checks (`scripts/`): `pnpm check:i18n` verifies the dictionaries (same keys in en and ru, `{placeholders}`, no

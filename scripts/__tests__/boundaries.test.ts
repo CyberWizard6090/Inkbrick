@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -20,9 +20,10 @@ function filesIn(dir: string): string[] {
   return out;
 }
 
-const packages = readdirSync(join(ROOT, 'packages')).flatMap((name) => [
-  ...filesIn(join(ROOT, 'packages', name, 'src')),
-]);
+// Папка пакета без `src` (остаток сборки с другой ветки: только `dist` и `node_modules`) пропускается.
+const packages = readdirSync(join(ROOT, 'packages'))
+  .filter((name) => existsSync(join(ROOT, 'packages', name, 'src')))
+  .flatMap((name) => filesIn(join(ROOT, 'packages', name, 'src')));
 const sandbox = filesIn(join(ROOT, 'apps', 'sandbox', 'src'));
 
 const IMPORT = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
