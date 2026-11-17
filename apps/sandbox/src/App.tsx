@@ -8,6 +8,7 @@ import {
   findReplace,
   folding,
   htmlToFragment,
+  preloadLocale,
   virtualRenderer,
   type FormattingMode,
   type ImageOptions,
@@ -372,7 +373,8 @@ export function App({ initial }: { initial: RestoredEditor }) {
 
   const changeLocale = (next: string) => {
     persistLocale(next);
-    setLocale(next);
+    // Перевод редактора приходит отдельным чанком: переключаем язык, когда он готов, чтобы не мелькал английский.
+    void preloadLocale(next).then(() => setLocale(next));
   };
 
   const importFile = async (file: File) => {

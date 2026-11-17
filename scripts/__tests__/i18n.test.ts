@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { en as editorEn } from '../../packages/react/src/i18n/en';
-import { ru as editorRu } from '../../packages/react/src/i18n/ru';
+import { en as editorEn } from '../../packages/locales/src/en';
+import { ru as editorRu } from '../../packages/locales/src/ru';
 import { en as sandboxEn } from '../../apps/sandbox/src/i18n/en';
 import { ru as sandboxRu } from '../../apps/sandbox/src/i18n/ru';
 import { de } from '../../apps/sandbox/src/locales/de';

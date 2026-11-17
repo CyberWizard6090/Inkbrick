@@ -33,6 +33,7 @@ CI runs all of them; please run the relevant ones locally before opening a pull 
 ```
 packages/document  model, schemas, serialization, export   — no React, no DOM
 packages/store     transactions, history, subscriptions       — no React
+packages/locales   UI dictionaries: English and on-demand languages — no React, no dependencies
 packages/engine    Editor, commands, controllers               — no React
 packages/react     EditorProvider, DocumentView, UI            — the only package with React
 packages/styles    CSS: tokens, layers, data-attribute contract
@@ -46,7 +47,7 @@ The packages are the **library**; `apps/sandbox` is the **demonstration** that u
 | Belongs in the library (`packages/*`)                                               | Belongs in the sandbox (`apps/sandbox`)                                              |
 | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Blocks, commands, schemas, controllers, UI components and their styles              | Pages and navigation: the editor and the table editor, the switch between them       |
-| Strings the editor shows (`packages/react/src/i18n`, en and ru)                     | Strings of the sandbox itself (`apps/sandbox/src/i18n`: menus, debug panel, notices) |
+| Strings the editor shows (`packages/locales`, en and ru)                            | Strings of the sandbox itself (`apps/sandbox/src/i18n`: menus, debug panel, notices) |
 | Everything with a documented public API (`docs/`) and a bundle budget (`pnpm size`) | Demo data and generators (sample, random and 50,000-block documents)                 |
 | Opt-in blocks and panels (`tableBlocks`, `TocPanel`, `FindReplacePanel`, …)         | The debug panel, tools menus, import and export of files, autosave                   |
 | `data-inkbrick-*` attributes, the contract for application styles                   | `window.__inkbrick` and the test ids that E2E tests use to drive the demo            |
@@ -71,7 +72,7 @@ Dependencies only point down this list. Data flow:
 - **Algorithms over the tree must be linear.** `packages/engine/__tests__/scaling.test.ts` fails on quadratic growth.
 - **Styling** uses the stable `data-inkbrick-*` attributes and `:where()` inside `@layer` (see `docs/styling.md`);
   `packages/styles/__tests__/contract.test.ts` enforces it.
-- **UI strings** live in the dictionaries (`packages/react/src/i18n` for the editor, `apps/sandbox/src/i18n` for the sandbox);
+- **UI strings** live in the dictionaries (`packages/locales` for the editor, `apps/sandbox/src/i18n` for the sandbox);
   every key needs `en` and `ru`, and `pnpm check:i18n` checks that the keys, the `{placeholders}` and the translations match.
 - **Comments explain why**, not what. Code comments and docs are written in Russian; public API docs in English
   are welcome too.

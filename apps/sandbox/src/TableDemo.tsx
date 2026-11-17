@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { TableEditor, useHistory, WordCount } from '@inkbrick/react';
+import { preloadLocale, TableEditor, useHistory, WordCount } from '@inkbrick/react';
 import { toMarkdown } from '@inkbrick/document';
 import {
   createTableEditor,
@@ -135,7 +135,7 @@ export function TableDemo() {
 
   const changeLocale = (next: string) => {
     persistLocale(next);
-    setLocale(next);
+    void preloadLocale(next).then(() => setLocale(next));
   };
 
   return (

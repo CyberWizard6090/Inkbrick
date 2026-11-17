@@ -10,6 +10,8 @@ const alias = {
   '@inkbrick/document': pkg('document'),
   '@inkbrick/store': pkg('store'),
   '@inkbrick/engine': pkg('engine'),
+  // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
+  '@inkbrick/locales': fileURLToPath(new URL('../packages/locales/src', import.meta.url)),
   '@inkbrick/react': pkg('react'),
 };
 const external = ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'temml', 'zod'];

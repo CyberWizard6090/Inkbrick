@@ -112,11 +112,19 @@ export type { FormulaRenderer, FormulaRenderOptions, FormulaState } from './math
 export { FormulaView } from './math/FormulaView';
 
 export { useT, useLocale } from './hooks/useT';
-export { registerLocale, getLocales, resolveMessages, createTranslator } from './i18n/translate';
+export {
+  registerLocale,
+  getLocales,
+  resolveMessages,
+  createTranslator,
+  preloadLocale,
+  isLocaleLoaded,
+} from './i18n/translate';
 export type { TFunction, MessageParams } from './i18n/translate';
 export { en } from './i18n/en';
 export type { MessageKey, Messages, PartialMessages } from './i18n/en';
-export { ru } from './i18n/ru';
+// Русский словарь в бандл не попадает, пока им не пользуются: провайдер грузит его по требованию (`preloadLocale`).
+export { ru } from '@inkbrick/locales/ru';
 
 export { Icon, preloadIcons } from './icons/Icon';
 export type { IconName, IconProps } from './icons/Icon';

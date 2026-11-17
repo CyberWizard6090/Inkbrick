@@ -1,14 +1,17 @@
-import { en, type MessageKey, type Messages, type PartialMessages } from './en';
-import { ru } from './ru';
+import {
+  en,
+  localeLoaders,
+  type MessageKey,
+  type Messages,
+  type PartialMessages,
+} from '@inkbrick/locales';
 
 export type MessageParams = Readonly<Record<string, string | number>>;
 
 export type TFunction = (key: MessageKey, params?: MessageParams) => string;
 
-const registry = new Map<string, PartialMessages>([
-  ['en', en],
-  ['ru', ru],
-]);
+// Английский всегда под рукой (из него берутся недостающие ключи), остальные языки подгружаются по требованию.
+const registry = new Map<string, PartialMessages>([['en', en]]);
 
 /**
  * Подключает словарь под кодом языка (`'de'`, `'uk'`, `'pt-BR'`). Словарь может быть неполным: недостающие
@@ -18,8 +21,41 @@ export function registerLocale(code: string, messages: PartialMessages): void {
   registry.set(normalize(code), messages);
 }
 
+/** Коды доступных языков: подключённые через `registerLocale`, загруженные и те, что грузятся по требованию (`ru`). */
 export function getLocales(): string[] {
-  return [...registry.keys()];
+  // Порядок: английский, встроенные языки, затем подключённые приложением, в порядке подключения.
+  return [...new Set(['en', ...Object.keys(localeLoaders), ...registry.keys()])];
+}
+
+/** Подключён ли язык сейчас (загружен или зарегистрирован): для него `resolveMessages` вернёт перевод сразу. */
+export function isLocaleLoaded(code: string): boolean {
+  const wanted = normalize(code);
+
+  return registry.has(wanted) || registry.has(wanted.split('-')[0]);
+}
+
+/**
+ * Загружает язык, который грузится по требованию (`ru`), и подключает его. Уже подключённый язык, свой словарь через
+ * `registerLocale` и неизвестный код ничего не загружают. Провайдер вызывает это сам при смене `locale`; вызовите заранее,
+ * если интерфейс должен сразу появиться на нужном языке (перед первой отрисовкой, в тестах и при рендере на сервере).
+ */
+export function preloadLocale(code: string): Promise<void> {
+  const wanted = normalize(code);
+
+  for (const candidate of [wanted, wanted.split('-')[0]]) {
+    if (registry.has(candidate)) return Promise.resolve();
+
+    const load = localeLoaders[candidate];
+
+    if (load) {
+      return load().then((messages) => {
+        // За время загрузки могли зарегистрировать свой словарь под тем же кодом: он важнее.
+        if (!registry.has(candidate)) registry.set(candidate, messages);
+      });
+    }
+  }
+
+  return Promise.resolve();
 }
 
 const normalize = (code: string) => code.trim().toLowerCase();
