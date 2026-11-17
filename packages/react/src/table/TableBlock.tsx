@@ -4,6 +4,8 @@ import {
   getBlockAlign,
   normalizeMerges,
   type BaseBlock,
+  type TableColumnType,
+  type TableOption,
   type TableProps,
 } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
@@ -14,6 +16,9 @@ import { useChildren } from '../hooks/useChildren';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { BlockRenderer } from '../renderer/BlockRenderer';
+import { CheckboxControl, ChipsControl, LinkControl } from './ColumnCell';
+import { isSelectType } from './columnTypes';
+import { TableColumnContext, type TableColumns } from './TableColumnContext';
 import { TableControls } from './TableControls';
 import { TableMergeContext, type MergedCell } from './TableMergeContext';
 import { useCellSelection } from './useCellSelection';
@@ -65,13 +70,22 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
-  const { header, widths, freezeRow, freezeColumn } = block.props as TableProps;
+  const { header, widths, freezeRow, freezeColumn, columnTypes, columnOptions } =
+    block.props as TableProps;
   const editor = useEditor();
   const table = useRef<HTMLTableElement>(null);
   const merged = useMemo(() => mergedCells(editor, block), [editor, block]);
   // Ширины, пока границу тянут: рисуются поверх widths, пока перетаскивание не записано в модель.
   const [preview, setPreview] = useState<readonly number[] | null>(null);
   useCellSelection(block.id, table, !readOnly);
+  // Только текстовые столбцы — ячейки рисуются как раньше и ничего не ищут.
+  const columnKinds = useMemo<TableColumns | null>(
+    () =>
+      columnTypes?.some((type) => type && type !== 'text')
+        ? { header: header !== false, types: columnTypes, options: columnOptions ?? [] }
+        : null,
+    [header, columnTypes, columnOptions],
+  );
 
   const shown: readonly (number | null | undefined)[] = preview ?? widths ?? [];
   const columns = shown.length;
@@ -102,7 +116,9 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
         )}
         <tbody>
           <TableMergeContext.Provider value={merged}>
-            <Children id={block.id} />
+            <TableColumnContext.Provider value={columnKinds}>
+              <Children id={block.id} />
+            </TableColumnContext.Provider>
           </TableMergeContext.Provider>
         </tbody>
       </table>
@@ -119,8 +135,30 @@ export function TableRowBlock({ block }: BlockProps) {
   );
 }
 
-export function TableCellBlock({ block, selected }: BlockProps) {
+/** Тип и варианты столбца ячейки; `null` — обычная текстовая ячейка (заголовок остаётся текстом). */
+function useCellColumn(block: BaseBlock): {
+  type: TableColumnType;
+  options: readonly TableOption[] | null | undefined;
+} | null {
+  const editor = useEditor();
+  const columns = useContext(TableColumnContext);
+
+  if (!columns) return null;
+
+  const row = block.parentId ? editor.store.getBlock(block.parentId) : undefined;
+  const table = row?.parentId ? editor.store.getBlock(row.parentId) : undefined;
+  const column = row ? row.children.indexOf(block.id) : -1;
+  const type = columns.types[column];
+
+  if (!row || !table || column < 0 || !type || type === 'text') return null;
+  if (columns.header && table.children[0] === row.id) return null;
+
+  return { type, options: columns.options[column] };
+}
+
+export function TableCellBlock({ block, selected, readOnly }: BlockProps) {
   const view = useEditorView();
+  const column = useCellColumn(block);
   const merge = useContext(TableMergeContext).get(block.id);
   const picked = useSyncExternalStore(
     view.cells.subscribe,
@@ -137,12 +175,23 @@ export function TableCellBlock({ block, selected }: BlockProps) {
       data-inkbrick-block="table-cell"
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
+      data-column-type={column?.type}
       data-selected={selected || undefined}
       data-cell-selected={picked || undefined}
       colSpan={merge && merge.colSpan > 1 ? merge.colSpan : undefined}
       rowSpan={merge && merge.rowSpan > 1 ? merge.rowSpan : undefined}
     >
+      {column?.type === 'checkbox' && <CheckboxControl block={block} readOnly={!!readOnly} />}
+      {column && isSelectType(column.type) && (
+        <ChipsControl
+          block={block}
+          options={column.options}
+          readOnly={!!readOnly}
+          multiple={column.type === 'multiselect'}
+        />
+      )}
       <Editable block={block} />
+      {column && <LinkControl block={block} type={column.type} />}
     </td>
   );
 }

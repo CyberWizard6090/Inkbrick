@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Table column properties (`docs/tables.md`): new column types `checkbox`, `select`, `multiselect`, `url`, `email`, `phone` next to `text`, `number`, `date`; the value is plain text in the cell (copy, export, search, undo keep working). A «Column properties…» dialog in the column menu sets the type and, for select types, the options with colours (`columnOptions` in the table props, command `setTableColumnOptions`); options move with their columns and copy with the table. Select cells show coloured chips with a picker, checkbox cells a checkbox, link types an open link and a warning for invalid values; the header row stays text. Sorting checkbox columns: unchecked before checked.
+
 - Command palette (`docs/command-palette.md`): `<CommandPalette commands={…} />` and `commandPalette.keymap` (Ctrl/Cmd+Shift+P; Ctrl+P is the browser's print). Built-in commands: undo and redo, formatting of the selection, «Turn into» and «Insert» for every slash-menu item that fits the current block. The app adds its own (`PaletteCommand`: `id`, `title`, `group`, `keywords`, `shortcut`, `when`, `run`), `findReplace.commands` adds Find and Replace; `useCommandPalette()` opens it from code. The selection at opening is restored before a command runs. Combobox ARIA, English and Russian.
 
 - Tags (`docs/tags.md`): `<TagHighlights onTagClick suggestions suggest />` highlights `#tag` (letters of any alphabet, digits, `_`, `-`, nested

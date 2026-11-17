@@ -58,6 +58,8 @@ export function parseDate(text: string): number | undefined {
 export function sortKey(text: string, type: TableColumnType): SortKey {
   const value = text.trim();
 
+  // Флажок: пусто — не отмечено, а не «нет значения»; отмеченные после неотмеченных.
+  if (type === 'checkbox') return value.toLowerCase() === 'true' ? 1 : 0;
   if (value === '') return undefined;
   if (type === 'number') return parseNumber(value);
   if (type === 'date') return parseDate(value);
