@@ -27,6 +27,12 @@ body {
   border-radius: 8px;
 }
 
+.playground-stats {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 .history-buttons {
   display: flex;
   gap: 8px;

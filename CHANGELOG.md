@@ -7,6 +7,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Word and character counter (`docs/word-count.md`): `<WordCount />` shows words and characters of the document and, with a selection,
+  of the selection against the whole («Words: 12 of 120»); the tooltip has the characters without spaces. Opt-in, `code` leaves code
+  blocks out, `delay` debounces the recount. `documentStats`, `selectionStats`, `countWords`, `countCharacters`, `useWordCount`. Words are
+  letters and digits (`don't`, `stop-gap`, `3.14` are one word), `Intl.Segmenter` finds them in Chinese, Japanese and Thai; formulas are
+  not counted. The sandbox shows the counter on both pages.
 - Block groups in the slash menu (`docs/slash-menu.md`): items stand under the headings «Basic blocks», «Media» and «Advanced» while
   the query is empty (the table is a basic block). `SlashMenuItem.group` / `BlockSlashItem.group` take `basic`, `media`,
   `advanced` or your own name (title from `slash.group.<name>`); items without a group come last under «Other». The turn-into list of
