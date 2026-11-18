@@ -1,3 +1,5 @@
+import { writeFileSync } from 'node:fs';
+
 import { afterAll, describe, it } from 'vitest';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
@@ -12,7 +14,12 @@ import {
   type DocumentSnapshot,
 } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
-import { DocumentView, EditorProvider, type DocumentViewProps } from '@inkbrick/react';
+import {
+  DocumentView,
+  EditorProvider,
+  getFootnoteIndex,
+  type DocumentViewProps,
+} from '@inkbrick/react';
 
 /*
  * Нагрузочные сценарии из ревью. Это замеры, а не проверки: результат — таблица в консоли.
@@ -411,7 +418,83 @@ describe('10 000 nested blocks', () => {
   });
 });
 
+/**
+ * Сноски в большом документе: каждая сотая строка ссылается на сноску. Номера сносок пересчитываются после правок;
+ * замер — сколько стоит одно нажатие клавиши (правка и пересчёт) в строке без сносок, в строке со сноской и Enter.
+ */
+describe('footnotes in a large document', () => {
+  const FOOTNOTE = '\uFFFC';
+
+  for (const size of SIZES.filter((count) => count <= 50_000)) {
+    it(`${size} blocks`, async () => {
+      const snapshot = snapshotOf(size);
+
+      for (let i = 0; i < size; i += 100) {
+        snapshot.blocks[`b${i}`].content = [
+          { insert: `Paragraph ${i}` },
+          { insert: FOOTNOTE, attributes: { footnote: `n${i}` } },
+        ];
+      }
+
+      const ed = load(snapshot);
+      const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+      const KEYS = 50;
+
+      const typing = async (blockId: string, enter = false) => {
+        const started = performance.now();
+
+        for (let k = 0; k < KEYS; k++) {
+          if (enter) {
+            ed.dispatch({ type: 'splitBlock', payload: { blockId, offset: 1 } } as never);
+          } else {
+            ed.dispatch({
+              type: 'insertText',
+              payload: {
+                text: 'x',
+                selection: { anchor: { blockId, offset: 1 }, focus: { blockId, offset: 1 } },
+              },
+            } as never);
+          }
+
+          await tick();
+        }
+
+        return Math.round(((performance.now() - started) / KEYS) * 100) / 100;
+      };
+      const idle = async () => {
+        const started = performance.now();
+
+        for (let k = 0; k < KEYS; k++) await tick();
+
+        return (performance.now() - started) / KEYS;
+      };
+      const base = await idle();
+      // Та же правка, пока сносками никто не пользуется (их индекс не построен).
+      const unwatched = await typing(`b${Math.floor(size / 2) + 5}`);
+      const index = getFootnoteIndex(ed);
+      const unsubscribe = index.subscribe(() => {});
+
+      index.numberOf('n0');
+
+      const plain = await typing(`b${Math.floor(size / 2) + 1}`);
+      const withFootnote = await typing(`b${Math.floor(size / 200) * 100}`);
+      const split = await typing(`b${Math.floor(size / 2) + 3}`, true);
+
+      unsubscribe();
+      record('footnotes: per key, plain line (ms)', size, plain, {
+        unwatched,
+        footnoteLine: withFootnote,
+        enter: split,
+        tick: Math.round(base * 100) / 100,
+      });
+    });
+  }
+});
+
 afterAll(() => {
   // eslint-disable-next-line no-console -- итог замеров печатается таблицей
   console.table(rows);
+
+  // BENCH_OUT=путь — ещё и в файл JSON (удобно сравнивать прогоны).
+  if (process.env.BENCH_OUT) writeFileSync(process.env.BENCH_OUT, JSON.stringify(rows, null, 2));
 });

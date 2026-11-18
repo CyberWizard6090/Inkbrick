@@ -218,6 +218,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   (`--inkbrick-gutter`, 56px; none below 640px) instead of relying on the page margin, and the handle lives in the left
   one. The handle is no longer clipped
   by a container with `overflow: hidden` and never leaves the document's left edge.
+- Footnotes: the index no longer walks the whole document after every keystroke. It looks at the changed blocks and
+  walks the document only when an edit touched footnotes or their order (a new or removed reference, a block with a
+  footnote moved, a footnote code changed). A keystroke in a 50 000-block document with footnotes went from 10.5 ms to
+  1.1 ms (the same as without footnotes), in a line with a footnote from 11.8 to 1.3 ms, Enter from 15 to 2.4 ms
+  (`pnpm bench`, scenario «footnotes in a large document»; `BENCH_OUT=file.json` also writes the results to a file).
 
 ### Fixed
 
