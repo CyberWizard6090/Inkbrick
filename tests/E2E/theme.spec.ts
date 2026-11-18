@@ -97,12 +97,12 @@ test.describe('Color palette', () => {
 
       const colors = await page
         .locator(
-          '[data-inkbrick-part="panel"][data-kind="highlight"] [data-color]:not([data-color=""])',
+          '[data-inkbrick-part="panel"][data-kind="highlight"] [data-color]:not([data-color=""]):not([data-color="custom"])',
         )
         .evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundColor));
 
-      expect(colors).toHaveLength(11);
-      expect(new Set(colors).size).toBe(11);
+      expect(colors).toHaveLength(16);
+      expect(new Set(colors).size).toBe(16);
     }
   });
 });
