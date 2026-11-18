@@ -9,7 +9,7 @@ import { LazyCodeBlock } from '../blocks/LazyCodeBlock';
 import { DividerBlock } from '../blocks/DividerBlock';
 import { CalloutBlock } from '../blocks/CalloutBlock';
 import { LazyImageBlock } from '../blocks/LazyImageBlock';
-import { LazyFormulaBlock } from '../blocks/LazyFormulaBlock';
+import { FormulaBlock } from '../blocks/FormulaBlock';
 
 export const defaultBlockComponents: BlockComponentRegistry = Object.freeze({
   'block:page': PageBlock,
@@ -22,5 +22,5 @@ export const defaultBlockComponents: BlockComponentRegistry = Object.freeze({
   'block:divider': DividerBlock,
   'block:callout': CalloutBlock,
   'block:image': LazyImageBlock,
-  'block:formula': LazyFormulaBlock,
+  'block:formula': FormulaBlock,
 });

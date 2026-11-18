@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
 import { useState } from 'react';
 
 import { CodeCaption, CodeToolbar } from '../src/blocks/CodeBlock';
 import { CodeShell } from '../src/blocks/CodeShell';
-import { FormulaBlockPlaceholder } from '../src/blocks/LazyFormulaBlock';
+import { FormulaBlock } from '../src/blocks/FormulaBlock';
 import { LazyCodeBlock } from '../src/blocks/LazyCodeBlock';
-import { LazyFormulaBlock } from '../src/blocks/LazyFormulaBlock';
 import { defaultBlockComponents } from '../src/registry/defaultBlockComponents';
 import type { BlockViewProps } from '../src/ui/types';
 import { mountEditor } from './harness';
@@ -17,24 +16,10 @@ afterEach(() => {
   vi.resetModules();
 });
 
-const viewProps = (flavour: string, text: string) =>
-  ({
-    block: {
-      id: 'b1',
-      flavour,
-      parentId: 'n',
-      children: [],
-      props: {},
-      content: text ? [{ insert: text }] : [],
-    },
-    selected: false,
-    readOnly: false,
-  }) as unknown as BlockViewProps;
-
-describe('code and formula blocks load as separate chunks', () => {
-  it('are registered through their lazy wrappers', () => {
+describe('the code block loads its toolbar as a separate chunk', () => {
+  it('is registered through its lazy wrapper, and the formula block is in the core', () => {
     expect(defaultBlockComponents['block:code']).toBe(LazyCodeBlock);
-    expect(defaultBlockComponents['block:formula']).toBe(LazyFormulaBlock);
+    expect(defaultBlockComponents['block:formula']).toBe(FormulaBlock);
   });
 
   describe('a code block whose chunk has not come yet', () => {
@@ -113,15 +98,6 @@ describe('code and formula blocks load as separate chunks', () => {
       expect(root.querySelector(`.editable[data-id="${ids[0]}"]`)).toBe(before);
       expect(before!.contains(getSelection()!.anchorNode)).toBe(true);
     });
-  });
-
-  it('the formula placeholder is an empty non-editable place with the same markup hooks', () => {
-    const view = render(<FormulaBlockPlaceholder {...viewProps('block:formula', '')} />);
-    const element = view.container.firstElementChild!;
-
-    expect(element.getAttribute('data-inkbrick-block')).toBe('formula');
-    expect(element.getAttribute('data-loading')).toBe('');
-    expect(element.getAttribute('contenteditable')).toBe('false');
   });
 
   it('once the chunk is in, the real blocks are drawn and take input', () => {
