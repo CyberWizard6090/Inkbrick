@@ -117,6 +117,7 @@ export function ChipsControl({
         disabled={readOnly}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={open ? id : undefined}
         aria-label={t('table.cell.choose')}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => setOpen((value) => !value)}
@@ -135,6 +136,7 @@ export function ChipsControl({
       {open && !readOnly && (
         <OptionsPicker
           id={id}
+          multiple={multiple}
           anchor={button.current}
           options={options ?? []}
           selected={selected}
@@ -171,6 +173,7 @@ export function ChipsControl({
 
 function OptionsPicker({
   id,
+  multiple,
   anchor,
   options,
   selected,
@@ -180,6 +183,7 @@ function OptionsPicker({
   onEscape,
 }: {
   id: string;
+  multiple: boolean;
   anchor: HTMLElement | null;
   options: readonly TableOption[];
   selected: readonly string[];
@@ -217,7 +221,8 @@ function OptionsPicker({
       id={id}
       data-inkbrick-ui="options-picker"
       role="listbox"
-      aria-multiselectable
+      aria-multiselectable={multiple || undefined}
+      aria-activedescendant={options[active] ? `${id}-${active}` : undefined}
       aria-label={t('table.cell.choose')}
       tabIndex={-1}
       style={{ position: 'fixed', left: rect?.left ?? 0, top: (rect?.bottom ?? 0) + 2 }}
@@ -243,6 +248,7 @@ function OptionsPicker({
       {options.map((option, index) => (
         <div
           key={option.label}
+          id={`${id}-${index}`}
           role="option"
           aria-selected={selected.includes(option.label)}
           data-inkbrick-part="option"
