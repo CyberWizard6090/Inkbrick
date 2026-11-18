@@ -4,6 +4,7 @@ import type { CaretResult } from '@inkbrick/engine';
 
 import { isFormattable, toggleFormatInSelection } from '../toolbar/formatting';
 import { availableSlashItems } from '../slash/items';
+import { convertBlocks, convertibleIn } from '../pick/actions';
 import type { SlashMenuItem } from '../slash/types';
 import type { TFunction } from '../i18n/translate';
 import type { PaletteCommand, PaletteContext } from './types';
@@ -38,6 +39,13 @@ export function formatShortcut(shortcut: string): string {
 /** Блок, в котором стоит каретка (или начало выделения), и можно ли в нём что-то менять. */
 const currentBlock = ({ editor, selection }: PaletteContext) =>
   selection ? editor.store.getBlock(selection.from.blockId) : undefined;
+
+/** Блоки, к которым относится команда: выбранный ряд, а без выбора — блок под кареткой. */
+const targetBlocks = (context: PaletteContext): readonly string[] => {
+  const ids = context.view.picked.getState().ids;
+
+  return ids.length > 0 ? ids : [currentBlock(context)?.id].filter((id) => id !== undefined);
+};
 
 const editable = (context: PaletteContext) => !context.readOnly;
 
@@ -149,36 +157,31 @@ export function builtinCommands(
         group: t('palette.group.turn'),
         keywords: [item.title, ...(item.keywords ?? [])],
         when: (context) => {
-          const block = currentBlock(context);
+          const { editor } = context;
+          const ids = targetBlocks(context);
 
           return (
             editable(context) &&
-            !!block &&
-            availableSlashItems(context.editor, [item], block.id).length > 0 &&
-            context.editor.can('convertBlock', {
-              blockId: block.id,
-              flavour: item.flavour,
-              props: item.props as never,
-            }) &&
-            !(
-              block.flavour === item.flavour &&
-              Object.entries(item.props ?? {}).every(
-                ([key, value]) => key === 'checked' || block.props[key] === value,
-              )
-            )
+            ids.length > 0 &&
+            availableSlashItems(editor, [item], ids[0]).length > 0 &&
+            convertibleIn(editor, ids, item).some((id) => {
+              const block = editor.store.getBlock(id)!;
+
+              return !(
+                block.flavour === item.flavour &&
+                Object.entries(item.props ?? {}).every(
+                  ([key, value]) => key === 'checked' || block.props[key] === value,
+                )
+              );
+            })
           );
         },
         run: (context) => {
-          const block = currentBlock(context);
+          const ids = targetBlocks(context);
 
-          if (!block) return;
+          if (ids.length === 0) return;
 
-          flushSync(() => {
-            context.editor.dispatch({
-              type: 'convertBlock',
-              payload: { blockId: block.id, flavour: item.flavour, props: item.props as never },
-            });
-          });
+          convertBlocks(context.editor, ids, item);
           restore(context);
         },
       },

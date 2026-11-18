@@ -9,9 +9,19 @@ import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
 import { syncSlashMenu } from '../slash/syncSlashMenu';
 import { iconByName } from '../controllers/adapters';
-import { BLOCK_BACKGROUNDS, getBlockBackground } from '@inkbrick/document';
+import { BLOCK_BACKGROUNDS, type BlockBackground } from '@inkbrick/document';
 
-import { deleteBlocks, duplicateBlocks, moveBlocks, targetsOf } from '../pick/actions';
+import {
+  backgroundTargets,
+  commonBackground,
+  convertBlocks,
+  convertibleIn,
+  deleteBlocks,
+  duplicateBlocks,
+  moveBlocks,
+  setBackgrounds,
+  targetsOf,
+} from '../pick/actions';
 import type { BlockMenuAction, BlockMenuBackground } from './types';
 
 const isCaret = (value: unknown): value is CaretResult =>
@@ -132,36 +142,54 @@ export function buildBlockActions(
     },
   ];
 
+  // Для ряда пункт показан, если подходит хотя бы одному блоку; применяется к тем, к которым применим, одним шагом undo.
+  const finish = () => {
+    view.blocks.closeMenu();
+    view.getRoot()?.focus({ preventScroll: true });
+  };
+
   const turnInto = availableSlashItems(editor, slashItems, blockId)
     .filter((item) => !item.run)
-    .filter((item) =>
-      editor.can('convertBlock', { blockId, flavour: item.flavour, props: item.props }),
-    )
+    .filter((item) => convertibleIn(editor, group, item).length > 0)
     .map<BlockMenuAction>((item) => ({
       id: item.id,
       title: item.title,
       icon: item.icon,
-      run: perform(() =>
-        editor.dispatch({
-          type: 'convertBlock',
-          payload: { blockId, flavour: item.flavour, props: item.props as never },
-        }),
-      ),
+      run: several
+        ? () => {
+            convertBlocks(editor, group, item);
+            finish();
+          }
+        : perform(() =>
+            editor.dispatch({
+              type: 'convertBlock',
+              payload: { blockId, flavour: item.flavour, props: item.props as never },
+            }),
+          ),
     }));
 
   // Фон есть у текстовых блоков, чья схема его допускает: движок проверяет props, так что свои блоки без фона его не покажут.
+  const withBackground = backgroundTargets(editor, group);
   const background: BlockMenuBackground | undefined =
-    block && editor.can('setBlockProps', { blockId, props: { background: BLOCK_BACKGROUNDS[0] } })
+    block && withBackground.length > 0
       ? {
-          current: getBlockBackground(block),
+          current: commonBackground(editor, withBackground),
           options: BLOCK_BACKGROUNDS,
-          onPick: (color) =>
+          onPick: (color) => {
+            if (several) {
+              setBackgrounds(editor, group, color as BlockBackground | null);
+              finish();
+
+              return;
+            }
+
             performBlockAction(view, () =>
               editor.dispatch({
                 type: 'setBlockProps',
                 payload: { blockId, props: { background: color ?? undefined } as never },
               }),
-            ),
+            );
+          },
         }
       : undefined;
 

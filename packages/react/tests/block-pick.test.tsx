@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { act, cleanup } from '@testing-library/react';
+import { act, cleanup, fireEvent } from '@testing-library/react';
 
 import { FRAGMENT_MIME } from '@inkbrick/engine';
 
-import { FindReplacePanel, useFind } from '../src';
+import { CommandPalette, FindReplacePanel, commandPalette, tableBlocks, useFind } from '../src';
 import type { EditorView } from '../src/editing/EditorView';
 import { useEditorView } from '../src/hooks/useEditorView';
 import { mountEditor } from './harness';
@@ -26,8 +26,11 @@ function Capture() {
   return null;
 }
 
-function mount(texts: string[]) {
-  const mounted = mountEditor(texts, { extra: <Capture /> });
+function mount(
+  texts: string[],
+  options: Parameters<typeof mountEditor>[1] = { extra: <Capture /> },
+) {
+  const mounted = mountEditor(texts, options);
   const picked = () => captured!.picked.getState().ids;
   const note = mounted.editor.document.getBlock(mounted.editor.document.rootId)!.children[0];
   const order = () =>
@@ -291,6 +294,159 @@ describe('dragging and the menu act on the whole picked run', () => {
       ).click(),
     );
     expect(t.order()).toEqual(['one', 'two', 'three']);
+  });
+});
+
+describe('turn into and background act on the whole picked run', () => {
+  const flavours = (t: ReturnType<typeof mount>) =>
+    t.blocks().map((id) => t.editor.document.getBlock(id)!.flavour.replace('block:', ''));
+  const backgrounds = (t: ReturnType<typeof mount>) =>
+    t.blocks().map((id) => t.editor.document.getBlock(id)!.props.background);
+  const openMenu = (t: ReturnType<typeof mount>, blockId: string) =>
+    act(() => captured!.blocks.openMenu({ blockId, x: 10, y: 10 }));
+  const menu = () => document.querySelector('[data-testid="block-menu"]')!;
+  const click = (selector: string) =>
+    act(() => (menu().querySelector(selector) as HTMLElement).click());
+
+  function pickAll(t: ReturnType<typeof mount>, count: number) {
+    t.caret(t.ids[0], 0);
+    t.key('Escape');
+    for (let i = 1; i < count; i++) t.key('ArrowDown', { shift: true });
+  }
+
+  /** Три абзаца и таблица между ними: у таблицы нет ни фона, ни превращения. */
+  function withTable() {
+    const t = mount(['one', 'two', 'three'], { blocks: tableBlocks, extra: <Capture /> });
+
+    act(() => {
+      t.editor.dispatch({
+        type: 'insertBlock',
+        payload: { flavour: 'block:table', afterId: t.ids[0] },
+      });
+    });
+
+    return t;
+  }
+
+  it('turns every picked block into the chosen type in one undo step and keeps the pick', () => {
+    const t = mount(['one', 'two', 'three']);
+
+    pickAll(t, 2);
+    t.editor.clearHistory();
+    openMenu(t, t.ids[1]);
+    click('[data-action="heading-2"]');
+
+    expect(flavours(t)).toEqual(['heading', 'heading', 'paragraph']);
+    expect(t.order()).toEqual(['one', 'two', 'three']);
+    expect(t.picked()).toEqual([t.ids[0], t.ids[1]]);
+    expect(document.querySelector('[data-testid="block-menu"]')).toBeNull();
+
+    act(() => t.editor.store.undo());
+    expect(flavours(t)).toEqual(['paragraph', 'paragraph', 'paragraph']);
+  });
+
+  it('turns only the blocks that can be turned and hides the item when none can', () => {
+    const t = withTable();
+
+    pickAll(t, 3);
+    openMenu(t, t.ids[0]);
+    click('[data-action="quote"]');
+
+    expect(flavours(t)).toEqual(['quote', 'table', 'quote', 'paragraph']);
+
+    // Таблица одна в ряду: превращать некуда, пункта нет.
+    act(() => captured!.picked.set([t.blocks()[1]], t.blocks()[1], t.blocks()[1]));
+    act(() => captured!.blocks.closeMenu());
+    openMenu(t, t.blocks()[1]);
+    expect(menu().querySelector('[data-action="heading-1"]')).toBeNull();
+  });
+
+  it('does not offer a type without text for a run, only for one block', () => {
+    const t = mount(['one', 'two']);
+
+    pickAll(t, 2);
+    openMenu(t, t.ids[0]);
+    expect(menu().querySelector('[data-action="heading-1"]')).not.toBeNull();
+    expect(menu().querySelector('[data-action="divider"]')).toBeNull();
+    act(() => captured!.blocks.closeMenu());
+
+    act(() => captured!.picked.set([t.ids[0]], t.ids[0], t.ids[0]));
+    openMenu(t, t.ids[0]);
+    expect(menu().querySelector('[data-action="divider"]')).not.toBeNull();
+  });
+
+  it('sets and clears the background of the whole run in one undo step', () => {
+    const t = mount(['one', 'two', 'three']);
+
+    pickAll(t, 3);
+    t.editor.clearHistory();
+    openMenu(t, t.ids[2]);
+    click('[data-action="background-yellow"]');
+
+    expect(backgrounds(t)).toEqual(['yellow', 'yellow', 'yellow']);
+    expect(t.picked()).toEqual(t.ids);
+
+    openMenu(t, t.ids[0]);
+    expect(
+      menu().querySelector('[data-action="background-yellow"]')!.getAttribute('aria-checked'),
+    ).toBe('true');
+    click('[data-action="background-none"]');
+    expect(backgrounds(t)).toEqual([undefined, undefined, undefined]);
+
+    act(() => t.editor.store.undo());
+    expect(backgrounds(t)).toEqual(['yellow', 'yellow', 'yellow']);
+    act(() => t.editor.store.undo());
+    expect(backgrounds(t)).toEqual([undefined, undefined, undefined]);
+  });
+
+  it('skips blocks without a background, and has no row when none has one', () => {
+    const t = withTable();
+
+    pickAll(t, 3);
+    openMenu(t, t.ids[0]);
+    click('[data-action="background-blue"]');
+
+    expect(backgrounds(t)).toEqual(['blue', undefined, 'blue', undefined]);
+
+    act(() => captured!.picked.set([t.blocks()[1]], t.blocks()[1], t.blocks()[1]));
+    openMenu(t, t.blocks()[1]);
+    expect(menu().querySelector('[data-inkbrick-part="swatches"]')).toBeNull();
+  });
+
+  it('the menu of a block outside the pick still acts on that block alone', () => {
+    const t = mount(['one', 'two', 'three']);
+
+    pickAll(t, 2);
+    openMenu(t, t.ids[2]);
+    click('[data-action="background-red"]');
+
+    expect(backgrounds(t)).toEqual([undefined, undefined, 'red']);
+  });
+
+  it('the command palette turns the whole picked run into a type', () => {
+    const t = mount(['one', 'two', 'three'], {
+      keymap: commandPalette.keymap,
+      extra: (
+        <>
+          <Capture />
+          <CommandPalette />
+        </>
+      ),
+    });
+
+    pickAll(t, 2);
+    t.editor.clearHistory();
+    t.key('p', { ctrl: true, shift: true });
+
+    const option = document.querySelector<HTMLElement>('[data-command="turn.quote"]')!;
+
+    expect(option).not.toBeNull();
+    act(() => fireEvent.click(option));
+
+    expect(flavours(t)).toEqual(['quote', 'quote', 'paragraph']);
+
+    act(() => t.editor.store.undo());
+    expect(flavours(t)).toEqual(['paragraph', 'paragraph', 'paragraph']);
   });
 });
 

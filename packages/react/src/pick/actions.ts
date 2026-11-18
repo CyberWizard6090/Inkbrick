@@ -1,6 +1,7 @@
 import { flushSync } from 'react-dom';
 
 import type { CaretResult, Editor, Fragment } from '@inkbrick/engine';
+import { BLOCK_BACKGROUNDS, getBlockBackground, type BlockBackground } from '@inkbrick/document';
 
 import type { EditorView } from '../editing/EditorView';
 
@@ -241,6 +242,93 @@ export function moveBlocks(
   view.getElement(ids[0])?.scrollIntoView?.({ block: 'nearest' });
 
   return true;
+}
+
+/** Куда можно превратить блоки: тип и свойства пункта «Превратить в» (пункт slash-меню). */
+interface ConvertTarget {
+  readonly flavour: string;
+  readonly props?: unknown;
+}
+
+/**
+ * Блоки ряда, которые можно превратить в `item`; остальные пропускаются. В тип без текста (разделитель, таблица) превращается
+ * только один блок: такой тип вставляется рядом и сдвигает остальные, ряд бы развалился.
+ */
+export function convertibleIn(
+  editor: Editor,
+  ids: readonly string[],
+  item: ConvertTarget,
+): readonly string[] {
+  if (ids.length > 1 && editor.schema.getBlockSchema(item.flavour)?.inline === false) return [];
+
+  return ids.filter((blockId) =>
+    editor.can('convertBlock', { blockId, flavour: item.flavour, props: item.props as never }),
+  );
+}
+
+/** Превращает блоки одной правкой (один шаг undo); блоки, которые не превращаются, остаются как были. */
+export function convertBlocks(
+  editor: Editor,
+  ids: readonly string[],
+  item: ConvertTarget,
+): readonly string[] {
+  const targets = convertibleIn(editor, ids, item);
+
+  if (targets.length === 0) return targets;
+
+  flushSync(() => {
+    editor.batch(() => {
+      for (const blockId of targets) {
+        editor.dispatch({
+          type: 'convertBlock',
+          payload: { blockId, flavour: item.flavour, props: item.props as never },
+        });
+      }
+    });
+  });
+
+  return targets;
+}
+
+/** Блоки ряда, у которых есть фон (движок принимает `background`); остальные пропускаются. */
+export function backgroundTargets(editor: Editor, ids: readonly string[]): readonly string[] {
+  return ids.filter((blockId) =>
+    editor.can('setBlockProps', { blockId, props: { background: BLOCK_BACKGROUNDS[0] } }),
+  );
+}
+
+/** Текущий фон блоков: общий для всех, `undefined` без фона или когда у блоков он разный. */
+export function commonBackground(
+  editor: Editor,
+  ids: readonly string[],
+): BlockBackground | undefined {
+  const colors = new Set(ids.map((id) => getBlockBackground(editor.store.getBlock(id)!)));
+
+  return colors.size === 1 ? [...colors][0] : undefined;
+}
+
+/** Задаёт (или снимает, `null`) фон блокам ряда одной правкой; блоки без фона пропускаются. */
+export function setBackgrounds(
+  editor: Editor,
+  ids: readonly string[],
+  color: BlockBackground | null,
+): readonly string[] {
+  const targets = backgroundTargets(editor, ids);
+
+  if (targets.length === 0) return targets;
+
+  flushSync(() => {
+    editor.batch(() => {
+      for (const blockId of targets) {
+        editor.dispatch({
+          type: 'setBlockProps',
+          payload: { blockId, props: { background: color ?? undefined } as never },
+        });
+      }
+    });
+  });
+
+  return targets;
 }
 
 /** Фрагмент для буфера обмена: выбранные блоки целиком. */
