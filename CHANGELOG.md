@@ -223,7 +223,6 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 - The caret in a code block no longer jumps to the start of the block when the syntax highlighter chunk arrives (or the language changes) while you type: a redraw that changes no text now keeps the selection. The code block also takes input before its toolbar chunk has loaded: the text field is the same element before and after the toolbar appears.
 
-
 - Enter in a list item no longer copies `collapsed` to the new item: the new one starts expanded and the nested blocks stay with the first part.
 - Virtual renderer: the nested blocks of a closed toggle (and of a collapsed list item) are no longer counted in the height estimate, so they leave
   no empty room in the scroll area.
