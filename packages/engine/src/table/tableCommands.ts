@@ -1,13 +1,4 @@
-import {
-  TABLE_COLUMN_TYPES,
-  TABLE_FILTER_OPS,
-  TABLE_OPTION_COLORS,
-  type TableColumnType,
-  type TableFilter,
-  type TableOption,
-  type TableView,
-  type TableProps,
-} from '@inkbrick/document';
+import { TABLE_COLUMN_TYPES, type TableColumnType, type TableProps } from '@inkbrick/document';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
 import type { CaretResult } from '../dispatcher/Intents';
@@ -189,7 +180,7 @@ export const SetTableColumnWidthCommand = defineBlockCommand<
   },
 });
 
-/** Задаёт тип столбца (`text`, `number`, `date`, `checkbox`, `select`, …): от него зависят сортировка и отображение. */
+/** Задаёт тип столбца (`text`, `number`, `date`): от него зависит сортировка. */
 export const SetTableColumnTypeCommand = defineBlockCommand<
   TableProps,
   { index: number; type: TableColumnType }
@@ -209,110 +200,6 @@ export const SetTableColumnTypeCommand = defineBlockCommand<
     context.setProps({ columnTypes: types.some((value) => value !== 'text') ? types : undefined });
   },
 });
-
-const MAX_OPTIONS = 100;
-
-/** Варианты списка в порядке показа: непустые названия без повторов (регистр различается), цвет из набора. */
-const validOptions = (options: unknown): options is TableOption[] =>
-  Array.isArray(options) &&
-  options.length <= MAX_OPTIONS &&
-  options.every(
-    (option) =>
-      !!option &&
-      typeof option.label === 'string' &&
-      option.label.trim() !== '' &&
-      option.label.length <= 100 &&
-      !option.label.includes(',') &&
-      (option.color === undefined || TABLE_OPTION_COLORS.includes(option.color)),
-  ) &&
-  new Set(options.map((option) => option.label)).size === options.length;
-
-/**
- * Задаёт варианты списка столбца (`select`, `multiselect`); пустой список убирает их. Названия не содержат запятую:
- * ею разделены значения `multiselect` в ячейке. Уже записанные в ячейках значения не меняются.
- */
-export const SetTableColumnOptionsCommand = defineBlockCommand<
-  TableProps,
-  { index: number; options: readonly TableOption[] }
->({
-  type: 'setTableColumnOptions',
-
-  canExecute: (context, { index, options }) =>
-    isIndex(index, columnsOf(context) - 1) && validOptions(options),
-
-  execute(context, { index, options }) {
-    const lists = Array.from(
-      { length: columnsOf(context) },
-      (_, i) => context.block.props.columnOptions?.[i] ?? null,
-    );
-
-    lists[index] = options.length > 0 ? options.map((option) => ({ ...option })) : null;
-    context.setProps({ columnOptions: lists.some((list) => list) ? lists : undefined });
-  },
-});
-
-const MAX_VIEWS = 20;
-
-const isFilter = (filter: unknown): boolean =>
-  filter === null ||
-  (!!filter &&
-    TABLE_FILTER_OPS.includes((filter as TableFilter).op) &&
-    ((filter as TableFilter).value === undefined ||
-      (typeof (filter as TableFilter).value === 'string' &&
-        ((filter as TableFilter).value as string).length <= 200)));
-
-/** Настроен ли вид: скрытые столбцы, фильтры или сортировка. */
-const customized = (view: TableView) =>
-  !!view.hidden?.some(Boolean) || !!view.filters?.some(Boolean) || !!view.sort;
-
-/**
- * Виды таблицы целиком: список заменяется одной правкой (один шаг undo), пустой список возвращает таблицу к одному виду
- * без настроек. Проверяется: уникальные коды, столбцы существуют, хотя бы один столбец виден, условия фильтров из
- * набора. Скрытие, фильтры и сортировка недоступны в таблице с объединёнными ячейками — сетка разошлась бы.
- */
-export const SetTableViewsCommand = defineBlockCommand<TableProps, { views: readonly TableView[] }>(
-  {
-    type: 'setTableViews',
-
-    canExecute: (context, { views }) => {
-      if (!Array.isArray(views) || views.length > MAX_VIEWS) return false;
-
-      const columns = columnsOf(context);
-      const merged = hasMerges(context);
-
-      return (
-        new Set(views.map((view) => view?.id)).size === views.length &&
-        views.every(
-          (view) =>
-            !!view &&
-            typeof view.id === 'string' &&
-            view.id !== '' &&
-            view.id.length <= 64 &&
-            (view.name === undefined ||
-              (typeof view.name === 'string' && view.name.length <= 60)) &&
-            (!merged || !customized(view)) &&
-            (view.hidden === undefined ||
-              (Array.isArray(view.hidden) &&
-                view.hidden.length <= columns &&
-                Array.from({ length: columns }).some((_, i) => !view.hidden![i]))) &&
-            (view.filters === undefined ||
-              (Array.isArray(view.filters) &&
-                view.filters.length <= columns &&
-                view.filters.every(isFilter))) &&
-            (view.sort === undefined ||
-              (isIndex(view.sort.column, columns - 1) &&
-                (view.sort.direction === 'asc' || view.sort.direction === 'desc'))),
-        )
-      );
-    },
-
-    execute(context, { views }) {
-      context.setProps({
-        views: views.length > 0 ? views.map((view) => ({ ...view })) : undefined,
-      });
-    },
-  },
-);
 
 /** Строки таблицы и их порядок после сортировки по столбцу; заголовок остаётся первым. */
 function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
@@ -492,8 +379,6 @@ export const tableCommands = [
   MoveTableColumnCommand,
   SetTableColumnWidthCommand,
   SetTableColumnTypeCommand,
-  SetTableColumnOptionsCommand,
-  SetTableViewsCommand,
   SortTableRowsCommand,
   MergeTableCellsCommand,
   SplitTableCellCommand,

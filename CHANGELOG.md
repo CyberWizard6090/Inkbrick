@@ -5,6 +5,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
+### Removed
+
+- Column properties and table views are cut: the dialog «Column properties», the column types `checkbox`, `select`, `multiselect`, `url`, `email` and `phone` (the types `text`, `number` and `date` stay), keyboard control of checkbox and select cells, column filters, hidden columns and several views per table. The `columnTypes` of a table keep the three original types; documents that were saved with the removed types are not migrated.
+
 ### Added
 
 - Table formatting (`docs/tables.md`, «Форматирование»): with a rectangle of cells selected, the right-click menu and the command palette format **all** the cells in one undo step — bold, italic, underline, strike, code (toggle: off when every cell already has it; Ctrl/Cmd+B, I, U, E, Shift+X work on the selection), text colour and highlight, left/centre/right/justify alignment per cell, clear formatting. Commands `formatTableCells`, `setTableCellsColor`, `clearTableCellsFormat`, `alignTableCells`, `setTableCellsBackground`, `resetTableColumnWidths`. Table properties `headerColumn`, `striped` (alternating rows) and `borders`, cell `background` (`BLOCK_BACKGROUNDS`, `data-background`), a «Table» grip menu in the table corner (header row and column, stripes, borders, freeze, reset widths, cell background for the selected cells or the whole table) with the same items in the cell context menu and the palette. Properties and cell backgrounds are validated by the schema, travel with copied tables, and `toHtml` writes cell background, alignment, `<th scope="row">`, stripes and borderless tables; Markdown is unchanged. `ToolbarProps.scope: 'cells'` and `onClearFormat` for custom toolbars. The resize handles got `aria-valuenow`.
@@ -16,9 +20,6 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Markdown import (`docs/export.md`): `fromMarkdown(text, { schema })` from `@inkbrick/document/markdown` parses Markdown back into a `Document` — the inverse of `toMarkdown` (paragraphs, headings, bullet, ordered and todo lists with nesting, quotes, `> [!NOTE]` callouts, fenced code with a language, `---`, images, GFM tables, `$$…$$` and `$…$` formulas, footnotes, `<details>` toggles; bold, italic, strikethrough, code, links, `<u>`). A separate entry point, so the main bundle does not grow. Unknown syntax stays plain text, raw HTML is never inserted, links and images go through `isSafeUrl`/`isSafeImageUrl`, nesting stops at `MAX_NESTING_DEPTH`, and `maxLength`/`maxBlocks` reject oversized input. Options `title`, `titleFromHeading`, `rootId`.
 
 - Block background (`docs/block-background.md`): `background` on paragraphs, headings, quotes, list items, callouts and toggles (`BLOCK_BACKGROUNDS`, `getBlockBackground`), a row of colours in the block menu (`props.background` of `slots.BlockMenu`), kept when the block is turned into another text type, exported to HTML as an inline style. Pale shades of the theme highlight colours keep the text readable in light and dark themes; the text stays where it was. `setBlockProps` with `undefined` now removes the property.
-
-- Table views (`docs/tables.md`): several views per table (`views` in the table props, command `setTableViews`), each with its own hidden columns, filters and a display sort that does not reorder the data. A bar over the table switches, adds, renames and deletes views and shows what is hidden; «Show all» clears the open view in one undo step. Which view is open is per reader and not part of the document. Filter conditions depend on the column type (contains, equals, greater/less for numbers and dates, empty, checked…); the header is never filtered; Tab skips hidden cells; data, copy and export are untouched. Not available with merged cells.
-- Table column properties (`docs/tables.md`): new column types `checkbox`, `select`, `multiselect`, `url`, `email`, `phone` next to `text`, `number`, `date`; the value is plain text in the cell (copy, export, search, undo keep working). A «Column properties…» dialog in the column menu sets the type and, for select types, the options with colours (`columnOptions` in the table props, command `setTableColumnOptions`); options move with their columns and copy with the table. Select cells show coloured chips with a picker, checkbox cells a checkbox, link types an open link and a warning for invalid values; the header row stays text. Sorting checkbox columns: unchecked before checked.
 
 - Command palette (`docs/command-palette.md`): `<CommandPalette commands={…} />` and `commandPalette.keymap` (Ctrl/Cmd+Shift+P; Ctrl+P is the browser's print). Built-in commands: undo and redo, formatting of the selection, «Turn into» and «Insert» for every slash-menu item that fits the current block. The app adds its own (`PaletteCommand`: `id`, `title`, `group`, `keywords`, `shortcut`, `when`, `run`), `findReplace.commands` adds Find and Replace; `useCommandPalette()` opens it from code. The selection at opening is restored before a command runs. Combobox ARIA, English and Russian.
 
@@ -149,10 +150,6 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Every package has a `README.md` for its npm page: what it does, how to install it, a short example. The root
   README lists the optional blocks and tools, `@inkbrick/locales` and all the guides; the size of the React editor
   there is up to date (~61 KB gzip).
-- Table: checkbox and select cells work from the keyboard. Space and Enter toggle a checkbox cell; Enter or Alt+ArrowDown
-  open the list of a select or multi-select cell, the arrows choose, Enter or Space mark an option, Escape closes the list
-  and returns the caret to the cell. The list is exposed as a `listbox` with `aria-activedescendant`; `aria-multiselectable`
-  is set only for multi-select, and the cell button has `aria-controls`.
 - Smooth appearance, like in Notion: the block handle fades in and slides in a few pixels from the left, the slash menu, the
   block menu and the context menu fade in and slide in from the caret, the handle or the click point (from below when a menu opens
   above it; `data-side="top|bottom"` on the menu), the floating toolbar rises over the selection or drops under it through the
@@ -297,9 +294,6 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   held the nested list (`validateSnapshot`: `block:list cannot be placed inside block:paragraph`). Backspace at the
   start of such an item now lifts the nested items too, instead of keeping them inside the paragraph.
 - Backspace in an empty first block removes it when a text block follows, and moves the caret there.
-- Table views: a row added while a filter or a sort of the view is on stays where it was inserted. It used to vanish
-  at once (an empty row did not pass the filter) with the caret inside the hidden row, or jump to its sorted place.
-  The filter and the sort take it into account after the next change of the view or its settings.
 - Several editors on one page: the tag and find highlights of one editor no longer wipe out the other's, and closing
   one editor (or its search) keeps the other's highlights. Escape picks a block even while the search or the command
   palette is open in another editor.

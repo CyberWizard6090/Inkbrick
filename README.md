@@ -11,7 +11,7 @@ undo/redo, a schema with validation and migrations, and a fully replaceable UI.
 - **Blocks:** paragraphs, headings 1–6, bullet / ordered / task lists with nesting, quotes, code with syntax
   highlighting, callouts, dividers, images (upload, link, caption, alt, width, alignment), block and inline
   formulas (LaTeX via Temml, or plug in KaTeX/MathJax). Unknown block types are preserved, never lost.
-- **Optional blocks:** tables (column types, sorting, filters, views, merged cells, frozen header), table of contents,
+- **Optional blocks:** tables (column types, sorting, merged cells, frozen header), table of contents,
   columns, toggles, footnotes. Each set is opt-in and adds nothing to the bundle until it is used.
 - **Tools:** find and replace, a command palette, `#tags`, a word counter, folding of headings and list items, picking
   and moving several blocks at once, block backgrounds, the browser's spellcheck.

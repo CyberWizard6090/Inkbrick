@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 
-import { tableBlocks } from '../src';
 import { mountEditor } from './harness';
 
 afterEach(cleanup);
@@ -85,32 +84,5 @@ describe('spellcheck', () => {
 
     expect(content(0).hasAttribute('spellcheck')).toBe(false);
     expect(content(1).getAttribute('spellcheck')).toBe('false');
-  });
-
-  it('excludes the cells of address, mail and phone columns', () => {
-    const { editor, ids } = mountEditor(['before'], { spellcheck: true, blocks: tableBlocks });
-    let tableId = '';
-
-    act(() => {
-      const made = editor.dispatch({
-        type: 'insertBlock',
-        payload: { flavour: 'block:table', afterId: ids[0] },
-      }) as { blockId: string };
-
-      tableId = editor.document.getBlock(
-        editor.document.getBlock(made.blockId)!.parentId!,
-      )!.parentId!;
-    });
-    act(() => {
-      editor.dispatch({
-        type: 'setTableColumnType',
-        payload: { blockId: tableId, index: 1, type: 'email' },
-      } as never);
-    });
-
-    const cells = [...document.querySelectorAll<HTMLElement>('tr:nth-child(2) td')];
-
-    expect(cells[0].hasAttribute('spellcheck')).toBe(false);
-    expect(cells[1].getAttribute('spellcheck')).toBe('false');
   });
 });

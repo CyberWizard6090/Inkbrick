@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 
-import type { Alignment, BaseBlock, TableProps, TableView } from '@inkbrick/document';
+import type { Alignment, BaseBlock, TableProps } from '@inkbrick/document';
 import {
   MAX_TABLE_CELLS,
   MAX_TABLE_COLUMNS,
@@ -24,9 +24,6 @@ import type { BlockMenuAction } from '../block-handle/types';
 import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { PortalPresence } from '../ui/Presence';
-import { ColumnPropertiesDialog } from './ColumnPropertiesDialog';
-import { canUpdateView, newViewId, setAt, updateView, updateViews } from './views';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableLine } from './cellSelection';
@@ -61,9 +58,6 @@ interface MenuState {
 
 export interface TableControlsProps {
   readonly block: BaseBlock;
-  /** Открытый вид: «Скрыть столбец», сортировка вида и фильтры относятся к нему. */
-  readonly activeView: TableView;
-  readonly onSelectView: (id: string) => void;
   readonly tableRef: RefObject<HTMLTableElement | null>;
   /** Ширина столбца, которую тянут сейчас; `null` — не тянут. Таблица рисует её, пока модель не изменилась. */
   /** Ширины всех столбцов, пока границу тянут (рисуются поверх модели); `null` — перетаскивание закончено. */
@@ -78,18 +72,6 @@ const MAX_WIDTH = 1200;
 const KEY_STEP = 10;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-/** Сортировка вида по столбцу: по возрастанию, по убыванию, снять. */
-const nextSort = (view: TableView, column: number): TableView => {
-  const current = view.sort;
-
-  if (!current || current.column !== column) return { ...view, sort: { column, direction: 'asc' } };
-  if (current.direction === 'asc') return { ...view, sort: { column, direction: 'desc' } };
-
-  const { sort: _sort, ...rest } = view;
-
-  return rest;
-};
 
 const prevent = (event: { preventDefault(): void }) => event.preventDefault();
 
@@ -118,8 +100,6 @@ function columnEdges(table: HTMLTableElement): Edge[] {
   );
 
   for (const row of Array.from(table.rows)) {
-    if (row.hidden) continue;
-
     Array.from(row.cells).forEach((cell, index) => {
       const last = index + Math.max(1, cell.colSpan) - 1;
 
@@ -159,8 +139,7 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
   const cell = row?.cells[position.column];
   const first = table.rows[0];
 
-  // Скрытая строка или столбец (фильтр, скрытие столбца) не измеряются: управлять нечем.
-  if (!row || !cell || !first || row.hidden || cell.hidden) return null;
+  if (!row || !cell || !first) return null;
 
   return {
     table: boxOf(table),
@@ -178,43 +157,8 @@ const sameLayout = (a: Layout | null, b: Layout | null) =>
  * и ручки ширины столбцов. Рисуется поверх документа (портал в `body`, `position: fixed`), а не внутри редактируемого
  * корня: так выделение и буфер обмена не видят этих элементов. Показывается, пока над таблицей мышь или в ней каретка;
  * в режиме только чтения не показывается.
- *
- * Окно свойств столбца живёт здесь, а не в самих элементах управления: когда фокус уходит в окно, каретка покидает
- * таблицу и они скрываются, а окно должно остаться.
  */
-export function TableControls(props: TableControlsProps) {
-  const [propertiesOf, setPropertiesOf] = useState<number | null>(null);
-  const view = useEditorView();
-
-  return (
-    <>
-      <TableControlsLayer {...props} onProperties={setPropertiesOf} />
-      <PortalPresence
-        open={propertiesOf !== null}
-        render={() => (
-          <ColumnPropertiesDialog
-            block={props.block}
-            view={props.activeView}
-            column={propertiesOf!}
-            onClose={() => {
-              setPropertiesOf(null);
-              view.getRoot()?.focus({ preventScroll: true });
-            }}
-          />
-        )}
-      />
-    </>
-  );
-}
-
-function TableControlsLayer({
-  block,
-  tableRef,
-  activeView,
-  onSelectView,
-  onPreview,
-  onProperties,
-}: TableControlsProps & { readonly onProperties: (column: number) => void }) {
+export function TableControls({ block, tableRef, onPreview }: TableControlsProps) {
   const editor = useEditor();
   const view = useEditorView();
   const { slots, t } = useEditorUI();
@@ -586,59 +530,6 @@ function TableControlsLayer({
         }),
     })),
     {
-      id: 'column-properties',
-      title: t('table.column.properties'),
-      icon: <Icon name="columns" />,
-      run: () => {
-        setMenu(null);
-        onProperties(column);
-      },
-    },
-    {
-      id: 'column-hide',
-      title: t('table.column.hide'),
-      icon: <Icon name="x" />,
-      disabled: !canUpdateView(editor, block, activeView.id, (view) => ({
-        ...view,
-        hidden: setAt(view.hidden, column, true, false),
-      })),
-      run: () =>
-        perform(
-          () =>
-            void updateView(editor, block, activeView.id, (view) => ({
-              ...view,
-              hidden: setAt(view.hidden, column, true, false),
-            })),
-        ),
-    },
-    {
-      id: 'column-view-sort',
-      title: t(
-        activeView.sort?.column !== column
-          ? 'table.column.viewSortAsc'
-          : activeView.sort.direction === 'asc'
-            ? 'table.column.viewSortDesc'
-            : 'table.column.viewSortOff',
-      ),
-      icon: <Icon name={activeView.sort?.column === column ? 'arrow-down' : 'arrow-up'} />,
-      disabled: !canUpdateView(editor, block, activeView.id, (view) => nextSort(view, column)),
-      run: () =>
-        perform(
-          () => void updateView(editor, block, activeView.id, (view) => nextSort(view, column)),
-        ),
-    },
-    {
-      id: 'view-add',
-      title: t('table.view.add'),
-      icon: <Icon name="plus" />,
-      run: () =>
-        perform(() => {
-          const id = newViewId();
-
-          if (updateViews(editor, block, (views) => [...views, { id }])) onSelectView(id);
-        }),
-    },
-    {
       id: 'column-sort-asc',
       title: t('table.column.sortAsc'),
       icon: <Icon name="arrow-up" />,
@@ -885,35 +776,33 @@ function TableControlsLayer({
       >
         <Icon name="plus" />
       </button>
-      {edges.map((edge, column) =>
-        activeView.hidden?.[column] ? null : (
-          <div
-            {...control}
-            key={column}
-            role="separator"
-            aria-orientation="vertical"
-            // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
-            aria-valuenow={Math.round(edge.x - (column === 0 ? table.left : edges[column - 1].x))}
-            aria-valuemin={MIN_WIDTH}
-            aria-valuemax={MAX_WIDTH}
-            aria-label={t('table.resize', { column: column + 1 })}
-            tabIndex={0}
-            data-inkbrick-part="resize"
-            style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
-            onPointerDown={(event) => resize(column, event)}
-            onKeyDown={(event) => resizeByKey(column, event)}
-            onDoubleClick={() => {
-              if (
-                can('setTableColumnWidth', { index: column, width: null }) &&
-                props.widths?.[column]
-              )
-                perform(() => {
-                  run('setTableColumnWidth', { index: column, width: null });
-                });
-            }}
-          />
-        ),
-      )}
+      {edges.map((edge, column) => (
+        <div
+          {...control}
+          key={column}
+          role="separator"
+          aria-orientation="vertical"
+          // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
+          aria-valuenow={Math.round(edge.x - (column === 0 ? table.left : edges[column - 1].x))}
+          aria-valuemin={MIN_WIDTH}
+          aria-valuemax={MAX_WIDTH}
+          aria-label={t('table.resize', { column: column + 1 })}
+          tabIndex={0}
+          data-inkbrick-part="resize"
+          style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
+          onPointerDown={(event) => resize(column, event)}
+          onKeyDown={(event) => resizeByKey(column, event)}
+          onDoubleClick={() => {
+            if (
+              can('setTableColumnWidth', { index: column, width: null }) &&
+              props.widths?.[column]
+            )
+              perform(() => {
+                run('setTableColumnWidth', { index: column, width: null });
+              });
+          }}
+        />
+      ))}
       {menu && (
         <Menu
           block={block}
