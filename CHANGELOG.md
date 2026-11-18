@@ -233,6 +233,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   footnote moved, a footnote code changed). A keystroke in a 50 000-block document with footnotes went from 10.5 ms to
   1.1 ms (the same as without footnotes), in a line with a footnote from 11.8 to 1.3 ms, Enter from 15 to 2.4 ms
   (`pnpm bench`, scenario «footnotes in a large document»; `BENCH_OUT=file.json` also writes the results to a file).
+- The block handle, the block menu, block moving and the drop line (`BlockHandleLayer`: pointer tracking, handle, menu, drag
+  and drop, drop indicator) load as one separate chunk right after an editable editor mounts: the core of `@inkbrick/react`
+  went from 63.2 to 60.7 KB gzip (the chunk is ~4 KB, read-only documents never load it). The default handle and menu used
+  to be two more chunks nested inside; now they ship in the same one. Typing never waits for it. The exports
+  (`useBlockDrag`, `DefaultBlockHandle`, `DefaultBlockMenu`, `DefaultDropIndicator`) and the `slots` keep working.
 
 ### Fixed
 

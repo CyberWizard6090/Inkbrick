@@ -1,10 +1,8 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
-import { BlockHandleHost } from '../block-handle/BlockHandleHost';
-import { DropIndicatorHost } from '../block-handle/DropIndicatorHost';
+import { LazyBlockHandles } from '../block-handle/LazyBlockHandles';
 import { useClipboard } from '../clipboard/useClipboard';
 import { ContextMenuHost, useContextMenu } from '../context-menu/ContextMenuHost';
-import { useBlockHandles } from '../block-handle/useBlockHandles';
 import { useEditorInput } from '../editing/useEditorInput';
 import { useMarginClick } from '../editing/useMarginClick';
 import { useSelectionState } from '../editing/useSelectionState';
@@ -57,7 +55,6 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
   useContextMenu(ref, !readOnly && formatting !== 'toolbar' && slots.ContextMenu !== null);
   useSelectionState(ref);
   useClipboard(ref, readOnly);
-  useBlockHandles(ref, slots.BlockHandle !== null && !readOnly);
 
   useLayoutEffect(() => view.setRoot(ref.current), [view]);
 
@@ -110,8 +107,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
       <ToolbarHost />
       <ContextMenuHost />
       <FormulaPopoverHost />
-      <BlockHandleHost />
-      <DropIndicatorHost />
+      <LazyBlockHandles rootRef={ref} handles={slots.BlockHandle !== null} />
     </>
   );
 }
