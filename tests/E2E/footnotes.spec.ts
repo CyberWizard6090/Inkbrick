@@ -77,8 +77,10 @@ test.describe('Footnotes', () => {
     await page.keyboard.type('Second');
 
     // Ссылка в тексте выше первой: у прежней номер 2.
-    await page.locator(editable).first().click();
-    await page.keyboard.press('Home');
+    await page
+      .locator(editable)
+      .first()
+      .click({ position: { x: 2, y: 5 } });
     await page.keyboard.type('Intro /footnote');
     await page.keyboard.press('Enter');
     await page.keyboard.type('First');
@@ -90,8 +92,10 @@ test.describe('Footnotes', () => {
     ]);
 
     // Удаляем первую ссылку («Intro » и сам символ-объект): текст сноски остаётся без ссылки.
-    await page.locator(editable).first().click();
-    await page.keyboard.press('Home');
+    await page
+      .locator(editable)
+      .first()
+      .click({ position: { x: 2, y: 5 } });
     for (let i = 0; i < 'Intro '.length; i++) await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Delete');
     await expect(page.locator(ref)).toHaveCount(1);
