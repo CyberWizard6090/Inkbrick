@@ -1,8 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import { isHexColor } from '@inkbrick/document';
+
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
 import { Icon } from '../icons/Icon';
+import { CustomColorSwatch } from '../ui/CustomColorSwatch';
 import type { BlockMenuAction, BlockMenuProps } from './types';
 
 export function DefaultBlockMenu({
@@ -147,6 +150,15 @@ export function DefaultBlockMenu({
                 onClick={() => background.onPick(color)}
               />
             ))}
+            <CustomColorSwatch
+              role="menuitemradio"
+              action="background-custom"
+              value={isHexColor(background.current) ? background.current : undefined}
+              fallback="#94c8ff"
+              label={t('color.custom')}
+              pressed={isHexColor(background.current)}
+              onPick={background.onPick}
+            />
           </div>
         </>
       )}

@@ -155,6 +155,50 @@ test.describe('Copy', () => {
     expect(copy[2].content).toEqual([{ insert: 'two', attributes: { italic: true } }]);
   });
 
+  test('copy then paste keeps named colors, custom colors and block backgrounds', async ({
+    page,
+  }) => {
+    await typeBlocks(page, ['tinted']);
+    await page.evaluate(() => {
+      const { editor } = (window as any).__inkbrick.main;
+      const note = editor.document.getBlock(editor.document.rootId).children[0];
+      const first = editor.document.getBlock(note).children[0];
+
+      editor.dispatch({
+        type: 'setInlineAttributes',
+        payload: {
+          from: { blockId: first, offset: 0 },
+          to: { blockId: first, offset: 2 },
+          attributes: { color: 'teal', backgroundColor: '#ffcc00' },
+        },
+      });
+      editor.dispatch({
+        type: 'setBlockProps',
+        payload: { blockId: first, props: { background: '#12ab34' } },
+      });
+    });
+
+    await page.locator(editable).first().click();
+    await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+C`);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press(`${modifier}+V`);
+
+    const copies = (await doc(page)).filter((row) => row.text === 'tinted');
+
+    expect(copies).toHaveLength(2);
+
+    for (const row of copies) {
+      expect(row.content[0]).toEqual({
+        insert: 'ti',
+        attributes: { color: 'teal', backgroundColor: '#ffcc00' },
+      });
+      expect(row.props.background).toBe('#12ab34');
+    }
+  });
+
   test('cut removes the selection, paste restores it elsewhere, and both are undoable', async ({
     page,
   }) => {

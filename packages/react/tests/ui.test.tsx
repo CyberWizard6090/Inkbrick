@@ -203,6 +203,95 @@ describe('formatting toolbar', () => {
     expect(block().props).toMatchObject({ alignment: 'center' });
   });
 
+  it('color panels: the new names are in the grid with labels, and "Custom color…" closes it', () => {
+    const { editor, ids, select } = mountEditor(['format me'], { formatting: 'toolbar' });
+    const block = () => editor.document.getBlock(ids[0])!;
+
+    select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
+
+    for (const [kind, format] of [
+      ['color', 'color'],
+      ['highlight', 'highlight'],
+    ] as const) {
+      fireEvent.click(button(format));
+
+      const panel = toolbar().querySelector(`[data-kind="${kind}"]`)!;
+      const swatches = panel.querySelectorAll<HTMLElement>('[data-inkbrick-part="swatch"]');
+
+      // «Без цвета», 16 имён палитры и «Свой цвет…»: три ровных ряда по шесть.
+      expect(swatches).toHaveLength(18);
+
+      for (const [name, label] of [
+        ['lime', 'Lime'],
+        ['teal', 'Teal'],
+        ['cyan', 'Cyan'],
+        ['indigo', 'Indigo'],
+        ['magenta', 'Magenta'],
+      ]) {
+        expect(panel.querySelector(`[data-color="${name}"]`)!.getAttribute('aria-label')).toBe(
+          label,
+        );
+      }
+
+      // Каждый образец — кнопка с подписью: клавиатура и скринридер видят название цвета.
+      for (const swatch of swatches) {
+        expect(swatch.tagName).toBe('BUTTON');
+        expect(swatch.getAttribute('aria-label'), swatch.outerHTML).toBeTruthy();
+      }
+    }
+
+    fireEvent.click(button('color'));
+    fireEvent.click(toolbar().querySelector('[data-kind="color"] [data-color="teal"]')!);
+    expect(block().content[0].attributes).toMatchObject({ color: 'teal' });
+
+    fireEvent.click(button('highlight'));
+    fireEvent.click(toolbar().querySelector('[data-kind="highlight"] [data-color="magenta"]')!);
+    expect(block().content[0].attributes).toMatchObject({ backgroundColor: 'magenta' });
+  });
+
+  it('"Custom color…" applies #rrggbb as text color and as highlight, then shows it', () => {
+    const { editor, ids, select } = mountEditor(['format me'], { formatting: 'toolbar' });
+    const block = () => editor.document.getBlock(ids[0])!;
+    const custom = (kind: string) =>
+      toolbar().querySelector<HTMLElement>(`[data-kind="${kind}"] [data-color="custom"]`)!;
+
+    select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
+
+    fireEvent.click(button('color'));
+    expect(custom('color').getAttribute('aria-label')).toBe('Custom color…');
+    expect(custom('color').hasAttribute('data-pressed')).toBe(false);
+
+    const input = toolbar().querySelector<HTMLInputElement>(
+      '[data-kind="color"] input[type="color"]',
+    )!;
+
+    // Поле выбора не вложено в кнопку и не берёт фокус: в Tab-порядке только сама кнопка.
+    expect(input.closest('button')).toBeNull();
+    expect(input.tabIndex).toBe(-1);
+
+    fireEvent.change(input, { target: { value: '#12ab34' } });
+    expect(block().content[0].attributes).toMatchObject({ color: '#12ab34' });
+
+    // После выбора панель закрылась: открываем снова и видим свой цвет на образце.
+    fireEvent.click(button('color'));
+    expect(custom('color').hasAttribute('data-pressed')).toBe(true);
+    expect(custom('color').style.getPropertyValue('--inkbrick-custom-color')).toBe('#12ab34');
+    expect(
+      button('color').querySelector<HTMLElement>('[data-inkbrick-part="indicator"]')!.style
+        .background,
+    ).not.toBe('');
+
+    fireEvent.click(button('highlight'));
+    fireEvent.change(
+      toolbar().querySelector<HTMLInputElement>('[data-kind="highlight"] input[type="color"]')!,
+      { target: { value: '#ffcc00' } },
+    );
+    expect(block().content[0].attributes).toMatchObject({
+      color: '#12ab34',
+      backgroundColor: '#ffcc00',
+    });
+  });
+
   it('link: the form validates the address; a safe one is applied, Escape cancels', () => {
     const { editor, ids, select } = mountEditor(['see docs'], { formatting: 'toolbar' });
 

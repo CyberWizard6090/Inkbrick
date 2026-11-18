@@ -9,7 +9,7 @@ import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
 import { syncSlashMenu } from '../slash/syncSlashMenu';
 import { iconByName } from '../controllers/adapters';
-import { BLOCK_BACKGROUNDS, type BlockBackground } from '@inkbrick/document';
+import { BLOCK_BACKGROUNDS } from '@inkbrick/document';
 
 import {
   backgroundTargets,
@@ -177,7 +177,7 @@ export function buildBlockActions(
           options: BLOCK_BACKGROUNDS,
           onPick: (color) => {
             if (several) {
-              setBackgrounds(editor, group, color as BlockBackground | null);
+              setBackgrounds(editor, group, color);
               finish();
 
               return;

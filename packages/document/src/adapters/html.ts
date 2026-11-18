@@ -1,6 +1,6 @@
 import type { Document } from '../document';
 import type { BaseBlock, InlineNode } from '../model';
-import { exportColor, isBlockBackground } from '../utils/colors';
+import { exportColor, getBlockBackgroundColor, isHexColor } from '../utils/colors';
 import { isFootnoteNode } from '../utils/footnote';
 import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
@@ -34,9 +34,9 @@ const ALIGNED = new Set(['center', 'right', 'justify']);
 /** `style` блока: выравнивание и фон (оттенок светлой темы: в экспорте переменных темы нет). */
 function alignStyle(block: BaseBlock): string {
   const align = block.props.alignment ?? block.props.align;
-  const background = isBlockBackground(block.props.background)
-    ? exportColor(block.props.background, 'background')
-    : null;
+  const color = getBlockBackgroundColor(block);
+  // Свой цвет — с той же прозрачностью 35%, что и в редакторе (там он разбавлен, чтобы текст оставался читаемым).
+  const background = isHexColor(color) ? `${color}59` : exportColor(color, 'background');
   const style = [
     typeof align === 'string' && ALIGNED.has(align) && `text-align:${align}`,
     background && `background-color:${background}`,

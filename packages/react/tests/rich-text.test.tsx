@@ -57,6 +57,14 @@ describe('renderInline: colors', () => {
     expect(span.getAttribute('style')).toBeNull();
   });
 
+  it('the new palette names become attributes too', () => {
+    const span = paint({ color: 'teal', backgroundColor: 'magenta' });
+
+    expect(span.getAttribute('data-inkbrick-color')).toBe('teal');
+    expect(span.getAttribute('data-inkbrick-bg')).toBe('magenta');
+    expect(span.getAttribute('style')).toBeNull();
+  });
+
   it('safe CSS colors still work as inline styles', () => {
     const span = paint({ color: '#123456', backgroundColor: 'rgb(1, 2, 3)' });
 

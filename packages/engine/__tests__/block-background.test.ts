@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { toHtml, BLOCK_BACKGROUNDS, getBlockBackground } from '@inkbrick/document';
+import {
+  toHtml,
+  BLOCK_BACKGROUNDS,
+  getBlockBackground,
+  getBlockBackgroundColor,
+} from '@inkbrick/document';
 
 import { Editor, type CaretResult } from '../src';
 
@@ -52,14 +57,39 @@ describe('block background', () => {
 
     for (const color of BLOCK_BACKGROUNDS) expect(can(editor, id, color)).toBe(true);
     expect(can(editor, id, 'black')).toBe(false);
-    expect(can(editor, id, '#ff0000')).toBe(false);
     expect(can(editor, id, 'url(x)')).toBe(false);
+    // Своё значение — только `#rrggbb`: короткий hex, rgb() и хвост после цвета схема отвергает.
+    for (const bad of ['#fff', 'rgb(1,2,3)', '#ff0000;x', '#ff00zz', 'red; x', ''])
+      expect(can(editor, id, bad), bad).toBe(false);
 
     const divider = make('block:divider');
     const note = editor.document.getBlock(editor.document.rootId)!.children[0];
 
     expect(can(editor, note, 'red')).toBe(false);
     expect(divider.editor.document.rootId).toBeTruthy();
+  });
+
+  it('accepts a custom #rrggbb background, undoes it and keeps it through conversion and HTML export', () => {
+    const { editor, id } = make();
+
+    expect(can(editor, id, '#12ab34')).toBe(true);
+    expect(can(editor, id, '#12AB34')).toBe(true);
+
+    set(editor, id, '#12ab34');
+    expect(getBlockBackgroundColor(editor.document.getBlock(id)!)).toBe('#12ab34');
+    // Именованный `getBlockBackground` своего цвета не знает: для имён из палитры он прежний.
+    expect(bg(editor, id)).toBeUndefined();
+    expect(toHtml(editor.document)).toContain('background-color:#12ab3459');
+
+    editor.dispatch({
+      type: 'convertBlock',
+      payload: { blockId: id, flavour: 'block:heading', props: { level: 2 } },
+    });
+    expect(getBlockBackgroundColor(editor.document.getBlock(id)!)).toBe('#12ab34');
+
+    editor.store.undo();
+    editor.store.undo();
+    expect(getBlockBackgroundColor(editor.document.getBlock(id)!)).toBeUndefined();
   });
 
   it('keeps the background when the block is turned into another text type', () => {

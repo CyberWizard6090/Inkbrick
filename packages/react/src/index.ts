@@ -74,6 +74,7 @@ export { uploadImage, normalizeImageUrl } from './images/upload';
 export * from './blocks/BlockProps';
 export * from './blocks/BlockChildren';
 export * from './blocks/UnknownBlockView';
+export * from './blocks/backgroundAttrs';
 export * from './blocks/Editable';
 export * from './blocks/PageBlock';
 export * from './blocks/NoteBlock';

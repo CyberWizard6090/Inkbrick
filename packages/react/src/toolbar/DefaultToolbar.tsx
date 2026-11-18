@@ -1,9 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 
-import { ALIGNMENTS, COLOR_NAMES, isColorName, type Alignment } from '@inkbrick/document';
+import {
+  ALIGNMENTS,
+  COLOR_NAMES,
+  isColorName,
+  safeCssColor,
+  type Alignment,
+} from '@inkbrick/document';
 
 import { useT } from '../hooks/useT';
 import { Icon, type IconName } from '../icons/Icon';
+import { CustomColorSwatch } from '../ui/CustomColorSwatch';
 import type { InlineFormat, ToolbarPanel, ToolbarProps } from './types';
 
 const BUTTONS: readonly { format: InlineFormat; icon: IconName }[] = [
@@ -84,6 +91,11 @@ export function DefaultToolbar({
 
   const colorKind = panel === 'highlight' ? 'backgroundColor' : 'color';
   const currentColor = panel === 'highlight' ? formats.backgroundColor : formats.color;
+  // Свой цвет: значение не из палитры, но безопасное для style (иначе образец «Свой цвет…» не подсвечивается).
+  const customColor =
+    currentColor !== undefined && !isColorName(currentColor)
+      ? (safeCssColor(currentColor) ?? undefined)
+      : undefined;
 
   return (
     <div
@@ -271,6 +283,8 @@ export function DefaultToolbar({
           )}
           {PANELS.map(({ panel: name, icon }) => {
             const current = name === 'color' ? formats.color : formats.backgroundColor;
+            const own =
+              current !== undefined && !isColorName(current) ? safeCssColor(current) : null;
 
             return (
               <button
@@ -288,7 +302,11 @@ export function DefaultToolbar({
                 onClick={() => onTogglePanel(name)}
               >
                 <Icon name={icon} />
-                <span className="inkbrick-toolbar__indicator" data-inkbrick-part="indicator" />
+                <span
+                  className="inkbrick-toolbar__indicator"
+                  data-inkbrick-part="indicator"
+                  style={own ? { background: own } : undefined}
+                />
               </button>
             );
           })}
@@ -362,6 +380,13 @@ export function DefaultToolbar({
                   {panel === 'color' ? 'A' : null}
                 </button>
               ))}
+              <CustomColorSwatch
+                value={customColor}
+                fallback={panel === 'color' ? '#1473e6' : '#ffe74a'}
+                label={t('color.custom')}
+                pressed={customColor !== undefined}
+                onPick={(hex) => onApplyColor(colorKind, hex)}
+              />
             </div>
           )}
         </>

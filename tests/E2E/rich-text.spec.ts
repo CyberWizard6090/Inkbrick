@@ -392,6 +392,134 @@ test.describe('Text color and highlight', () => {
     expect((await rows(page))[0].content).toEqual([{ insert: 'ab' }]);
   });
 
+  test('the grid holds the 16 named colors, "no color" and "Custom color…" in three even rows', async ({
+    page,
+  }) => {
+    await typeLine(page, 'grid');
+    await selectLine(page);
+
+    for (const kind of ['color', 'highlight']) {
+      await page.locator(`${toolbar} [data-format="${kind}"]`).click();
+
+      const swatches = page.locator(
+        `${toolbar} [data-inkbrick-part="panel"][data-kind="${kind}"] [data-inkbrick-part="swatch"]`,
+      );
+
+      await expect(swatches).toHaveCount(18);
+
+      const boxes = await swatches.evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const { x, y, width } = node.getBoundingClientRect();
+
+          return { x: Math.round(x), y: Math.round(y), width };
+        }),
+      );
+
+      expect(new Set(boxes.map((box) => box.y)).size).toBe(3);
+      expect(new Set(boxes.map((box) => box.x)).size).toBe(6);
+      for (const box of boxes) expect(box.width).toBeGreaterThanOrEqual(32);
+
+      // Каждый образец назван и доступен: у всех своя подпись, а новые цвета — со своими именами.
+      const labels = await swatches.evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute('aria-label')),
+      );
+
+      expect(labels.every(Boolean)).toBe(true);
+      expect(new Set(labels).size).toBe(18);
+      expect(labels).toEqual(expect.arrayContaining(['Teal', 'Cyan', 'Lime', 'Indigo', 'Magenta']));
+      expect(labels.at(-1)).toBe('Custom color…');
+
+      await page.locator(`${toolbar} [data-format="${kind}"]`).click();
+    }
+  });
+
+  test('the new names are stored as names and the theme gives each its own shade', async ({
+    page,
+  }) => {
+    await typeLine(page, 'tint');
+    await selectLine(page);
+    await page.locator(`${toolbar} [data-format="color"]`).click();
+    await page.locator(`${toolbar} [data-inkbrick-part="panel"] [data-color="teal"]`).click();
+    await page.locator(`${toolbar} [data-format="highlight"]`).click();
+    await page.locator(`${toolbar} [data-inkbrick-part="panel"] [data-color="magenta"]`).click();
+
+    expect((await rows(page))[0].content).toEqual([
+      { insert: 'tint', attributes: { color: 'teal', backgroundColor: 'magenta' } },
+    ]);
+
+    const span = page.locator('[data-inkbrick-color="teal"][data-inkbrick-bg="magenta"]');
+
+    await page.evaluate(() =>
+      document.documentElement.setAttribute('data-inkbrick-theme', 'light'),
+    );
+    await expect(span).toHaveCSS('color', 'rgb(15, 118, 110)');
+    await expect(span).toHaveCSS('background-color', 'rgb(245, 208, 254)');
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
+    await expect(span).toHaveCSS('color', 'rgb(45, 212, 191)');
+    await expect(span).toHaveCSS('background-color', 'rgb(162, 28, 175)');
+  });
+
+  test('"Custom color…" stores #rrggbb for text and highlight and shows it on the toolbar', async ({
+    page,
+  }) => {
+    await typeLine(page, 'custom');
+    await selectLine(page);
+
+    await page.locator(`${toolbar} [data-format="color"]`).click();
+    await page.locator(`${toolbar} [data-kind="color"] input[type="color"]`).fill('#12ab34');
+
+    await expect(page.locator(`${toolbar} [data-inkbrick-part="panel"]`)).toHaveCount(0);
+    await expect(page.locator('.editable span[style]')).toHaveCSS('color', 'rgb(18, 171, 52)');
+
+    await page.locator(`${toolbar} [data-format="highlight"]`).click();
+    await page.locator(`${toolbar} [data-kind="highlight"] input[type="color"]`).fill('#ffcc00');
+
+    expect((await rows(page))[0].content).toEqual([
+      { insert: 'custom', attributes: { color: '#12ab34', backgroundColor: '#ffcc00' } },
+    ]);
+
+    // Выбранный свой цвет виден: образец и индикатор кнопки получают его.
+    await page.locator(`${toolbar} [data-format="color"]`).click();
+
+    const custom = page.locator(`${toolbar} [data-kind="color"] [data-color="custom"]`);
+
+    await expect(custom).toHaveAttribute('data-pressed', 'true');
+    await expect(custom).toHaveCSS('background-color', 'rgb(18, 171, 52)');
+    await expect(
+      page.locator(`${toolbar} [data-format="color"] [data-inkbrick-part="indicator"]`),
+    ).toHaveCSS('background-color', 'rgb(18, 171, 52)');
+  });
+
+  test('swatches work from the keyboard: Enter applies a name, "Custom color…" is a button', async ({
+    page,
+  }) => {
+    await typeLine(page, 'keys');
+    await selectLine(page);
+    await page.locator(`${toolbar} [data-format="color"]`).focus();
+    await page.keyboard.press('Enter');
+
+    const teal = page.locator(`${toolbar} [data-kind="color"] [data-color="teal"]`);
+
+    await teal.focus();
+    await expect(teal).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    expect((await rows(page))[0].content[0].attributes).toEqual({ color: 'teal' });
+
+    // «Свой цвет…» — обычная кнопка в порядке Tab, а скрытое поле выбора в него не входит.
+    await page.locator(`${toolbar} [data-format="color"]`).focus();
+    await page.keyboard.press('Enter');
+
+    const custom = page.locator(`${toolbar} [data-kind="color"] [data-color="custom"]`);
+
+    await custom.focus();
+    await expect(custom).toBeFocused();
+    await expect(
+      page.locator(`${toolbar} [data-kind="color"] input[type="color"]`),
+    ).toHaveAttribute('tabindex', '-1');
+  });
+
   test('the panel is hidden together with the toolbar', async ({ page }) => {
     await typeLine(page, 'z');
     await selectLine(page);

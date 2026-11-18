@@ -919,6 +919,46 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='lime']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-lime);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='teal']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-teal);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='cyan']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-cyan);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='indigo']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-indigo);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='magenta']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-magenta);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
       > [data-inkbrick-part='panel'][data-kind='color']
       [data-inkbrick-part='swatch'][data-color='red']
   ) {
@@ -927,10 +967,115 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='lime']
+  ) {
+    color: var(--inkbrick-color-lime);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='teal']
+  ) {
+    color: var(--inkbrick-color-teal);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='cyan']
+  ) {
+    color: var(--inkbrick-color-cyan);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='indigo']
+  ) {
+    color: var(--inkbrick-color-indigo);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='color']
+      [data-inkbrick-part='swatch'][data-color='magenta']
+  ) {
+    color: var(--inkbrick-color-magenta);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
       > [data-inkbrick-part='panel'][data-kind='highlight']
       [data-inkbrick-part='swatch'][data-color='red']
   ) {
     background: var(--inkbrick-highlight-red);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='lime']
+  ) {
+    background: var(--inkbrick-highlight-lime);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='teal']
+  ) {
+    background: var(--inkbrick-highlight-teal);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='cyan']
+  ) {
+    background: var(--inkbrick-highlight-cyan);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='indigo']
+  ) {
+    background: var(--inkbrick-highlight-indigo);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      > [data-inkbrick-part='panel'][data-kind='highlight']
+      [data-inkbrick-part='swatch'][data-color='magenta']
+  ) {
+    background: var(--inkbrick-highlight-magenta);
+  }
+
+  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). Сам <input
+     type="color"> прозрачен и лежит под кнопкой: он нужен только как якорь системного окна выбора. */
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-color='custom']) {
+    background: var(
+      --inkbrick-custom-color,
+      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
+    );
+  }
+
+  :where([data-inkbrick-part='custom-color']) {
+    position: relative;
+    display: grid;
+  }
+
+  :where([data-inkbrick-part='custom-color-input']) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
   }
 
   :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {
@@ -1230,7 +1375,7 @@
   /* Меню блока: ряд цветов фона. */
   :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatches']) {
     display: grid;
-    grid-template-columns: repeat(5, 28px);
+    grid-template-columns: repeat(8, 28px);
     gap: 4px;
     padding: 4px 8px 8px;
   }
@@ -1294,6 +1439,33 @@
 
   :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='red']) {
     background: var(--inkbrick-highlight-red);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='lime']) {
+    background: var(--inkbrick-highlight-lime);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='teal']) {
+    background: var(--inkbrick-highlight-teal);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='cyan']) {
+    background: var(--inkbrick-highlight-cyan);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='indigo']) {
+    background: var(--inkbrick-highlight-indigo);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='magenta']) {
+    background: var(--inkbrick-highlight-magenta);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='custom']) {
+    background: var(
+      --inkbrick-custom-color,
+      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
+    );
   }
 
   /* Столбцы таблицы: список вариантов у ячейки выбора и окно свойств столбца. */

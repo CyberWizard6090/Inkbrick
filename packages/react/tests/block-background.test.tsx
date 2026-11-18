@@ -41,9 +41,59 @@ describe('block background in the block menu', () => {
 
     t.openMenu();
 
-    expect(t.menu()!.querySelectorAll('[data-inkbrick-part="swatch"]')).toHaveLength(10);
+    // «Без фона», 14 цветов палитры и «Свой цвет…».
+    expect(t.menu()!.querySelectorAll('[data-inkbrick-part="swatch"]')).toHaveLength(16);
     expect(t.swatch('none').getAttribute('aria-checked')).toBe('true');
     expect(t.swatch('yellow').getAttribute('aria-label')).toBe('Yellow');
+
+    for (const name of ['lime', 'teal', 'cyan', 'indigo', 'magenta'])
+      expect(t.swatch(name).getAttribute('aria-label'), name).toBeTruthy();
+
+    expect(t.swatch('teal').getAttribute('aria-label')).toBe('Teal');
+    expect(t.swatch('custom').getAttribute('aria-label')).toBe('Custom color…');
+  });
+
+  it('"Custom color…" stores #rrggbb, draws it through a variable and checks the swatch', () => {
+    const t = mount();
+
+    t.openMenu();
+    expect(t.swatch('custom').getAttribute('aria-checked')).toBe('false');
+
+    const input = t.menu()!.querySelector<HTMLInputElement>('input[type="color"]')!;
+
+    // Кнопка и скрытое поле — соседи: интерактивный элемент внутри кнопки недопустим.
+    expect(input.closest('button')).toBeNull();
+    expect(input.getAttribute('aria-hidden')).toBe('true');
+
+    act(() => void fireEvent.change(input, { target: { value: '#12ab34' } }));
+
+    expect(t.editor.document.getBlock(t.ids[0])!.props.background).toBe('#12ab34');
+    expect(t.block().getAttribute('data-background')).toBe('custom');
+    expect(t.block().style.getPropertyValue('--inkbrick-block-background')).toBe('#12ab34');
+    expect(t.menu()).toBeNull();
+
+    t.openMenu();
+    expect(t.swatch('custom').getAttribute('aria-checked')).toBe('true');
+    expect(t.swatch('none').getAttribute('aria-checked')).toBe('false');
+
+    act(() => void fireEvent.click(t.swatch('none')));
+    expect(t.block().hasAttribute('data-background')).toBe(false);
+    expect(t.block().style.getPropertyValue('--inkbrick-block-background')).toBe('');
+  });
+
+  it('the engine refuses a background that is not a palette name or #rrggbb', () => {
+    const t = mount();
+    const can = (background: unknown) =>
+      t.editor.can('setBlockProps', {
+        blockId: t.ids[0],
+        props: { background } as never,
+      });
+
+    expect(can('#12ab34')).toBe(true);
+    expect(can('magenta')).toBe(true);
+
+    for (const bad of ['url(x)', 'red; x', '#fff', '#12ab34;', 'rgb(1,2,3)', 'white', 'black'])
+      expect(can(bad), bad).toBe(false);
   });
 
   it('a click sets the background, draws it on the block and closes the menu; "none" removes it', () => {

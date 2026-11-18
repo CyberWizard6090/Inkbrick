@@ -83,6 +83,12 @@ export const ru: Messages = {
   'color.purple': 'Фиолетовый',
   'color.pink': 'Розовый',
   'color.red': 'Красный',
+  'color.lime': 'Салатовый',
+  'color.teal': 'Бирюзовый',
+  'color.cyan': 'Голубой',
+  'color.indigo': 'Индиго',
+  'color.magenta': 'Маджента',
+  'color.custom': 'Свой цвет…',
 
   'toolbar.turnInto.label': 'Превратить в: {type}',
   'toolbar.turnInto.title': 'Превратить в',

@@ -58,7 +58,10 @@ export interface BlockMenuAction {
   readonly run: () => void;
 }
 
-/** Фон блока в меню: доступные цвета, текущий и выбор (`null` снимает фон). Нет у блоков, которым фон не положен. */
+/**
+ * Фон блока в меню: доступные цвета, текущий (имя из палитры или свой `#rrggbb`) и выбор (`null` снимает фон). Нет у
+ * блоков, которым фон не положен.
+ */
 export interface BlockMenuBackground {
   readonly current: string | undefined;
   readonly options: readonly string[];

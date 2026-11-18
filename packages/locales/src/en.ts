@@ -85,6 +85,12 @@ export const en = {
   'color.purple': 'Purple',
   'color.pink': 'Pink',
   'color.red': 'Red',
+  'color.lime': 'Lime',
+  'color.teal': 'Teal',
+  'color.cyan': 'Cyan',
+  'color.indigo': 'Indigo',
+  'color.magenta': 'Magenta',
+  'color.custom': 'Custom color…',
 
   'toolbar.turnInto.label': 'Turn into: {type}',
   'toolbar.turnInto.title': 'Turn into',

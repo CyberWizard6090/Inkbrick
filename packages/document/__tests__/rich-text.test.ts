@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BLOCK_BACKGROUNDS,
+  COLOR_HEX,
+  COLOR_NAMES,
   FORMULA_CHAR,
   MAX_FORMULA_LENGTH,
   alignProps,
@@ -8,8 +11,10 @@ import {
   deserializeDocument,
   exportColor,
   getBlockAlign,
+  getBlockBackgroundColor,
   isAlignable,
   isColorName,
+  isHexColor,
   safeCssColor,
   toHtml,
   toMarkdown,
@@ -71,6 +76,42 @@ describe('colors', () => {
     expect(isColorName(undefined)).toBe(false);
   });
 
+  it('has the new palette names, each with an export shade, and keeps the old ones', () => {
+    const added = ['lime', 'teal', 'cyan', 'indigo', 'magenta'];
+    const old = ['black', 'white', 'gray', 'brown', 'orange', 'yellow', 'green', 'blue', 'purple'];
+
+    for (const name of [...old, 'pink', 'red', ...added]) {
+      expect(isColorName(name), name).toBe(true);
+      expect(COLOR_HEX[name as keyof typeof COLOR_HEX].text, name).toMatch(/^#[\da-f]{6}$/);
+      expect(COLOR_HEX[name as keyof typeof COLOR_HEX].background, name).toMatch(/^#[\da-f]{6}$/);
+    }
+
+    expect(COLOR_NAMES).toHaveLength(16);
+    expect(new Set(COLOR_NAMES).size).toBe(COLOR_NAMES.length);
+    expect(Object.keys(COLOR_HEX).sort()).toEqual([...COLOR_NAMES].sort());
+    // Фон блока — те же имена без чёрного и белого; тёмные темы читают их через те же токены.
+    expect([...BLOCK_BACKGROUNDS].sort()).toEqual(
+      COLOR_NAMES.filter((name) => name !== 'black' && name !== 'white').sort(),
+    );
+    expect(BLOCK_BACKGROUNDS[0]).toBe('gray');
+  });
+
+  it('isHexColor takes only #rrggbb', () => {
+    for (const ok of ['#000000', '#12ab34', '#12AB34']) expect(isHexColor(ok), ok).toBe(true);
+
+    for (const bad of ['#fff', '#12ab34ff', '12ab34', 'red', '#12ab3g', '#12ab34;x', '', 5, null])
+      expect(isHexColor(bad), String(bad)).toBe(false);
+  });
+
+  it('reads the block background: palette name or #rrggbb, nothing else', () => {
+    const bg = (background: unknown) => getBlockBackgroundColor({ props: { background } });
+
+    expect(bg('teal')).toBe('teal');
+    expect(bg('#12ab34')).toBe('#12ab34');
+
+    for (const bad of ['black', 'url(x)', '#fff', undefined, 5]) expect(bg(bad)).toBeUndefined();
+  });
+
   it('accepts only safe CSS colors', () => {
     for (const ok of [
       '#fff',
@@ -104,6 +145,12 @@ describe('colors', () => {
     expect(exportColor('white', 'background')).toBe('#ffffff');
     expect(exportColor('#123456', 'text')).toBe('#123456');
     expect(exportColor('url(x)', 'text')).toBeNull();
+  });
+
+  it('exports the new names as hex', () => {
+    expect(exportColor('teal', 'text')).toBe('#0f766e');
+    expect(exportColor('magenta', 'background')).toBe('#f5d0fe');
+    expect(exportColor('lime', 'background')).toBe('#d9f99d');
   });
 });
 
@@ -238,6 +285,39 @@ describe('export of formulas, colors and alignment', () => {
     expect(toHtml(document, { title: false })).toBe(
       '<p><span style="color:#e5192b;background-color:#ffe74a">a</span>b<span style="background-color:#123456">c</span></p>',
     );
+  });
+
+  it('html: new names and custom hex in text, highlight and block background', () => {
+    const document = build([
+      {
+        flavour: 'block:paragraph',
+        content: [
+          text('a', { color: 'indigo', backgroundColor: 'cyan' }),
+          text('b', { color: '#12ab34' }),
+        ],
+        props: { alignment: 'left', background: 'teal' },
+      },
+      { flavour: 'block:quote', content: [text('q')], props: { background: '#12ab34' } },
+    ]);
+    const html = toHtml(document, { title: false });
+
+    expect(html).toContain(
+      '<p style="background-color:#99f6e4"><span style="color:#4f46e5;background-color:#a5f3fc">a</span><span style="color:#12ab34">b</span></p>',
+    );
+    // Свой цвет фона блока — с той же прозрачностью 35%, что и в редакторе.
+    expect(html).toContain('<blockquote style="background-color:#12ab3459">q</blockquote>');
+  });
+
+  it('markdown carries no colors, so new names change nothing there', () => {
+    const document = build([
+      {
+        flavour: 'block:paragraph',
+        content: [text('a', { color: 'teal', backgroundColor: 'magenta' })],
+        props: { alignment: 'left', background: '#12ab34' },
+      },
+    ]);
+
+    expect(toMarkdown(document, { title: false })).toBe('a\n');
   });
 
   it('html: alignment of quote, callout and list items', () => {

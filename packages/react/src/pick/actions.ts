@@ -1,7 +1,7 @@
 import { flushSync } from 'react-dom';
 
 import type { CaretResult, Editor, Fragment } from '@inkbrick/engine';
-import { BLOCK_BACKGROUNDS, getBlockBackground, type BlockBackground } from '@inkbrick/document';
+import { BLOCK_BACKGROUNDS, getBlockBackgroundColor } from '@inkbrick/document';
 
 import type { EditorView } from '../editing/EditorView';
 
@@ -297,12 +297,9 @@ export function backgroundTargets(editor: Editor, ids: readonly string[]): reado
   );
 }
 
-/** Текущий фон блоков: общий для всех, `undefined` без фона или когда у блоков он разный. */
-export function commonBackground(
-  editor: Editor,
-  ids: readonly string[],
-): BlockBackground | undefined {
-  const colors = new Set(ids.map((id) => getBlockBackground(editor.store.getBlock(id)!)));
+/** Текущий фон блоков (имя из палитры или `#rrggbb`): общий для всех, `undefined` без фона или когда он разный. */
+export function commonBackground(editor: Editor, ids: readonly string[]): string | undefined {
+  const colors = new Set(ids.map((id) => getBlockBackgroundColor(editor.store.getBlock(id)!)));
 
   return colors.size === 1 ? [...colors][0] : undefined;
 }
@@ -311,7 +308,7 @@ export function commonBackground(
 export function setBackgrounds(
   editor: Editor,
   ids: readonly string[],
-  color: BlockBackground | null,
+  color: string | null,
 ): readonly string[] {
   const targets = backgroundTargets(editor, ids);
 

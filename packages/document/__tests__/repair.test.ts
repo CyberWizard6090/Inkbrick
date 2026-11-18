@@ -122,3 +122,33 @@ describe('repairSnapshot', () => {
     expect(snapshot).toEqual(before);
   });
 });
+
+describe('block background after repair', () => {
+  it('keeps palette names and #rrggbb, including the new colours', () => {
+    for (const background of ['teal', 'magenta', '#12ab34']) {
+      const { snapshot, first } = base();
+
+      snapshot.blocks[first].props = { alignment: 'left', background };
+
+      const result = repaired(snapshot);
+
+      expect(result.snapshot.blocks[first].props.background, background).toBe(background);
+      expect(result.fixes).toEqual([]);
+    }
+  });
+
+  it('replaces a damaged background with the default props, as before', () => {
+    for (const background of ['url(x)', '#fff', 'chartreuse', 'red; x', 5, 'black']) {
+      const { snapshot, first } = base();
+
+      snapshot.blocks[first].props = { alignment: 'left', background };
+
+      const result = repaired(snapshot);
+
+      expect(result.snapshot.blocks[first].props, String(background)).toEqual(
+        schema.createProps('block:paragraph'),
+      );
+      expect(result.fixes.length).toBeGreaterThan(0);
+    }
+  });
+});
