@@ -144,7 +144,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | Подсветка кода           | `--inkbrick-syntax-{keyword,string,comment,number,function,type,constant,builtin,variable,property,tag,attribute,meta,regex}`                     |
 | Цвета текста и подсветки | `--inkbrick-color-<имя>`, `--inkbrick-highlight-<имя>` (имена палитры: black, white, gray, brown, orange, yellow, green, blue, purple, pink, red) |
 | Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-gutter`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`              |
-| Плавное появление        | `--inkbrick-appear-duration` (100ms; `0ms` выключает), `--inkbrick-appear-shift` (4px)                                                            |
+| Плавное появление        | `--inkbrick-appear-duration` (100ms; `0ms` выключает), `--inkbrick-appear-shift` (4px), `--inkbrick-disappear-duration` (100ms; `0ms` выключает)  |
 
 Прежние имена (`--inkbrick-bg-surface`, `--inkbrick-text-primary`, `--inkbrick-accent-color`, …) продолжают работать как псевдонимы.
 
@@ -160,11 +160,31 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 положение задаёт встроенный `transform`, поэтому движение идёт через отдельное свойство `translate`, и рывка нет. Toolbar внутри
 контекстного меню (`data-placement="inline"`) сам не анимируется. Палитра команд: затемнение проявляется (`inkbrick-fade-in`), а окно
 опускается на сдвиг сверху (`inkbrick-slide-down`; только сдвиг, без прозрачности: иначе она перемножилась бы с прозрачностью затемнения).
-Панель поиска выезжает сверху так же, как меню (`inkbrick-menu-in`); набор запроса её не перезапускает. Переход ручки от блока к блоку анимацию не запускает: это тот же узел;
+Панель поиска выезжает сверху так же, как меню (`inkbrick-menu-in`); набор запроса её не перезапускает. Так же появляются попап формулы, список
+вариантов в ячейке таблицы и подсказки тегов, а диалог свойств столбца — как палитра (затемнение проявляется, окно опускается). Переход ручки от блока к блоку анимацию не запускает: это тот же узел;
 меню анимируется при открытии, а не при каждой набранной букве запроса. Длительность и сдвиг задают токены `--inkbrick-appear-duration` и
 `--inkbrick-appear-shift`; `--inkbrick-appear-duration: 0ms` выключает движение. При `prefers-reduced-motion: reduce` анимации
 и переходы отключены. Всё это обычный CSS в слое `inkbrick.ui` и `inkbrick.blocks`: любое ваше правило победит без `!important`,
 например `[data-inkbrick-ui='block-handle'] { animation: none }`.
+
+#### Плавное исчезновение
+
+Окна не просто пропадают: когда они закрываются, они гаснут за `--inkbrick-disappear-duration` (`@keyframes inkbrick-fade-out`).
+Это относится к ручке блока и меню блока, линии вставки, slash-меню, контекстному меню, toolbar, палитре, панели поиска, попапу
+формулы, диалогу свойств столбца, списку вариантов в ячейке, подсказкам тегов и выпадающему списку `select`. Исчезающее окно
+остаётся в DOM, пока анимация не закончится, и тогда удаляется: этим занимается небольшой компонент `Presence`. Он оборачивает окно
+в элемент `<div data-inkbrick-presence data-state="open|closed">` с `display: contents`, так что на раскладку обёртка не влияет, а
+у закрывающегося окна `data-state="closed"`, `aria-hidden="true"` и `pointer-events: none`.
+
+- **Без анимации окно удаляется сразу, как раньше:** при `prefers-reduced-motion: reduce`, при `--inkbrick-disappear-duration: 0ms`,
+  без стилей пакета (в тестах на jsdom, например) и у своего компонента из слота, у которого на корне нет анимации.
+- **Если окно открыли снова, пока оно уходит,** оно создаётся заново (снова играет появление и срабатывают эффекты монтирования, например фокус
+  в списке); ручка блока и линия вставки при этом остаются тем же узлом, поэтому не мигают.
+- **Свой компонент из слота** получает плавный выход одним правилом на корне: например
+  `[data-inkbrick-presence][data-state='closed'] > .my-menu { animation: my-fade-out 120ms forwards }`. Анимация обязана заканчиваться
+  (`forwards`, без `infinite`): когда она закончится, окно удалится.
+- В тестах пользователя элемент закрытого окна может ещё какое-то время быть в DOM: проверяйте исчезновение через `toHaveCount(0)` /
+  `waitFor`, а не мгновенным `count()`.
 
 ## Иконки
 

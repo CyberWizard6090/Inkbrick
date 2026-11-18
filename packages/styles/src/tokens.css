@@ -38,6 +38,8 @@
     /* Плавное появление ручки блока, линии вставки, slash-меню, меню блока, контекстного меню, toolbar, палитры команд и панели поиска (как в Notion): 0ms выключает, сдвиг — откуда они выезжают */
     --inkbrick-appear-duration: var(--inkbrick-duration-fast);
     --inkbrick-appear-shift: 4px;
+    /* Плавное исчезновение тех же элементов: 0ms убирает их сразу */
+    --inkbrick-disappear-duration: var(--inkbrick-duration-fast);
 
     --inkbrick-z-handle: 9990;
     --inkbrick-z-menu: 9995;

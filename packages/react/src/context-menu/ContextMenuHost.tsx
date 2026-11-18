@@ -146,5 +146,6 @@ export function ContextMenuHost() {
     };
   }, [open, Panel]);
 
-  return open && Panel ? <Panel /> : null;
+  // Панель остаётся смонтированной и сама плавно убирает меню, когда оно закрывается.
+  return Panel ? <Panel /> : null;
 }

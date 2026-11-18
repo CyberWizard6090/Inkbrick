@@ -37,8 +37,20 @@
   /* Меню появляются плавно: проявляются и чуть выезжают от каретки или ручки (снизу, если открыты над ней). */
   :where([data-inkbrick-ui='slash-menu']),
   :where([data-inkbrick-ui='block-menu']),
-  :where([data-inkbrick-ui='context-menu']) {
+  :where([data-inkbrick-ui='context-menu']),
+  :where([data-inkbrick-ui='formula-popover']),
+  :where([data-inkbrick-ui='options-picker']),
+  :where([data-inkbrick-ui='tag-suggestions']) {
     animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* Диалог свойств столбца появляется, как палитра: затемнение проявляется, окно опускается. */
+  :where([data-inkbrick-ui='column-properties-backdrop']) {
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='column-properties']) {
+    animation: inkbrick-slide-down var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-ui='slash-menu'][data-side='top']),
@@ -1133,6 +1145,12 @@
     }
   }
 
+  @keyframes inkbrick-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
   @keyframes inkbrick-fade-in {
     from {
       opacity: 0;
@@ -1773,6 +1791,20 @@
   }
 
   /*
+   * Плавное исчезновение. Когда окно закрывается, `Presence` не удаляет его сразу, а ставит обёртке `data-state="closed"`:
+   * то, что в ней лежит, гаснет, пока анимация не закончится, и тогда удаляется. Обёртка не влияет на раскладку. Правило
+   * стоит после всех правил появления: у них та же специфичность 0, и среди равных побеждает более позднее.
+   */
+  :where([data-inkbrick-presence]) {
+    display: contents;
+  }
+
+  :where([data-inkbrick-presence][data-state='closed'] > *) {
+    animation: inkbrick-fade-out var(--inkbrick-disappear-duration) var(--inkbrick-curve) forwards;
+    pointer-events: none;
+  }
+
+  /*
    * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
    * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
    */
@@ -1786,7 +1818,13 @@
     :where([data-inkbrick-ui='toolbar']),
     :where([data-inkbrick-ui='palette-backdrop']),
     :where([data-inkbrick-ui='palette']),
-    :where([data-inkbrick-ui='find']) {
+    :where([data-inkbrick-ui='find']),
+    :where([data-inkbrick-ui='formula-popover']),
+    :where([data-inkbrick-ui='options-picker']),
+    :where([data-inkbrick-ui='tag-suggestions']),
+    :where([data-inkbrick-ui='column-properties-backdrop']),
+    :where([data-inkbrick-ui='column-properties']),
+    :where([data-inkbrick-presence][data-state='closed'] > *) {
       animation: none;
     }
   }

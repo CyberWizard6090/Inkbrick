@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 import {
   TABLE_COLUMN_TYPES,
@@ -102,9 +101,7 @@ export function ColumnPropertiesDialog({
       list.map((option, i) => (i === index ? { ...option, ...change } : option)),
     );
 
-  if (typeof document === 'undefined') return null;
-
-  return createPortal(
+  return (
     <div
       data-inkbrick-ui="column-properties-backdrop"
       onMouseDown={(event) => {
@@ -243,7 +240,6 @@ export function ColumnPropertiesDialog({
           </button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
 }

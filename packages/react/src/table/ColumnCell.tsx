@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 import type { BaseBlock, TableColumnType, TableOption } from '@inkbrick/document';
 
@@ -7,6 +6,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
+import { PortalPresence } from '../ui/Presence';
 import {
   columnHref,
   isChecked,
@@ -133,40 +133,43 @@ export function ChipsControl({
         })}
         {selected.length === 0 && <span data-inkbrick-part="chip-empty">{' '}</span>}
       </button>
-      {open && !readOnly && (
-        <OptionsPicker
-          id={id}
-          multiple={multiple}
-          anchor={button.current}
-          options={options ?? []}
-          selected={selected}
-          onPick={(label) => {
-            const next = multiple
-              ? selected.includes(label)
-                ? selected.filter((value) => value !== label)
-                : [...selected, label]
-              : selected.includes(label)
-                ? []
-                : [label];
+      <PortalPresence
+        open={open && !readOnly}
+        render={() => (
+          <OptionsPicker
+            id={id}
+            multiple={multiple}
+            anchor={button.current}
+            options={options ?? []}
+            selected={selected}
+            onPick={(label) => {
+              const next = multiple
+                ? selected.includes(label)
+                  ? selected.filter((value) => value !== label)
+                  : [...selected, label]
+                : selected.includes(label)
+                  ? []
+                  : [label];
 
-            set(serializeSelected(next));
-            if (!multiple) {
+              set(serializeSelected(next));
+              if (!multiple) {
+                setOpen(false);
+                backToCell();
+              }
+            }}
+            onClear={() => {
+              set('');
               setOpen(false);
               backToCell();
-            }
-          }}
-          onClear={() => {
-            set('');
-            setOpen(false);
-            backToCell();
-          }}
-          onClose={() => setOpen(false)}
-          onEscape={() => {
-            setOpen(false);
-            backToCell();
-          }}
-        />
-      )}
+            }}
+            onClose={() => setOpen(false)}
+            onEscape={() => {
+              setOpen(false);
+              backToCell();
+            }}
+          />
+        )}
+      />
     </>
   );
 }
@@ -213,9 +216,7 @@ function OptionsPicker({
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [anchor, onClose]);
 
-  if (typeof document === 'undefined') return null;
-
-  return createPortal(
+  return (
     <div
       ref={list}
       id={id}
@@ -274,8 +275,7 @@ function OptionsPicker({
           {t('table.cell.clear')}
         </div>
       )}
-    </div>,
-    document.body,
+    </div>
   );
 }
 

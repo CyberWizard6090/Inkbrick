@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
+import { PortalPresence } from '../ui/Presence';
 import { highlightsSupported, setHighlight } from '../editing/highlights';
 import { findPoint, readDocSelection } from '../editing/selection';
 import { collectTags } from './collect';
@@ -276,34 +276,40 @@ export function TagHighlights({
     return () => document.removeEventListener('keydown', onKey, true);
   });
 
-  if (!open || typeof document === 'undefined') return null;
+  return (
+    <PortalPresence
+      open={!!open}
+      render={() => {
+        const shown = open!;
 
-  return createPortal(
-    <div
-      className="inkbrick-tag-suggestions"
-      data-inkbrick-ui="tag-suggestions"
-      data-testid="tag-suggestions"
-      role="listbox"
-      aria-label={t('tags.suggestions')}
-      style={{ left: open.x, top: open.y + 4 }}
-      onMouseDown={(event) => event.preventDefault()}
-    >
-      {open.items.map((tag, index) => (
-        <div
-          key={tag}
-          role="option"
-          aria-selected={index === open.active}
-          data-inkbrick-part="item"
-          data-active={index === open.active || undefined}
-          data-tag={tag}
-          onMouseEnter={() => setOpen({ ...open, active: index })}
-          onClick={() => apply(open, tag)}
-        >
-          #{tag}
-        </div>
-      ))}
-    </div>,
-    document.body,
+        return (
+          <div
+            className="inkbrick-tag-suggestions"
+            data-inkbrick-ui="tag-suggestions"
+            data-testid="tag-suggestions"
+            role="listbox"
+            aria-label={t('tags.suggestions')}
+            style={{ left: shown.x, top: shown.y + 4 }}
+            onMouseDown={(event) => event.preventDefault()}
+          >
+            {shown.items.map((tag, index) => (
+              <div
+                key={tag}
+                role="option"
+                aria-selected={index === shown.active}
+                data-inkbrick-part="item"
+                data-active={index === shown.active || undefined}
+                data-tag={tag}
+                onMouseEnter={() => setOpen({ ...shown, active: index })}
+                onClick={() => apply(shown, tag)}
+              >
+                #{tag}
+              </div>
+            ))}
+          </div>
+        );
+      }}
+    />
   );
 }
 

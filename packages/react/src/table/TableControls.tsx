@@ -24,6 +24,7 @@ import type { BlockMenuAction } from '../block-handle/types';
 import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { PortalPresence } from '../ui/Presence';
 import { ColumnPropertiesDialog } from './ColumnPropertiesDialog';
 import { canUpdateView, newViewId, setAt, updateView, updateViews } from './views';
 import { Icon } from '../icons/Icon';
@@ -187,17 +188,20 @@ export function TableControls(props: TableControlsProps) {
   return (
     <>
       <TableControlsLayer {...props} onProperties={setPropertiesOf} />
-      {propertiesOf !== null && (
-        <ColumnPropertiesDialog
-          block={props.block}
-          view={props.activeView}
-          column={propertiesOf}
-          onClose={() => {
-            setPropertiesOf(null);
-            view.getRoot()?.focus({ preventScroll: true });
-          }}
-        />
-      )}
+      <PortalPresence
+        open={propertiesOf !== null}
+        render={() => (
+          <ColumnPropertiesDialog
+            block={props.block}
+            view={props.activeView}
+            column={propertiesOf!}
+            onClose={() => {
+              setPropertiesOf(null);
+              view.getRoot()?.focus({ preventScroll: true });
+            }}
+          />
+        )}
+      />
     </>
   );
 }

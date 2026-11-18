@@ -151,10 +151,16 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Smooth appearance, like in Notion: the block handle fades in and slides in a few pixels from the left, the slash menu, the
   block menu and the context menu fade in and slide in from the caret, the handle or the click point (from below when a menu opens
   above it; `data-side="top|bottom"` on the menu), the floating toolbar rises over the selection or drops under it through the
-  `translate` property, so its own `transform` positioning is not touched (`inkbrick-toolbar-in`, `inkbrick-toolbar-in-down`), the command palette dims the page and drops its window in (`inkbrick-slide-down`), the find panel drops in from the top edge, the drop line fades in while a block is dragged, and the dragged block dims instead of blinking. Pure CSS (`@keyframes inkbrick-handle-in`,
+  `translate` property, so its own `transform` positioning is not touched (`inkbrick-toolbar-in`, `inkbrick-toolbar-in-down`), the command palette dims the page and drops its window in (`inkbrick-slide-down`), the find panel drops in from the top edge, the formula popover, the option list of a table cell and the tag suggestions fade in like menus and the column properties dialog like the palette, the drop line fades in while a block is dragged, and the dragged block dims instead of blinking. Pure CSS (`@keyframes inkbrick-handle-in`,
   `inkbrick-fade-in`, `inkbrick-menu-in`, `inkbrick-menu-in-up`), on by default, off under `prefers-reduced-motion: reduce`. Tokens `--inkbrick-appear-duration` (100ms,
   `0ms` turns it off) and `--inkbrick-appear-shift` (4px). Moving the pointer from block to block does not replay it: the
   handle is the same node.
+- Smooth disappearance: every popup above fades out (`@keyframes inkbrick-fade-out`, token `--inkbrick-disappear-duration`, 100ms,
+  `0ms` turns it off) instead of vanishing. The new `Presence` component (`data-inkbrick-presence`, `display: contents`, `data-state="open|closed"`,
+  `aria-hidden` and `pointer-events: none` while it leaves) keeps a closing popup in the DOM until its exit animation ends. Without an
+  animation (`prefers-reduced-motion`, `0ms`, no package styles, a custom slot component whose root has none) it removes the popup at once, as
+  before. A popup that is opened again while it is leaving is created anew (so its mount effects run again); the block handle and the drop
+  line keep the same node. A custom slot component gets the exit with one rule on `[data-inkbrick-presence][data-state='closed'] > .your-root`.
 
 ### Changed
 
