@@ -1153,6 +1153,12 @@
     }
   }
 
+  @keyframes inkbrick-slide-down {
+    from {
+      transform: translateY(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
   @keyframes inkbrick-toolbar-in {
     from {
       opacity: 0;
@@ -1164,18 +1170,6 @@
     from {
       opacity: 0;
       translate: 0 calc(-1 * var(--inkbrick-appear-shift));
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    :where([data-inkbrick-ui='select']),
-    :where([data-inkbrick-ui='block-handle']),
-    :where([data-inkbrick-ui='drop-indicator']),
-    :where([data-inkbrick-ui='slash-menu']),
-    :where([data-inkbrick-ui='block-menu']),
-    :where([data-inkbrick-ui='context-menu']),
-    :where([data-inkbrick-ui='toolbar']) {
-      animation: none;
     }
   }
 
@@ -1449,6 +1443,8 @@
     justify-content: center;
     padding-top: 12vh;
     background: rgba(0, 0, 0, 0.3);
+    /* Затемнение проявляется, а окно ниже только опускается: если бы оно ещё и проявлялось, прозрачности перемножились бы. */
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-ui='palette']) {
@@ -1466,6 +1462,7 @@
     font-size: var(--inkbrick-font-size-ui);
     box-shadow: var(--inkbrick-shadow-16);
     overflow: hidden;
+    animation: inkbrick-slide-down var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-ui='palette'] [data-inkbrick-part='query']) {
@@ -1536,6 +1533,8 @@
     top: 12px;
     right: 16px;
     z-index: var(--inkbrick-z-popup);
+    /* Панель опускается из-за верхнего края, как меню от ручки. */
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1771,5 +1770,24 @@
   :where([data-inkbrick-ui='tag-suggestions'] [data-inkbrick-part='item'][data-active]) {
     background: var(--inkbrick-bg-3);
     color: var(--inkbrick-brand-fg);
+  }
+
+  /*
+   * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
+   * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-ui='select']),
+    :where([data-inkbrick-ui='block-handle']),
+    :where([data-inkbrick-ui='drop-indicator']),
+    :where([data-inkbrick-ui='slash-menu']),
+    :where([data-inkbrick-ui='block-menu']),
+    :where([data-inkbrick-ui='context-menu']),
+    :where([data-inkbrick-ui='toolbar']),
+    :where([data-inkbrick-ui='palette-backdrop']),
+    :where([data-inkbrick-ui='palette']),
+    :where([data-inkbrick-ui='find']) {
+      animation: none;
+    }
   }
 }
