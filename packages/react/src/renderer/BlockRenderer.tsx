@@ -1,4 +1,4 @@
-import { memo, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import type { BlockId } from '@inkbrick/document';
 
@@ -9,6 +9,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { resolveBlockComponent } from '../registry/resolveBlockComponent';
+import { animateCollapse } from '../ui/collapse';
 import { useEditorUI } from '../ui/EditorUIContext';
 
 export interface BlockRendererProps {
@@ -16,6 +17,9 @@ export interface BlockRendererProps {
 }
 
 const warned = new Set<string>();
+
+/** Больше стольких блоков за раз раздел сворачивается и разворачивается без анимации. */
+const MAX_ANIMATED_FOLD = 40;
 
 export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererProps) {
   const editor = useEditor();
@@ -40,6 +44,12 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
   );
   const block = useBlock(id);
 
+  // Блок, который скрыл свёрнутый заголовок, не пропадает сразу: пока идёт анимация, он ещё нарисован (`gone` — он уже ушёл).
+  const [gone, setGone] = useState(folded);
+  const wasFolded = useRef(folded);
+
+  if (!folded && gone) setGone(false);
+
   // Блок выбран целиком (Esc, рамка): отметка ставится на его элемент, компоненты блоков про неё не знают.
   useLayoutEffect(() => {
     const element = view
@@ -49,7 +59,28 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     element?.toggleAttribute('data-picked', picked);
   }, [view, id, picked, block]);
 
-  if (!block || folded) {
+  // Сворачивание и разворачивание заголовка: блок плавно уходит или появляется (на его собственном корне, без обёртки).
+  useLayoutEffect(() => {
+    const before = wasFolded.current;
+
+    wasFolded.current = folded;
+
+    if (before === folded) return;
+
+    const element = view
+      .getRoot()
+      ?.querySelector<HTMLElement>(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
+    // Раздел из сотен блоков двигать нельзя: каждый анимировался бы сам. Он сворачивается сразу.
+    const animated = !!element && view.folds.changed <= MAX_ANIMATED_FOLD;
+
+    if (folded) {
+      if (!animated || !animateCollapse(element, 'closed', () => setGone(true))) setGone(true);
+    } else if (animated) {
+      animateCollapse(element, 'open');
+    }
+  }, [view, id, folded]);
+
+  if (!block || (folded && gone)) {
     return null;
   }
 

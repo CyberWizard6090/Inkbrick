@@ -6,6 +6,7 @@ import { useChildren } from '../hooks/useChildren';
 import { useEditor } from '../hooks/useEditor';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
+import { useCollapse } from '../ui/collapse';
 import { Editable } from './Editable';
 import type { BlockProps } from './BlockProps';
 
@@ -45,6 +46,8 @@ export function ListItem({
   const editor = useEditor();
   const t = useT();
   const children = useChildren(block.id);
+  // Вложенные блоки сворачиваются плавно: пока они уходят, остаются в дереве.
+  const nested = useCollapse<HTMLDivElement>(!fold?.collapsed);
   const orderedNumber = useOrderedNumber(block);
 
   const type = typeof block.props.type === 'string' ? block.props.type : 'bullet';
@@ -107,8 +110,8 @@ export function ListItem({
         )}
       </div>
 
-      {children.length > 0 && !fold?.collapsed && (
-        <div className="block-nested-children" data-inkbrick-part="children">
+      {nested.mounted && children.length > 0 && (
+        <div ref={nested.ref} className="block-nested-children" data-inkbrick-part="children">
           <BlockChildren id={block.id} />
         </div>
       )}

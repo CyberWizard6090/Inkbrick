@@ -40,6 +40,8 @@
     --inkbrick-appear-shift: 4px;
     /* Плавное исчезновение тех же элементов: 0ms убирает их сразу */
     --inkbrick-disappear-duration: var(--inkbrick-duration-fast);
+    /* Сворачивание переключателей, пунктов списка и разделов под заголовком: 0ms убирает движение */
+    --inkbrick-collapse-duration: var(--inkbrick-duration-slow);
 
     --inkbrick-z-handle: 9990;
     --inkbrick-z-menu: 9995;

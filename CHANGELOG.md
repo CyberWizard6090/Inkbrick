@@ -161,6 +161,13 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   animation (`prefers-reduced-motion`, `0ms`, no package styles, a custom slot component whose root has none) it removes the popup at once, as
   before. A popup that is opened again while it is leaving is created anew (so its mount effects run again); the block handle and the drop
   line keep the same node. A custom slot component gets the exit with one rule on `[data-inkbrick-presence][data-state='closed'] > .your-root`.
+- Smooth collapsing: toggles, foldable list items and headings with a folded section shrink and grow with an animation
+  (`--inkbrick-collapse-duration`, 220ms, `0ms` or `prefers-reduced-motion` turn it off) instead of jumping: height, opacity and vertical
+  margins go from where the element is now to zero or back, the arrow turns smoothly, and a second click in the middle of the animation
+  turns around from where it is. The nested blocks of a toggle or a list item stay in the tree until the animation ends; the blocks of a folded
+  section shrink each in place, and a section of more than 40 blocks collapses at once. Built on the Web Animations API (`animateCollapse`,
+  `useCollapse`), so no wrapper elements are added; the code block collapse uses the same token. Only the fold and unfold are animated: the first
+  nested block of a toggle, and blocks drawn for the first time, appear at once.
 
 ### Changed
 
