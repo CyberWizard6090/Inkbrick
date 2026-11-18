@@ -155,6 +155,15 @@ export function VirtualChildList({
 
   useEffect(() => (windowed ? view.viewport.attach() : undefined), [view, windowed]);
 
+  // Рендерер рисует только блоки у экрана: анимации сворачивания разделов ограничены тем, что на странице.
+  useLayoutEffect(() => {
+    view.folds.windowed = windowed;
+
+    return () => {
+      view.folds.windowed = false;
+    };
+  }, [view, windowed]);
+
   const offsets = useMemo(() => {
     if (!windowed) return null;
 
@@ -201,13 +210,14 @@ export function VirtualChildList({
     const to = Math.min(last, upperBound(offsets, range.bottom + options.overscan) - 1);
     const pinned = new Set<number>([0, last]);
 
-    for (const id of [...view.viewport.getPinned(), dragId, dropId]) {
+    for (const id of [...view.viewport.getPinned(), dragId, dropId, ...view.folds.leavingIds()]) {
       if (id) pinned.add(indexOfItem(editor, parentId, ids, id));
     }
 
     pinned.delete(-1);
 
-    const shown = (i: number) => !view.folds.isHidden(ids[i]);
+    // Скрытый заголовком блок, который ещё уходит с анимацией, пока рисуется: иначе анимации не видно.
+    const shown = (i: number) => !view.folds.isHidden(ids[i]) || view.folds.isLeaving(ids[i]);
 
     // Лимит окна считает отрисованные блоки, а не индексы: свёрнутый раздел из сотен скрытых блоков не должен
     // выталкивать из окна блоки, которые стоят на экране сразу за ним.
@@ -231,7 +241,10 @@ export function VirtualChildList({
     if (!windowed || !rendered || !marker.current) return;
 
     const seen = new Set<Element>();
-    const expected = new Set(rendered.map((i) => ids[i]));
+    // Блок, который сейчас сжимается или растёт, не измеряем: его высота временная. Измерим, когда анимация закончится.
+    const expected = new Set(
+      rendered.map((i) => ids[i]).filter((id) => !view.folds.isAnimating(id)),
+    );
     let changed = false;
     let previous: { id: BlockId; top: number; height: number } | null = null;
     let remaining = rendered.length;
@@ -297,6 +310,11 @@ export function VirtualChildList({
         if (!sizes.has(element)) observer.current.observe(element);
       }
     }
+
+    // Пока блоки сворачиваются или разворачиваются, их высота временная, а раскладка в DOM расходится с моделью высот.
+    // Окно и перемер не пересчитываем: на каждый коммит они дёргались бы заново (бесконечный цикл обновлений). Когда
+    // анимация кончится, контроллер разбудит список, и всё пересчитается по настоящим высотам.
+    if (view.folds.isMoving) return;
 
     const next = visibleRange(marker.current, parents.current);
     const step = options.overscan / 4;

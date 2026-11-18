@@ -1,5 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 
+import { useTool } from './sandbox';
+
 const editable = '.editable';
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 
@@ -207,5 +209,92 @@ test.describe('Collapse animation: off switches', () => {
     await expect(page.locator(toggleKids)).toHaveCount(1);
     await page.locator(toggleButton).click();
     expect(await page.locator(toggleKids).count()).toBe(0);
+  });
+});
+
+test.describe('Collapse animation: virtual renderer (50 000 blocks)', () => {
+  test('a section folds smoothly with no jump at the end, unfolds smoothly, and nothing throws', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/?lang=en');
+    await useTool(page, 'load-large');
+    await expect(page.locator('.editable[data-id="large-0"]')).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 4600));
+    await expect(page.locator('.editable[data-id="large-100"]')).toBeVisible();
+
+    const fold = page
+      .locator('.editable[data-id="large-100"]')
+      .locator('xpath=..')
+      .locator('[data-inkbrick-part="fold"]');
+
+    // Кадр за кадром: положение следующего заголовка и высота первого скрытого блока.
+    const record = (frames: number) =>
+      page.evaluate(
+        (count) =>
+          new Promise<{ top: number | null; height: number | null }[]>((resolve) => {
+            const rows: { top: number | null; height: number | null }[] = [];
+            const tick = () => {
+              const next = document.querySelector('.editable[data-id="large-200"]');
+              const first = document
+                .querySelector('.editable[data-id="large-101"]')
+                ?.closest('[data-block-id]');
+
+              rows.push({
+                top: next ? next.getBoundingClientRect().top : null,
+                height: first ? first.getBoundingClientRect().height : null,
+              });
+
+              if (rows.length < count) requestAnimationFrame(tick);
+              else resolve(rows);
+            };
+
+            requestAnimationFrame(tick);
+          }),
+        frames,
+      );
+    const steps = (rows: { top: number | null }[]) => {
+      const tops = rows.map((row) => row.top).filter((top): top is number => top !== null);
+
+      return Math.max(...tops.slice(1).map((top, i) => Math.abs(top - tops[i])));
+    };
+
+    const folding = record(40);
+
+    await fold.click();
+
+    const rows = await folding;
+    const heights = rows.map((row) => row.height).filter((h): h is number => h !== null);
+
+    // Первый скрытый блок сжимается до нуля (а не застревает на min-height), и следующий заголовок едет без прыжка.
+    expect(Math.min(...heights)).toBeLessThan(5);
+    expect(steps(rows)).toBeLessThan(60);
+
+    await expect(page.locator('.editable[data-id="large-101"]')).toHaveCount(0);
+
+    const unfolding = record(40);
+
+    await fold.click();
+
+    const grown = (await unfolding).map((row) => row.height).filter((h): h is number => h !== null);
+
+    expect(grown.length).toBeGreaterThan(3);
+    expect(Math.min(...grown)).toBeLessThan(10);
+    expect(Math.max(...grown)).toBeGreaterThan(20);
+    await expect(page.locator('.editable[data-id="large-101"]')).toHaveCount(1);
+
+    // Рывки скроллом посреди анимации не раскачивают список (раньше это могло закончиться бесконечным циклом обновлений).
+    for (let i = 0; i < 3; i++) {
+      await fold.click();
+      for (const delta of [250, -400, 600, -200]) {
+        await page.mouse.wheel(0, delta);
+        await page.waitForTimeout(40);
+      }
+      await page.waitForTimeout(400);
+    }
+
+    expect(errors).toEqual([]);
   });
 });

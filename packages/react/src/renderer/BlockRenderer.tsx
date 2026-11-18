@@ -47,6 +47,7 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
   // Блок, который скрыл свёрнутый заголовок, не пропадает сразу: пока идёт анимация, он ещё нарисован (`gone` — он уже ушёл).
   const [gone, setGone] = useState(folded);
   const wasFolded = useRef(folded);
+  const started = useRef(false);
 
   if (!folded && gone) setGone(false);
 
@@ -59,24 +60,57 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     element?.toggleAttribute('data-picked', picked);
   }, [view, id, picked, block]);
 
+  useLayoutEffect(() => view.folds.register(id), [view, id]);
+
   // Сворачивание и разворачивание заголовка: блок плавно уходит или появляется (на его собственном корне, без обёртки).
   useLayoutEffect(() => {
+    const first = !started.current;
     const before = wasFolded.current;
 
+    started.current = true;
     wasFolded.current = folded;
-
-    if (before === folded) return;
 
     const element = view
       .getRoot()
       ?.querySelector<HTMLElement>(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
     // Раздел из сотен блоков двигать нельзя: каждый анимировался бы сам. Он сворачивается сразу.
-    const animated = !!element && view.folds.changed <= MAX_ANIMATED_FOLD;
+    const animated = !!element && view.folds.canAnimate(MAX_ANIMATED_FOLD);
 
-    if (folded) {
-      if (!animated || !animateCollapse(element, 'closed', () => setGone(true))) setGone(true);
-    } else if (animated) {
-      animateCollapse(element, 'open');
+    const appear = () => {
+      if (!animated) return;
+
+      view.folds.setMoving(id, false);
+
+      if (!animateCollapse(element, 'open', () => view.folds.setMoving(id, null))) {
+        view.folds.setMoving(id, null);
+      }
+    };
+
+    // Блок смонтирован уже после разворачивания раздела (виртуальный рендерер рисует его только сейчас): появляется плавно.
+    if (first) {
+      if (!folded && view.folds.consumeRevealed(id)) appear();
+
+      return;
+    }
+
+    if (before === folded) return;
+
+    if (!folded) {
+      appear();
+
+      return;
+    }
+
+    const leaving =
+      animated &&
+      animateCollapse(element, 'closed', () => {
+        view.folds.setMoving(id, null);
+        setGone(true);
+      });
+
+    if (!leaving) {
+      view.folds.setMoving(id, null);
+      setGone(true);
     }
   }, [view, id, folded]);
 

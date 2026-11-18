@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
-const BOX = ['marginTop', 'marginBottom', 'paddingTop', 'paddingBottom'] as const;
+const BOX = ['marginTop', 'marginBottom', 'paddingTop', 'paddingBottom', 'minHeight'] as const;
 
 interface Running {
   readonly animation: Animation;
@@ -60,20 +60,41 @@ export function animateCollapse(
   if (natural === 0 && to === 'closed') return false;
 
   const computed = getComputedStyle(element);
-  const full: Keyframe = { height: `${natural}px`, opacity: 1 };
 
-  for (const key of BOX) full[key] = computed[key];
+  // Между соседями в контейнере блоков стоит `gap`: свёрнутый до нуля блок всё ещё занимает свой промежуток, пока его не
+  // уберут, и когда его убирают, всё ниже прыгает на этот промежуток. Поэтому в свёрнутом виде отступ равен минус промежутку.
+  const parent = element.parentElement ? getComputedStyle(element.parentElement) : null;
+  const gap = parent && /flex|grid/.test(parent.display) ? parseFloat(parent.rowGap) || 0 : 0;
+  const side = element.nextElementSibling
+    ? 'marginBottom'
+    : element.previousElementSibling
+      ? 'marginTop'
+      : null;
+
+  const fullBox = {} as Record<(typeof BOX)[number], number>;
+  const emptyBox = {} as Record<(typeof BOX)[number], number>;
+
+  for (const key of BOX) {
+    fullBox[key] = parseFloat(computed[key]) || 0; // `auto` у `min-height` — нечего удерживать, будет 0
+    emptyBox[key] = key === side ? -gap : 0;
+  }
+
+  const full: Keyframe = { height: `${natural}px`, opacity: 1 };
+  const empty: Keyframe = { height: '0px', opacity: 0 };
+
+  for (const key of BOX) {
+    full[key] = `${fullBox[key]}px`;
+    empty[key] = `${emptyBox[key]}px`;
+  }
 
   // Доля «раскрытости», с которой начинаем: у уже двигавшегося элемента — где он сейчас, у нового — край.
   const progress =
     mid === null ? (to === 'open' ? 0 : 1) : Math.min(1, Math.max(0, mid / (natural || 1)));
-  const empty: Keyframe = { height: '0px', opacity: 0 };
-
-  for (const key of BOX) empty[key] = '0px';
-
   const start: Keyframe = { height: `${natural * progress}px`, opacity: progress };
 
-  for (const key of BOX) start[key] = `${parseFloat(computed[key]) * progress}px`;
+  for (const key of BOX) {
+    start[key] = `${emptyBox[key] + (fullBox[key] - emptyBox[key]) * progress}px`;
+  }
 
   const distance = to === 'open' ? 1 - progress : progress;
 
@@ -84,6 +105,9 @@ export function animateCollapse(
   const animation = element.animate([start, to === 'open' ? full : empty], {
     duration: total * distance,
     easing: style.getPropertyValue('--inkbrick-curve').trim() || 'ease',
+    // Свёрнутый блок удерживает конечное состояние до удаления из дерева: иначе после конца анимации он на миг возвращается
+    // к полной высоте, пока React его не убрал (текст «мелькает»). Раскрытый возвращается к обычному виду сам.
+    fill: to === 'closed' ? 'forwards' : 'none',
   });
 
   running.set(element, { animation, overflow });
@@ -92,7 +116,10 @@ export function animateCollapse(
     if (running.get(element)?.animation !== animation) return;
 
     running.delete(element);
-    element.style.overflow = overflow;
+
+    // Раскрытому элементу возвращаем `overflow`; свёрнутый сейчас уберут, и до этого он должен оставаться обрезанным.
+    if (to === 'open') element.style.overflow = overflow;
+
     done?.();
   };
 
