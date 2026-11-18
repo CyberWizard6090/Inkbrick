@@ -36,13 +36,28 @@
 
   /* Меню появляются плавно: проявляются и чуть выезжают от каретки или ручки (снизу, если открыты над ней). */
   :where([data-inkbrick-ui='slash-menu']),
-  :where([data-inkbrick-ui='block-menu']) {
+  :where([data-inkbrick-ui='block-menu']),
+  :where([data-inkbrick-ui='context-menu']) {
     animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-ui='slash-menu'][data-side='top']),
-  :where([data-inkbrick-ui='block-menu'][data-side='top']) {
+  :where([data-inkbrick-ui='block-menu'][data-side='top']),
+  :where([data-inkbrick-ui='context-menu'][data-side='top']) {
     animation-name: inkbrick-menu-in-up;
+  }
+
+  /*
+   * Плавающий toolbar: положение ему задаёт встроенный `transform`, поэтому выезд — через отдельное свойство `translate`
+   * (оно складывается с `transform`, а не заменяет его). Над выделением он поднимается снизу, под ним — опускается сверху.
+   * Toolbar внутри контекстного меню (`inline`) не анимируется: меню уже появляется целиком.
+   */
+  :where([data-inkbrick-ui='toolbar']:not([data-placement='inline'])) {
+    animation: inkbrick-toolbar-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='below']) {
+    animation-name: inkbrick-toolbar-in-down;
   }
 
   :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']) {
@@ -1138,12 +1153,28 @@
     }
   }
 
+  @keyframes inkbrick-toolbar-in {
+    from {
+      opacity: 0;
+      translate: 0 var(--inkbrick-appear-shift);
+    }
+  }
+
+  @keyframes inkbrick-toolbar-in-down {
+    from {
+      opacity: 0;
+      translate: 0 calc(-1 * var(--inkbrick-appear-shift));
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     :where([data-inkbrick-ui='select']),
     :where([data-inkbrick-ui='block-handle']),
     :where([data-inkbrick-ui='drop-indicator']),
     :where([data-inkbrick-ui='slash-menu']),
-    :where([data-inkbrick-ui='block-menu']) {
+    :where([data-inkbrick-ui='block-menu']),
+    :where([data-inkbrick-ui='context-menu']),
+    :where([data-inkbrick-ui='toolbar']) {
       animation: none;
     }
   }

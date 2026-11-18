@@ -35,7 +35,7 @@
     --inkbrick-duration-normal: 150ms;
     --inkbrick-duration-slow: 220ms;
     --inkbrick-curve: cubic-bezier(0.33, 0, 0.67, 1);
-    /* Плавное появление ручки блока, линии вставки, slash-меню и меню блока (как в Notion): 0ms выключает, сдвиг — откуда они выезжают */
+    /* Плавное появление ручки блока, линии вставки, slash-меню, меню блока, контекстного меню и toolbar (как в Notion): 0ms выключает, сдвиг — откуда они выезжают */
     --inkbrick-appear-duration: var(--inkbrick-duration-fast);
     --inkbrick-appear-shift: 4px;
 

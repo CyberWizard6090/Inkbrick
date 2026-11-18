@@ -4,6 +4,11 @@ import { test, expect, type Page } from '@playwright/test';
 import { useTool } from './sandbox';
 
 async function violations(page: Page) {
+  // Меню и панели появляются плавно (100 мс): axe считает контраст по установившемуся виду, а не по полупрозрачному кадру.
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((animation) => animation.finished)),
+  );
+
   const result = await new AxeBuilder({ page })
     .include('.inkbrick-editor')
     .include('[data-inkbrick-ui]')

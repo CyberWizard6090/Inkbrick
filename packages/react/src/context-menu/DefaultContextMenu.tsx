@@ -9,6 +9,8 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState({ left: position.x, top: position.y });
+  // Меню открылось над точкой клика: при появлении оно выезжает снизу.
+  const [above, setAbove] = useState(false);
 
   // Меню целиком в окне: у правого/нижнего края открывается влево/вверх от точки клика.
   useLayoutEffect(() => {
@@ -22,6 +24,7 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
     const top =
       position.y + height + MARGIN > window.innerHeight ? position.y - height : position.y;
 
+    setAbove(position.y + height + MARGIN > window.innerHeight);
     setPlace({
       left: Math.max(MARGIN, Math.min(left, window.innerWidth - width - MARGIN)),
       top: Math.max(MARGIN, Math.min(top, window.innerHeight - height - MARGIN)),
@@ -58,6 +61,7 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
       className="inkbrick-context-menu"
       data-inkbrick-ui="context-menu"
       data-testid="context-menu"
+      data-side={above ? 'top' : 'bottom'}
       role="menu"
       aria-label={t('contextMenu.label')}
       style={place}
