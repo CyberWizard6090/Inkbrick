@@ -2,6 +2,7 @@ import * as z from '../zod';
 
 import type { BaseBlock } from '../../model/BaseBlock';
 import type { BlockSchema, BlockTemplate } from '../BlockSchema';
+import { BLOCK_BACKGROUNDS } from '../../utils/colors';
 
 export const TABLE = 'block:table';
 export const TABLE_ROW = 'block:table-row';
@@ -110,6 +111,12 @@ export type TableMerge = z.infer<typeof tableMergeSchema>;
 export const tablePropsSchema = z.object({
   /** Первая строка — заголовок. */
   header: z.boolean().default(true),
+  /** Первый столбец — заголовок (выделяется как заголовок строки; в HTML — `<th scope="row">`). */
+  headerColumn: z.boolean().default(false),
+  /** Чередующиеся строки: каждая вторая строка тела таблицы чуть темнее. */
+  striped: z.boolean().default(false),
+  /** Границы ячеек; `false` — таблица без линий. */
+  borders: z.boolean().default(true),
   /** Первая строка остаётся на виду при прокрутке таблицы. */
   freezeRow: z.boolean().default(false),
   /** Первый столбец остаётся на виду при горизонтальной прокрутке. */
@@ -139,6 +146,8 @@ export const tableRowPropsSchema = z.object({});
 
 export const tableCellPropsSchema = z.object({
   align: z.enum(['left', 'center', 'right', 'justify']).optional(),
+  /** Цвет фона ячейки (`BLOCK_BACKGROUNDS`); без него фона нет. */
+  background: z.enum(BLOCK_BACKGROUNDS).optional(),
 });
 
 /** Заготовка таблицы `rows` × `columns` с пустыми ячейками. */

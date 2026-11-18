@@ -1,4 +1,4 @@
-import { isAlignment, type Alignment, type BaseBlock, type BlockId } from '@inkbrick/document';
+import { isAlignment, isBlockBackground, type BaseBlock, type BlockId } from '@inkbrick/document';
 
 import type { Fragment } from '../clipboard/types';
 import { tableCellAt, tableSize } from './tableGrid';
@@ -82,17 +82,25 @@ export function tableRangeFragment(
   if (cells.length === 0 || !table) return { blocks: [] };
 
   const clamped = clampTableRange(getBlock, tableId, range)!;
-  const align = cells[0].map((id): Alignment | undefined => {
-    const value = getBlock(id)?.props.align;
+  const own = cells.map((row) =>
+    row.map((id) => {
+      const { align, background } = getBlock(id)?.props ?? {};
 
-    return isAlignment(value) ? value : undefined;
-  });
+      return {
+        ...(isAlignment(align) && align !== 'left' ? { align } : {}),
+        ...(isBlockBackground(background) ? { background } : {}),
+      };
+    }),
+  );
 
   return tableFragment(
     cells.map((row) => row.map((id) => getBlock(id)?.content ?? [])),
     {
       header: table.props.header !== false && clamped.top === 0,
-      align,
+      headerColumn: table.props.headerColumn === true && clamped.left === 0,
+      striped: table.props.striped === true,
+      borders: table.props.borders !== false,
+      cellProps: own,
       columnTypes: Array.isArray(table.props.columnTypes)
         ? table.props.columnTypes.slice(clamped.left, clamped.right + 1)
         : undefined,

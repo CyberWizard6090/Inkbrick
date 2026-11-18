@@ -373,8 +373,16 @@ describe('table items', () => {
       'table-column-left',
       'table-column-right',
       'table-column-delete',
+      'table-header',
+      'table-headerColumn',
+      'table-striped',
+      'table-borders',
+      'table-freezeRow',
+      'table-freezeColumn',
+      'table-reset-widths',
     ]);
-    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(1);
+    // Один разделитель перед пунктами таблицы и один перед её форматированием.
+    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(2);
 
     fireEvent.click(item('table-row-below'));
     expect([rows(), columns(), $menu()]).toEqual([4, 3, null]);

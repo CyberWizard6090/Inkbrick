@@ -157,7 +157,7 @@ function renderBlock(block: BaseBlock): string {
 }
 
 function renderTable(node: ExportNode): string {
-  const { header, rows, widths, merges } = exportTable(node);
+  const { header, headerColumn, striped, borders, rows, widths, merges } = exportTable(node);
 
   if (rows.length === 0) return '';
 
@@ -181,10 +181,19 @@ function renderTable(node: ExportNode): string {
       (found && found.columns > 1 ? ` colspan="${found.columns}"` : '') +
       (found && found.rows > 1 ? ` rowspan="${found.rows}"` : '');
 
-    return `<${tag}${spans}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${tag}>`;
+    // Заголовочный столбец в теле таблицы — `<th scope="row">`.
+    const rowHeader = headerColumn && columnIndex === 0 && tag === 'td';
+    const name = rowHeader ? 'th' : tag;
+    const scope = rowHeader ? ' scope="row"' : '';
+
+    return `<${name}${scope}${spans}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${name}>`;
   };
-  const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th', rowIndex: number) =>
-    `<tr>${cells.map((cell, columnIndex) => cellHtml(cell, tag, rowIndex, columnIndex)).join('')}</tr>`;
+  const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th', rowIndex: number) => {
+    // Полосатость: каждая вторая строка тела; цвет светлой темы, потому что стилей темы в экспорте нет.
+    const band = striped && tag === 'td' && (rowIndex - (header ? 1 : 0)) % 2 === 1;
+
+    return `<tr${band ? ' style="background-color:#f4f4f4"' : ''}>${cells.map((cell, columnIndex) => cellHtml(cell, tag, rowIndex, columnIndex)).join('')}</tr>`;
+  };
   const columns = widths.some((width) => width !== null)
     ? `<colgroup>${widths
         .map((width) => (width === null ? '<col>' : `<col style="width:${width}px">`))
@@ -197,7 +206,9 @@ function renderTable(node: ExportNode): string {
     .map((cells, index) => row(cells, 'td', index + offset))
     .join('');
 
-  return `<table>${columns}${head}<tbody>${body}</tbody></table>`;
+  const attributes = (borders ? '' : ' data-borders="none"') + (striped ? ' data-striped' : '');
+
+  return `<table${attributes}>${columns}${head}<tbody>${body}</tbody></table>`;
 }
 
 function renderOutline(items: readonly OutlineItem[]): string {

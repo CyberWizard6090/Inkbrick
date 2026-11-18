@@ -450,6 +450,33 @@
     font-weight: var(--inkbrick-font-weight-semibold);
   }
 
+  /* Заголовочный столбец: первая ячейка каждой строки выделена так же, как заголовочная строка. */
+  :where(
+    [data-inkbrick-block='table'][data-header-column]
+      [data-inkbrick-block='table-row']
+      > [data-inkbrick-block='table-cell']:first-child
+  ) {
+    background: var(--inkbrick-bg-3);
+    font-weight: var(--inkbrick-font-weight-semibold);
+  }
+
+  /* Чередующиеся строки: каждая вторая строка тела (с заголовком — третья, пятая…, без него — вторая, четвёртая…). */
+  :where(
+    [data-inkbrick-block='table'][data-striped][data-header]
+      [data-inkbrick-block='table-row']:nth-child(odd):not(:first-child)
+      > [data-inkbrick-block='table-cell'],
+    [data-inkbrick-block='table'][data-striped]:not([data-header])
+      [data-inkbrick-block='table-row']:nth-child(even)
+      > [data-inkbrick-block='table-cell']
+  ) {
+    background: color-mix(in srgb, var(--inkbrick-bg-3) 50%, var(--inkbrick-bg-1));
+  }
+
+  /* Без границ: линии остаются в раскладке прозрачными, поэтому ширина ячеек не меняется. */
+  :where([data-inkbrick-block='table'][data-borders='none'] [data-inkbrick-block='table-cell']) {
+    border-color: transparent;
+  }
+
   :where([data-inkbrick-block='quote']) {
     display: block;
     margin: 0;
@@ -1764,6 +1791,61 @@
 
   :where([data-background='red']) {
     background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, transparent);
+  }
+
+  /* Фон ячейки таблицы: те же цвета, но без полей наружу и непрозрачный (закреплённые ячейки не просвечивают). */
+  :where([data-inkbrick-block='table-cell'][data-background]) {
+    margin-inline: 0;
+    padding-inline: 8px;
+    border-radius: 0;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='gray']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-gray) 35%, var(--inkbrick-bg-1));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='brown']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-brown) 35%, var(--inkbrick-bg-1));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='orange']) {
+    background-color: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-orange) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='yellow']) {
+    background-color: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-yellow) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='green']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-green) 35%, var(--inkbrick-bg-1));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='blue']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-blue) 35%, var(--inkbrick-bg-1));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='purple']) {
+    background-color: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-purple) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='pink']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-pink) 35%, var(--inkbrick-bg-1));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-background='red']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, var(--inkbrick-bg-1));
   }
 
   /* Блок выбран целиком (Esc в блоке, Shift+стрелки, рамка): подсветка поверх фона блока. */

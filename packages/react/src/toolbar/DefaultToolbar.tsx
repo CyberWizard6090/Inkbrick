@@ -41,6 +41,8 @@ export function DefaultToolbar({
   onAlign,
   onInsertFormula,
   turnInto,
+  scope = 'text',
+  onClearFormat,
 }: ToolbarProps) {
   const t = useT();
   const input = useRef<HTMLInputElement>(null);
@@ -234,35 +236,39 @@ export function DefaultToolbar({
             data-inkbrick-part="separator"
             role="separator"
           />
-          <button
-            type="button"
-            className="inkbrick-toolbar__button"
-            data-inkbrick-part="button"
-            data-format="link"
-            data-pressed={formats.link !== undefined || undefined}
-            aria-label={t('toolbar.link.label')}
-            aria-pressed={formats.link !== undefined}
-            title={t('toolbar.link.title')}
-            onClick={onOpenLink}
-          >
-            <Icon name="link" />
-          </button>
-          <button
-            type="button"
-            className="inkbrick-toolbar__button"
-            data-inkbrick-part="button"
-            data-format="formula"
-            aria-label={t('toolbar.formula.label')}
-            title={t('toolbar.formula.title')}
-            onClick={onInsertFormula}
-          >
-            <Icon name="sigma" />
-          </button>
-          <span
-            className="inkbrick-toolbar__separator"
-            data-inkbrick-part="separator"
-            role="separator"
-          />
+          {scope !== 'cells' && (
+            <>
+              <button
+                type="button"
+                className="inkbrick-toolbar__button"
+                data-inkbrick-part="button"
+                data-format="link"
+                data-pressed={formats.link !== undefined || undefined}
+                aria-label={t('toolbar.link.label')}
+                aria-pressed={formats.link !== undefined}
+                title={t('toolbar.link.title')}
+                onClick={onOpenLink}
+              >
+                <Icon name="link" />
+              </button>
+              <button
+                type="button"
+                className="inkbrick-toolbar__button"
+                data-inkbrick-part="button"
+                data-format="formula"
+                aria-label={t('toolbar.formula.label')}
+                title={t('toolbar.formula.title')}
+                onClick={onInsertFormula}
+              >
+                <Icon name="sigma" />
+              </button>
+              <span
+                className="inkbrick-toolbar__separator"
+                data-inkbrick-part="separator"
+                role="separator"
+              />
+            </>
+          )}
           {PANELS.map(({ panel: name, icon }) => {
             const current = name === 'color' ? formats.color : formats.backgroundColor;
 
@@ -307,6 +313,19 @@ export function DefaultToolbar({
               <Icon name={ALIGN_ICONS[align]} />
             </button>
           ))}
+          {onClearFormat && (
+            <button
+              type="button"
+              className="inkbrick-toolbar__button"
+              data-inkbrick-part="button"
+              data-format="clear"
+              aria-label={t('toolbar.clear.label')}
+              title={t('toolbar.clear.title')}
+              onClick={onClearFormat}
+            >
+              <Icon name="x" />
+            </button>
+          )}
           {panel && (
             <div
               key={panel}

@@ -125,6 +125,12 @@ export const isTable = (block: BaseBlock) => block.flavour === 'block:table';
 export interface ExportTable {
   /** Первая строка — заголовок. */
   readonly header: boolean;
+  /** Первый столбец — заголовок. */
+  readonly headerColumn: boolean;
+  /** Чередующиеся строки тела. */
+  readonly striped: boolean;
+  /** Границы ячеек (по умолчанию есть). */
+  readonly borders: boolean;
   /** Строки; во всех строках поровну ячеек (недостающие — `undefined`, их выводят пустыми). */
   readonly rows: readonly (readonly (BaseBlock | undefined)[])[];
   readonly widths: readonly (number | null)[];
@@ -146,6 +152,9 @@ export function exportTable(node: ExportNode): ExportTable {
 
   return {
     header: node.block.props.header !== false,
+    headerColumn: node.block.props.headerColumn === true,
+    striped: node.block.props.striped === true,
+    borders: node.block.props.borders !== false,
     merges: normalizeMerges(node.block.props.merges, rows.length, columns),
     rows: rows.map((row) => Array.from({ length: columns }, (_, index) => row[index])),
     widths: Array.from({ length: columns }, (_, index) => {
