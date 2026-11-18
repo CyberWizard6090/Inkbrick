@@ -1,7 +1,8 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  // `markdown` — отдельная точка входа: разбор Markdown не попадает в основной бандл.
+  entry: ['src/index.ts', 'src/markdown.ts'],
   format: ['esm'],
   target: 'es2022',
   dts: true,

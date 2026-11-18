@@ -45,6 +45,7 @@ export function load(json: string) {
   list of `{ insert, attributes }` nodes.
 - Snapshots carry the format and schema versions; `deserializeDocument` migrates older snapshots once.
 - Export escapes text and passes links and images through `isSafeUrl` / `isSafeImageUrl`.
+- `fromMarkdown(text, { schema })` from `@inkbrick/document/markdown` parses Markdown back into a document; it is a separate entry point, so it stays out of the main bundle.
 
 The editor itself is [`@inkbrick/engine`](https://www.npmjs.com/package/@inkbrick/engine), the UI is
 [`@inkbrick/react`](https://www.npmjs.com/package/@inkbrick/react).
