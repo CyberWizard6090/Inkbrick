@@ -4,6 +4,7 @@
   "entryPointStrategy": "resolve",
   "entryPoints": [
     "packages/document/src/index.ts",
+    "packages/document/src/markdown.ts",
     "packages/store/src/index.ts",
     "packages/engine/src/index.ts",
     "packages/locales/src/index.ts",
