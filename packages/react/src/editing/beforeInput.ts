@@ -3,7 +3,7 @@ import type { CaretResult, Editor } from '@inkbrick/engine';
 import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
 import { matchInlineFormula } from '../formula/actions';
-import { deleteForwardAtEnd } from './deleteAtBoundary';
+import { deleteForwardAtEnd, unfoldNeighbour } from './deleteAtBoundary';
 import { matchInlineMarkdown } from './markdownInline';
 import type { EditorView } from './EditorView';
 import type { InputActions } from './inputActions';
@@ -249,10 +249,12 @@ export function applyBeforeInput(
     case 'deleteContentBackward':
       run(() =>
         collapsed
-          ? exec<CaretResult>({
-              type: 'deleteBackward',
-              payload: { blockId: from.blockId, offset: from.offset },
-            })
+          ? from.offset === 0 && unfoldNeighbour(editor, view, from.blockId, 'backward')
+            ? undefined
+            : exec<CaretResult>({
+                type: 'deleteBackward',
+                payload: { blockId: from.blockId, offset: from.offset },
+              })
           : deleteSelection(selection),
       );
       return;
@@ -268,7 +270,9 @@ export function applyBeforeInput(
           });
         }
 
-        return deleteForwardAtEnd(editor, from.blockId);
+        return unfoldNeighbour(editor, view, from.blockId, 'forward')
+          ? undefined
+          : deleteForwardAtEnd(editor, from.blockId);
       });
       return;
 
@@ -284,10 +288,12 @@ export function applyBeforeInput(
               type: 'deleteText',
               payload: { blockId: from.blockId, from: start, to: from.offset },
             })
-          : exec<CaretResult>({
-              type: 'deleteBackward',
-              payload: { blockId: from.blockId, offset: from.offset },
-            });
+          : unfoldNeighbour(editor, view, from.blockId, 'backward')
+            ? undefined
+            : exec<CaretResult>({
+                type: 'deleteBackward',
+                payload: { blockId: from.blockId, offset: from.offset },
+              });
       });
       return;
 

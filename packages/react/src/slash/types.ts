@@ -23,6 +23,10 @@ export interface SlashMenuItem {
    * Без группы пункт стоит после всех групп.
    */
   readonly group?: string;
+  /** Ключи словаря приложения (`messages`, `locales`, `registerLocale`) для названия, описания и слов поиска. */
+  readonly titleKey?: string;
+  readonly descriptionKey?: string;
+  readonly keywordsKey?: string;
   readonly flavour: string;
   readonly props?: Readonly<Record<string, unknown>>;
   /**

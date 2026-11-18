@@ -9,7 +9,7 @@ import { syncToolbar } from '../toolbar/syncToolbar';
 import { selectAllText } from '../editing/selection';
 import { openInlineFormula } from '../formula/actions';
 import { setAlignInSelection } from '../toolbar/rich';
-import { deleteForwardAtEnd } from '../editing/deleteAtBoundary';
+import { deleteForwardAtEnd, unfoldNeighbour } from '../editing/deleteAtBoundary';
 import type { KeyBinding, KeymapContext } from './types';
 
 const caretAtEdge =
@@ -175,7 +175,9 @@ export const defaultKeymap: readonly KeyBinding[] = [
       const { blockId } = context.selection()!.from;
 
       context.run(() =>
-        context.exec<CaretResult>({ type: 'deleteBackward', payload: { blockId, offset: 0 } }),
+        unfoldNeighbour(context.editor, context.view, blockId, 'backward')
+          ? undefined
+          : context.exec<CaretResult>({ type: 'deleteBackward', payload: { blockId, offset: 0 } }),
       );
     },
   },
@@ -186,7 +188,11 @@ export const defaultKeymap: readonly KeyBinding[] = [
     run: (context) => {
       const { blockId } = context.selection()!.from;
 
-      context.run(() => deleteForwardAtEnd(context.editor, blockId));
+      context.run(() =>
+        unfoldNeighbour(context.editor, context.view, blockId, 'forward')
+          ? undefined
+          : deleteForwardAtEnd(context.editor, blockId),
+      );
     },
   },
 ];

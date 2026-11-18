@@ -24,6 +24,7 @@ import { InsertChildChange, SetBlockChange } from '@inkbrick/store';
 
 import { DebugPanel } from './components/DebugPanel';
 import { NoticeBar, type Notice } from './components/NoticeBar';
+import { editorMessages } from './blocks/messages';
 import { DemoSwitch } from './DemoSwitch';
 import { HistoryButtons } from './components/HistoryButtons';
 import { createSandboxI18n, SandboxI18nContext } from './i18n';
@@ -458,6 +459,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         editor={editor}
         blocks={customBlocks}
         locale={locale}
+        locales={editorMessages}
         readOnly={readOnly}
         images={demoImages}
         formatting={formatting}

@@ -93,6 +93,10 @@ export const counterController = defineBlockController<CounterProps>({
       description: 'Number with + and − buttons',
       keywords: ['counter', 'count', 'счётчик', 'счетчик'],
       icon: 'plus',
+      // Строки для slash-меню на языке интерфейса: словарь приложения передаётся провайдеру (`locales`), см. `blocks/messages.ts`.
+      titleKey: 'counter.slash.title',
+      descriptionKey: 'counter.slash.description',
+      keywordsKey: 'counter.slash.keywords',
     },
   ],
 

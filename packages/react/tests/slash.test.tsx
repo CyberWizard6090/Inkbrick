@@ -15,6 +15,7 @@ import {
 import { availableSlashItems, visibleSlashItems } from '../src/slash/items';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
 import { SlashMenuController } from '../src/slash/SlashMenuController';
+import { createTranslator, resolveMessages } from '../src/i18n/translate';
 
 const titles = (items: readonly SlashMenuItem[]) => items.map((i) => i.id);
 
@@ -45,6 +46,61 @@ describe('filterSlashItems', () => {
 
   it('returns an empty list when nothing matches', () => {
     expect(filterSlashItems(defaultSlashItems, 'zzzz')).toEqual([]);
+  });
+});
+
+describe('slash items translated from the app dictionary (titleKey)', () => {
+  const item: SlashMenuItem = {
+    id: 'counter',
+    title: 'Counter',
+    description: 'A counter',
+    keywords: ['count'],
+    flavour: 'block:counter',
+    titleKey: 'app.counter.title',
+    descriptionKey: 'app.counter.description',
+    keywordsKey: 'app.counter.keywords',
+  };
+  const translator = (messages: Record<string, string>) =>
+    createTranslator({ ...resolveMessages(), ...messages } as never);
+  const find = (t: ReturnType<typeof translator>) =>
+    resolveSlashItems([item], t).find((entry) => entry.id === 'counter')!;
+
+  it('takes the title, the description and extra search words from the dictionary', () => {
+    const result = find(
+      translator({
+        'app.counter.title': 'Счётчик',
+        'app.counter.description': 'Число с кнопками',
+        'app.counter.keywords': 'счётчик, число',
+      }),
+    );
+
+    expect(result.title).toBe('Счётчик');
+    expect(result.description).toBe('Число с кнопками');
+    expect(result.keywords).toEqual(['count', 'счётчик', 'число']);
+  });
+
+  it('keeps the written text where the dictionary has no such key', () => {
+    const result = find(translator({ 'app.counter.title': 'Счётчик' }));
+
+    expect(result.title).toBe('Счётчик');
+    expect(result.description).toBe('A counter');
+    expect(result.keywords).toEqual(['count']);
+    expect(find(translator({})).title).toBe('Counter');
+  });
+
+  it('an item without keys is left as it is and an item that replaces a default is translated too', () => {
+    const plain: SlashMenuItem = { id: 'widget', title: 'Widget', flavour: 'block:widget' };
+    const quote: SlashMenuItem = {
+      id: 'quote',
+      title: 'Pull quote',
+      flavour: 'block:quote',
+      titleKey: 'app.quote',
+    };
+    const t = translator({ 'app.quote': 'Цитата-врезка' });
+    const items = resolveSlashItems([plain, quote], t);
+
+    expect(items.find((entry) => entry.id === 'widget')).toEqual(plain);
+    expect(items.find((entry) => entry.id === 'quote')!.title).toBe('Цитата-врезка');
   });
 });
 

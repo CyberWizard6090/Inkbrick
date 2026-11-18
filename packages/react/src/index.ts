@@ -138,6 +138,7 @@ export {
 export type { TFunction, MessageParams } from './i18n/translate';
 export { en } from './i18n/en';
 export type { MessageKey, Messages, PartialMessages } from './i18n/en';
+export type { AppMessages } from './i18n/translate';
 // Русский словарь в бандл не попадает, пока им не пользуются: провайдер грузит его по требованию (`preloadLocale`).
 export { ru } from '@inkbrick/locales/ru';
 
