@@ -138,6 +138,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Footnotes (`docs/footnotes.md`): `footnoteBlocks` (opt-in, like the table of contents) with a reference object in the text (`footnote` inline attribute) and a `block:footnote` text block at the end of the note. `/footnote`, the command palette or `insertFootnote()` add both in one undo step; numbers are computed from the order of the references, so they never go stale; click the number to jump to the text, «↩» to jump back; a footnote without a reference shows «?». Exported to HTML (`<sup>`, `<aside id="fn-…">`), Markdown (`[^1]`, `[^1]: …`) and plain text. New: `SlashMenuItem.run`/`canRun` (an item that runs an action instead of turning the block) and `ReactBlockDefinition.slashActions`. A block that ends with an object (formula or footnote) now gets a trailing `<br>` so the caret can be placed after it.
 
 - Slash items of your own blocks follow the language: `titleKey`, `descriptionKey` and `keywordsKey` on an item (`BlockSlashItem`, `SlashMenuItem`) take the text from the app dictionary, `title`, `description` and `keywords` stay as the fallback. Dictionaries are typed `AppMessages` (editor keys plus your own), a key found nowhere comes back as itself, and the dictionary passed to the provider (`locales`) now adds to the connected language instead of replacing it (missing keys come from `en`/`ru` rather than only from English). `docs/i18n.md`.
+- Every package has a `README.md` for its npm page: what it does, how to install it, a short example. The root
+  README lists the optional blocks and tools, `@inkbrick/locales` and all the guides; the size of the React editor
+  there is up to date (~61 KB gzip).
 
 ### Changed
 

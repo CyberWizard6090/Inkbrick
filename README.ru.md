@@ -38,6 +38,20 @@
 - [Правила вложенности, версии схем и `meta` блоков](docs/schema-rules.md)
 - [Экспорт: Markdown, HTML, простой текст](docs/export.md)
 - [Клавиатурные сочетания (keymap)](docs/keymap.md)
+- [Таблицы](docs/tables.md)
+- [Оглавление](docs/toc.md)
+- [Колонки](docs/columns.md)
+- [Переключатель (toggle)](docs/toggle.md)
+- [Сноски](docs/footnotes.md)
+- [Поиск и замена](docs/find-replace.md)
+- [Палитра команд](docs/command-palette.md)
+- [Теги `#tag`](docs/tags.md)
+- [Счётчик слов и символов](docs/word-count.md)
+- [Сворачивание заголовков](docs/heading-folding.md)
+- [Сворачивание пунктов списка](docs/list-folding.md)
+- [Выбор и перенос нескольких блоков](docs/block-picking.md)
+- [Фон блока](docs/block-background.md)
+- [Проверка орфографии](docs/spellcheck.md)
 - Песочница (`pnpm dev`) — одна страница: переключатели «Редактирование / Чтение», Debug, язык, кнопки «Пример» и «Неизвестный блок»
 
 ## Команды
@@ -82,7 +96,7 @@ pnpm -r --filter "@inkbrick/*" publish --access public
 При публикации (`pnpm publish` / `pnpm pack`) поля `main`, `types` и `exports` берутся из `publishConfig`
 (указывают на `dist`), а `workspace:*` заменяется на версию пакета. Установленный из npm Inkbrick импортируется
 как обычная ESM-библиотека, без настройки Vite: `import { Editor } from '@inkbrick/engine'`. `@inkbrick/styles`
-публикуется как CSS без сборки.
+публикуется как CSS без сборки. У каждого пакета свой `README.md` на английском — его показывает страница пакета на npm.
 
 ## Docker
 
