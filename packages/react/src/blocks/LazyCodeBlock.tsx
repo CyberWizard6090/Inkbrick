@@ -1,32 +1,27 @@
 import { lazyModule, useLazy } from '../ui/lazy';
 import type { BlockViewProps } from '../ui/types';
+import { CodeShell } from './CodeShell';
 
-const codeBlock = lazyModule(() => import('./CodeBlock').then((module) => module.CodeBlock), {
-  soon: true,
-});
+const codeParts = lazyModule(
+  () =>
+    import('./CodeBlock').then(({ CodeToolbar, CodeCaption }) => ({ CodeToolbar, CodeCaption })),
+  { soon: true },
+);
 
 /**
- * Блок кода из отдельного чанка. Пока чанк грузится (его запрос уходит сразу после монтирования редактора, к первому вводу он обычно готов),
- * на его месте текст кода как есть: документ с кодом открывается без пустого места. `CodeBlock` по-прежнему
+ * Блок кода: каркас и текст в основном бандле, панель (язык, свёртка, копирование) и подпись из отдельного чанка. Чанк
+ * подгружается сразу после монтирования редактора, но даже если блок появился раньше, он принимает ввод сразу: поле
+ * ввода то же самое до и после прихода панели, а панель просто появляется над ним. `CodeBlock` по-прежнему
  * экспортируется для своих реестров компонентов.
  */
 export function LazyCodeBlock(props: BlockViewProps) {
-  const CodeBlock = useLazy(codeBlock);
+  const parts = useLazy(codeParts);
 
-  return CodeBlock ? <CodeBlock {...props} /> : <CodeBlockPlaceholder {...props} />;
-}
-
-/** Место блока кода, пока грузится чанк: текст кода как есть, без правки. */
-export function CodeBlockPlaceholder({ block }: BlockViewProps) {
   return (
-    <div
-      className="block block-code"
-      data-inkbrick-block="code"
-      data-block-id={block.id}
-      data-loading=""
-      contentEditable={false}
-    >
-      <pre>{block.content.map((node) => node.insert).join('')}</pre>
-    </div>
+    <CodeShell
+      {...props}
+      Toolbar={parts?.CodeToolbar ?? null}
+      Caption={parts?.CodeCaption ?? null}
+    />
   );
 }
