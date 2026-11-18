@@ -43,7 +43,7 @@ describe('the caret in a code block survives a redraw that changes no text', () 
   });
 
   it('is not moved when the text itself changes (the one who changed it places the caret)', () => {
-    const { editor, ids, caret, root, type } = mountEditor(['ab']);
+    const { ids, caret, root, type } = mountEditor(['ab']);
 
     root.focus();
     caret(ids[0], 2);
