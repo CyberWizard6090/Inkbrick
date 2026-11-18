@@ -3,6 +3,7 @@ import type { BlockId } from '@inkbrick/document';
 import { BlockHandleController } from '../block-handle/BlockHandleController';
 import { UploadTracker } from '../images/UploadTracker';
 import { BlockSelectionController } from './BlockSelectionController';
+import { PickedBlocksController } from './PickedBlocksController';
 import { FoldController } from './FoldController';
 import { CellSelectionController } from './CellSelectionController';
 import { ContextMenuController } from '../context-menu/ContextMenuController';
@@ -27,6 +28,9 @@ export class EditorView {
   readonly uploads = new UploadTracker();
 
   readonly selection = new BlockSelectionController();
+
+  /** Блоки, выбранные целиком (не выделение текста). */
+  readonly picked = new PickedBlocksController();
 
   readonly folds = new FoldController();
   readonly cells = new CellSelectionController();

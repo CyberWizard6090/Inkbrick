@@ -13,6 +13,7 @@ import {
 
 import { blockAtPoint, probePoint } from '../block-handle/geometry';
 import { createInputActions } from '../editing/inputActions';
+import { deleteBlocks, pickedFragment } from '../pick/actions';
 import { readDocSelection, type DocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -79,11 +80,18 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
     const writeSelection = (event: ClipboardEvent, cut: boolean) => {
       if (isForeignControl(event.target)) return;
 
-      const selection = readDocSelection(root);
+      const pickedIds = view.picked.getState().ids;
+      const selection = pickedIds.length > 0 ? null : readDocSelection(root);
 
-      if (!selection || selection.collapsed || !event.clipboardData) return;
+      if (!event.clipboardData) return;
+      if (pickedIds.length === 0 && (!selection || selection.collapsed)) return;
 
-      const fragment = editor.copyFragment(selection.from, selection.to);
+      // Выбранные блоки копируются целиком, как при выделении от начала первого до конца последнего.
+      const fragment = selection
+        ? editor.copyFragment(selection.from, selection.to)
+        : pickedFragment(editor, pickedIds);
+
+      if (!fragment) return;
 
       if (fragment.blocks.length === 0) return;
 
@@ -94,7 +102,10 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       event.clipboardData.setData(FRAGMENT_MIME, json);
       event.preventDefault();
 
-      if (cut && !readOnly) run(() => editor.batch(() => deleteSelection(selection)));
+      if (cut && !readOnly) {
+        if (selection) run(() => editor.batch(() => deleteSelection(selection)));
+        else deleteBlocks(editor, view, pickedIds);
+      }
     };
 
     const pastePlain = (text: string, selection: DocSelection) => {

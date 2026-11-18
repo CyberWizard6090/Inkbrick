@@ -255,7 +255,8 @@ describe('context menu opening and closing', () => {
     expect($menu()).toBeNull();
     expect(document.activeElement).toBe(root);
 
-    // Esc без открытого меню ничего не перехватывает.
+    // Esc без открытого меню и без каретки в тексте ничего не перехватывает (с кареткой он выбирает блок).
+    getSelection()!.removeAllRanges();
     expect(fireEvent.keyDown(root, { key: 'Escape' })).toBe(true);
   });
 

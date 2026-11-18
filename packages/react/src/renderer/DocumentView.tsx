@@ -61,6 +61,15 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
 
   useLayoutEffect(() => view.setRoot(ref.current), [view]);
 
+  // Пока блоки выбраны целиком, мигающая каретка скрыта: она «припаркована» браузером в начале документа.
+  useEffect(
+    () =>
+      view.picked.subscribe(() =>
+        ref.current?.toggleAttribute('data-picking', view.picked.size > 0),
+      ),
+    [view],
+  );
+
   /*
    * Палитру формул (отдельный чанк ~5 КБ) начинаем грузить сразу после первой отрисовки: она не задерживает
    * открытие документа, но готова к первому редактору формулы (Tab из поля кода ведёт в палитру).

@@ -132,6 +132,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 - Spell check (`docs/spellcheck.md`): `EditorProvider` option `spellcheck` (`true` or `{ lang }`, off by default) turns on the browser's spell checker for the document; the root gets `lang` (the interface language unless another is given). Code blocks, formulas, code spans, links and the cells of url, email and phone columns are excluded; off in read-only mode. The sandbox turns it on (`?spellcheck=off`, a switch in Settings). The root had `spellcheck="false"` before; that is still what you get without the option.
 
+- Picking and moving several blocks (`docs/block-picking.md`): `Esc` picks the block under the caret (a text range picks all its blocks), `Shift+↑/↓` extends, a frame dragged in the gutter beside the document picks the blocks it touches. On the picked run: `Delete` removes, `Ctrl/Cmd+D` duplicates, `Ctrl/Cmd+Shift+↑/↓` moves (also for the block under the caret), `Ctrl/Cmd+C/X` copy and cut whole blocks, dragging a handle moves the whole run in one gesture, and the block menu's Duplicate, Up, Down and Delete act on the run. Every action is one undo step. New: `view.picked`, `pickKeymap`, the `data-picked` and `data-picking` attributes. The `Esc` key now picks the block when nothing else uses it (menus, panels and table cell selection keep theirs).
+- The engine size budget is 22 KB (was 19).
+
 ### Changed
 
 - Adding a language to `@inkbrick/locales` is mechanical: a new `src/<code>.ts` plus one line in `localeLoaders`. The package `exports` (`./*`) and the `tsup` entries use a mask, and `pnpm check:i18n` and the package tests walk every language file (same keys and placeholders as English, a loader for every file).

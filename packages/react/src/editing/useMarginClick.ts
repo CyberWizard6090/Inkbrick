@@ -1,6 +1,8 @@
 import { useEffect, type RefObject } from 'react';
 
+import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { pickRun } from '../pick/actions';
 import { findPoint } from './selection';
 
 const EDITABLE = '.editable[data-id]';
@@ -35,6 +37,7 @@ interface DomPoint {
  * Без этого атрибута обрабатываются только клики внутри самого корня.
  */
 export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: boolean) {
+  const editor = useEditor();
   const view = useEditorView();
 
   useEffect(() => {
@@ -54,6 +57,7 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
 
       event.preventDefault();
       stop?.();
+      view.picked.clear();
 
       if (globalThis.document.activeElement !== root) root.focus({ preventScroll: true });
 
@@ -72,8 +76,41 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
 
       selection.setBaseAndExtent(anchor.node, anchor.offset, point.node, point.offset);
 
+      // Протягивание с поля за краем документа (левее или правее корня) — рамка: выбираются блоки целиком.
+      const bounds = root.getBoundingClientRect();
+      const gutter = event.clientX < bounds.left || event.clientX > bounds.right;
+      const start = { x: event.clientX, y: event.clientY };
+      let frame: HTMLElement | null = null;
+
       const onMove = (move: MouseEvent) => {
         if ((move.buttons & 1) === 0) return finish();
+
+        if (gutter && !frame && Math.hypot(move.clientX - start.x, move.clientY - start.y) > 4) {
+          selection.removeAllRanges();
+          frame = globalThis.document.createElement('div');
+          frame.setAttribute('data-inkbrick-ui', 'marquee');
+          frame.style.cssText = 'position:fixed;pointer-events:none;';
+          globalThis.document.body.appendChild(frame);
+        }
+
+        if (frame) {
+          const left = Math.min(start.x, move.clientX);
+          const top = Math.min(start.y, move.clientY);
+          const height = Math.abs(move.clientY - start.y);
+
+          Object.assign(frame.style, {
+            left: `${left}px`,
+            top: `${top}px`,
+            width: `${Math.abs(move.clientX - start.x)}px`,
+            height: `${height}px`,
+          });
+
+          const ids = blocksInBand(editor, view, top, top + height);
+
+          view.picked.set(ids, ids[0] ?? null, ids.at(-1) ?? null);
+
+          return;
+        }
 
         const focus = pointAt(root, move.clientX, move.clientY);
 
@@ -85,6 +122,15 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
         globalThis.document.removeEventListener('mousemove', onMove);
         globalThis.document.removeEventListener('mouseup', finish);
         stop = null;
+
+        if (frame) {
+          frame.remove();
+          frame = null;
+
+          const { ids, anchor: first, focus: last } = view.picked.getState();
+
+          if (ids.length > 0) pickRun(view, ids, first ?? undefined, last ?? undefined);
+        }
       };
 
       globalThis.document.addEventListener('mousemove', onMove);
@@ -100,7 +146,7 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
       zone.removeEventListener('mousedown', onMouseDown);
       stop?.();
     };
-  }, [view, ref, enabled]);
+  }, [editor, view, ref, enabled]);
 }
 
 /** Клик не по тексту и не по элементу со своим поведением: в корне — мимо блоков, снаружи — по обёртке корня. */
@@ -183,4 +229,24 @@ function caretFromPoint(x: number, y: number): DomPoint | null {
   }
 
   return null;
+}
+
+/** Блоки верхнего уровня заметки, чьи строки пересекают полосу `top`–`bottom` (координаты окна). */
+function blocksInBand(
+  editor: ReturnType<typeof useEditor>,
+  view: ReturnType<typeof useEditorView>,
+  top: number,
+  bottom: number,
+): string[] {
+  const root = view.getRoot();
+  const note = editor.document.getBlock(editor.document.rootId)?.children[0];
+
+  if (!root || !note) return [];
+
+  return (editor.store.getBlock(note)?.children ?? []).filter((id) => {
+    const element = root.querySelector(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
+    const rect = element?.getBoundingClientRect();
+
+    return !!rect && rect.height > 0 && rect.bottom >= top && rect.top <= bottom;
+  });
 }

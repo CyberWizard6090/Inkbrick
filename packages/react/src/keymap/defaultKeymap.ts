@@ -2,6 +2,7 @@ import type { CaretResult } from '@inkbrick/engine';
 import type { Alignment } from '@inkbrick/document';
 
 import { applySlashItem } from '../slash/applySlashItem';
+import { pickKeymap } from '../pick/keymap';
 import { visibleSlashItems } from '../slash/items';
 import { isFormattable } from '../toolbar/formatting';
 import { syncToolbar } from '../toolbar/syncToolbar';
@@ -123,6 +124,8 @@ export const defaultKeymap: readonly KeyBinding[] = [
   },
 
   // Выделить всё: нативное поведение ненадёжно для документа, начинающегося с нередактируемого блока.
+  // Выбор блоков целиком: после меню «/» (его Esc и стрелки важнее) и перед остальными клавишами.
+  ...pickKeymap,
   { id: 'selectAll', keys: 'Mod-a', run: ({ root }) => selectAllText(root) },
   { id: 'undo', keys: 'Mod-z', run: (context) => context.undo() },
   { id: 'redo', keys: ['Mod-Shift-z', 'Mod-y'], run: (context) => context.redo() },

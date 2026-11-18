@@ -1353,6 +1353,13 @@
     gap: 8px;
   }
 
+  /* Рамка выбора блоков мышью с поля. */
+  :where([data-inkbrick-ui='marquee']) {
+    z-index: var(--inkbrick-z-popup);
+    border: 1px solid var(--inkbrick-brand-bg);
+    background: color-mix(in srgb, var(--inkbrick-brand-bg) 12%, transparent);
+  }
+
   /* Палитра команд: окно по центру сверху над затемнением, список разделами. */
   :where([data-inkbrick-ui='palette-backdrop']) {
     position: fixed;

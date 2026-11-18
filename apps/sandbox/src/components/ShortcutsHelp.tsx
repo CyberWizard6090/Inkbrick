@@ -80,6 +80,19 @@ const buildSections = (t: SandboxT): readonly { title: string; rows: readonly Ro
     ],
   },
   {
+    title: t('shortcuts.section.blocks'),
+    rows: [
+      bound('pick.start', t('shortcuts.pickBlock')),
+      { keys: ['Shift+↑', 'Shift+↓'], label: t('shortcuts.extendPick') },
+      bound('pick.delete', t('shortcuts.deleteBlocks')),
+      bound('pick.duplicate', t('shortcuts.duplicateBlocks')),
+      {
+        keys: [formatKeys('Mod-Shift-ArrowUp'), formatKeys('Mod-Shift-ArrowDown')],
+        label: t('shortcuts.moveBlocks'),
+      },
+    ],
+  },
+  {
     title: t('shortcuts.section.menus'),
     rows: [
       { keys: ['/'], label: t('shortcuts.slashMenu') },
