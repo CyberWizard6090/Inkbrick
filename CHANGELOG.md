@@ -261,6 +261,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- The table column/row menu and the column option list no longer stay open when the page scrolls: they are `position: fixed`, so after a scroll or a resize they hung where the grip used to be. They close on scroll and resize; scrolling inside the menu itself keeps it open.
 - A formula block no longer swallows what you type before its chunk arrives: the block (`FormulaBlock`) is in the core bundle now and `LazyFormulaBlock` with its empty placeholder is gone, so a new block opens its input field at once and keeps the same element, focus and typed code when the symbol palette (still a separate chunk) and Temml arrive; a filled formula shows its LaTeX source until Temml is in. The core of `@inkbrick/react` grows by about 1.4 KB gzip (61.6 → 63.0 KB).
 
 - Backspace at the start of the block under a folded section and Delete at the end of a folded heading no longer merge text into a block you cannot see: the section unfolds first (one undo step, the caret stays), the next press merges as usual (`docs/heading-folding.md`).

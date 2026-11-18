@@ -211,9 +211,22 @@ function OptionsPicker({
       if (!list.current?.contains(target) && !anchor?.contains(target)) onClose();
     };
 
-    document.addEventListener('pointerdown', onPointerDown, true);
+    // Список стоит на экране, а не в документе: после прокрутки страницы он остался бы висеть далеко от своей ячейки.
+    const onScroll = (event: Event) => {
+      if (event.target instanceof Node && list.current?.contains(event.target)) return;
 
-    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+      onClose();
+    };
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', onClose);
+
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', onClose);
+    };
   }, [anchor, onClose]);
 
   return (

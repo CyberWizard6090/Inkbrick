@@ -40,6 +40,41 @@ async function hover(page: Page, row: number, column: number) {
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 }
 
+test.describe('Table menus and the scroll', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+    // Страница длиннее окна: ниже таблицы столько абзацев, что её можно прокручивать.
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press('Control+End');
+      await page.keyboard.press('Enter');
+      await page.keyboard.type(`line ${i}`);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.mouse.move(2, 2);
+  });
+
+  test('the column menu closes when the page scrolls, and does not when its own list scrolls', async ({
+    page,
+  }) => {
+    await hover(page, 1, 1);
+    await page.locator(part('column-grip')).click();
+
+    const menu = page.locator('[data-inkbrick-ui="block-menu"]');
+
+    await expect(menu).toBeVisible();
+
+    // Прокрутка самого меню (оно длиннее окна на низком экране) его не закрывает.
+    await menu.evaluate((element) =>
+      element.dispatchEvent(new Event('scroll', { bubbles: false })),
+    );
+    await expect(menu).toBeVisible();
+
+    await page.mouse.wheel(0, 600);
+    await expect(menu).toHaveCount(0);
+  });
+});
+
 test.describe('Table controls', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?lang=en');
