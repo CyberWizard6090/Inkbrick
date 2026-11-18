@@ -5,6 +5,7 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
+import { highlightsSupported, setHighlight } from '../editing/highlights';
 import { findPoint, readDocSelection } from '../editing/selection';
 import { collectTags } from './collect';
 import { blockTags } from './parse';
@@ -22,12 +23,6 @@ const HIGHLIGHT = 'inkbrick-tag';
 const MAX_SUGGESTIONS = 8;
 /** `#` и уже набранные знаки тега перед кареткой. */
 const TYPING = /(?<![\p{L}\p{N}_#&/])#([\p{L}\p{N}_/-]*)$/u;
-
-type HighlightRegistry = {
-  set(name: string, highlight: unknown): void;
-  delete(name: string): void;
-};
-type HighlightConstructor = new (...ranges: Range[]) => unknown;
 
 interface Suggestion {
   readonly blockId: string;
@@ -72,9 +67,6 @@ export function TagHighlights({
 
   // Подсветка: перерисовывается после правок и прокрутки (виртуальный рендерер сменил блоки на странице).
   useEffect(() => {
-    const highlights = (globalThis.CSS as unknown as { highlights?: HighlightRegistry } | undefined)
-      ?.highlights;
-    const Highlight = (globalThis as unknown as { Highlight?: HighlightConstructor }).Highlight;
     let frame = 0;
 
     const paint = () => {
@@ -82,7 +74,7 @@ export function TagHighlights({
 
       const root = view.getRoot();
 
-      if (!highlights || !Highlight || !root) return;
+      if (!root || !highlightsSupported()) return;
 
       const ranges: Range[] = [];
 
@@ -105,7 +97,8 @@ export function TagHighlights({
         }
       }
 
-      highlights.set(HIGHLIGHT, new Highlight(...ranges));
+      // Подсветка общая для страницы: теги других редакторов остаются.
+      setHighlight(HIGHLIGHT, view, ranges);
     };
     const later = () => {
       if (!frame) frame = requestAnimationFrame(paint);
@@ -119,7 +112,7 @@ export function TagHighlights({
       cancelAnimationFrame(frame);
       unsubscribe();
       window.removeEventListener('scroll', later, { capture: true });
-      highlights?.delete(HIGHLIGHT);
+      setHighlight(HIGHLIGHT, view, []);
     };
   }, [editor, view]);
 

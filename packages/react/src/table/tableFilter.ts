@@ -9,6 +9,8 @@ import type {
 
 import { parseDate, parseNumber, sortKey, sortedOrder } from '@inkbrick/engine';
 
+const NONE: ReadonlySet<BlockId> = new Set();
+
 /** Какие условия имеет смысл предлагать для типа столбца. */
 export function filterOpsFor(type: TableColumnType): readonly TableFilter['op'][] {
   if (type === 'checkbox') return ['checked', 'unchecked'];
@@ -83,13 +85,14 @@ export function matchesFilter(text: string, type: TableColumnType, filter: Table
 
 /**
  * Строки таблицы, скрытые фильтрами вида (id строк). Заголовок не фильтруется; строка скрыта, если не подходит хотя бы
- * одному фильтру. `textOf` — текст ячейки.
+ * одному фильтру. `textOf` — текст ячейки. Строки из `added` (добавленные, пока вид открыт) не скрываются.
  */
 export function filteredRowIds(
   table: BaseBlock,
   getBlock: (id: BlockId) => BaseBlock | undefined,
   textOf: (cell: BaseBlock) => string,
   filters: readonly (TableFilter | null | undefined)[] | undefined,
+  added: ReadonlySet<BlockId> = NONE,
 ): Set<BlockId> {
   const props = table.props as TableProps;
   const hidden = new Set<BlockId>();
@@ -101,7 +104,7 @@ export function filteredRowIds(
   for (const rowId of body) {
     const row = getBlock(rowId);
 
-    if (!row) continue;
+    if (!row || added.has(rowId)) continue;
 
     const visible = filters.every((filter, column) => {
       if (!filter) return true;
@@ -119,19 +122,22 @@ export function filteredRowIds(
 
 /**
  * Порядок показа строк вида: заголовок первым, остальные по столбцу сортировки (как при сортировке данных, но порядок в
- * документе не меняется). `null` — порядок документа.
+ * документе не меняется). Строки из `added` не сортируются: каждая стоит сразу за строкой, после которой её вставили.
+ * `null` — порядок документа.
  */
 export function sortedRowIds(
   table: BaseBlock,
   getBlock: (id: BlockId) => BaseBlock | undefined,
   textOf: (cell: BaseBlock) => string,
   sort: TableView['sort'],
+  added: ReadonlySet<BlockId> = NONE,
 ): BlockId[] | null {
   if (!sort) return null;
 
   const props = table.props as TableProps;
   const fixed = props.header === false ? 0 : 1;
-  const rows = table.children.slice(fixed);
+  const body = table.children.slice(fixed);
+  const rows = body.filter((rowId) => !added.has(rowId));
   const type = props.columnTypes?.[sort.column] ?? 'text';
   const keys = rows.map((rowId) => {
     const cell = getBlock(getBlock(rowId)?.children[sort.column] ?? '');
@@ -139,8 +145,14 @@ export function sortedRowIds(
     return sortKey(cell ? textOf(cell) : '', type);
   });
 
-  return [
-    ...table.children.slice(0, fixed),
-    ...sortedOrder(keys, sort.direction).map((index) => rows[index]),
-  ];
+  const order = sortedOrder(keys, sort.direction).map((index) => rows[index]);
+
+  // Новые строки — за соседом сверху по документу (первая строка тела — в начало).
+  body.forEach((rowId, index) => {
+    if (!added.has(rowId)) return;
+
+    order.splice(index === 0 ? 0 : order.indexOf(body[index - 1]) + 1, 0, rowId);
+  });
+
+  return [...table.children.slice(0, fixed), ...order];
 }

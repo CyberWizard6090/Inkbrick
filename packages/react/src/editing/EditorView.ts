@@ -47,6 +47,12 @@ export class EditorView {
 
   readonly viewport = new ViewportController();
 
+  /**
+   * Открытые панели этого редактора, которые сами закрываются по Esc (`'find'`, `'palette'`): пока они открыты, Esc не
+   * выбирает блок. Панели других редакторов на странице сюда не попадают.
+   */
+  readonly panels = new Set<string>();
+
   pointerDown = false;
 
   /** Место сразу после строчной Markdown-разметки: первый набранный там символ не наследует форматирование. */

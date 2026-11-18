@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useEditor } from '../hooks/useEditor';
@@ -76,6 +76,14 @@ export function FindReplacePanel() {
   }, [open, nonce]);
 
   useEffect(() => () => controller.close(), [controller]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    view.panels.add('find');
+
+    return () => void view.panels.delete('find');
+  }, [open, view]);
 
   if (!open || typeof document === 'undefined') return null;
 

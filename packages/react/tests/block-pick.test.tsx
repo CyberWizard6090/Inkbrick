@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 
 import { FRAGMENT_MIME } from '@inkbrick/engine';
 
+import { FindReplacePanel, useFind } from '../src';
 import type { EditorView } from '../src/editing/EditorView';
 import { useEditorView } from '../src/hooks/useEditorView';
 import { mountEditor } from './harness';
@@ -42,7 +44,26 @@ function mount(texts: string[]) {
   return { ...mounted, picked, order, marks, note };
 }
 
+function OpenFind() {
+  const { controller } = useFind();
+
+  useEffect(() => controller.open(), [controller]);
+
+  return <FindReplacePanel />;
+}
+
 describe('picking blocks', () => {
+  it('a search open in another editor on the page does not stop Escape from picking here', () => {
+    mountEditor(['other'], { extra: <OpenFind /> });
+    expect(document.querySelector('[data-inkbrick-ui="find"]')).not.toBeNull();
+
+    const t = mount(['one', 'two']);
+
+    t.caret(t.ids[0], 1);
+    t.key('Escape');
+    expect(t.picked()).toEqual([t.ids[0]]);
+  });
+
   it('Escape picks the block under the caret and marks it; a second Escape returns the caret', () => {
     const t = mount(['one', 'two', 'three']);
 
@@ -285,13 +306,10 @@ describe('what Escape leaves alone', () => {
     t.key('Escape');
     expect(t.picked()).toEqual([]);
 
-    const panel = document.createElement('div');
-
-    panel.setAttribute('data-inkbrick-ui', 'find');
-    document.body.appendChild(panel);
+    captured!.panels.add('palette');
     t.caret(t.ids[0], 0);
     t.key('Escape');
     expect(t.picked()).toEqual([]);
-    panel.remove();
+    captured!.panels.delete('palette');
   });
 });

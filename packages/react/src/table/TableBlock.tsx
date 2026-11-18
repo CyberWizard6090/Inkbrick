@@ -62,6 +62,23 @@ function mergedCells(editor: Editor, table: BaseBlock): ReadonlyMap<string, Merg
   return map;
 }
 
+/**
+ * Строки, добавленные после последней смены настроек вида (вид, фильтры, сортировка). Фильтр их не скрывает и сортировка не
+ * переставляет: новая строка остаётся там, где её вставили, иначе в неё не попасть. Учтутся при следующей смене настроек.
+ */
+function useAddedRows(rows: readonly string[], settings: string): ReadonlySet<string> {
+  const known = useRef<{ settings: string; rows: ReadonlySet<string> } | null>(null);
+
+  return useMemo(() => {
+    if (known.current?.settings !== settings) known.current = { settings, rows: new Set(rows) };
+
+    const base = known.current.rows;
+    const added = rows.filter((id) => !base.has(id));
+
+    return added.length > 0 ? new Set(added) : NO_ROWS;
+  }, [rows, settings]);
+}
+
 const plainText = (cell: BaseBlock) => cell.content.map((node) => node.insert).join('');
 
 /** Строки таблицы в заданном порядке (сортировка вида). */
@@ -115,20 +132,24 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
         : null,
     [header, columnTypes, columnOptions, columnHidden],
   );
+  const added = useAddedRows(
+    block.children,
+    JSON.stringify([active.id, columnFilters ?? null, active.sort ?? null]),
+  );
   // Строки, скрытые фильтрами. Считается при смене фильтров и состава строк, а не при каждой правке текста: строка,
-  // которую правят, не пропадает из-под рук; в следующий раз она учтётся заново.
+  // которую правят, не пропадает из-под рук; в следующий раз она учтётся заново. Новые строки не скрываются.
   const hiddenRows = useMemo(
     () =>
       columnFilters?.some(Boolean)
-        ? filteredRowIds(block, (id) => editor.store.getBlock(id), plainText, columnFilters)
+        ? filteredRowIds(block, (id) => editor.store.getBlock(id), plainText, columnFilters, added)
         : NO_ROWS,
     // `block` меняется вместе с составом строк и свойствами таблицы.
-    [editor, block, columnFilters],
+    [editor, block, columnFilters, added],
   );
   // Порядок показа строк вида; пересчитывается так же, как скрытые строки.
   const rowOrder = useMemo(
-    () => sortedRowIds(block, (id) => editor.store.getBlock(id), plainText, active.sort),
-    [editor, block, active.sort],
+    () => sortedRowIds(block, (id) => editor.store.getBlock(id), plainText, active.sort, added),
+    [editor, block, active.sort, added],
   );
   const hiddenColumns = columnHidden?.filter(Boolean).length ?? 0;
   const filtered = columnFilters?.filter(Boolean).length ?? 0;

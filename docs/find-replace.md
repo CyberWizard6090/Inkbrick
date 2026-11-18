@@ -38,6 +38,8 @@ import { EditorProvider, DocumentView, FindReplacePanel, findReplace } from '@in
 
 Подсветка использует CSS Custom Highlight API: `::highlight(inkbrick-find)` и `::highlight(inkbrick-find-current)`. Документ при этом
 не меняется, лишних элементов в DOM нет. В браузерах без этого API работают переход и замена, но не подсветка.
+Реестр подсветок один на страницу: если редакторов несколько, совпадения каждого из них подсвечиваются вместе, и закрытие поиска
+в одном не снимает подсветку в другом.
 
 ## Для кода
 
