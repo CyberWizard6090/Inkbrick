@@ -328,9 +328,21 @@ function TableControlsLayer({
     };
   }, [tableRef, block.id, editor]);
 
-  // Меню закрывается кликом снаружи (кнопки управления сами переключают его) и при пропаже таблицы.
+  // Меню закрывается кликом снаружи (кнопки управления сами переключают его), прокруткой страницы или таблицы (меню стоит на
+  // экране, а не в документе: после прокрутки оно осталось бы висеть далеко от своей таблицы) и при пропаже таблицы.
   useEffect(() => {
     if (!menu) return;
+
+    const onScroll = (event: Event) => {
+      // Длинное меню само прокручивается: это не повод его закрывать.
+      if (
+        event.target instanceof Element &&
+        event.target.closest('[data-inkbrick-ui="block-menu"]')
+      )
+        return;
+
+      setMenu(null);
+    };
 
     const onDown = (event: PointerEvent) => {
       if (
@@ -343,8 +355,14 @@ function TableControlsLayer({
     };
 
     document.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', onScroll);
 
-    return () => document.removeEventListener('pointerdown', onDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', onScroll);
+    };
   }, [menu]);
 
   if (typeof document === 'undefined' || !active || !layout) return null;
