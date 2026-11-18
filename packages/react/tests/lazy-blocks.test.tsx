@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
+import { useState } from 'react';
 
-import { CodeBlockPlaceholder } from '../src/blocks/LazyCodeBlock';
+import { CodeCaption, CodeToolbar } from '../src/blocks/CodeBlock';
+import { CodeShell } from '../src/blocks/CodeShell';
 import { FormulaBlockPlaceholder } from '../src/blocks/LazyFormulaBlock';
 import { LazyCodeBlock } from '../src/blocks/LazyCodeBlock';
 import { LazyFormulaBlock } from '../src/blocks/LazyFormulaBlock';
@@ -35,15 +37,82 @@ describe('code and formula blocks load as separate chunks', () => {
     expect(defaultBlockComponents['block:formula']).toBe(LazyFormulaBlock);
   });
 
-  it('the code placeholder shows the code as it is, with no editing', () => {
-    const view = render(
-      <CodeBlockPlaceholder {...viewProps('block:code', 'let a = 1;\nlet b = 2;')} />,
-    );
-    const element = view.container.firstElementChild!;
+  describe('a code block whose chunk has not come yet', () => {
+    let setReady: (ready: boolean) => void = () => undefined;
 
-    expect(element.getAttribute('data-loading')).toBe('');
-    expect(element.getAttribute('contenteditable')).toBe('false');
-    expect(element.textContent).toBe('let a = 1;\nlet b = 2;');
+    /** Каркас блока кода с панелью, которая «приходит» по команде: так же, как приходит чанк. */
+    function Swapping(props: BlockViewProps) {
+      const [ready, set] = useState(false);
+
+      setReady = set;
+
+      return (
+        <CodeShell
+          {...props}
+          Toolbar={ready ? CodeToolbar : null}
+          Caption={ready ? CodeCaption : null}
+        />
+      );
+    }
+
+    const mountCode = (text: string) => {
+      const mounted = mountEditor([text], {
+        components: { 'block:code': Swapping as never },
+      });
+
+      act(() => {
+        mounted.editor.dispatch({
+          type: 'convertBlock',
+          payload: { blockId: mounted.ids[0], flavour: 'block:code', props: {} },
+        });
+      });
+
+      return mounted;
+    };
+
+    it('already shows the code in an editable body and keeps a place for the toolbar', () => {
+      const { root, ids } = mountCode('let a = 1;');
+      const block = root.querySelector('[data-inkbrick-block="code"]')!;
+
+      expect(
+        block.querySelector('[data-inkbrick-part="toolbar"]')!.hasAttribute('data-loading'),
+      ).toBe(true);
+      expect(block.querySelector('[data-inkbrick-part="collapse"]')).toBeNull();
+      expect(block.querySelector(`.editable[data-id="${ids[0]}"]`)!.textContent).toBe('let a = 1;');
+    });
+
+    it('takes input before the chunk arrives and keeps it after', () => {
+      const { root, ids, caret, type, editor } = mountCode('ab');
+
+      caret(ids[0], 2);
+      type('c');
+      expect(editor.engine.inline.toPlainText(editor.document.getBlock(ids[0])!.content)).toBe(
+        'abc',
+      );
+
+      act(() => setReady(true));
+
+      expect(root.querySelector('[data-inkbrick-part="collapse"]')).not.toBeNull();
+      expect(
+        root.querySelector('[data-inkbrick-part="toolbar"]')!.hasAttribute('data-loading'),
+      ).toBe(false);
+
+      type('d');
+      expect(editor.engine.inline.toPlainText(editor.document.getBlock(ids[0])!.content)).toBe(
+        'abcd',
+      );
+    });
+
+    it('keeps the same input element when the toolbar arrives, so the caret is not lost', () => {
+      const { root, ids, caret } = mountCode('ab');
+      const before = root.querySelector(`.editable[data-id="${ids[0]}"]`);
+
+      caret(ids[0], 1);
+      act(() => setReady(true));
+
+      expect(root.querySelector(`.editable[data-id="${ids[0]}"]`)).toBe(before);
+      expect(before!.contains(getSelection()!.anchorNode)).toBe(true);
+    });
   });
 
   it('the formula placeholder is an empty non-editable place with the same markup hooks', () => {

@@ -481,6 +481,12 @@
     transition: border-color var(--inkbrick-duration-slow) var(--inkbrick-curve);
   }
 
+  /* Панель ещё грузится (её чанк): место за ней занято, блок не подпрыгивает, когда она появится. */
+  :where([data-inkbrick-block='code'] > [data-inkbrick-part='toolbar'][data-loading]) {
+    box-sizing: border-box;
+    min-height: 37px;
+  }
+
   :where([data-inkbrick-block='code'][data-collapsed] > [data-inkbrick-part='toolbar']) {
     border-bottom-color: transparent;
   }

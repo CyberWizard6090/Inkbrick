@@ -151,7 +151,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Code and formula blocks load as separate chunks (`LazyCodeBlock`, `LazyFormulaBlock`, like the image block); `CodeBlock` and `FormulaBlock` are still exported
   for your own component registries. The chunks are requested right after an editable editor mounts (`preloadSoon`), so a block that
   appears on Enter or `/` normally takes input at once; until then a placeholder stands in (the code as plain text for a code block). The core of
-  `@inkbrick/react` is about 3.3 KB gzip lighter (64.5 → 61.2 KB). Total transfer is the same: the chunks leave the initial bundle, they do not wait for the first use. A block created within the first moments after mount, before its chunk has arrived, shows the placeholder and cannot take input until it does.
+  `@inkbrick/react` is about 3.3 KB gzip lighter (64.5 → 61.2 KB). Total transfer is the same: the chunks leave the initial bundle, they do not wait for the first use. A code block created within the first moments after mount, before its toolbar chunk has arrived, already takes input (the shell and the text are in the main bundle, only the toolbar, language select and caption come from the chunk); a formula block created that early still shows a placeholder until its chunk arrives.
 - Process: work accumulates in `develop` (pull requests are squashed into it) and goes to `master` in one release pull request
   merged with a merge commit; CI also runs on pushes to `develop` (`CONTRIBUTING.md`, «Branching»).
 - Repository checks (`scripts/`): `pnpm check:i18n` verifies the dictionaries (same keys in en and ru, `{placeholders}`, no
@@ -220,6 +220,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 ### Fixed
 
 - Backspace at the start of the block under a folded section and Delete at the end of a folded heading no longer merge text into a block you cannot see: the section unfolds first (one undo step, the caret stays), the next press merges as usual (`docs/heading-folding.md`).
+
+- The caret in a code block no longer jumps to the start of the block when the syntax highlighter chunk arrives (or the language changes) while you type: a redraw that changes no text now keeps the selection. The code block also takes input before its toolbar chunk has loaded: the text field is the same element before and after the toolbar appears.
 
 - Enter in a list item no longer copies `collapsed` to the new item: the new one starts expanded and the nested blocks stay with the first part.
 - Virtual renderer: the nested blocks of a closed toggle (and of a collapsed list item) are no longer counted in the height estimate, so they leave

@@ -4,6 +4,7 @@ import type { BaseBlock } from '@inkbrick/document';
 
 import { renderCode } from '../editing/renderCode';
 import { renderInline } from '../editing/renderInline';
+import { readDocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
@@ -53,8 +54,21 @@ export function Editable({ block, placeholder }: EditableProps) {
   );
   const language = typeof block.props.language === 'string' ? block.props.language : 'plain';
 
+  // Текст, который нарисован сейчас: перерисовка без изменения текста (пришёл подсветчик или формульный движок) не должна
+  // сбрасывать каретку, которую иначе никто бы не вернул на место.
+  const drawn = useRef<BaseBlock['content'] | null>(null);
+
   useLayoutEffect(() => {
     const plain = block.content.every((node) => !node.attributes);
+    const root = view.getRoot();
+    const kept =
+      drawn.current === block.content && root && globalThis.document.activeElement === root
+        ? readDocSelection(root)
+        : null;
+    const mine =
+      kept && kept.from.blockId === block.id && kept.to.blockId === block.id ? kept : null;
+
+    drawn.current = block.content;
 
     // Код — простой текст: подсветка только оборачивает его в <span data-inkbrick-token>, не меняя символов.
     if (isCode && highlighter && plain) {
@@ -77,7 +91,18 @@ export function Editable({ block, placeholder }: EditableProps) {
 
       renderInline(ref.current!, block.content, { formulaRenderer, footnotes });
     }
-  }, [editor, block.content, isCode, language, highlighter, formulaRenderer, highlighterReady]);
+
+    if (mine) view.placeSelection(mine.from, mine.to);
+  }, [
+    editor,
+    view,
+    block.content,
+    isCode,
+    language,
+    highlighter,
+    formulaRenderer,
+    highlighterReady,
+  ]);
 
   const isEmpty = block.content.every((node) => node.insert.length === 0);
 
