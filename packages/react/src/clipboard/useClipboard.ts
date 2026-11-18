@@ -22,8 +22,15 @@ import { insertImageFiles } from '../images/insertImages';
 import { isAcceptedImage } from '../images/upload';
 import { setLinkInSelection } from '../toolbar/formatting';
 import { useEditorUI } from '../ui/EditorUIContext';
-import { embeddedFragment, htmlToFragment } from './htmlToFragment';
+import { lazyModule } from '../ui/lazy';
 import { tabularText } from './tabularText';
+
+/**
+ * Разбор HTML из буфера (Google Docs, Word, браузер) — отдельный чанк: он нужен только при вставке чужой разметки. Чанк
+ * подгружается сразу после монтирования редактора, поэтому к первой вставке он обычно готов и вставка остаётся
+ * синхронной; если нет, вставка ждёт его и ложится на то же место.
+ */
+const htmlParser = lazyModule(() => import('./htmlToFragment'), { soon: true });
 
 const URL_ONLY = /^(https?:\/\/|mailto:)\S+$/i;
 
@@ -195,6 +202,29 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       if (text) pastePlain(text, target);
     };
 
+    const parseHtml = (parser: typeof import('./htmlToFragment'), html: string): Fragment | null =>
+      parser.embeddedFragment(html) ?? parser.htmlToFragment(html);
+
+    /** Вставка разобранного HTML, когда чанк с разбором пришёл позже самого события: те же правила, что и в обычном пути. */
+    const pasteParsed = (
+      parser: typeof import('./htmlToFragment'),
+      html: string,
+      text: string,
+      target: DocSelection,
+      fallback: (target: DocSelection) => void,
+    ) => {
+      const fragment = parseHtml(parser, html);
+
+      if (fragment && images.rehost && hasExternalImages(fragment)) {
+        void pasteRehosted(fragment, target, text);
+        return;
+      }
+
+      if (fragment && pasteFragment(fragment, target)) return;
+
+      fallback(target);
+    };
+
     const onPaste = (event: ClipboardEvent) => {
       if (isForeignControl(event.target)) return;
 
@@ -226,13 +256,40 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
 
       const inCode = editor.store.getBlock(selection.from.blockId)?.flavour === 'block:code';
 
+      // Что делать, когда ни фрагмент, ни HTML не подошли: таблица из текста с табуляциями или просто текст.
+      const fallback = (target: DocSelection) => {
+        // Текст с табуляциями, похожий на таблицу (Excel, Sheets, терминал), — таблица; Ctrl+Shift+V вставляет текстом.
+        const rows =
+          !plainOnly && !inCode && editor.schema.hasBlock('block:table') ? tabularText(text) : null;
+
+        if (rows && pasteFragment(tableFragment(rows, { header: false }), target)) return;
+
+        if (text) pastePlain(text, target);
+      };
+
       if (!plainOnly && !inCode) {
         const json = data.getData(FRAGMENT_MIME);
         const html = data.getData('text/html');
 
         // Свой формат буфера — копия из этого же редактора; HTML может прийти откуда угодно, и его картинки чужие.
         const own = json ? sanitizeFragment(parseJson(json)) : null;
-        const fragment = own ?? (html ? (embeddedFragment(html) ?? htmlToFragment(html)) : null);
+        const parser = htmlParser.get();
+
+        // Чужой HTML, а чанк с разбором ещё не пришёл (вставка в первые мгновения): ждём его и вставляем на то же место.
+        if (!own && html && !parser) {
+          void htmlParser.preload().then((loaded) => {
+            const target =
+              readDocSelection(root) ??
+              (editor.store.getBlock(selection.from.blockId) ? selection : null);
+
+            if (!target || editor.readOnly) return;
+
+            pasteParsed(loaded, html, text, target, fallback);
+          });
+          return;
+        }
+
+        const fragment = own ?? (html && parser ? parseHtml(parser, html) : null);
 
         if (fragment && !own && images.rehost && hasExternalImages(fragment)) {
           void pasteRehosted(fragment, selection, text);
@@ -242,13 +299,7 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
         if (fragment && pasteFragment(fragment, selection)) return;
       }
 
-      // Текст с табуляциями, похожий на таблицу (Excel, Sheets, терминал), — таблица; Ctrl+Shift+V вставляет текстом.
-      const rows =
-        !plainOnly && !inCode && editor.schema.hasBlock('block:table') ? tabularText(text) : null;
-
-      if (rows && pasteFragment(tableFragment(rows, { header: false }), selection)) return;
-
-      if (text) pastePlain(text, selection);
+      fallback(selection);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
