@@ -320,6 +320,35 @@ test.describe('Block handle appearance', () => {
     await page.mouse.up();
   });
 
+  test('the slash menu and the block menu appear with the menu animation', async ({ page }) => {
+    await page.goto('/');
+    await typeBlocks(page, ['one', 'two']);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('/');
+    await expect(page.locator('[data-testid="slash-menu"]')).toBeVisible();
+    expect(await animationOf(page, '[data-testid="slash-menu"]')).toEqual({
+      name: 'inkbrick-menu-in',
+      duration: '0.1s',
+    });
+    await expect(page.locator('[data-testid="slash-menu"]')).toHaveAttribute('data-side', 'bottom');
+    await page.keyboard.press('Escape');
+
+    await openMenu(page, 0);
+    expect(await animationOf(page, menu)).toEqual({ name: 'inkbrick-menu-in', duration: '0.1s' });
+  });
+
+  test('a menu opened above the caret slides in from below', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 380 });
+    await page.goto('/');
+    await typeBlocks(page, ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', '']);
+    await page.keyboard.type('/');
+    await expect(page.locator('[data-testid="slash-menu"]')).toBeVisible();
+    await expect(page.locator('[data-testid="slash-menu"]')).toHaveAttribute('data-side', 'top');
+    expect((await animationOf(page, '[data-testid="slash-menu"]')).name).toBe(
+      'inkbrick-menu-in-up',
+    );
+  });
+
   test('is off with prefers-reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
@@ -328,6 +357,17 @@ test.describe('Block handle appearance', () => {
 
     await hoverBlock(page, 0);
     expect((await animationOf(page, handle)).name).toBe('none');
+
+    await page.locator(editable).last().click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('/');
+    await expect(page.locator('[data-testid="slash-menu"]')).toBeVisible();
+    expect((await animationOf(page, '[data-testid="slash-menu"]')).name).toBe('none');
+    await page.keyboard.press('Escape');
+
+    await openMenu(page, 0);
+    expect((await animationOf(page, menu)).name).toBe('none');
   });
 
   test('the duration and the shift are tokens: 0ms turns the animation into an instant one', async ({

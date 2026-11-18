@@ -34,6 +34,17 @@
     overflow-y: auto;
   }
 
+  /* Меню появляются плавно: проявляются и чуть выезжают от каретки или ручки (снизу, если открыты над ней). */
+  :where([data-inkbrick-ui='slash-menu']),
+  :where([data-inkbrick-ui='block-menu']) {
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'][data-side='top']),
+  :where([data-inkbrick-ui='block-menu'][data-side='top']) {
+    animation-name: inkbrick-menu-in-up;
+  }
+
   :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']) {
     padding: 8px 8px 2px;
     color: var(--inkbrick-fg-3);
@@ -1113,10 +1124,26 @@
     }
   }
 
+  @keyframes inkbrick-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-menu-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(var(--inkbrick-appear-shift));
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     :where([data-inkbrick-ui='select']),
     :where([data-inkbrick-ui='block-handle']),
-    :where([data-inkbrick-ui='drop-indicator']) {
+    :where([data-inkbrick-ui='drop-indicator']),
+    :where([data-inkbrick-ui='slash-menu']),
+    :where([data-inkbrick-ui='block-menu']) {
       animation: none;
     }
   }

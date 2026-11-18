@@ -148,9 +148,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   open the list of a select or multi-select cell, the arrows choose, Enter or Space mark an option, Escape closes the list
   and returns the caret to the cell. The list is exposed as a `listbox` with `aria-activedescendant`; `aria-multiselectable`
   is set only for multi-select, and the cell button has `aria-controls`.
-- Smooth appearance, like in Notion: the block handle fades in and slides in a few pixels from the left, the drop line fades in
-  while a block is dragged, and the dragged block dims instead of blinking. Pure CSS (`@keyframes inkbrick-handle-in`,
-  `inkbrick-fade-in`), on by default, off under `prefers-reduced-motion: reduce`. Tokens `--inkbrick-appear-duration` (100ms,
+- Smooth appearance, like in Notion: the block handle fades in and slides in a few pixels from the left, the slash menu and the
+  block menu fade in and slide in from the caret or the handle (from below when a menu opens above it; `data-side="top|bottom"`
+  on the menu), the drop line fades in while a block is dragged, and the dragged block dims instead of blinking. Pure CSS (`@keyframes inkbrick-handle-in`,
+  `inkbrick-fade-in`, `inkbrick-menu-in`, `inkbrick-menu-in-up`), on by default, off under `prefers-reduced-motion: reduce`. Tokens `--inkbrick-appear-duration` (100ms,
   `0ms` turns it off) and `--inkbrick-appear-shift` (4px). Moving the pointer from block to block does not replay it: the
   handle is the same node.
 
