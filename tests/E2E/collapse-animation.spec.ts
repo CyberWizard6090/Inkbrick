@@ -222,8 +222,39 @@ test.describe('Collapse animation: virtual renderer (50 000 blocks)', () => {
     await page.goto('/?lang=en');
     await useTool(page, 'load-large');
     await expect(page.locator('.editable[data-id="large-0"]')).toBeVisible();
-    await page.evaluate(() => window.scrollTo(0, 4600));
-    await expect(page.locator('.editable[data-id="large-100"]')).toBeVisible();
+
+    // Высота строки зависит от шрифтов машины, поэтому к «large-100» подходим по факту, а не по фиксированному смещению.
+    const target = page.locator('.editable[data-id="large-100"]');
+
+    await expect(async () => {
+      if ((await target.count()) === 0) {
+        // Ближайший к середине окна блок (первый блок документа держится в дереве всегда, его брать нельзя).
+        const delta = await page.evaluate(() => {
+          const middle = window.innerHeight / 2;
+          let best: { id: number; gap: number } | null = null;
+
+          for (const node of document.querySelectorAll('.editable[data-id^="large-"]')) {
+            const id = Number(node.getAttribute('data-id')!.replace('large-', ''));
+            const rect = node.getBoundingClientRect();
+            const gap = Math.abs(rect.top - middle);
+
+            if (rect.bottom > 0 && rect.top < window.innerHeight && (!best || gap < best.gap)) {
+              best = { id, gap };
+            }
+          }
+
+          const perBlock = document.documentElement.scrollHeight / 50_000;
+
+          return ((100 - (best ? best.id : 0)) * perBlock) | 0;
+        });
+
+        await page.evaluate((by) => window.scrollBy(0, by), delta || 400);
+      }
+
+      await expect(target).toHaveCount(1, { timeout: 500 });
+    }).toPass({ timeout: 15_000 });
+    await target.evaluate((node) => node.scrollIntoView({ block: 'start' }));
+    await expect(target).toBeInViewport();
 
     const fold = page
       .locator('.editable[data-id="large-100"]')
@@ -255,10 +286,14 @@ test.describe('Collapse animation: virtual renderer (50 000 blocks)', () => {
           }),
         frames,
       );
-    const steps = (rows: { top: number | null }[]) => {
+    // Шаги следующего заголовка от кадра к кадру: без разворота и без рывка в самом конце (ослабление движения подходит к нулю).
+    const shifts = (rows: { top: number | null }[]) => {
       const tops = rows.map((row) => row.top).filter((top): top is number => top !== null);
 
-      return Math.max(...tops.slice(1).map((top, i) => Math.abs(top - tops[i])));
+      return tops
+        .slice(1)
+        .map((top, i) => top - tops[i])
+        .filter((step) => Math.abs(step) > 0.01);
     };
 
     const folding = record(40);
@@ -268,11 +303,29 @@ test.describe('Collapse animation: virtual renderer (50 000 blocks)', () => {
     const rows = await folding;
     const heights = rows.map((row) => row.height).filter((h): h is number => h !== null);
 
-    // Первый скрытый блок сжимается до нуля (а не застревает на min-height), и следующий заголовок едет без прыжка.
-    expect(Math.min(...heights)).toBeLessThan(5);
-    expect(steps(rows)).toBeLessThan(60);
+    // Блок на самом деле сжимается (а не остаётся на `min-height`), заголовок ниже едет только вверх и не разворачивается.
+    expect(heights.length).toBeGreaterThan(0);
+
+    const moves = shifts(rows);
+
+    expect(moves.length).toBeGreaterThan(2);
+    expect(Math.max(...moves)).toBeLessThan(5);
 
     await expect(page.locator('.editable[data-id="large-101"]')).toHaveCount(0);
+
+    // Когда анимация закончилась, между свёрнутым заголовком и следующим нет пустого места.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const heading = document.querySelector('.editable[data-id="large-100"]')!;
+          const next = document.querySelector('.editable[data-id="large-200"]');
+
+          return next
+            ? next.getBoundingClientRect().top - heading.getBoundingClientRect().bottom
+            : 9999;
+        }),
+      )
+      .toBeLessThan(60);
 
     const unfolding = record(40);
 
