@@ -11,6 +11,10 @@ undo/redo, a schema with validation and migrations, and a fully replaceable UI.
 - **Blocks:** paragraphs, headings 1–6, bullet / ordered / task lists with nesting, quotes, code with syntax
   highlighting, callouts, dividers, images (upload, link, caption, alt, width, alignment), block and inline
   formulas (LaTeX via Temml, or plug in KaTeX/MathJax). Unknown block types are preserved, never lost.
+- **Optional blocks:** tables (column types, sorting, filters, views, merged cells, frozen header), table of contents,
+  columns, toggles, footnotes. Each set is opt-in and adds nothing to the bundle until it is used.
+- **Tools:** find and replace, a command palette, `#tags`, a word counter, folding of headings and list items, picking
+  and moving several blocks at once, block backgrounds, the browser's spellcheck.
 - **Editing:** selection across blocks, Markdown shortcuts, slash menu, floating toolbar (formats, links, colors,
   highlight, alignment), block handles with a menu, drag and drop with mouse and touch, configurable keyboard
   shortcuts, mobile keyboards (IME composition).
@@ -21,7 +25,7 @@ undo/redo, a schema with validation and migrations, and a fully replaceable UI.
   blocks with controllers (`defineBlock`), style through stable `data-inkbrick-*` attributes, CSS layers and design
   tokens (light/dark), translate the UI (en, ru, or your own dictionaries).
 - **Scale and quality:** linear algorithms (100 000 blocks load in ~1 s), an optional virtual renderer for huge
-  documents, ~58 KB gzip for the React editor, no `eval`, strict input validation, accessibility checked with axe,
+  documents, ~61 KB gzip for the React editor (formulas, code highlighting and rare menus load on demand), no `eval`, strict input validation, accessibility checked with axe,
   end-to-end tests in Chromium, Firefox and WebKit.
 
 ## Install
@@ -85,6 +89,7 @@ const myDesignSystem = definePresentation({
 | `@inkbrick/document` | Model, block schemas (zod), validation, serialization, migrations, export. No React, no DOM.    |
 | `@inkbrick/store`    | Transactions with rollback, history (undo/redo), subscriptions.                                 |
 | `@inkbrick/engine`   | `Editor`, commands, block controllers. Headless — usable on a server.                           |
+| `@inkbrick/locales`  | UI dictionaries: English, and languages that load on demand (Russian).                          |
 | `@inkbrick/react`    | `EditorProvider`, `DocumentView`, default UI, input and clipboard handling.                     |
 | `@inkbrick/styles`   | Default styles: design tokens, themes, `@layer` + `:where()` over `data-inkbrick-*` attributes. |
 
@@ -96,7 +101,14 @@ Guides (in Russian): [UI customization and custom blocks](docs/ui-customization.
 [clipboard](docs/clipboard.md) · [images and callouts](docs/images-and-callout.md) · [styling](docs/styling.md) ·
 [i18n](docs/i18n.md) · [formulas](docs/formulas.md) · [text style](docs/text-style.md) ·
 [code highlighting](docs/code-highlighting.md) · [schemas, nesting, versions](docs/schema-rules.md) ·
-[export](docs/export.md) · [keymap](docs/keymap.md) · [tables](docs/tables.md).
+[export](docs/export.md) · [keymap](docs/keymap.md) · [tables](docs/tables.md) · [table of contents](docs/toc.md) ·
+[columns](docs/columns.md) · [toggles](docs/toggle.md) · [footnotes](docs/footnotes.md) ·
+[find and replace](docs/find-replace.md) · [command palette](docs/command-palette.md) · [tags](docs/tags.md) ·
+[word count](docs/word-count.md) · [folding headings](docs/heading-folding.md) ·
+[folding list items](docs/list-folding.md) · [picking several blocks](docs/block-picking.md) ·
+[block background](docs/block-background.md) · [spellcheck](docs/spellcheck.md).
+
+Each package on npm has its own README with a short example.
 
 API reference: `pnpm docs:api` generates it into `docs/api` from the TSDoc comments.
 
