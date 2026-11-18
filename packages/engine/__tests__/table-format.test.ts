@@ -1,0 +1,372 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  Editor,
+  tableBlocks,
+  createTableEditor,
+  tableCellAt,
+  tableIdOf,
+  tableRangeFragment,
+  type TableRange,
+} from '../src';
+import {
+  createSchemaRegistry,
+  tableBlockSchemas,
+  toHtml,
+  toMarkdown,
+  validateSnapshot,
+} from '@inkbrick/document';
+
+const ALL: TableRange = { top: 0, left: 0, bottom: 2, right: 2 };
+
+function setup(options: Parameters<typeof createTableEditor>[0] = {}) {
+  const editor = createTableEditor({
+    rows: [
+      ['a', 'b', 'c'],
+      ['d', '', 'f'],
+      ['g', 'h', 'i'],
+    ],
+    ...options,
+  });
+  const tableId = tableIdOf(editor)!;
+  const getBlock = (id: string) => editor.document.getBlock(id);
+  const cell = (row: number, column: number) => tableCellAt(getBlock, tableId, row, column)!;
+  const attrs = (row: number, column: number) =>
+    editor.document.getBlock(cell(row, column))!.content.map((node) => node.attributes ?? {});
+  const run = (type: string, payload: Record<string, unknown>) =>
+    editor.dispatch({ type, payload: { blockId: tableId, ...payload } } as never);
+  const can = (type: string, payload: Record<string, unknown>) =>
+    editor.can(type, { blockId: tableId, ...payload });
+
+  return { editor, tableId, cell, attrs, run, can, getBlock };
+}
+
+const undoSteps = (editor: Editor) => {
+  let steps = 0;
+
+  while (editor.canUndo) {
+    editor.undo();
+    steps += 1;
+  }
+
+  return steps;
+};
+
+describe('formatTableCells', () => {
+  it('turns a format on for every cell with text in the range, in one undo step', () => {
+    const { editor, run, attrs } = setup();
+
+    run('formatTableCells', { range: ALL, format: 'bold' });
+
+    for (const [row, column] of [
+      [0, 0],
+      [0, 2],
+      [1, 0],
+      [2, 2],
+    ])
+      expect(attrs(row, column)).toEqual([{ bold: true }]);
+
+    expect(undoSteps(editor)).toBe(1);
+    expect(attrs(0, 0)).toEqual([{}]);
+  });
+
+  it('turns it off when every cell already has it, and on again when only some do', () => {
+    const { run, attrs } = setup();
+
+    run('formatTableCells', { range: ALL, format: 'italic' });
+    run('formatTableCells', { range: ALL, format: 'italic' });
+    expect(attrs(1, 0)).toEqual([{}]);
+
+    run('formatTableCells', { range: { top: 0, left: 0, bottom: 0, right: 0 }, format: 'italic' });
+    run('formatTableCells', { range: ALL, format: 'italic' });
+    expect(attrs(0, 0)).toEqual([{ italic: true }]);
+    expect(attrs(2, 2)).toEqual([{ italic: true }]);
+  });
+
+  it('formats only the rectangle', () => {
+    const { run, attrs } = setup();
+
+    run('formatTableCells', { range: { top: 1, left: 0, bottom: 2, right: 0 }, format: 'strike' });
+
+    expect(attrs(0, 0)).toEqual([{}]);
+    expect(attrs(1, 0)).toEqual([{ strike: true }]);
+    expect(attrs(2, 0)).toEqual([{ strike: true }]);
+    expect(attrs(2, 1)).toEqual([{}]);
+  });
+
+  it('refuses an unknown format and a range of empty cells', () => {
+    const { can } = setup();
+
+    expect(can('formatTableCells', { range: ALL, format: 'sparkle' })).toBe(false);
+    expect(
+      can('formatTableCells', { range: { top: 1, left: 1, bottom: 1, right: 1 }, format: 'bold' }),
+    ).toBe(false);
+    expect(can('formatTableCells', { range: 'all', format: 'bold' })).toBe(false);
+  });
+
+  it('is refused in a read-only editor', () => {
+    const { editor, can } = setup();
+
+    editor.setReadOnly(true);
+
+    expect(can('formatTableCells', { range: ALL, format: 'bold' })).toBe(false);
+  });
+});
+
+describe('setTableCellsColor and clearTableCellsFormat', () => {
+  it('sets and removes the text colour and highlight of the whole range', () => {
+    const { run, attrs } = setup();
+
+    run('setTableCellsColor', { range: ALL, attributes: { color: 'red' } });
+    run('setTableCellsColor', { range: ALL, attributes: { backgroundColor: 'yellow' } });
+    expect(attrs(0, 1)).toEqual([{ color: 'red', backgroundColor: 'yellow' }]);
+
+    run('setTableCellsColor', { range: ALL, attributes: { color: undefined } });
+    expect(attrs(0, 1)).toEqual([{ backgroundColor: 'yellow' }]);
+  });
+
+  it('accepts only palette names and safe CSS colours, and only the two attributes', () => {
+    const { can } = setup();
+
+    expect(can('setTableCellsColor', { range: ALL, attributes: { color: 'blue' } })).toBe(true);
+    expect(can('setTableCellsColor', { range: ALL, attributes: { color: '#ff0000' } })).toBe(true);
+    expect(can('setTableCellsColor', { range: ALL, attributes: { color: 'red;x:y' } })).toBe(false);
+    expect(can('setTableCellsColor', { range: ALL, attributes: { link: 'https://a.b' } })).toBe(
+      false,
+    );
+    expect(can('setTableCellsColor', { range: ALL, attributes: {} })).toBe(false);
+  });
+
+  it('clears styles and colours but keeps links', () => {
+    const { editor, run, attrs, cell } = setup();
+
+    editor.dispatch({
+      type: 'setInlineAttributes',
+      payload: {
+        from: { blockId: cell(0, 0), offset: 0 },
+        to: { blockId: cell(0, 0), offset: 1 },
+        attributes: { link: 'https://example.com' },
+      },
+    });
+    run('formatTableCells', { range: ALL, format: 'bold' });
+    run('setTableCellsColor', { range: ALL, attributes: { color: 'red' } });
+
+    run('clearTableCellsFormat', { range: ALL });
+
+    expect(attrs(0, 0)).toEqual([{ link: 'https://example.com' }]);
+    expect(attrs(2, 2)).toEqual([{}]);
+  });
+});
+
+describe('alignTableCells', () => {
+  it('aligns every cell of the range, in one undo step', () => {
+    const { editor, run, getBlock, cell } = setup();
+
+    run('alignTableCells', { range: { top: 0, left: 1, bottom: 2, right: 2 }, align: 'center' });
+
+    expect(getBlock(cell(0, 1))!.props.align).toBe('center');
+    expect(getBlock(cell(2, 2))!.props.align).toBe('center');
+    expect(getBlock(cell(0, 0))!.props.align).toBeUndefined();
+    expect(undoSteps(editor)).toBe(1);
+  });
+
+  it('refuses an unknown alignment', () => {
+    const { can } = setup();
+
+    expect(can('alignTableCells', { range: ALL, align: 'middle' })).toBe(false);
+  });
+
+  it('aligns empty cells too', () => {
+    const { run, getBlock, cell } = setup();
+
+    run('alignTableCells', { range: ALL, align: 'right' });
+
+    expect(getBlock(cell(1, 1))!.props.align).toBe('right');
+  });
+});
+
+describe('setTableCellsBackground', () => {
+  it('sets and clears the background of the cells and the schema accepts it', () => {
+    const { editor, run, getBlock, cell } = setup();
+
+    run('setTableCellsBackground', {
+      range: { top: 0, left: 0, bottom: 0, right: 2 },
+      background: 'green',
+    });
+
+    expect(getBlock(cell(0, 2))!.props.background).toBe('green');
+    expect(getBlock(cell(1, 2))!.props.background).toBeUndefined();
+    expect(validateSnapshot(editor.serialize(), createSchemaRegistry(tableBlockSchemas))).toEqual(
+      [],
+    );
+
+    run('setTableCellsBackground', { range: ALL, background: null });
+    expect(getBlock(cell(0, 2))!.props.background).toBeUndefined();
+  });
+
+  it('refuses a colour outside the block palette', () => {
+    const { can } = setup();
+
+    expect(can('setTableCellsBackground', { range: ALL, background: 'black' })).toBe(false);
+    expect(can('setTableCellsBackground', { range: ALL, background: 'url(x)' })).toBe(false);
+    expect(can('setTableCellsBackground', { range: ALL, background: 'red' })).toBe(true);
+  });
+});
+
+describe('table properties', () => {
+  it('stores headerColumn, striped and borders in the table props and validates them', () => {
+    const { editor, tableId, getBlock } = setup();
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: { blockId: tableId, props: { headerColumn: true, striped: true, borders: false } },
+    });
+
+    expect(getBlock(tableId)!.props).toMatchObject({
+      headerColumn: true,
+      striped: true,
+      borders: false,
+    });
+    expect(
+      editor.can('setBlockProps', { blockId: tableId, props: { striped: 'yes' } as never }),
+    ).toBe(false);
+  });
+
+  it('resets column widths to automatic in one step and only when some are set', () => {
+    const { editor, run, can, getBlock, tableId } = setup();
+
+    expect(can('resetTableColumnWidths', {})).toBe(false);
+
+    run('setTableColumnWidth', { index: 0, width: 120 });
+    expect(can('resetTableColumnWidths', {})).toBe(true);
+
+    run('resetTableColumnWidths', {});
+    expect(getBlock(tableId)!.props.widths).toBeUndefined();
+
+    editor.undo();
+    expect(getBlock(tableId)!.props.widths).toEqual([120, null, null]);
+  });
+});
+
+describe('copying and export', () => {
+  it('carries the table properties and the cell alignment and background into a range fragment', () => {
+    const { editor, tableId, run } = setup();
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: { blockId: tableId, props: { striped: true, borders: false } },
+    });
+    run('alignTableCells', { range: { top: 1, left: 1, bottom: 1, right: 1 }, align: 'right' });
+    run('setTableCellsBackground', {
+      range: { top: 1, left: 1, bottom: 1, right: 1 },
+      background: 'pink',
+    });
+
+    const fragment = tableRangeFragment((id) => editor.document.getBlock(id), tableId, {
+      top: 1,
+      left: 0,
+      bottom: 1,
+      right: 2,
+    });
+    const table = fragment.blocks[0];
+    const cells = table.children[0].children;
+
+    expect(table.props).toMatchObject({ striped: true, borders: false });
+    expect(cells[1].props).toEqual({ align: 'right', background: 'pink' });
+    expect(cells[0].props).toEqual({});
+  });
+
+  it('pastes a copied table with its properties, backgrounds and alignment', () => {
+    const source = setup();
+
+    source.editor.dispatch({
+      type: 'setBlockProps',
+      payload: {
+        blockId: source.tableId,
+        props: { headerColumn: true, striped: true, borders: false },
+      },
+    });
+    source.run('setTableCellsBackground', { range: ALL, background: 'blue' });
+    source.run('alignTableCells', { range: ALL, align: 'center' });
+
+    const fragment = tableRangeFragment(
+      (id) => source.editor.document.getBlock(id),
+      source.tableId,
+      ALL,
+    );
+    const target = new Editor({ blocks: tableBlocks });
+    const note = target.document.getBlock(target.document.rootId)!.children[0];
+    const paragraph = target.document.getBlock(note)!.children[0];
+
+    target.dispatch({
+      type: 'pasteFragment',
+      payload: { at: { blockId: paragraph, offset: 0 }, fragment },
+    });
+
+    const pasted = [...document_tables(target)].pop()!;
+    const cell = target.document.getBlock(
+      target.document.getBlock(pasted.children[1])!.children[1],
+    )!;
+
+    expect(pasted.props).toMatchObject({ headerColumn: true, striped: true, borders: false });
+    expect(cell.props).toMatchObject({ background: 'blue', align: 'center' });
+  });
+
+  it('writes cell backgrounds, alignment and the table properties into the HTML', () => {
+    const { editor, tableId, run } = setup();
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: {
+        blockId: tableId,
+        props: { headerColumn: true, striped: true, borders: false },
+      },
+    });
+    run('setTableCellsBackground', {
+      range: { top: 0, left: 0, bottom: 0, right: 0 },
+      background: 'yellow',
+    });
+    run('alignTableCells', { range: { top: 0, left: 1, bottom: 0, right: 1 }, align: 'center' });
+
+    const html = toHtml(editor.document);
+
+    expect(html).toContain('<table data-borders="none" data-striped>');
+    expect(html).toContain('<th style="background-color:#ffe74a">a</th>');
+    expect(html).toContain('<th style="text-align:center">b</th>');
+    expect(html).toContain('<th scope="row">d</th>');
+    // Вторая строка тела — полоса.
+    expect(html).toContain('<tr style="background-color:#f4f4f4">');
+  });
+
+  it('leaves the HTML of a plain table as it was and keeps Markdown unchanged', () => {
+    const { editor, tableId, run } = setup();
+    const before = toMarkdown(editor.document);
+
+    expect(toHtml(editor.document)).toContain('<table>');
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: { blockId: tableId, props: { striped: true, headerColumn: true, borders: false } },
+    });
+    run('setTableCellsBackground', { range: ALL, background: 'red' });
+    run('formatTableCells', { range: { top: 0, left: 0, bottom: 0, right: 0 }, format: 'bold' });
+
+    const after = toMarkdown(editor.document);
+
+    expect(after).toContain('| **a** | b | c |');
+    expect(after.replace('**a**', 'a')).toBe(before);
+  });
+});
+
+function* document_tables(editor: Editor) {
+  const stack = [editor.document.rootId];
+
+  while (stack.length > 0) {
+    const block = editor.document.getBlock(stack.pop()!);
+
+    if (!block) continue;
+    if (block.flavour === 'block:table') yield block;
+
+    stack.push(...block.children);
+  }
+}

@@ -13,6 +13,7 @@ import {
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { cellShortcut } from './cellFormatting';
 import { cellOfRange, clearTableCells, selectTableCells, visibleCell } from './cellSelection';
 
 const ARROWS: Record<string, readonly [number, number]> = {
@@ -127,6 +128,9 @@ export function useCellSelection(
 
       if (!selection || selection.tableId !== tableId || event.isComposing) return;
 
+      // Ввод в меню, палитре и других окнах редактора не относится к ячейкам: выделение остаётся.
+      if (event.target instanceof Element && event.target.closest('[data-inkbrick-ui]')) return;
+
       const mod = event.ctrlKey || event.metaKey;
       const size = tableSize(getBlock, tableId);
 
@@ -138,6 +142,9 @@ export function useCellSelection(
       } else if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault();
         flushSync(() => clearTableCells(editor, selection.ids));
+      } else if (mod && !editor.readOnly && cellShortcut(editor, selection, event)) {
+        event.preventDefault();
+        event.stopPropagation();
       } else if (event.key in ARROWS && !mod && !event.altKey) {
         const [dRow, dColumn] = ARROWS[event.key];
         const head = {

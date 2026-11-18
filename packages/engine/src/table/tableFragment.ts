@@ -22,6 +22,10 @@ export type TableCellInput = string | readonly InlineNode[];
 export interface TableFragmentOptions {
   /** Первая строка — заголовок (по умолчанию да). */
   header?: boolean;
+  /** Первый столбец — заголовок; чередующиеся строки; `false` — без границ. */
+  headerColumn?: boolean;
+  striped?: boolean;
+  borders?: boolean;
   /** Первая строка и первый столбец остаются на виду при прокрутке. */
   freezeRow?: boolean;
   freezeColumn?: boolean;
@@ -35,6 +39,8 @@ export interface TableFragmentOptions {
   align?: readonly (Alignment | undefined)[];
   /** Ширины столбцов в пикселях по порядку; `null` — по содержимому. */
   widths?: readonly (number | null)[];
+  /** Свои props ячеек по строкам и столбцам (выравнивание и фон отдельных ячеек); поверх выравнивания столбцов. */
+  cellProps?: readonly (readonly (Readonly<Record<string, unknown>> | undefined)[])[];
 }
 
 const contentOf = (cell: TableCellInput | undefined): InlineNode[] =>
@@ -72,6 +78,9 @@ export function tableFragment(
 
   const props: Record<string, unknown> = { header: options.header ?? true };
 
+  if (options.headerColumn) props.headerColumn = true;
+  if (options.striped) props.striped = true;
+  if (options.borders === false) props.borders = false;
   if (options.freezeRow) props.freezeRow = true;
   if (options.freezeColumn) props.freezeColumn = true;
   if (options.merges?.length) props.merges = options.merges.map((merge) => ({ ...merge }));
@@ -92,17 +101,18 @@ export function tableFragment(
           TABLE,
           props,
           [],
-          rows.map((row) =>
+          rows.map((row, rowIndex) =>
             block(
               TABLE_ROW,
               {},
               [],
               Array.from({ length: columns }, (_, column) => {
                 const align = options.align?.[column];
+                const own = options.cellProps?.[rowIndex]?.[column];
 
                 return block(
                   TABLE_CELL,
-                  align && align !== 'left' ? { align } : {},
+                  { ...(align && align !== 'left' ? { align } : {}), ...own },
                   contentOf(row[column]),
                   [],
                 );

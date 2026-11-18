@@ -41,6 +41,13 @@ export interface ToolbarProps {
   readonly onApplyColor: (kind: 'color' | 'backgroundColor', value: string | null) => void;
   readonly onAlign: (align: Alignment) => void;
   readonly onInsertFormula: () => void;
+  /**
+   * `'cells'` — форматирование выделенных ячеек таблицы: ссылки и формул нет, зато есть «Очистить форматирование»
+   * (`onClearFormat`). По умолчанию (`'text'`) — выделенный текст.
+   */
+  readonly scope?: 'text' | 'cells';
+  /** Снимает начертание и цвета (только для `scope: 'cells'`). */
+  readonly onClearFormat?: () => void;
   /** Есть, когда выделение в одном блоке и его можно превратить в другой тип; без поля кнопки «Превратить в» нет. */
   readonly turnInto?: ToolbarTurnInto;
 }

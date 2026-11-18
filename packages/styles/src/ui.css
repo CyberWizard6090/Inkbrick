@@ -317,7 +317,8 @@
 
   :where(
     [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
-    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']
   ) {
     border-radius: 3px;
     background: var(--inkbrick-stroke-1);
@@ -335,10 +336,16 @@
     height: 8px;
   }
 
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']) {
+    width: 12px;
+    height: 12px;
+  }
+
   :where(
     [data-inkbrick-ui='table-controls']:is(
         [data-inkbrick-part='row-grip'],
-        [data-inkbrick-part='column-grip']
+        [data-inkbrick-part='column-grip'],
+        [data-inkbrick-part='table-grip']
       ):hover,
     [data-inkbrick-ui='table-controls'][aria-expanded='true']
   ) {
@@ -416,6 +423,11 @@
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
       width: 32px;
       height: 14px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']) {
+      width: 20px;
+      height: 20px;
     }
 
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {

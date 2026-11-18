@@ -30,6 +30,7 @@ import { canUpdateView, newViewId, setAt, updateView, updateViews } from './view
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableLine } from './cellSelection';
+import { cellsBackgroundMenu, tableFormatActions } from './tableFormatActions';
 
 interface Position {
   readonly row: number;
@@ -52,7 +53,7 @@ interface Layout {
 }
 
 interface MenuState {
-  readonly kind: 'row' | 'column';
+  readonly kind: 'row' | 'column' | 'table';
   readonly position: Position;
   readonly x: number;
   readonly y: number;
@@ -673,6 +674,16 @@ function TableControlsLayer({
     },
   ];
 
+  /** Меню таблицы: форматирование таблицы целиком и фон выделенных ячеек (без выделения — всех). */
+  const tableActions = (): BlockMenuAction[] =>
+    tableFormatActions(editor, block, t, (action) =>
+      perform(() => {
+        action();
+
+        return cellAt(active.row, active.column);
+      }),
+    );
+
   const open = (kind: MenuState['kind'], x: number, y: number) =>
     setMenu((current) =>
       current?.kind === kind &&
@@ -805,6 +816,16 @@ function TableControlsLayer({
       <button
         {...control}
         type="button"
+        data-inkbrick-part="table-grip"
+        aria-label={t('table.handle')}
+        aria-haspopup="menu"
+        aria-expanded={menu?.kind === 'table'}
+        style={{ left: table.left - 16, top: table.top - 16 }}
+        onClick={() => open('table', table.left, table.top + 4)}
+      />
+      <button
+        {...control}
+        type="button"
         data-inkbrick-part="row-grip"
         aria-label={t('table.rowHandle', { row: active.row + 1 })}
         aria-haspopup="menu"
@@ -853,6 +874,10 @@ function TableControlsLayer({
             key={column}
             role="separator"
             aria-orientation="vertical"
+            // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
+            aria-valuenow={Math.round(edge.x - (column === 0 ? table.left : edges[column - 1].x))}
+            aria-valuemin={MIN_WIDTH}
+            aria-valuemax={MAX_WIDTH}
             aria-label={t('table.resize', { column: column + 1 })}
             tabIndex={0}
             data-inkbrick-part="resize"
@@ -875,7 +900,22 @@ function TableControlsLayer({
         <Menu
           block={block}
           position={{ x: menu.x, y: menu.y }}
-          actions={menu.kind === 'row' ? rowActions(menu.position) : columnActions(menu.position)}
+          actions={
+            menu.kind === 'row'
+              ? rowActions(menu.position)
+              : menu.kind === 'column'
+                ? columnActions(menu.position)
+                : tableActions()
+          }
+          background={
+            menu.kind === 'table'
+              ? cellsBackgroundMenu(editor, block, view.cells.get(), (action) =>
+                  perform(() => {
+                    action();
+                  }),
+                )
+              : undefined
+          }
           turnInto={[]}
           onClose={() => {
             setMenu(null);

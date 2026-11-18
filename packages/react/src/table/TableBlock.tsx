@@ -2,6 +2,7 @@ import { useContext, useMemo, useRef, useState, useSyncExternalStore } from 'rea
 
 import {
   getBlockAlign,
+  getBlockBackground,
   normalizeMerges,
   type BaseBlock,
   type TableColumnType,
@@ -108,8 +109,17 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
-  const { header, widths, freezeRow, freezeColumn, columnTypes, columnOptions } =
-    block.props as TableProps;
+  const {
+    header,
+    headerColumn,
+    striped,
+    borders,
+    widths,
+    freezeRow,
+    freezeColumn,
+    columnTypes,
+    columnOptions,
+  } = block.props as TableProps;
   const { views, active, select } = useActiveView(block);
   const columnHidden = active.hidden;
   const columnFilters = active.filters;
@@ -170,6 +180,9 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-block-id={block.id}
       data-selected={selected || undefined}
       data-header={header || undefined}
+      data-header-column={headerColumn || undefined}
+      data-striped={striped || undefined}
+      data-borders={borders === false ? 'none' : undefined}
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
     >
@@ -279,6 +292,7 @@ export function TableCellBlock({ block, selected, readOnly }: BlockProps) {
       data-block-id={block.id}
       hidden={column?.hidden || undefined}
       data-align={getBlockAlign(block) ?? 'left'}
+      data-background={getBlockBackground(block)}
       data-column-type={column && column.type !== 'text' ? column.type : undefined}
       // Адреса, почта, телефоны, числа и метки не проверяются на орфографию.
       spellCheck={column && column.type !== 'text' ? false : undefined}

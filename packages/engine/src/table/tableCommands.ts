@@ -20,6 +20,7 @@ import {
   type TableAxis,
 } from './tableMerge';
 import { clampTableRange, type TableRange } from './tableRange';
+import { tableFormatCommands } from './tableFormat';
 
 type Context = BlockCommandContext<TableProps>;
 
@@ -482,6 +483,7 @@ export const SplitTableCellCommand = defineBlockCommand<
 });
 
 export const tableCommands = [
+  ...tableFormatCommands,
   InsertTableRowCommand,
   DeleteTableRowCommand,
   MoveTableRowCommand,

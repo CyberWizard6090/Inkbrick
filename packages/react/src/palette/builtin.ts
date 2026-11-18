@@ -7,6 +7,12 @@ import { availableSlashItems } from '../slash/items';
 import { convertBlocks, convertibleIn } from '../pick/actions';
 import type { SlashMenuItem } from '../slash/types';
 import type { TFunction } from '../i18n/translate';
+import {
+  cellFormatCommands,
+  formatPickedCells,
+  pickedCells,
+  tablePaletteCommands,
+} from '../table/paletteCommands';
 import type { PaletteCommand, PaletteContext } from './types';
 
 const FORMATS = [
@@ -97,17 +103,23 @@ export function builtinCommands(
       title: t(`toolbar.${format}.label`),
       group: t('palette.group.format'),
       shortcut,
+      // Выделены ячейки таблицы — формат применяется ко всем сразу (см. `table/cellFormatting`).
       when: (context: PaletteContext) =>
-        editable(context) &&
-        !!context.selection &&
-        !context.selection.collapsed &&
-        isFormattable(context.editor, context.selection),
+        !!pickedCells(context) ||
+        (editable(context) &&
+          !!context.selection &&
+          !context.selection.collapsed &&
+          isFormattable(context.editor, context.selection)),
       run: (context: PaletteContext) => {
+        if (formatPickedCells(context, format)) return;
+
         if (context.selection) {
           toggleFormatInSelection(context.editor, context.view, context.selection, format);
         }
       },
     })),
+    ...cellFormatCommands(),
+    ...tablePaletteCommands(),
   ];
 
   for (const item of slashItems) {

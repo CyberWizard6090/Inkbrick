@@ -1,13 +1,15 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 import { readDocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { Icon } from '../icons/Icon';
+import { cellToolbar } from '../table/cellFormatting';
 import { DefaultToolbar } from '../toolbar/DefaultToolbar';
 import { toolbarHandlers } from '../toolbar/toolbarHandlers';
 import { turnIntoFor } from '../toolbar/turnInto';
+import type { ToolbarPanel } from '../toolbar/types';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
 import {
@@ -36,6 +38,14 @@ export function ContextMenuPanel() {
     view.toolbar.getState,
     view.toolbar.getState,
   );
+
+  // Панель цвета у кнопок форматирования выделенных ячеек: у текста её состояние хранит toolbar, а у ячеек его нет.
+  const [cellPanel, setCellPanel] = useState<ToolbarPanel | null>(null);
+  const [, refresh] = useState(0);
+
+  useEffect(() => {
+    if (!menu.position) setCellPanel(null);
+  }, [menu.position]);
 
   const root = view.getRoot();
   const open =
@@ -72,7 +82,8 @@ export function ContextMenuPanel() {
       else if (document.activeElement !== rootElement) rootElement.focus({ preventScroll: true });
     };
 
-    const hasText = !!selection && !selection.collapsed;
+    const picked = view.cells.get();
+    const hasText = (!!selection && !selection.collapsed) || !!picked;
 
     const items: ContextMenuItem[] = [
       {
@@ -136,7 +147,17 @@ export function ContextMenuPanel() {
 
     const Toolbar = slots.Toolbar === null ? null : (slots.Toolbar ?? DefaultToolbar);
     const formatting =
-      Toolbar && hasText && toolbar.visible && toolbar.formats && toolbar.range ? (
+      Toolbar && picked ? (
+        <Toolbar
+          position={menu.position!}
+          placement="inline"
+          {...cellToolbar(editor, picked, {
+            current: cellPanel,
+            set: setCellPanel,
+            changed: () => refresh((n) => n + 1),
+          })}
+        />
+      ) : Toolbar && hasText && toolbar.visible && toolbar.formats && toolbar.range ? (
         <Toolbar
           formats={toolbar.formats}
           position={menu.position!}

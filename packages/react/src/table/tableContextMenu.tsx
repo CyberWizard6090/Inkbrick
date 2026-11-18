@@ -14,6 +14,7 @@ import type { BlockContextMenuContext } from '../blocks/defineBlock';
 import type { ContextMenuItem } from '../context-menu/types';
 import { Icon } from '../icons/Icon';
 import { visibleCell } from './cellSelection';
+import { tableFormatActions } from './tableFormatActions';
 
 /** Правый клик в ячейке: вставить и удалить строку и столбец, в которых стоит курсор. */
 export function tableContextMenu({
@@ -90,6 +91,17 @@ export function tableContextMenu({
     });
   }
 
+  const tableBlock = getBlock(tableId);
+  // Форматирование таблицы: заголовки, полосатость, границы, закрепление, ширины.
+  const format = tableBlock
+    ? tableFormatActions(editor, tableBlock, t, (action) => {
+        editor.sealHistory();
+        flushSync(() => {
+          action();
+        });
+      }).map((item, index): ContextMenuItem => ({ ...item, separatorBefore: index === 0 }))
+    : [];
+
   return [
     ...items,
     {
@@ -134,5 +146,6 @@ export function tableContextMenu({
       disabled: size.columns < 2,
       run: () => perform('deleteTableColumn', { index: column }, after(row, column)),
     },
+    ...format,
   ];
 }
