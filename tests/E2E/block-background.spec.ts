@@ -32,6 +32,34 @@ test.describe('Block background', () => {
     await typeBlocks(page, ['first', 'second']);
   });
 
+  test('the handle of a painted block stands at the same place as the one of a plain block, not compact', async ({
+    page,
+  }) => {
+    const handleBox = async (index: number) => {
+      await page.locator(editable).nth(index).hover();
+      await expect(page.locator(handle)).toBeVisible();
+
+      return (await page.locator(handle).boundingBox())!;
+    };
+
+    const plain = await handleBox(0);
+
+    await openMenu(page, 1);
+    await page.locator(`${menu} [data-action="background-yellow"]`).click();
+    await expect(block(page, 1)).toHaveAttribute('data-background', 'yellow');
+    await page.mouse.move(2, 2);
+
+    // Ручка появляется с лёгким сдвигом: сравниваем, когда анимация закончилась.
+    await page.locator(editable).nth(1).hover();
+    await expect(page.locator(handle)).toBeVisible();
+    await expect
+      .poll(async () => Math.abs((await page.locator(handle).boundingBox())!.x - plain.x), {
+        timeout: 3000,
+      })
+      .toBeLessThanOrEqual(2);
+    await expect(page.locator(handle)).not.toHaveAttribute('data-compact', /.*/);
+  });
+
   test('the block menu paints a block, keeps its text in place and removes the background', async ({
     page,
   }) => {

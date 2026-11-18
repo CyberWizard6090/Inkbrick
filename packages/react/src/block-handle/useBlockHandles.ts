@@ -36,7 +36,11 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
       if (wrapper && row) {
         view.blocks.setHover({
           blockId,
-          x: Math.round(wrapper.getBoundingClientRect().left),
+          // Окрашенный блок выступает за колонку на отрицательный отступ: ручка стоит у края колонки, как у обычных.
+          x: Math.round(
+            wrapper.getBoundingClientRect().left -
+              Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0),
+          ),
           y: Math.round(row.top),
         });
       }

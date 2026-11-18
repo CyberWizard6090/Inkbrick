@@ -28,6 +28,15 @@ test.describe('Command palette appearance', () => {
     await typeBlocks(page, ['hello world']);
   });
 
+  test('the query line keeps its height when the list is long', async ({ page }) => {
+    await page.keyboard.press(`${modifier}+Shift+p`);
+    await expect(page.locator(palette)).toBeVisible();
+
+    const query = page.locator(`${palette} [data-inkbrick-part="query"]`);
+
+    await expect.poll(async () => (await query.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  });
+
   test('the dimming fades in and the window drops in', async ({ page }) => {
     await page.keyboard.press(`${modifier}+Shift+p`);
     await expect(page.locator(palette)).toBeVisible();
