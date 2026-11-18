@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- «Turn into» and «Background» for picked blocks (`docs/block-picking.md`): the block menu opened on a block of a picked run turns the whole run into the chosen type or paints it in one undo step, skipping the blocks the action does not apply to (no item or colour row when it fits none); the command palette's «Turn into …» commands act on the picked run too. Types without text (divider, table) stay single-block. `convertBlocks`, `convertibleIn`, `setBackgrounds`, `backgroundTargets` in `pick/actions`.
+
 - Block background (`docs/block-background.md`): `background` on paragraphs, headings, quotes, list items, callouts and toggles (`BLOCK_BACKGROUNDS`, `getBlockBackground`), a row of colours in the block menu (`props.background` of `slots.BlockMenu`), kept when the block is turned into another text type, exported to HTML as an inline style. Pale shades of the theme highlight colours keep the text readable in light and dark themes; the text stays where it was. `setBlockProps` with `undefined` now removes the property.
 
 - Table views (`docs/tables.md`): several views per table (`views` in the table props, command `setTableViews`), each with its own hidden columns, filters and a display sort that does not reorder the data. A bar over the table switches, adds, renames and deletes views and shows what is hidden; «Show all» clears the open view in one undo step. Which view is open is per reader and not part of the document. Filter conditions depend on the column type (contains, equals, greater/less for numbers and dates, empty, checked…); the header is never filtered; Tab skips hidden cells; data, copy and export are untouched. Not available with merged cells.

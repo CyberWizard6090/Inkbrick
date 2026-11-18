@@ -6,6 +6,7 @@ const editable = '.editable';
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 const handle = '[data-testid="block-handle"]';
 const picked = '[data-picked]';
+const menu = '[data-testid="block-menu"]';
 
 async function typeBlocks(page: Page, texts: string[]) {
   await page.locator(editable).first().click();
@@ -135,5 +136,36 @@ test.describe('Picking blocks', () => {
 
     await page.keyboard.press(`${modifier}+z`);
     expect(await texts(page)).toEqual(['one', 'two', 'three', 'four']);
+  });
+
+  test('the block menu turns the picked run into a type and paints it, one undo each', async ({
+    page,
+  }) => {
+    await page.locator(editable).nth(1).click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await page.locator(editable).nth(1).hover();
+    await expect(page.locator(handle)).toBeVisible();
+    await page.locator(`${handle} [data-action="grip"]`).click();
+    await page.locator(`${menu} [data-action="quote"]`).click();
+
+    await expect(page.locator('[data-inkbrick-block="quote"]')).toHaveCount(2);
+    await expect(page.locator(picked)).toHaveCount(2);
+    expect(await texts(page)).toEqual(['one', 'two', 'three', 'four']);
+
+    await page.locator(editable).nth(2).hover();
+    await page.locator(`${handle} [data-action="grip"]`).click();
+    await page.locator(`${menu} [data-action="background-yellow"]`).click();
+
+    await expect(page.locator('[data-background="yellow"]')).toHaveCount(2);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(page.locator('[data-background]')).toHaveCount(0);
+    await expect(page.locator('[data-inkbrick-block="quote"]')).toHaveCount(2);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(page.locator('[data-inkbrick-block="quote"]')).toHaveCount(0);
+    await expect(page.locator('[data-inkbrick-block="paragraph"]')).toHaveCount(4);
   });
 });
