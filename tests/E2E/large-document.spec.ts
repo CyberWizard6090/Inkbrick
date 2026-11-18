@@ -220,18 +220,20 @@ test.describe('Large document (virtual renderer)', () => {
     await expect.poll(async () => before - (await heightOf(page))).toBeGreaterThan(20000);
     await expect(block(page, 'large-1000')).toBeVisible();
 
-    const gap = await page.evaluate(() => {
-      const heading = document
-        .querySelector('.editable[data-id="large-0"]')!
-        .getBoundingClientRect();
-      const next = document
-        .querySelector('.editable[data-id="large-1000"]')!
-        .getBoundingClientRect();
+    const gapBetween = () =>
+      page.evaluate(() => {
+        const heading = document
+          .querySelector('.editable[data-id="large-0"]')!
+          .getBoundingClientRect();
+        const next = document
+          .querySelector('.editable[data-id="large-1000"]')!
+          .getBoundingClientRect();
 
-      return next.top - heading.bottom;
-    });
+        return next.top - heading.bottom;
+      });
 
-    expect(gap).toBeLessThan(40);
+    // Блоки раздела на экране сжимаются с анимацией (~220 мс): ждём, пока промежуток закроется.
+    await expect.poll(gapBetween, { timeout: 3000 }).toBeLessThan(40);
 
     const folded = await heightOf(page);
 
@@ -251,16 +253,21 @@ test.describe('Large document (virtual renderer)', () => {
     await fold(page, 'large-2000');
     await expect(block(page, 'large-3000')).toBeVisible();
 
-    const tops = await page.evaluate(() =>
-      ['large-0', 'large-1000', 'large-2000', 'large-3000'].map((id) =>
-        Math.round(
-          document.querySelector(`.editable[data-id="${id}"]`)!.getBoundingClientRect().top,
-        ),
-      ),
-    );
+    const stepsOf = () =>
+      page.evaluate(() => {
+        const tops = ['large-0', 'large-1000', 'large-2000', 'large-3000'].map((id) =>
+          Math.round(
+            document.querySelector(`.editable[data-id="${id}"]`)!.getBoundingClientRect().top,
+          ),
+        );
 
-    // Заголовки идут вплотную друг за другом (шаг одной строки заголовка), без пустых промежутков.
-    for (let i = 1; i < tops.length; i++) expect(tops[i] - tops[i - 1]).toBeLessThan(80);
+        return tops.slice(1).map((top, i) => top - tops[i]);
+      });
+
+    // Заголовки идут вплотную друг за другом (шаг одной строки заголовка), без пустых промежутков: когда анимация кончилась.
+    await expect
+      .poll(async () => Math.max(...(await stepsOf())), { timeout: 3000 })
+      .toBeLessThan(80);
   });
 
   test('the document has six heading levels and mixed blocks', async ({ page }) => {
