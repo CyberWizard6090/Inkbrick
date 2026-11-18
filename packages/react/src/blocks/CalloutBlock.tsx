@@ -1,4 +1,5 @@
-import { CALLOUT_TONES, getBlockAlign, getBlockBackground } from '@inkbrick/document';
+import { CALLOUT_TONES, getBlockAlign } from '@inkbrick/document';
+import { backgroundAttrs } from './backgroundAttrs';
 
 import { useT } from '../hooks/useT';
 import { Icon, type IconName } from '../icons/Icon';
@@ -34,7 +35,7 @@ export function CalloutBlock({ block, editor, selected, readOnly }: BlockViewPro
       className="block block-callout"
       data-inkbrick-block="callout"
       data-align={getBlockAlign(block) ?? 'left'}
-      data-background={getBlockBackground(block)}
+      {...backgroundAttrs(block)}
       data-tone={tone}
       data-block-id={block.id}
       data-selected={selected || undefined}

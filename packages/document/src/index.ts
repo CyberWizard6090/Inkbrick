@@ -14,6 +14,8 @@ export {
   isColorName,
   isBlockBackground,
   getBlockBackground,
+  getBlockBackgroundColor,
+  isHexColor,
   safeCssColor,
   exportColor,
 } from './utils/colors';

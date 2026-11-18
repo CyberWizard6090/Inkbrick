@@ -117,6 +117,11 @@
     --inkbrick-color-blue: #1473e6;
     --inkbrick-color-purple: #8b3fe0;
     --inkbrick-color-pink: #e5249b;
+    --inkbrick-color-lime: #4d7c0f;
+    --inkbrick-color-teal: #0f766e;
+    --inkbrick-color-cyan: #0e7490;
+    --inkbrick-color-indigo: #4f46e5;
+    --inkbrick-color-magenta: #c026d3;
     --inkbrick-color-red: #e5192b;
     --inkbrick-highlight-gray: #d6d6d6;
     --inkbrick-highlight-brown: #e3bf99;
@@ -127,6 +132,11 @@
     --inkbrick-highlight-purple: #d0b4ff;
     --inkbrick-highlight-pink: #ffb0e4;
     --inkbrick-highlight-red: #ff9aa3;
+    --inkbrick-highlight-lime: #d9f99d;
+    --inkbrick-highlight-teal: #99f6e4;
+    --inkbrick-highlight-cyan: #a5f3fc;
+    --inkbrick-highlight-indigo: #c7d2fe;
+    --inkbrick-highlight-magenta: #f5d0fe;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -197,6 +207,11 @@
       --inkbrick-color-blue: #4aa3ff;
       --inkbrick-color-purple: #b57dff;
       --inkbrick-color-pink: #ff6bd1;
+      --inkbrick-color-lime: #a3e635;
+      --inkbrick-color-teal: #2dd4bf;
+      --inkbrick-color-cyan: #22d3ee;
+      --inkbrick-color-indigo: #818cf8;
+      --inkbrick-color-magenta: #e879f9;
       --inkbrick-color-red: #ff5a67;
       --inkbrick-highlight-gray: #5c5c5c;
       --inkbrick-highlight-brown: #7d4a28;
@@ -207,6 +222,11 @@
       --inkbrick-highlight-purple: #6c36bb;
       --inkbrick-highlight-pink: #ab2781;
       --inkbrick-highlight-red: #b52b37;
+      --inkbrick-highlight-lime: #4d7c0f;
+      --inkbrick-highlight-teal: #0f766e;
+      --inkbrick-highlight-cyan: #0e7490;
+      --inkbrick-highlight-indigo: #4338ca;
+      --inkbrick-highlight-magenta: #a21caf;
     }
   }
 
@@ -277,6 +297,11 @@
     --inkbrick-color-blue: #4aa3ff;
     --inkbrick-color-purple: #b57dff;
     --inkbrick-color-pink: #ff6bd1;
+    --inkbrick-color-lime: #a3e635;
+    --inkbrick-color-teal: #2dd4bf;
+    --inkbrick-color-cyan: #22d3ee;
+    --inkbrick-color-indigo: #818cf8;
+    --inkbrick-color-magenta: #e879f9;
     --inkbrick-color-red: #ff5a67;
     --inkbrick-highlight-gray: #5c5c5c;
     --inkbrick-highlight-brown: #7d4a28;
@@ -287,6 +312,11 @@
     --inkbrick-highlight-purple: #6c36bb;
     --inkbrick-highlight-pink: #ab2781;
     --inkbrick-highlight-red: #b52b37;
+    --inkbrick-highlight-lime: #4d7c0f;
+    --inkbrick-highlight-teal: #0f766e;
+    --inkbrick-highlight-cyan: #0e7490;
+    --inkbrick-highlight-indigo: #4338ca;
+    --inkbrick-highlight-magenta: #a21caf;
   }
 
   :where(:root, [data-inkbrick-theme]) {
