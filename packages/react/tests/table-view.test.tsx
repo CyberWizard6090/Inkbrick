@@ -145,6 +145,21 @@ describe('table view: filters', () => {
     expect(t.rows()[1].hidden).toBe(true);
   });
 
+  it('a row added under a filter stays visible until the view settings change', () => {
+    const t = mountTable();
+
+    t.views([{ id: 'default', filters: [{ op: 'contains', value: 'p' }] }]);
+    t.run('insertTableRow', { index: 2 });
+    expect(t.rows().map((row) => row.hidden)).toEqual([false, false, false, false]);
+
+    // Ещё одна вставка не прячет первую новую строку: обе добавлены при открытом виде.
+    t.run('insertTableRow', { index: 4 });
+    expect(t.rows().every((row) => !row.hidden)).toBe(true);
+
+    t.views([{ id: 'default', filters: [{ op: 'contains', value: 'pe' }] }]);
+    expect(t.rows().map((row) => row.hidden)).toEqual([false, true, true, false, true]);
+  });
+
   it('"Show all" clears the filters and the hidden columns in one undo step', () => {
     const t = mountTable();
 
@@ -324,6 +339,28 @@ describe('table views: several views', () => {
     click(tab('By qty'));
     expect(names(t)).toEqual(['Name', 'pear', 'apple']);
     expect(t.text(t.cell(1, 0))).toBe('apple');
+  });
+
+  it('a row added under a view sort stays where it was inserted', () => {
+    const t = mountTable();
+
+    t.run('setTableColumnType', { index: 1, type: 'number' });
+    t.views([{ id: 'default', sort: { column: 1, direction: 'desc' } }]);
+    expect(names(t)).toEqual(['Name', 'pear', 'apple']);
+
+    // Строка вставлена за «apple» (вторая в документе) — на экране она за «apple», хотя по сортировке ушла бы выше.
+    t.run('insertTableRow', { index: 2 });
+    t.set(2, 0, 'kiwi');
+    t.set(2, 1, '99');
+    expect(names(t)).toEqual(['Name', 'pear', 'apple', 'kiwi']);
+
+    // Строка в начале тела — первой после заголовка.
+    t.run('insertTableRow', { index: 1 });
+    t.set(1, 0, 'fig');
+    expect(names(t)).toEqual(['Name', 'fig', 'pear', 'apple', 'kiwi']);
+
+    t.views([{ id: 'default', sort: { column: 1, direction: 'asc' } }]);
+    expect(names(t)).toEqual(['Name', 'apple', 'pear', 'kiwi', 'fig']);
   });
 
   it('adds a view from the bar, renames it by double click and deletes it', () => {

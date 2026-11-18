@@ -2,6 +2,7 @@ import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
 import { findPoint } from '../editing/selection';
+import { highlightsSupported, setHighlight } from '../editing/highlights';
 import { findMatches, replaceMatches, type FindMatch } from './search';
 
 export interface FindState {
@@ -30,14 +31,6 @@ const IDLE: FindState = {
   current: -1,
   nonce: 0,
 };
-
-type HighlightRegistry = {
-  set(name: string, highlight: unknown): void;
-  delete(name: string): void;
-};
-
-const registry = (): HighlightRegistry | undefined =>
-  (globalThis.CSS as unknown as { highlights?: HighlightRegistry } | undefined)?.highlights;
 
 export const HIGHLIGHT = 'inkbrick-find';
 export const HIGHLIGHT_CURRENT = 'inkbrick-find-current';
@@ -208,17 +201,13 @@ export class FindController {
 
   /** Перерисовывает подсветку по текущему состоянию; вызывается и после перерисовки блоков (прокрутка, правка). */
   paint(): void {
-    const highlights = registry();
-    const Highlight = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown })
-      .Highlight;
-
-    if (!highlights || !Highlight) return;
+    if (!highlightsSupported()) return;
 
     const { matches, current, open } = this.state;
 
     if (!open || matches.length === 0) {
-      highlights.delete(HIGHLIGHT);
-      highlights.delete(HIGHLIGHT_CURRENT);
+      setHighlight(HIGHLIGHT, this, []);
+      setHighlight(HIGHLIGHT_CURRENT, this, []);
       return;
     }
 
@@ -233,10 +222,9 @@ export class FindController {
       else all.push(range);
     });
 
-    highlights.set(HIGHLIGHT, new Highlight(...all));
-
-    if (now) highlights.set(HIGHLIGHT_CURRENT, new Highlight(now));
-    else highlights.delete(HIGHLIGHT_CURRENT);
+    // Подсветка общая для страницы: совпадения поиска в других редакторах остаются.
+    setHighlight(HIGHLIGHT, this, all);
+    setHighlight(HIGHLIGHT_CURRENT, this, now ? [now] : []);
   }
 
   /** Закрывает поиск и ставит курсор на текущее совпадение: выделенное совпадение удобно сразу править. */

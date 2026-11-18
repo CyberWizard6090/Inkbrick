@@ -11,6 +11,8 @@ export default [
       'playwright-report/**',
       'test-results/**',
       '.husky/_/**',
+      // Справочник API, его собирает typedoc (`pnpm docs:api`).
+      'docs/api/**',
     ],
   },
   js.configs.recommended,

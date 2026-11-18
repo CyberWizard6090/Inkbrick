@@ -245,6 +245,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   held the nested list (`validateSnapshot`: `block:list cannot be placed inside block:paragraph`). Backspace at the
   start of such an item now lifts the nested items too, instead of keeping them inside the paragraph.
 - Backspace in an empty first block removes it when a text block follows, and moves the caret there.
+- Table views: a row added while a filter or a sort of the view is on stays where it was inserted. It used to vanish
+  at once (an empty row did not pass the filter) with the caret inside the hidden row, or jump to its sorted place.
+  The filter and the sort take it into account after the next change of the view or its settings.
+- Several editors on one page: the tag and find highlights of one editor no longer wipe out the other's, and closing
+  one editor (or its search) keeps the other's highlights. Escape picks a block even while the search or the command
+  palette is open in another editor.
+- `pnpm lint` skips the generated API reference (`docs/api`), so it passes after `pnpm docs:api`.
+- `docs/export.md` lists how toggles, tables of contents, columns, footnotes and block backgrounds are exported.
 
 ## 0.1.0-alpha.0 — 2026-11-01
 

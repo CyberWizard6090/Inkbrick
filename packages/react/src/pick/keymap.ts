@@ -14,10 +14,8 @@ import {
 
 const picked = ({ view }: KeymapContext) => view.picked.size > 0;
 
-/** Панели, которые закрывает Esc сами (поиск, палитра): выбирать блок под ними нельзя. */
-const panelOpen = () =>
-  typeof document !== 'undefined' &&
-  document.querySelector('[data-inkbrick-ui="find"], [data-inkbrick-ui="palette"]') !== null;
+/** Панели этого редактора, которые закрывает Esc сами (поиск, палитра): выбирать блок под ними нельзя. */
+const panelOpen = ({ view }: KeymapContext) => view.panels.size > 0;
 
 /** Блок под кареткой, который можно выбрать, и, если выделение охватывает несколько блоков, весь их ряд. */
 function blocksAtSelection({ editor, selection }: KeymapContext): readonly string[] {
@@ -142,7 +140,7 @@ export const pickKeymap: readonly KeyBinding[] = [
     when: (context) =>
       idle(context) &&
       !picked(context) &&
-      !panelOpen() &&
+      !panelOpen(context) &&
       !context.view.slash.getState().open &&
       // У этих состояний свой Esc: меню, выделение ячеек таблицы.
       !context.view.contextMenu.getState().position &&

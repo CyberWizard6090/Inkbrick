@@ -78,6 +78,14 @@ export function CommandPalette({ commands = [], builtin = true }: CommandPalette
     [available, query],
   );
 
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    view.panels.add('palette');
+
+    return () => void view.panels.delete('palette');
+  }, [open, view]);
+
   // Фокус переносится до отрисовки: нажатия сразу после появления окна попадают в строку поиска, а не в документ.
   useLayoutEffect(() => {
     if (!open) return;
