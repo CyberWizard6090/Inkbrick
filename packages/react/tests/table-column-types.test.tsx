@@ -308,3 +308,112 @@ describe('column properties dialog', () => {
     expect(t.props().columnOptions).toBeUndefined();
   });
 });
+
+describe('keyboard in checkbox and select cells', () => {
+  const options = [
+    { label: 'Open', color: 'green' },
+    { label: 'Closed', color: 'blue' },
+  ];
+  const picker = () => document.querySelector<HTMLElement>('[data-inkbrick-ui="options-picker"]');
+  const setup = (type: 'checkbox' | 'select' | 'multiselect') => {
+    const t = mountTable();
+
+    t.configure({
+      setTableColumnType: { index: 1, type },
+      ...(type === 'checkbox' ? {} : { setTableColumnOptions: { index: 1, options } }),
+    });
+    t.caret(t.cell(1, 1), 0);
+
+    return t;
+  };
+
+  it('Space and Enter toggle a checkbox cell, the caret stays in the cell and one undo reverts it', () => {
+    const t = setup('checkbox');
+
+    expect(t.key(' ').defaultPrevented).toBe(true);
+    expect(t.text(t.cell(1, 1))).toBe('true');
+    expect(t.td(1, 1).querySelector<HTMLInputElement>('input')!.checked).toBe(true);
+
+    t.key('Enter');
+    expect(t.text(t.cell(1, 1))).toBe('');
+    expect(t.editor.document.getBlock(t.tableId)!.children).toHaveLength(3);
+
+    t.key(' ');
+    act(() => void t.editor.undo());
+    expect(t.text(t.cell(1, 1))).toBe('');
+  });
+
+  it('does not touch plain cells, the header of a checkbox column and read-only tables', () => {
+    const t = setup('checkbox');
+
+    t.caret(t.cell(1, 0), 0);
+    t.key(' ');
+    expect(t.text(t.cell(1, 0))).toBe('');
+
+    t.caret(t.cell(1, 1), 0);
+    act(() => t.editor.setReadOnly(true));
+    t.key(' ');
+    expect(t.text(t.cell(1, 1))).toBe('');
+  });
+
+  it('Enter and Alt+ArrowDown open the list of a select cell, Escape closes it and keeps the caret', () => {
+    const t = setup('select');
+
+    expect(t.key('Enter').defaultPrevented).toBe(true);
+    expect(picker()).not.toBeNull();
+    expect(
+      t.td(1, 1).querySelector('[data-inkbrick-part="cell-chips"]')!.getAttribute('aria-expanded'),
+    ).toBe('true');
+
+    act(() => void fireEvent.keyDown(picker()!, { key: 'Escape' }));
+    expect(picker()).toBeNull();
+
+    t.caret(t.cell(1, 1), 0);
+    t.key('ArrowDown', { alt: true });
+    expect(picker()).not.toBeNull();
+  });
+
+  it('arrows move through the options and Enter picks one; the list announces the active option', () => {
+    const t = setup('select');
+
+    t.key('Enter');
+    const list = picker()!;
+    const ids = [...list.querySelectorAll('[role="option"]')].map((node) => node.id);
+
+    expect(list.getAttribute('aria-activedescendant')).toBe(ids[0]);
+    expect(list.getAttribute('aria-multiselectable')).toBeNull();
+
+    act(() => void fireEvent.keyDown(list, { key: 'ArrowDown' }));
+    expect(list.getAttribute('aria-activedescendant')).toBe(ids[1]);
+
+    act(() => void fireEvent.keyDown(list, { key: 'Enter' }));
+    expect(t.text(t.cell(1, 1))).toBe('Closed');
+    expect(picker()).toBeNull();
+
+    act(() => void t.editor.undo());
+    expect(t.text(t.cell(1, 1))).toBe('');
+  });
+
+  it('a multi-select list is multiselectable and Enter in a cell opens it', () => {
+    const t = setup('multiselect');
+
+    t.key('Enter');
+    expect(picker()!.getAttribute('aria-multiselectable')).toBe('true');
+    expect(
+      t.td(1, 1).querySelector('[data-inkbrick-part="cell-chips"]')!.getAttribute('aria-controls'),
+    ).toBe(picker()!.id);
+
+    act(() => void fireEvent.keyDown(picker()!, { key: ' ' }));
+    act(() => void fireEvent.keyDown(picker()!, { key: 'ArrowDown' }));
+    act(() => void fireEvent.keyDown(picker()!, { key: 'Enter' }));
+    expect(t.text(t.cell(1, 1))).toBe('Open, Closed');
+    expect(picker()).not.toBeNull();
+  });
+
+  it('Tab still moves to the next cell', () => {
+    const t = setup('select');
+
+    t.key('Tab');
+    expect(picker()).toBeNull();
+  });
+});

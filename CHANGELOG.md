@@ -141,6 +141,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Every package has a `README.md` for its npm page: what it does, how to install it, a short example. The root
   README lists the optional blocks and tools, `@inkbrick/locales` and all the guides; the size of the React editor
   there is up to date (~61 KB gzip).
+- Table: checkbox and select cells work from the keyboard. Space and Enter toggle a checkbox cell; Enter or Alt+ArrowDown
+  open the list of a select or multi-select cell, the arrows choose, Enter or Space mark an option, Escape closes the list
+  and returns the caret to the cell. The list is exposed as a `listbox` with `aria-activedescendant`; `aria-multiselectable`
+  is set only for multi-select, and the cell button has `aria-controls`.
 
 ### Changed
 
