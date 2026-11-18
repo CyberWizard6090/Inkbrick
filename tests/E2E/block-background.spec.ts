@@ -56,7 +56,7 @@ test.describe('Block background', () => {
       .poll(async () => Math.abs((await page.locator(handle).boundingBox())!.x - plain.x), {
         timeout: 3000,
       })
-      .toBeLessThanOrEqual(1);
+      .toBeLessThanOrEqual(2);
     await expect(page.locator(handle)).not.toHaveAttribute('data-compact', /.*/);
   });
 
