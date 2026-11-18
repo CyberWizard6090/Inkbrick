@@ -21,6 +21,7 @@ export type { ColorName, BlockBackground } from './utils/colors';
 export { ALIGNMENTS, isAlignment, isAlignable, getBlockAlign, alignProps } from './utils/align';
 export type { Alignment } from './utils/align';
 export { FORMULA_CHAR, MAX_FORMULA_LENGTH, isFormulaNode } from './utils/formula';
+export { FOOTNOTE_ID, isFootnoteNode, footnoteNumbers } from './utils/footnote';
 export { MAX_NESTING_DEPTH } from './utils/nesting';
 export { normalizeMerges } from './utils/tableMerges';
 export { serializeDelimited, parseDelimited, MAX_DELIMITED_CELLS } from './utils/delimited';

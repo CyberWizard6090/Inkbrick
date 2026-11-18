@@ -8,6 +8,7 @@ import { syncToolbar } from '../toolbar/syncToolbar';
 import { openFormulaAt } from '../formula/actions';
 import { handleKeyDown } from '../keymap/keymap';
 import { useEditorUI } from '../ui/EditorUIContext';
+import { goToFootnote } from '../footnote/actions';
 import { applyBeforeInput } from './beforeInput';
 import { createInputActions } from './inputActions';
 import { readDocSelection } from './selection';
@@ -185,6 +186,16 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
       if (formula && root.contains(formula)) {
         event.preventDefault();
         openFormulaAt(view, formula);
+        return;
+      }
+
+      const footnote =
+        event.target instanceof Element ? event.target.closest('[data-inkbrick-footnote]') : null;
+
+      // Клик по номеру сноски ведёт к её тексту.
+      if (footnote && root.contains(footnote)) {
+        event.preventDefault();
+        goToFootnote(editor, view, footnote.getAttribute('data-inkbrick-footnote')!);
         return;
       }
 

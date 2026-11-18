@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CommandPalette,
+  createFootnote,
   DocumentView,
   EditorProvider,
   FindReplacePanel,
@@ -240,6 +241,13 @@ function loadSample(editor: Editor): void {
   after = table.id;
 
   add('block:toc');
+
+  // Сноска: ссылка в тексте и её текст внизу заметки (следующие блоки вставляются выше неё).
+  const sentence = 'A sentence with a footnote.';
+  const noted = add('block:paragraph', undefined, [sentence]);
+  const footnote = createFootnote(editor, noted, sentence.length - 1);
+
+  if (footnote) write(footnote.blockId, ['The text of the footnote.']);
 
   const leftColumn = add('block:columns', undefined, ['Left column']);
   const columnsId = editor.document.getBlock(

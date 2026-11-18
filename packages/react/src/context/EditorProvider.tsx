@@ -183,7 +183,16 @@ export function EditorProvider({
       slashItems:
         customSlash === false
           ? []
-          : resolveSlashItems(mergeById(controllerSlashItems(editor), customSlash ?? []), t),
+          : resolveSlashItems(
+              mergeById(
+                [
+                  ...controllerSlashItems(editor),
+                  ...(blocks ?? []).flatMap((block) => block.slashActions ?? []),
+                ],
+                customSlash ?? [],
+              ),
+              t,
+            ),
       highlighter: code === false ? null : (code ?? lazyHighlightCode),
       formulaRenderer: math === false ? null : (math ?? temmlRenderer),
       locale: locale ?? 'en',

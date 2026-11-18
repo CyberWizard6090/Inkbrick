@@ -208,6 +208,73 @@
     text-align: start;
   }
 
+  /* Сноски: номер ссылки в тексте (рисуется в теневом корне) и текст сноски внизу заметки. */
+  :where([data-inkbrick-footnote]) {
+    display: inline;
+    padding: 0 1px;
+    border-radius: var(--inkbrick-radius-control);
+    color: var(--inkbrick-brand-fg);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-footnote]:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-footnote])::part(label) {
+    font-size: 0.75em;
+    font-weight: var(--inkbrick-font-weight-semibold);
+    line-height: 0;
+    vertical-align: baseline;
+    position: relative;
+    top: -0.4em;
+  }
+
+  :where([data-inkbrick-footnote][data-state='fallback'])::after {
+    content: '*';
+    vertical-align: super;
+    font-size: 0.75em;
+  }
+
+  :where([data-inkbrick-block='footnote']) {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--inkbrick-fg-2);
+    font-size: 0.9em;
+  }
+
+  :where([data-inkbrick-block='footnote'] > [data-inkbrick-part='content']) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  :where([data-inkbrick-block='footnote'] > [data-inkbrick-part='footnote-number']) {
+    min-width: 1.5em;
+    color: var(--inkbrick-brand-fg);
+    font-weight: var(--inkbrick-font-weight-semibold);
+    text-align: end;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-block='footnote'][data-orphan] > [data-inkbrick-part='footnote-number']) {
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where([data-inkbrick-part='footnote-back']) {
+    padding: 0 4px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-brand-fg);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='footnote-back']:hover) {
+    background: var(--inkbrick-bg-3);
+  }
+
   /* Вид таблицы: полоса над таблицей, пока часть её скрыта фильтрами или скрытием столбцов. */
   :where([data-inkbrick-block='table'] > [data-inkbrick-part='view-bar']) {
     display: flex;

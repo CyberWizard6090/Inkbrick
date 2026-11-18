@@ -10,6 +10,7 @@ export * from './blocks/ListSchema';
 export * from './blocks/QuoteSchema';
 export * from './blocks/CodeSchema';
 export * from './blocks/DividerSchema';
+export * from './blocks/FootnoteSchema';
 export * from './blocks/CalloutSchema';
 export * from './blocks/ImageSchema';
 export * from './blocks/FormulaSchema';

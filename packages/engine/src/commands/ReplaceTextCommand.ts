@@ -16,7 +16,7 @@ export const ReplaceTextCommand: Command<ReplaceTextPayload, CaretResult> = {
     const inherited = plain
       ? undefined
       : engine.inline.attributesBefore(block.content, start === end ? start : start + 1);
-    const { link: _link, formula: _formula, ...attributes } = inherited ?? {};
+    const { link: _link, formula: _formula, footnote: _footnote, ...attributes } = inherited ?? {};
 
     const withoutRange = engine.inline.deleteText(block.content, start, end);
     const next = engine.inline.insertText(

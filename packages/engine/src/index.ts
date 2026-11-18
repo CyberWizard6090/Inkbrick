@@ -34,5 +34,6 @@ export { sanitizeFragment } from './clipboard/sanitize';
 export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
 export * from './table';
 export * from './toc';
+export * from './footnote';
 export * from './columns';
 export * from './toggle';

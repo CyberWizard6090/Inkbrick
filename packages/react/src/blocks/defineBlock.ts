@@ -8,6 +8,7 @@ import type { EditorView } from '../editing/EditorView';
 import type { ContextMenuItem } from '../context-menu/types';
 import type { DocPoint } from '../editing/selection';
 import type { KeyBinding } from '../keymap/types';
+import type { SlashMenuItem } from '../slash/types';
 import type { TFunction } from '../i18n/translate';
 import type { BlockComponent, BlockComponentRegistry, BlockViewProps } from '../ui/types';
 
@@ -42,6 +43,11 @@ export interface ReactBlockDefinition<
    * под разделителем.
    */
   readonly contextMenu?: (context: BlockContextMenuContext) => readonly ContextMenuItem[];
+  /**
+   * Пункты slash-меню, которые не превращают блок, а выполняют действие на месте набранного «/» (например, вставляют
+   * сноску). Поле `flavour` пункта показывает, какой блок нужен документу: без его схемы пункт скрыт.
+   */
+  readonly slashActions?: readonly SlashMenuItem[];
 }
 
 /**

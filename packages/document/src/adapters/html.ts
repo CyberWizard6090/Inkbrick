@@ -1,12 +1,14 @@
 import type { Document } from '../document';
 import type { BaseBlock, InlineNode } from '../model';
 import { exportColor, isBlockBackground } from '../utils/colors';
+import { isFootnoteNode } from '../utils/footnote';
 import { isFormulaNode } from '../utils/formula';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
   collectHeadings,
   exportTable,
+  footnoteLabel,
   groupSiblings,
   headingLevel,
   isOrdered,
@@ -49,6 +51,12 @@ function inlineToHtml(nodes: readonly InlineNode[], inCode = false): string {
       const { insert, attributes } = node;
 
       // Встроенная формула: `<span class="math inline">\(…\)</span>` — как у pandoc, подхватывается KaTeX/MathJax.
+      if (isFootnoteNode(node)) {
+        const id = String(attributes!.footnote);
+
+        return `<sup><a href="#fn-${id}">${footnoteLabel(id)}</a></sup>`.repeat(insert.length);
+      }
+
       if (isFormulaNode(node)) {
         const latex = escapeHtml(String(attributes!.formula));
 
@@ -120,6 +128,12 @@ function renderBlock(block: BaseBlock): string {
     }
     case 'block:divider':
       return '<hr>';
+    case 'block:footnote': {
+      const id = stringProp(block, 'id').replace(/[^\w-]/g, '');
+      const label = footnoteLabel(id);
+
+      return `<aside id="fn-${id}" data-footnote="${label}"><sup>${label}</sup> ${text}</aside>`;
+    }
     case 'block:formula': {
       const latex = escapeHtml(stringProp(block, 'latex'));
 

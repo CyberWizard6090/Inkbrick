@@ -7,10 +7,13 @@ import {
   type TextAttributes,
 } from '@inkbrick/document';
 
+import type { FootnoteIndex } from '../footnote/FootnoteIndex';
 import { ensureMathStyles, mountFormula, type FormulaRenderer } from '../math/renderer';
 
 export interface RenderInlineOptions {
   readonly formulaRenderer?: FormulaRenderer | null;
+  /** Индекс сносок редактора: ссылки на сноски показывают в нём свой номер. Нужен, только если в тексте есть сноски. */
+  readonly footnotes?: FootnoteIndex;
 }
 
 /** Фрагменты, которые не проверяются на орфографию: код, ссылки, формулы. */
@@ -67,6 +70,39 @@ function renderFormulaAtom(latex: string, options: RenderInlineOptions): HTMLEle
   return host;
 }
 
+/**
+ * Ссылка на сноску — объект из одного символа. Номер рисуется в теневом корне и не входит в текст блока, поэтому смещения
+ * курсора остаются равными смещениям модели; цифра обновляется индексом, когда номера меняются.
+ */
+function renderFootnoteAtom(id: string, options: RenderInlineOptions): HTMLElement {
+  const doc = globalThis.document;
+  const host = doc.createElement('span');
+
+  host.setAttribute('data-inkbrick-footnote', id);
+  host.setAttribute('data-inkbrick-part', 'footnote-ref');
+  host.setAttribute('contenteditable', 'false');
+  host.setAttribute('spellcheck', 'false');
+  host.textContent = FORMULA_CHAR;
+
+  const label = doc.createElement('sup');
+
+  label.setAttribute('part', 'label');
+
+  try {
+    host.attachShadow({ mode: 'open' }).appendChild(label);
+  } catch {
+    // Теневой DOM недоступен: номер показывает CSS (`::after`), смещения не меняются.
+    host.setAttribute('data-state', 'fallback');
+
+    return host;
+  }
+
+  if (options.footnotes) options.footnotes.addLabel(label, id);
+  else label.textContent = '?';
+
+  return host;
+}
+
 function renderNode(
   insert: string,
   attributes: TextAttributes | undefined,
@@ -74,7 +110,14 @@ function renderNode(
 ): Node {
   let node: Node;
 
-  if (typeof attributes?.formula === 'string') {
+  if (typeof attributes?.footnote === 'string') {
+    const fragment = globalThis.document.createDocumentFragment();
+
+    for (let i = 0; i < insert.length; i++)
+      fragment.appendChild(renderFootnoteAtom(attributes.footnote, options));
+
+    node = fragment;
+  } else if (typeof attributes?.formula === 'string') {
     const fragment = globalThis.document.createDocumentFragment();
 
     for (let i = 0; i < insert.length; i++)
@@ -138,12 +181,18 @@ export function renderInline(
   }
 
   /*
-   * <br> нужен в двух случаях: пустой блок (иначе в нём нельзя поставить курсор)
-   * и завершающий перевод строки в white-space: pre-wrap (виден только с <br> после него).
+   * <br> нужен в трёх случаях: пустой блок (иначе в нём нельзя поставить курсор),
+   * завершающий перевод строки в white-space: pre-wrap (виден только с <br> после него) и
+   * блок, оканчивающийся объектом (формула, ссылка на сноску): после нередактируемого элемента в конце строки
+   * браузер не ставит курсор, а с <br> за ним — ставит.
    * На смещения текста <br> не влияет: Range.toString() его игнорирует.
    */
   const text = nodes.map((node) => node.insert).join('');
-  if (text === '' || text.endsWith('\n')) {
+  const last = nodes.findLast((node) => node.insert.length > 0);
+  const endsWithObject =
+    typeof last?.attributes?.formula === 'string' || typeof last?.attributes?.footnote === 'string';
+
+  if (text === '' || text.endsWith('\n') || endsWithObject) {
     fragment.appendChild(globalThis.document.createElement('br'));
   }
 

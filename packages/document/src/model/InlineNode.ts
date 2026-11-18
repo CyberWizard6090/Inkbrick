@@ -9,6 +9,8 @@ export interface TextAttributes {
   backgroundColor?: string;
   /** Встроенная формула: код LaTeX. Узел с этим атрибутом состоит из символов-объектов `FORMULA_CHAR`. */
   formula?: string;
+  /** Ссылка на сноску: код сноски (`block:footnote` с тем же `id`). Узел состоит из символов-объектов `FORMULA_CHAR`. */
+  footnote?: string;
   [key: string]: string | boolean | undefined;
 }
 
