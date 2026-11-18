@@ -205,6 +205,11 @@
     height: 28px;
   }
 
+  /* Ручка появляется плавно: проявляется и чуть выезжает слева. Переход от блока к блоку её не мигает — она та же. */
+  :where([data-inkbrick-ui='block-handle']) {
+    animation: inkbrick-handle-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
   /* Узкий экран: слева от текста нет полосы, ручка лежит поверх текста — нужна подложка */
   :where([data-inkbrick-ui='block-handle'][data-compact]) {
     padding: 0 2px;
@@ -543,6 +548,7 @@
     border-radius: 1px;
     background: var(--inkbrick-brand-bg);
     pointer-events: none;
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where(body[data-inkbrick-dragging], body[data-inkbrick-dragging] *) {
@@ -1094,8 +1100,23 @@
     }
   }
 
+  @keyframes inkbrick-handle-in {
+    from {
+      opacity: 0;
+      transform: translateX(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    :where([data-inkbrick-ui='select']) {
+    :where([data-inkbrick-ui='select']),
+    :where([data-inkbrick-ui='block-handle']),
+    :where([data-inkbrick-ui='drop-indicator']) {
       animation: none;
     }
   }

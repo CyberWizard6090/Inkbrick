@@ -144,10 +144,20 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | Подсветка кода           | `--inkbrick-syntax-{keyword,string,comment,number,function,type,constant,builtin,variable,property,tag,attribute,meta,regex}`                     |
 | Цвета текста и подсветки | `--inkbrick-color-<имя>`, `--inkbrick-highlight-<имя>` (имена палитры: black, white, gray, brown, orange, yellow, green, blue, purple, pink, red) |
 | Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-gutter`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`              |
+| Появление ручки          | `--inkbrick-appear-duration` (100ms; `0ms` выключает), `--inkbrick-appear-shift` (4px)                                                            |
 
 Прежние имена (`--inkbrick-bg-surface`, `--inkbrick-text-primary`, `--inkbrick-accent-color`, …) продолжают работать как псевдонимы.
 
 Подключать можно по частям: `@inkbrick/styles/tokens.css`, `base.css`, `blocks.css`, `ui.css`.
+
+### Плавное появление
+
+Как в Notion, ручка блока при появлении проявляется и чуть выезжает слева (`@keyframes inkbrick-handle-in`), линия вставки при
+переносе проявляется (`inkbrick-fade-in`), а переносимый блок притухает до 0.4, а не мигает. Переход ручки от блока к блоку
+анимацию не запускает: это тот же узел. Длительность и сдвиг задают токены `--inkbrick-appear-duration` и
+`--inkbrick-appear-shift`; `--inkbrick-appear-duration: 0ms` выключает движение. При `prefers-reduced-motion: reduce` анимации
+и переходы отключены. Всё это обычный CSS в слое `inkbrick.ui` и `inkbrick.blocks`: любое ваше правило победит без `!important`,
+например `[data-inkbrick-ui='block-handle'] { animation: none }`.
 
 ## Иконки
 

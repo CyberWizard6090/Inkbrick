@@ -279,6 +279,70 @@ test.describe('Add block below', () => {
   });
 });
 
+test.describe('Block handle appearance', () => {
+  const animationOf = (page: Page, selector: string) =>
+    page.locator(selector).evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return { name: style.animationName, duration: style.animationDuration };
+    });
+
+  test('fades in with the animation from the styles, and does not blink between blocks', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await typeBlocks(page, ['one', 'two']);
+    await page.mouse.move(2, 2);
+
+    await hoverBlock(page, 0);
+    expect(await animationOf(page, handle)).toEqual({
+      name: 'inkbrick-handle-in',
+      duration: '0.1s',
+    });
+
+    // Переход к другому блоку — та же ручка: узел не пересоздаётся, поэтому анимация не запускается заново.
+    await page.locator(handle).evaluate((element) => element.setAttribute('data-probe', '1'));
+    await hoverBlock(page, 1);
+    await expect(page.locator(`${handle}[data-probe="1"]`)).toHaveCount(1);
+  });
+
+  test('the drop line fades in', async ({ page }) => {
+    await page.goto('/');
+    await typeBlocks(page, ['one', 'two', 'three']);
+    await dragBlock(page, 0, 2, 'bottom', false);
+
+    await expect(page.locator('[data-testid="drop-indicator"]')).toBeVisible();
+    expect(await animationOf(page, '[data-testid="drop-indicator"]')).toEqual({
+      name: 'inkbrick-fade-in',
+      duration: '0.1s',
+    });
+
+    await page.mouse.up();
+  });
+
+  test('is off with prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await typeBlocks(page, ['one', 'two']);
+    await page.mouse.move(2, 2);
+
+    await hoverBlock(page, 0);
+    expect((await animationOf(page, handle)).name).toBe('none');
+  });
+
+  test('the duration and the shift are tokens: 0ms turns the animation into an instant one', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.addStyleTag({ content: ':root { --inkbrick-appear-duration: 0ms; }' });
+    await typeBlocks(page, ['one', 'two']);
+    await page.mouse.move(2, 2);
+
+    await hoverBlock(page, 0);
+    expect((await animationOf(page, handle)).duration).toBe('0s');
+  });
+});
+
 test.describe('Drag and drop', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');

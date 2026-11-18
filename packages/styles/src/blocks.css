@@ -1357,6 +1357,14 @@
 
   :where([data-inkbrick-root] [data-inkbrick-dragging='true']) {
     opacity: 0.4;
+    /* Блок, который понесли, мягко притухает, а не мигает. */
+    transition: opacity var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-root] [data-inkbrick-dragging='true']) {
+      transition: none;
+    }
   }
 
   /* ---- Выравнивание текста: data-align на блоке, действует на его собственный текст (не на вложенные блоки) ---- */

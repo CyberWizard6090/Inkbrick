@@ -35,6 +35,9 @@
     --inkbrick-duration-normal: 150ms;
     --inkbrick-duration-slow: 220ms;
     --inkbrick-curve: cubic-bezier(0.33, 0, 0.67, 1);
+    /* Плавное появление ручки блока и линии вставки (как в Notion): 0ms выключает, сдвиг — откуда она выезжает */
+    --inkbrick-appear-duration: var(--inkbrick-duration-fast);
+    --inkbrick-appear-shift: 4px;
 
     --inkbrick-z-handle: 9990;
     --inkbrick-z-menu: 9995;
