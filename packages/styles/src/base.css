@@ -89,11 +89,18 @@
 
   :where([data-inkbrick-part='content'] code) {
     padding: 1px 4px;
-    border: 1px solid var(--inkbrick-stroke-2);
+    border: 1px solid transparent;
     border-radius: var(--inkbrick-radius-control);
-    background: var(--inkbrick-bg-3);
+    background: var(--inkbrick-inline-code-bg);
+    color: var(--inkbrick-inline-code-fg);
     font-family: var(--inkbrick-font-mono);
     font-size: 0.9em;
+  }
+
+  :where([data-inkbrick-root])::selection,
+  :where([data-inkbrick-root] *)::selection {
+    background: var(--inkbrick-selection-bg);
+    color: inherit;
   }
 
   /* Ссылка подчёркнута всегда: отличать её от текста только цветом недоступно (WCAG 1.4.1) */

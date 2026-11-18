@@ -35,7 +35,7 @@
     --inkbrick-duration-normal: 150ms;
     --inkbrick-duration-slow: 220ms;
     --inkbrick-curve: cubic-bezier(0.33, 0, 0.67, 1);
-    /* Плавное появление ручки блока, линии вставки, slash-меню, меню блока, контекстного меню, toolbar, палитры команд и панели поиска (как в Notion): 0ms выключает, сдвиг — откуда они выезжают */
+    /* Плавное появление ручки блока, линии вставки, slash-меню, меню блока, контекстного меню, toolbar, палитры команд и панели поиска: 0ms выключает, сдвиг — откуда они выезжают */
     --inkbrick-appear-duration: var(--inkbrick-duration-fast);
     --inkbrick-appear-shift: 4px;
     /* Плавное исчезновение тех же элементов: 0ms убирает их сразу */
@@ -53,51 +53,49 @@
   :where(:root, [data-inkbrick-theme='light']) {
     color-scheme: light;
 
-    --inkbrick-fg-1: #242424;
-    --inkbrick-fg-2: #424242;
-    --inkbrick-fg-3: #616161;
-    --inkbrick-fg-4: #707070;
-    --inkbrick-fg-disabled: #bdbdbd;
+    --inkbrick-fg-1: #37352f;
+    --inkbrick-fg-2: #55534e;
+    --inkbrick-fg-3: #65635e;
+    --inkbrick-fg-4: #66645f;
+    --inkbrick-fg-disabled: #b4b3af;
     --inkbrick-fg-on-brand: #ffffff;
 
-    --inkbrick-bg-1: #ffffff; /* поверхности: документ, меню, панели */
-    --inkbrick-bg-2: #fafafa;
-    --inkbrick-bg-3: #f5f5f5; /* фон приложения, код */
-    --inkbrick-bg-4: #f0f0f0;
-    --inkbrick-bg-hover: #f5f5f5;
-    --inkbrick-bg-pressed: #e0e0e0;
-    --inkbrick-bg-selected: #ebebeb;
+    --inkbrick-bg-1: #ffffff;
+    --inkbrick-bg-3: #f1f1ef;
+    --inkbrick-bg-hover: #efeeec;
+    --inkbrick-bg-pressed: #e3e2e0;
+    --inkbrick-bg-selected: #e8e7e4;
 
-    --inkbrick-stroke-1: #d1d1d1;
-    --inkbrick-stroke-2: #e0e0e0;
-    --inkbrick-stroke-3: #f0f0f0;
-    --inkbrick-stroke-accessible: #616161;
+    --inkbrick-stroke-1: #dfdedb;
+    --inkbrick-stroke-2: #e9e9e7;
+    --inkbrick-stroke-3: #f1f1ef;
+    --inkbrick-stroke-accessible: #787774;
     --inkbrick-stroke-focus-1: #ffffff;
-    --inkbrick-stroke-focus-2: #000000;
+    --inkbrick-stroke-focus-2: #2383e2;
 
-    --inkbrick-brand-bg: #0078d4;
-    --inkbrick-brand-bg-hover: #106ebe;
-    --inkbrick-brand-bg-pressed: #004578;
-    --inkbrick-brand-fg: #0f6cbd;
-    --inkbrick-brand-link: #106ebe;
-    --inkbrick-brand-tint: #eff6fc;
+    --inkbrick-brand-bg: #2383e2;
+    --inkbrick-brand-bg-hover: #0077d4;
+    --inkbrick-brand-bg-pressed: #0b6ec5;
+    --inkbrick-brand-fg: #0b6bcb;
+    --inkbrick-brand-link: #0b6bcb;
+    --inkbrick-brand-tint: #e7f3f8;
 
-    --inkbrick-status-info-fg: #106ebe;
-    --inkbrick-status-info-bg: #eff6fc;
-    --inkbrick-status-warning-fg: #bc4b09;
-    --inkbrick-status-warning-bg: #fff9f5;
-    --inkbrick-status-success-fg: #107c10;
-    --inkbrick-status-success-bg: #f1faf1;
-    --inkbrick-status-danger-fg: #b10e1c;
-    --inkbrick-status-danger-bg: #fdf3f4;
+    --inkbrick-status-info-fg: #65635e;
+    --inkbrick-status-info-bg: #f1f1ef;
+    --inkbrick-status-warning-fg: #8a5f0a;
+    --inkbrick-status-warning-bg: #fbf3db;
+    --inkbrick-status-success-fg: #2b6b4d;
+    --inkbrick-status-success-bg: #edf3ec;
+    --inkbrick-status-danger-fg: #b42318;
+    --inkbrick-status-danger-bg: #fdebec;
 
-    --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.12);
-    --inkbrick-shadow-key: rgba(0, 0, 0, 0.14);
+    --inkbrick-shadow-ambient: rgba(15, 15, 15, 0.05);
+    --inkbrick-shadow-key: rgba(15, 15, 15, 0.1);
 
     --inkbrick-syntax-keyword: #0000ff;
     --inkbrick-syntax-string: #a31515;
-    --inkbrick-syntax-comment: #008000;
-    --inkbrick-syntax-number: #098658;
+    --inkbrick-syntax-comment: #5d7a5a;
+    --inkbrick-syntax-number: #0b7a4f;
     --inkbrick-syntax-function: #795e26;
     --inkbrick-syntax-type: #267f99;
     --inkbrick-syntax-constant: #0070c1;
@@ -109,80 +107,86 @@
     --inkbrick-syntax-meta: #af00db;
     --inkbrick-syntax-regex: #811f3f;
 
-    --inkbrick-color-gray: #6b6b6b;
-    --inkbrick-color-brown: #a0592a;
-    --inkbrick-color-orange: #f26a00;
-    --inkbrick-color-yellow: #d49b00;
-    --inkbrick-color-green: #1ea01e;
-    --inkbrick-color-blue: #1473e6;
-    --inkbrick-color-purple: #8b3fe0;
-    --inkbrick-color-pink: #e5249b;
-    --inkbrick-color-lime: #4d7c0f;
-    --inkbrick-color-teal: #0f766e;
-    --inkbrick-color-cyan: #0e7490;
-    --inkbrick-color-indigo: #4f46e5;
-    --inkbrick-color-magenta: #c026d3;
-    --inkbrick-color-red: #e5192b;
-    --inkbrick-highlight-gray: #d6d6d6;
-    --inkbrick-highlight-brown: #e3bf99;
-    --inkbrick-highlight-orange: #ffc58f;
-    --inkbrick-highlight-yellow: #ffe74a;
-    --inkbrick-highlight-green: #96e396;
-    --inkbrick-highlight-blue: #94c8ff;
-    --inkbrick-highlight-purple: #d0b4ff;
-    --inkbrick-highlight-pink: #ffb0e4;
-    --inkbrick-highlight-red: #ff9aa3;
-    --inkbrick-highlight-lime: #d9f99d;
-    --inkbrick-highlight-teal: #99f6e4;
-    --inkbrick-highlight-cyan: #a5f3fc;
-    --inkbrick-highlight-indigo: #c7d2fe;
-    --inkbrick-highlight-magenta: #f5d0fe;
+    --inkbrick-color-gray: #6f6e69;
+    --inkbrick-color-brown: #8f5f48;
+    --inkbrick-color-orange: #b85a00;
+    --inkbrick-color-yellow: #8f6500;
+    --inkbrick-color-green: #3a7456;
+    --inkbrick-color-blue: #2c6f98;
+    --inkbrick-color-purple: #82569f;
+    --inkbrick-color-pink: #b13f7b;
+    --inkbrick-color-lime: #4f7a1b;
+    --inkbrick-color-teal: #2b7a73;
+    --inkbrick-color-cyan: #1f7388;
+    --inkbrick-color-indigo: #5b5bb0;
+    --inkbrick-color-magenta: #a8399c;
+    --inkbrick-color-red: #c4342d;
+    --inkbrick-highlight-gray: #e3e2e0;
+    --inkbrick-highlight-brown: #eee0da;
+    --inkbrick-highlight-orange: #fadec9;
+    --inkbrick-highlight-yellow: #fdecc8;
+    --inkbrick-highlight-green: #dbeddb;
+    --inkbrick-highlight-blue: #d3e5ef;
+    --inkbrick-highlight-purple: #e8deee;
+    --inkbrick-highlight-pink: #f5e0e9;
+    --inkbrick-highlight-red: #ffe2dd;
+    --inkbrick-highlight-lime: #e6f0cf;
+    --inkbrick-highlight-teal: #d3ece9;
+    --inkbrick-highlight-cyan: #d5ecf2;
+    --inkbrick-highlight-indigo: #e0e2f5;
+    --inkbrick-highlight-magenta: #f1dcee;
+
+    --inkbrick-bg-2: #f7f6f3;
+    --inkbrick-bg-4: #ebeceb;
+    --inkbrick-inline-code-fg: #b92f2f;
+    --inkbrick-inline-code-bg: rgba(135, 131, 120, 0.15);
+    --inkbrick-selection-bg: rgba(45, 170, 219, 0.3);
   }
 
   @media (prefers-color-scheme: dark) {
     :where(:root:not([data-inkbrick-theme='light'])) {
       color-scheme: dark;
 
-      --inkbrick-fg-1: #ffffff;
-      --inkbrick-fg-2: #d6d6d6;
-      --inkbrick-fg-3: #adadad;
-      --inkbrick-fg-4: #999999;
-      --inkbrick-fg-disabled: #5c5c5c;
+      --inkbrick-fg-1: rgba(255, 255, 255, 0.81);
+      --inkbrick-fg-2: #bdbdbd;
+      --inkbrick-fg-3: #9b9b9b;
+      --inkbrick-fg-4: #8b8b8b;
+      --inkbrick-fg-disabled: #5a5a5a;
       --inkbrick-fg-on-brand: #ffffff;
 
-      --inkbrick-bg-1: #292929;
-      --inkbrick-bg-2: #1f1f1f;
-      --inkbrick-bg-3: #141414;
-      --inkbrick-bg-4: #0a0a0a;
-      --inkbrick-bg-hover: #3d3d3d;
-      --inkbrick-bg-pressed: #1f1f1f;
-      --inkbrick-bg-selected: #383838;
+      --inkbrick-bg-1: #191919;
+      --inkbrick-bg-2: #202020;
+      --inkbrick-bg-3: #252525;
+      --inkbrick-bg-4: #2f2f2f;
+      --inkbrick-bg-hover: #2c2c2c;
+      --inkbrick-bg-pressed: #373737;
+      --inkbrick-bg-selected: #333333;
 
-      --inkbrick-stroke-1: #666666;
-      --inkbrick-stroke-2: #525252;
-      --inkbrick-stroke-3: #3d3d3d;
-      --inkbrick-stroke-accessible: #adadad;
-      --inkbrick-stroke-focus-1: #000000;
-      --inkbrick-stroke-focus-2: #ffffff;
+      --inkbrick-stroke-1: #3f3f3f;
+      --inkbrick-stroke-2: #2f2f2f;
+      --inkbrick-stroke-3: #272727;
+      --inkbrick-stroke-accessible: #8b8b8b;
+      --inkbrick-stroke-focus-1: #191919;
+      --inkbrick-stroke-focus-2: #529cca;
 
-      --inkbrick-brand-bg: #106ebe;
-      --inkbrick-brand-bg-hover: #0078d4;
-      --inkbrick-brand-bg-pressed: #004578;
-      --inkbrick-brand-fg: #479ef5;
-      --inkbrick-brand-link: #2899f5;
-      --inkbrick-brand-tint: #002848;
+      --inkbrick-brand-bg: #2383e2;
+      --inkbrick-brand-bg-hover: #3a92ea;
+      --inkbrick-brand-bg-pressed: #1a73cc;
+      --inkbrick-brand-fg: #529cca;
+      --inkbrick-brand-link: #6ab0e8;
+      --inkbrick-brand-tint: #1c3447;
 
-      --inkbrick-status-info-fg: #3aa0f3;
-      --inkbrick-status-info-bg: #002848;
-      --inkbrick-status-warning-fg: #f7630c;
-      --inkbrick-status-warning-bg: #411200;
-      --inkbrick-status-success-fg: #54b054;
-      --inkbrick-status-success-bg: #052505;
-      --inkbrick-status-danger-fg: #dc626d;
-      --inkbrick-status-danger-bg: #3f1011;
+      --inkbrick-status-info-fg: #9b9b9b;
+      --inkbrick-status-info-bg: #252525;
+      --inkbrick-status-warning-fg: #d9a441;
+      --inkbrick-status-warning-bg: #3a3322;
+      --inkbrick-status-success-fg: #4dab9a;
+      --inkbrick-status-success-bg: #1f3a33;
+      --inkbrick-status-danger-fg: #ff7369;
+      --inkbrick-status-danger-bg: #4a2a29;
 
-      --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.24);
-      --inkbrick-shadow-key: rgba(0, 0, 0, 0.28);
+      --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.3);
+      --inkbrick-shadow-key: rgba(0, 0, 0, 0.4);
 
       --inkbrick-syntax-keyword: #569cd6;
       --inkbrick-syntax-string: #ce9178;
@@ -199,80 +203,84 @@
       --inkbrick-syntax-meta: #c586c0;
       --inkbrick-syntax-regex: #d16969;
 
-      --inkbrick-color-gray: #b8b8b8;
-      --inkbrick-color-brown: #e08f55;
-      --inkbrick-color-orange: #ff8a3d;
-      --inkbrick-color-yellow: #ffd21f;
-      --inkbrick-color-green: #4ade4a;
-      --inkbrick-color-blue: #4aa3ff;
-      --inkbrick-color-purple: #b57dff;
-      --inkbrick-color-pink: #ff6bd1;
-      --inkbrick-color-lime: #a3e635;
-      --inkbrick-color-teal: #2dd4bf;
-      --inkbrick-color-cyan: #22d3ee;
-      --inkbrick-color-indigo: #818cf8;
-      --inkbrick-color-magenta: #e879f9;
-      --inkbrick-color-red: #ff5a67;
-      --inkbrick-highlight-gray: #5c5c5c;
-      --inkbrick-highlight-brown: #7d4a28;
-      --inkbrick-highlight-orange: #b0480a;
-      --inkbrick-highlight-yellow: #947700;
-      --inkbrick-highlight-green: #1f7d1f;
-      --inkbrick-highlight-blue: #1c62bd;
-      --inkbrick-highlight-purple: #6c36bb;
-      --inkbrick-highlight-pink: #ab2781;
-      --inkbrick-highlight-red: #b52b37;
-      --inkbrick-highlight-lime: #4d7c0f;
-      --inkbrick-highlight-teal: #0f766e;
-      --inkbrick-highlight-cyan: #0e7490;
-      --inkbrick-highlight-indigo: #4338ca;
-      --inkbrick-highlight-magenta: #a21caf;
+      --inkbrick-color-gray: #9b9b9b;
+      --inkbrick-color-brown: #bb8f78;
+      --inkbrick-color-orange: #e08a3c;
+      --inkbrick-color-yellow: #d9a441;
+      --inkbrick-color-green: #4dab9a;
+      --inkbrick-color-blue: #529cca;
+      --inkbrick-color-purple: #a98ad0;
+      --inkbrick-color-pink: #d669a2;
+      --inkbrick-color-lime: #9bbf4d;
+      --inkbrick-color-teal: #3fb5a7;
+      --inkbrick-color-cyan: #4cb4cc;
+      --inkbrick-color-indigo: #8f94e0;
+      --inkbrick-color-magenta: #cf7bc7;
+      --inkbrick-color-red: #ff7369;
+      --inkbrick-highlight-gray: #454b4e;
+      --inkbrick-highlight-brown: #4a3f3a;
+      --inkbrick-highlight-orange: #594a3a;
+      --inkbrick-highlight-yellow: #59563b;
+      --inkbrick-highlight-green: #354c4b;
+      --inkbrick-highlight-blue: #364954;
+      --inkbrick-highlight-purple: #443f57;
+      --inkbrick-highlight-pink: #533b4c;
+      --inkbrick-highlight-red: #594141;
+      --inkbrick-highlight-lime: #414b2c;
+      --inkbrick-highlight-teal: #2f4a47;
+      --inkbrick-highlight-cyan: #2d4a52;
+      --inkbrick-highlight-indigo: #3b3d5c;
+      --inkbrick-highlight-magenta: #51374d;
+
+      --inkbrick-inline-code-fg: #ff7369;
+      --inkbrick-inline-code-bg: rgba(135, 131, 120, 0.15);
+      --inkbrick-selection-bg: rgba(45, 170, 219, 0.3);
     }
   }
 
   :where([data-inkbrick-theme='dark']) {
     color-scheme: dark;
 
-    --inkbrick-fg-1: #ffffff;
-    --inkbrick-fg-2: #d6d6d6;
-    --inkbrick-fg-3: #adadad;
-    --inkbrick-fg-4: #999999;
-    --inkbrick-fg-disabled: #5c5c5c;
+    --inkbrick-fg-1: rgba(255, 255, 255, 0.81);
+    --inkbrick-fg-2: #bdbdbd;
+    --inkbrick-fg-3: #9b9b9b;
+    --inkbrick-fg-4: #8b8b8b;
+    --inkbrick-fg-disabled: #5a5a5a;
     --inkbrick-fg-on-brand: #ffffff;
 
-    --inkbrick-bg-1: #292929;
-    --inkbrick-bg-2: #1f1f1f;
-    --inkbrick-bg-3: #141414;
-    --inkbrick-bg-4: #0a0a0a;
-    --inkbrick-bg-hover: #3d3d3d;
-    --inkbrick-bg-pressed: #1f1f1f;
-    --inkbrick-bg-selected: #383838;
+    --inkbrick-bg-1: #191919;
+    --inkbrick-bg-2: #202020;
+    --inkbrick-bg-3: #252525;
+    --inkbrick-bg-4: #2f2f2f;
+    --inkbrick-bg-hover: #2c2c2c;
+    --inkbrick-bg-pressed: #373737;
+    --inkbrick-bg-selected: #333333;
 
-    --inkbrick-stroke-1: #666666;
-    --inkbrick-stroke-2: #525252;
-    --inkbrick-stroke-3: #3d3d3d;
-    --inkbrick-stroke-accessible: #adadad;
-    --inkbrick-stroke-focus-1: #000000;
-    --inkbrick-stroke-focus-2: #ffffff;
+    --inkbrick-stroke-1: #3f3f3f;
+    --inkbrick-stroke-2: #2f2f2f;
+    --inkbrick-stroke-3: #272727;
+    --inkbrick-stroke-accessible: #8b8b8b;
+    --inkbrick-stroke-focus-1: #191919;
+    --inkbrick-stroke-focus-2: #529cca;
 
-    --inkbrick-brand-bg: #106ebe;
-    --inkbrick-brand-bg-hover: #0078d4;
-    --inkbrick-brand-bg-pressed: #004578;
-    --inkbrick-brand-fg: #479ef5;
-    --inkbrick-brand-link: #2899f5;
-    --inkbrick-brand-tint: #002848;
+    --inkbrick-brand-bg: #2383e2;
+    --inkbrick-brand-bg-hover: #3a92ea;
+    --inkbrick-brand-bg-pressed: #1a73cc;
+    --inkbrick-brand-fg: #529cca;
+    --inkbrick-brand-link: #6ab0e8;
+    --inkbrick-brand-tint: #1c3447;
 
-    --inkbrick-status-info-fg: #3aa0f3;
-    --inkbrick-status-info-bg: #002848;
-    --inkbrick-status-warning-fg: #f7630c;
-    --inkbrick-status-warning-bg: #411200;
-    --inkbrick-status-success-fg: #54b054;
-    --inkbrick-status-success-bg: #052505;
-    --inkbrick-status-danger-fg: #dc626d;
-    --inkbrick-status-danger-bg: #3f1011;
+    --inkbrick-status-info-fg: #9b9b9b;
+    --inkbrick-status-info-bg: #252525;
+    --inkbrick-status-warning-fg: #d9a441;
+    --inkbrick-status-warning-bg: #3a3322;
+    --inkbrick-status-success-fg: #4dab9a;
+    --inkbrick-status-success-bg: #1f3a33;
+    --inkbrick-status-danger-fg: #ff7369;
+    --inkbrick-status-danger-bg: #4a2a29;
 
-    --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.24);
-    --inkbrick-shadow-key: rgba(0, 0, 0, 0.28);
+    --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.3);
+    --inkbrick-shadow-key: rgba(0, 0, 0, 0.4);
 
     --inkbrick-syntax-keyword: #569cd6;
     --inkbrick-syntax-string: #ce9178;
@@ -289,34 +297,38 @@
     --inkbrick-syntax-meta: #c586c0;
     --inkbrick-syntax-regex: #d16969;
 
-    --inkbrick-color-gray: #b8b8b8;
-    --inkbrick-color-brown: #e08f55;
-    --inkbrick-color-orange: #ff8a3d;
-    --inkbrick-color-yellow: #ffd21f;
-    --inkbrick-color-green: #4ade4a;
-    --inkbrick-color-blue: #4aa3ff;
-    --inkbrick-color-purple: #b57dff;
-    --inkbrick-color-pink: #ff6bd1;
-    --inkbrick-color-lime: #a3e635;
-    --inkbrick-color-teal: #2dd4bf;
-    --inkbrick-color-cyan: #22d3ee;
-    --inkbrick-color-indigo: #818cf8;
-    --inkbrick-color-magenta: #e879f9;
-    --inkbrick-color-red: #ff5a67;
-    --inkbrick-highlight-gray: #5c5c5c;
-    --inkbrick-highlight-brown: #7d4a28;
-    --inkbrick-highlight-orange: #b0480a;
-    --inkbrick-highlight-yellow: #947700;
-    --inkbrick-highlight-green: #1f7d1f;
-    --inkbrick-highlight-blue: #1c62bd;
-    --inkbrick-highlight-purple: #6c36bb;
-    --inkbrick-highlight-pink: #ab2781;
-    --inkbrick-highlight-red: #b52b37;
-    --inkbrick-highlight-lime: #4d7c0f;
-    --inkbrick-highlight-teal: #0f766e;
-    --inkbrick-highlight-cyan: #0e7490;
-    --inkbrick-highlight-indigo: #4338ca;
-    --inkbrick-highlight-magenta: #a21caf;
+    --inkbrick-color-gray: #9b9b9b;
+    --inkbrick-color-brown: #bb8f78;
+    --inkbrick-color-orange: #e08a3c;
+    --inkbrick-color-yellow: #d9a441;
+    --inkbrick-color-green: #4dab9a;
+    --inkbrick-color-blue: #529cca;
+    --inkbrick-color-purple: #a98ad0;
+    --inkbrick-color-pink: #d669a2;
+    --inkbrick-color-lime: #9bbf4d;
+    --inkbrick-color-teal: #3fb5a7;
+    --inkbrick-color-cyan: #4cb4cc;
+    --inkbrick-color-indigo: #8f94e0;
+    --inkbrick-color-magenta: #cf7bc7;
+    --inkbrick-color-red: #ff7369;
+    --inkbrick-highlight-gray: #454b4e;
+    --inkbrick-highlight-brown: #4a3f3a;
+    --inkbrick-highlight-orange: #594a3a;
+    --inkbrick-highlight-yellow: #59563b;
+    --inkbrick-highlight-green: #354c4b;
+    --inkbrick-highlight-blue: #364954;
+    --inkbrick-highlight-purple: #443f57;
+    --inkbrick-highlight-pink: #533b4c;
+    --inkbrick-highlight-red: #594141;
+    --inkbrick-highlight-lime: #414b2c;
+    --inkbrick-highlight-teal: #2f4a47;
+    --inkbrick-highlight-cyan: #2d4a52;
+    --inkbrick-highlight-indigo: #3b3d5c;
+    --inkbrick-highlight-magenta: #51374d;
+
+    --inkbrick-inline-code-fg: #ff7369;
+    --inkbrick-inline-code-bg: rgba(135, 131, 120, 0.15);
+    --inkbrick-selection-bg: rgba(45, 170, 219, 0.3);
   }
 
   :where(:root, [data-inkbrick-theme]) {
