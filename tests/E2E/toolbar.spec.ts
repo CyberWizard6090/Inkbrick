@@ -38,6 +38,65 @@ async function selectRange(page: Page, from: [number, number], to: [number, numb
 
 const texts = (page: Page) => page.locator(editable).allTextContents();
 
+const animationOf = (page: Page, selector: string) =>
+  page.locator(selector).evaluate((element) => {
+    const style = getComputedStyle(element);
+
+    return { name: style.animationName, duration: style.animationDuration };
+  });
+
+test.describe('Floating toolbar appearance', () => {
+  test('rises over the selection with the toolbar animation and ends exactly where it was placed', async ({
+    page,
+  }) => {
+    await page.goto('/?formatting=toolbar');
+    await typeBlocks(page, ['one', 'hello world']);
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowLeft');
+    await expect(page.locator(toolbar)).toBeVisible();
+
+    await expect(page.locator(toolbar)).toHaveAttribute('data-placement', 'above');
+    expect(await animationOf(page, toolbar)).toEqual({
+      name: 'inkbrick-toolbar-in',
+      duration: '0.1s',
+    });
+
+    // Выезд идёт через `translate`, а положение задаёт `transform`: после анимации они не мешают друг другу.
+    await page.waitForTimeout(250);
+    const box = (await page.locator(toolbar).boundingBox())!;
+    const line = (await page.locator(editable).nth(1).boundingBox())!;
+
+    expect(box.y + box.height).toBeLessThanOrEqual(line.y + 1);
+    expect(await page.locator(toolbar).evaluate((el) => getComputedStyle(el).translate)).toBe(
+      'none',
+    );
+  });
+
+  test('under the first line it drops from above', async ({ page }) => {
+    await page.goto('/?formatting=toolbar');
+    await typeBlocks(page, ['hello world']);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowLeft');
+    await expect(page.locator(toolbar)).toBeVisible();
+
+    const placement = await page.locator(toolbar).getAttribute('data-placement');
+
+    expect(await animationOf(page, toolbar)).toEqual({
+      name: placement === 'below' ? 'inkbrick-toolbar-in-down' : 'inkbrick-toolbar-in',
+      duration: '0.1s',
+    });
+  });
+
+  test('is off with prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/?formatting=toolbar');
+    await typeBlocks(page, ['hello world']);
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowLeft');
+    await expect(page.locator(toolbar)).toBeVisible();
+
+    expect((await animationOf(page, toolbar)).name).toBe('none');
+  });
+});
+
 test.describe('Floating toolbar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?formatting=toolbar');

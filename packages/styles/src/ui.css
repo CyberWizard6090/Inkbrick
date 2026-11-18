@@ -34,6 +34,44 @@
     overflow-y: auto;
   }
 
+  /* Меню появляются плавно: проявляются и чуть выезжают от каретки или ручки (снизу, если открыты над ней). */
+  :where([data-inkbrick-ui='slash-menu']),
+  :where([data-inkbrick-ui='block-menu']),
+  :where([data-inkbrick-ui='context-menu']),
+  :where([data-inkbrick-ui='formula-popover']),
+  :where([data-inkbrick-ui='options-picker']),
+  :where([data-inkbrick-ui='tag-suggestions']) {
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* Диалог свойств столбца появляется, как палитра: затемнение проявляется, окно опускается. */
+  :where([data-inkbrick-ui='column-properties-backdrop']) {
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='column-properties']) {
+    animation: inkbrick-slide-down var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'][data-side='top']),
+  :where([data-inkbrick-ui='block-menu'][data-side='top']),
+  :where([data-inkbrick-ui='context-menu'][data-side='top']) {
+    animation-name: inkbrick-menu-in-up;
+  }
+
+  /*
+   * Плавающий toolbar: положение ему задаёт встроенный `transform`, поэтому выезд — через отдельное свойство `translate`
+   * (оно складывается с `transform`, а не заменяет его). Над выделением он поднимается снизу, под ним — опускается сверху.
+   * Toolbar внутри контекстного меню (`inline`) не анимируется: меню уже появляется целиком.
+   */
+  :where([data-inkbrick-ui='toolbar']:not([data-placement='inline'])) {
+    animation: inkbrick-toolbar-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='below']) {
+    animation-name: inkbrick-toolbar-in-down;
+  }
+
   :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']) {
     padding: 8px 8px 2px;
     color: var(--inkbrick-fg-3);
@@ -203,6 +241,11 @@
     align-items: center;
     gap: 2px;
     height: 28px;
+  }
+
+  /* Ручка появляется плавно: проявляется и чуть выезжает слева. Переход от блока к блоку её не мигает — она та же. */
+  :where([data-inkbrick-ui='block-handle']) {
+    animation: inkbrick-handle-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   /* Узкий экран: слева от текста нет полосы, ручка лежит поверх текста — нужна подложка */
@@ -543,6 +586,7 @@
     border-radius: 1px;
     background: var(--inkbrick-brand-bg);
     pointer-events: none;
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where(body[data-inkbrick-dragging], body[data-inkbrick-dragging] *) {
@@ -1094,9 +1138,56 @@
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    :where([data-inkbrick-ui='select']) {
-      animation: none;
+  @keyframes inkbrick-handle-in {
+    from {
+      opacity: 0;
+      transform: translateX(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes inkbrick-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes inkbrick-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-menu-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(var(--inkbrick-appear-shift));
+    }
+  }
+
+  @keyframes inkbrick-slide-down {
+    from {
+      transform: translateY(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-toolbar-in {
+    from {
+      opacity: 0;
+      translate: 0 var(--inkbrick-appear-shift);
+    }
+  }
+
+  @keyframes inkbrick-toolbar-in-down {
+    from {
+      opacity: 0;
+      translate: 0 calc(-1 * var(--inkbrick-appear-shift));
     }
   }
 
@@ -1370,6 +1461,8 @@
     justify-content: center;
     padding-top: 12vh;
     background: rgba(0, 0, 0, 0.3);
+    /* Затемнение проявляется, а окно ниже только опускается: если бы оно ещё и проявлялось, прозрачности перемножились бы. */
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-ui='palette']) {
@@ -1387,6 +1480,7 @@
     font-size: var(--inkbrick-font-size-ui);
     box-shadow: var(--inkbrick-shadow-16);
     overflow: hidden;
+    animation: inkbrick-slide-down var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-ui='palette'] [data-inkbrick-part='query']) {
@@ -1457,6 +1551,8 @@
     top: 12px;
     right: 16px;
     z-index: var(--inkbrick-z-popup);
+    /* Панель опускается из-за верхнего края, как меню от ручки. */
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1692,5 +1788,44 @@
   :where([data-inkbrick-ui='tag-suggestions'] [data-inkbrick-part='item'][data-active]) {
     background: var(--inkbrick-bg-3);
     color: var(--inkbrick-brand-fg);
+  }
+
+  /*
+   * Плавное исчезновение. Когда окно закрывается, `Presence` не удаляет его сразу, а ставит обёртке `data-state="closed"`:
+   * то, что в ней лежит, гаснет, пока анимация не закончится, и тогда удаляется. Обёртка не влияет на раскладку. Правило
+   * стоит после всех правил появления: у них та же специфичность 0, и среди равных побеждает более позднее.
+   */
+  :where([data-inkbrick-presence]) {
+    display: contents;
+  }
+
+  :where([data-inkbrick-presence][data-state='closed'] > *) {
+    animation: inkbrick-fade-out var(--inkbrick-disappear-duration) var(--inkbrick-curve) forwards;
+    pointer-events: none;
+  }
+
+  /*
+   * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
+   * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-ui='select']),
+    :where([data-inkbrick-ui='block-handle']),
+    :where([data-inkbrick-ui='drop-indicator']),
+    :where([data-inkbrick-ui='slash-menu']),
+    :where([data-inkbrick-ui='block-menu']),
+    :where([data-inkbrick-ui='context-menu']),
+    :where([data-inkbrick-ui='toolbar']),
+    :where([data-inkbrick-ui='palette-backdrop']),
+    :where([data-inkbrick-ui='palette']),
+    :where([data-inkbrick-ui='find']),
+    :where([data-inkbrick-ui='formula-popover']),
+    :where([data-inkbrick-ui='options-picker']),
+    :where([data-inkbrick-ui='tag-suggestions']),
+    :where([data-inkbrick-ui='column-properties-backdrop']),
+    :where([data-inkbrick-ui='column-properties']),
+    :where([data-inkbrick-presence][data-state='closed'] > *) {
+      animation: none;
+    }
   }
 }

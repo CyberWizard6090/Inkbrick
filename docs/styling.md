@@ -132,22 +132,70 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
   элементе, например на `<html>`.
 - Переопределение — обычной переменной: `:root { --inkbrick-brand-bg: #107c10; --inkbrick-radius-surface: 12px; }`.
 
-| Группа                   | Токены                                                                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Текст                    | `--inkbrick-fg-1`…`-4`, `--inkbrick-fg-disabled`, `--inkbrick-fg-on-brand`                                                                        |
-| Фоны                     | `--inkbrick-bg-1` (поверхности)…`-4`, `--inkbrick-bg-hover`, `-pressed`, `-selected`                                                              |
-| Рамки                    | `--inkbrick-stroke-1`…`-3`, `--inkbrick-stroke-accessible`, `--inkbrick-stroke-focus-1/2`                                                         |
-| Акцент                   | `--inkbrick-brand-bg`, `-hover`, `-pressed`, `--inkbrick-brand-fg`, `--inkbrick-brand-link`                                                       |
-| Статусы                  | `--inkbrick-status-{info,warning,success,danger}-{fg,bg,border}`                                                                                  |
-| Форма                    | `--inkbrick-radius-control` (4px), `--inkbrick-radius-surface` (8px), `--inkbrick-shadow-4/8/16`                                                  |
-| Типографика              | `--inkbrick-font-family`, `--inkbrick-font-mono`, `--inkbrick-font-size`, `--inkbrick-font-size-ui`, `--inkbrick-line-height`                     |
-| Подсветка кода           | `--inkbrick-syntax-{keyword,string,comment,number,function,type,constant,builtin,variable,property,tag,attribute,meta,regex}`                     |
-| Цвета текста и подсветки | `--inkbrick-color-<имя>`, `--inkbrick-highlight-<имя>` (имена палитры: black, white, gray, brown, orange, yellow, green, blue, purple, pink, red) |
-| Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-gutter`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`              |
+| Группа                   | Токены                                                                                                                                                                                                    |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Текст                    | `--inkbrick-fg-1`…`-4`, `--inkbrick-fg-disabled`, `--inkbrick-fg-on-brand`                                                                                                                                |
+| Фоны                     | `--inkbrick-bg-1` (поверхности)…`-4`, `--inkbrick-bg-hover`, `-pressed`, `-selected`                                                                                                                      |
+| Рамки                    | `--inkbrick-stroke-1`…`-3`, `--inkbrick-stroke-accessible`, `--inkbrick-stroke-focus-1/2`                                                                                                                 |
+| Акцент                   | `--inkbrick-brand-bg`, `-hover`, `-pressed`, `--inkbrick-brand-fg`, `--inkbrick-brand-link`                                                                                                               |
+| Статусы                  | `--inkbrick-status-{info,warning,success,danger}-{fg,bg,border}`                                                                                                                                          |
+| Форма                    | `--inkbrick-radius-control` (4px), `--inkbrick-radius-surface` (8px), `--inkbrick-shadow-4/8/16`                                                                                                          |
+| Типографика              | `--inkbrick-font-family`, `--inkbrick-font-mono`, `--inkbrick-font-size`, `--inkbrick-font-size-ui`, `--inkbrick-line-height`                                                                             |
+| Подсветка кода           | `--inkbrick-syntax-{keyword,string,comment,number,function,type,constant,builtin,variable,property,tag,attribute,meta,regex}`                                                                             |
+| Цвета текста и подсветки | `--inkbrick-color-<имя>`, `--inkbrick-highlight-<имя>` (имена палитры: black, white, gray, brown, orange, yellow, green, blue, purple, pink, red)                                                         |
+| Прочее                   | `--inkbrick-icon-size`, `--inkbrick-space-block`, `--inkbrick-gutter`, `--inkbrick-duration-*`, `--inkbrick-curve`, `--inkbrick-z-*`                                                                      |
+| Плавное появление        | `--inkbrick-appear-duration` (100ms; `0ms` выключает), `--inkbrick-appear-shift` (4px), `--inkbrick-disappear-duration` (100ms; `0ms` выключает), `--inkbrick-collapse-duration` (220ms; `0ms` выключает) |
 
 Прежние имена (`--inkbrick-bg-surface`, `--inkbrick-text-primary`, `--inkbrick-accent-color`, …) продолжают работать как псевдонимы.
 
 Подключать можно по частям: `@inkbrick/styles/tokens.css`, `base.css`, `blocks.css`, `ui.css`.
+
+### Плавное появление
+
+Как в Notion, ручка блока при появлении проявляется и чуть выезжает слева (`@keyframes inkbrick-handle-in`), линия вставки при
+переносе проявляется (`inkbrick-fade-in`), а переносимый блок притухает до 0.4, а не мигает. Slash-меню, меню блока и
+контекстное меню проявляются и чуть выезжают от каретки, ручки или точки клика (`inkbrick-menu-in`, а если меню открылось над ней,
+то снизу, `inkbrick-menu-in-up`; сторона видна по атрибуту `data-side="top|bottom"` меню). Плавающий toolbar поднимается снизу
+над выделением и опускается сверху под ним (`inkbrick-toolbar-in`, `inkbrick-toolbar-in-down`; `data-placement="above|below"`): его
+положение задаёт встроенный `transform`, поэтому движение идёт через отдельное свойство `translate`, и рывка нет. Toolbar внутри
+контекстного меню (`data-placement="inline"`) сам не анимируется. Палитра команд: затемнение проявляется (`inkbrick-fade-in`), а окно
+опускается на сдвиг сверху (`inkbrick-slide-down`; только сдвиг, без прозрачности: иначе она перемножилась бы с прозрачностью затемнения).
+Панель поиска выезжает сверху так же, как меню (`inkbrick-menu-in`); набор запроса её не перезапускает. Так же появляются попап формулы, список
+вариантов в ячейке таблицы и подсказки тегов, а диалог свойств столбца — как палитра (затемнение проявляется, окно опускается). Переход ручки от блока к блоку анимацию не запускает: это тот же узел;
+меню анимируется при открытии, а не при каждой набранной букве запроса. Длительность и сдвиг задают токены `--inkbrick-appear-duration` и
+`--inkbrick-appear-shift`; `--inkbrick-appear-duration: 0ms` выключает движение. При `prefers-reduced-motion: reduce` анимации
+и переходы отключены. Всё это обычный CSS в слое `inkbrick.ui` и `inkbrick.blocks`: любое ваше правило победит без `!important`,
+например `[data-inkbrick-ui='block-handle'] { animation: none }`.
+
+#### Плавное сворачивание
+
+Переключатель, пункт списка со стрелкой, заголовок со свёрнутым разделом и блок кода сворачиваются и разворачиваются плавно за
+`--inkbrick-collapse-duration` (220 мс; `0ms` выключает). Двигаются высота, прозрачность и вертикальные отступы; стрелка поворачивается.
+Вложенные блоки переключателя и пункта списка на время сворачивания остаются в дереве и убираются, когда анимация закончилась.
+Блоки раздела под свёрнутым заголовком сжимаются каждый на своём месте (обёрток нет), а раздел больше 40 блоков сворачивается сразу:
+иначе столько анимаций сразу тормозили бы страницу. Повторный клик посреди анимации разворачивает её от того места, где она сейчас, без
+прыжка. Анимируются только сворачивание и разворачивание: первый вложенный блок (Enter в заголовке переключателя) и блоки, которые
+отрисованы в первый раз, появляются сразу. Это обычная анимация по Web Animations API, а не CSS (`getAnimations()` её видит); её
+выключают токен `0ms` и `prefers-reduced-motion: reduce`. Сворачивание блока кода — CSS-переход по `grid-template-rows` с тем же токеном.
+
+#### Плавное исчезновение
+
+Окна не просто пропадают: когда они закрываются, они гаснут за `--inkbrick-disappear-duration` (`@keyframes inkbrick-fade-out`).
+Это относится к ручке блока и меню блока, линии вставки, slash-меню, контекстному меню, toolbar, палитре, панели поиска, попапу
+формулы, диалогу свойств столбца, списку вариантов в ячейке, подсказкам тегов и выпадающему списку `select`. Исчезающее окно
+остаётся в DOM, пока анимация не закончится, и тогда удаляется: этим занимается небольшой компонент `Presence`. Он оборачивает окно
+в элемент `<div data-inkbrick-presence data-state="open|closed">` с `display: contents`, так что на раскладку обёртка не влияет, а
+у закрывающегося окна `data-state="closed"`, `aria-hidden="true"` и `pointer-events: none`.
+
+- **Без анимации окно удаляется сразу, как раньше:** при `prefers-reduced-motion: reduce`, при `--inkbrick-disappear-duration: 0ms`,
+  без стилей пакета (в тестах на jsdom, например) и у своего компонента из слота, у которого на корне нет анимации.
+- **Если окно открыли снова, пока оно уходит,** оно создаётся заново (снова играет появление и срабатывают эффекты монтирования, например фокус
+  в списке); ручка блока и линия вставки при этом остаются тем же узлом, поэтому не мигают.
+- **Свой компонент из слота** получает плавный выход одним правилом на корне: например
+  `[data-inkbrick-presence][data-state='closed'] > .my-menu { animation: my-fade-out 120ms forwards }`. Анимация обязана заканчиваться
+  (`forwards`, без `infinite`): когда она закончится, окно удалится.
+- В тестах пользователя элемент закрытого окна может ещё какое-то время быть в DOM: проверяйте исчезновение через `toHaveCount(0)` /
+  `waitFor`, а не мгновенным `count()`.
 
 ## Иконки
 

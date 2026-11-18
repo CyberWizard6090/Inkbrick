@@ -77,6 +77,8 @@ export function DefaultBlockMenu({
       ref={ref}
       className="inkbrick-block-menu"
       data-inkbrick-ui="block-menu"
+      // С какой стороны от ручки открыто меню: от этого зависит, откуда оно выезжает при появлении.
+      data-side={flip ? 'top' : 'bottom'}
       role="menu"
       aria-label={t('menu.label')}
       data-testid="block-menu"

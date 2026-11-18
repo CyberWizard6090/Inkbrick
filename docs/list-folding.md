@@ -35,3 +35,9 @@ import { EditorProvider, DocumentView, listFolding } from '@inkbrick/react';
   переключателя.
 - Части для стилей: стрелка — `data-inkbrick-part="fold"` внутри строки пункта (`data-inkbrick-part="row"`), у пункта
   `data-foldable` и `data-collapsed`.
+
+## Анимация
+
+Вложенные пункты сворачиваются и разворачиваются плавно, стрелка поворачивается; повторный клик посреди анимации разворачивает её от
+того места, где она сейчас. Длительность — `--inkbrick-collapse-duration`; `0ms` и `prefers-reduced-motion` выключают. Подробнее — в
+[стилизации](styling.md#плавное-сворачивание).

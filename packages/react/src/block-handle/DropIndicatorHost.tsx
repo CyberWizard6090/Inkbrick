@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { createPortal } from 'react-dom';
 
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useEditorUI } from '../ui/EditorUIContext';
+import { PortalPresence } from '../ui/Presence';
 import { blockElement } from './geometry';
 import type { DropIndicatorProps } from './types';
 import { useBlockDragState } from './useBlockDrag';
@@ -47,19 +47,28 @@ export function DropIndicatorHost() {
     return () => element?.removeAttribute('data-inkbrick-dragging');
   }, [draggedId, view]);
 
-  if (readOnly || slots.DropIndicator === null || typeof document === 'undefined') return null;
-  if (!drag?.indicator || !drag.targetId || !drag.position) return null;
-
   const Indicator = slots.DropIndicator ?? DefaultDropIndicator;
+  const open =
+    !readOnly &&
+    slots.DropIndicator !== null &&
+    typeof document !== 'undefined' &&
+    !!drag?.indicator &&
+    !!drag.targetId &&
+    !!drag.position;
 
-  return createPortal(
-    <Indicator
-      blockId={drag.blockId}
-      targetId={drag.targetId}
-      position={drag.position}
-      side={drag.side ?? undefined}
-      indicator={drag.indicator}
-    />,
-    document.body,
+  return (
+    <PortalPresence
+      reuse
+      open={open}
+      render={() => (
+        <Indicator
+          blockId={drag!.blockId}
+          targetId={drag!.targetId!}
+          position={drag!.position!}
+          side={drag!.side ?? undefined}
+          indicator={drag!.indicator!}
+        />
+      )}
+    />
   );
 }

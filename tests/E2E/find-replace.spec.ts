@@ -25,6 +25,41 @@ const highlighted = (page: Page, name: string) =>
     return found ? [...found].map((range) => range.toString()) : null;
   }, name);
 
+test.describe('Find panel appearance', () => {
+  const animationOf = (page: Page) =>
+    page.locator(panel).evaluate((element) => {
+      const style = getComputedStyle(element);
+
+      return { name: style.animationName, duration: style.animationDuration };
+    });
+
+  test('the panel drops in from the top edge, and is still while the query changes', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['hello world']);
+    await page.keyboard.press(`${modifier}+f`);
+    await expect(page.locator(panel)).toBeVisible();
+
+    expect(await animationOf(page)).toEqual({ name: 'inkbrick-menu-in', duration: '0.1s' });
+
+    // Набор запроса не пересоздаёт панель: анимация идёт только при открытии.
+    await page.locator(panel).evaluate((element) => element.setAttribute('data-probe', '1'));
+    await page.keyboard.type('hello');
+    await expect(page.locator(`${panel}[data-probe="1"]`)).toHaveCount(1);
+  });
+
+  test('is off with prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['hello world']);
+    await page.keyboard.press(`${modifier}+f`);
+    await expect(page.locator(panel)).toBeVisible();
+
+    expect((await animationOf(page)).name).toBe('none');
+  });
+});
+
 test.describe('Find and replace', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?lang=en');

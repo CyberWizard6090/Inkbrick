@@ -33,6 +33,48 @@ async function rightClick(page: Page, index: number, where: 'start' | 'end' = 's
 
 const texts = (page: Page) => page.locator(editable).allTextContents();
 
+const animationOf = (page: Page, selector: string) =>
+  page.locator(selector).evaluate((element) => {
+    const style = getComputedStyle(element);
+
+    return { name: style.animationName, duration: style.animationDuration };
+  });
+
+test.describe('Context menu appearance', () => {
+  test('fades in, and the toolbar inside it does not animate on its own', async ({ page }) => {
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['hello world']);
+    await selectFirstWord(page, 0);
+    await rightClick(page, 0);
+    await expect(page.locator(menu)).toBeVisible();
+
+    expect(await animationOf(page, menu)).toEqual({ name: 'inkbrick-menu-in', duration: '0.1s' });
+    await expect(page.locator(menu)).toHaveAttribute('data-side', 'bottom');
+    expect((await animationOf(page, `${menu} ${toolbar}`)).name).toBe('none');
+  });
+
+  test('a menu that opens above the click point slides in from below', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 360 });
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'hello world']);
+    await rightClick(page, 7, 'end');
+    await expect(page.locator(menu)).toBeVisible();
+
+    await expect(page.locator(menu)).toHaveAttribute('data-side', 'top');
+    expect((await animationOf(page, menu)).name).toBe('inkbrick-menu-in-up');
+  });
+
+  test('is off with prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['hello world']);
+    await rightClick(page, 0);
+    await expect(page.locator(menu)).toBeVisible();
+
+    expect((await animationOf(page, menu)).name).toBe('none');
+  });
+});
+
 test.describe('Context menu', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?lang=en');

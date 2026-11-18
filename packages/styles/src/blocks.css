@@ -498,7 +498,7 @@
   :where([data-inkbrick-block='code'] > [data-inkbrick-part='body']) {
     display: grid;
     grid-template-rows: 1fr;
-    transition: grid-template-rows var(--inkbrick-duration-slow) var(--inkbrick-curve);
+    transition: grid-template-rows var(--inkbrick-collapse-duration) var(--inkbrick-curve);
   }
 
   :where([data-inkbrick-block='code'][data-collapsed] > [data-inkbrick-part='body']) {
@@ -743,6 +743,15 @@
   ) {
     background: var(--inkbrick-bg-3);
     color: var(--inkbrick-fg-1);
+  }
+
+  /* Стрелка поворачивается плавно, а не скачком (при prefers-reduced-motion — сразу, см. ниже). */
+  :where(
+    [data-inkbrick-block='heading'] [data-inkbrick-part='fold'] svg,
+    [data-inkbrick-block='list'] > [data-inkbrick-part='row'] > [data-inkbrick-part='fold'] svg,
+    [data-inkbrick-block='toggle'] > [data-inkbrick-part='row'] [data-inkbrick-part='toggle'] svg
+  ) {
+    transition: transform var(--inkbrick-duration-normal) var(--inkbrick-curve);
   }
 
   :where(
@@ -1357,6 +1366,22 @@
 
   :where([data-inkbrick-root] [data-inkbrick-dragging='true']) {
     opacity: 0.4;
+    /* Блок, который понесли, мягко притухает, а не мигает. */
+    transition: opacity var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* Блок стоит в конце файла: у правил специфичность 0, и среди равных побеждает более позднее. */
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-root] [data-inkbrick-dragging='true']),
+    :where([data-inkbrick-block='heading'] [data-inkbrick-part='fold'] svg),
+    :where(
+      [data-inkbrick-block='list'] > [data-inkbrick-part='row'] > [data-inkbrick-part='fold'] svg
+    ),
+    :where(
+      [data-inkbrick-block='toggle'] > [data-inkbrick-part='row'] [data-inkbrick-part='toggle'] svg
+    ) {
+      transition: none;
+    }
   }
 
   /* ---- Выравнивание текста: data-align на блоке, действует на его собственный текст (не на вложенные блоки) ---- */

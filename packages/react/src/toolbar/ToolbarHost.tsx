@@ -1,4 +1,3 @@
-import { createPortal } from 'react-dom';
 import { useSyncExternalStore } from 'react';
 
 import { useEditor } from '../hooks/useEditor';
@@ -6,6 +5,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { lazyModule, useLazy } from '../ui/lazy';
+import { PortalPresence } from '../ui/Presence';
 import { toolbarHandlers } from './toolbarHandlers';
 import { turnIntoFor } from './turnInto';
 
@@ -30,20 +30,16 @@ export function ToolbarHost() {
     view.contextMenu.getState,
   );
 
-  if (slots.Toolbar === null || readOnly) return null;
-
-  if (
-    !state.visible ||
-    !state.position ||
-    !state.formats ||
-    !state.range ||
-    typeof document === 'undefined'
-  ) {
-    return null;
-  }
-
   // Открытое контекстное меню само показывает кнопки форматирования.
-  if (menu.position) return null;
+  const visible =
+    slots.Toolbar !== null &&
+    !readOnly &&
+    state.visible &&
+    !!state.position &&
+    !!state.formats &&
+    !!state.range &&
+    typeof document !== 'undefined' &&
+    !menu.position;
 
   /*
    * В режиме контекстного меню плавающий toolbar показывается только пальцем (правого клика нет) и для
@@ -54,23 +50,26 @@ export function ToolbarHost() {
     slots.ContextMenu === null ||
     view.lastPointerType === 'touch' ||
     state.linkOpen;
-
-  if (!floating) return null;
-
   const Toolbar = slots.Toolbar ?? Default;
 
-  if (!Toolbar) return null;
+  return (
+    <PortalPresence
+      open={visible && floating && !!Toolbar}
+      render={() => {
+        const Current = Toolbar!;
 
-  return createPortal(
-    <Toolbar
-      formats={state.formats}
-      position={state.position}
-      placement="floating"
-      linkOpen={state.linkOpen}
-      panel={state.panel}
-      turnInto={turnIntoFor(editor, view, slashItems, state.range)}
-      {...toolbarHandlers(editor, view, state.range)}
-    />,
-    document.body,
+        return (
+          <Current
+            formats={state.formats!}
+            position={state.position!}
+            placement="floating"
+            linkOpen={state.linkOpen}
+            panel={state.panel}
+            turnInto={turnIntoFor(editor, view, slashItems, state.range!)}
+            {...toolbarHandlers(editor, view, state.range!)}
+          />
+        );
+      }}
+    />
   );
 }

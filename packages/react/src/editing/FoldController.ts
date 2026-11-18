@@ -13,6 +13,9 @@ export class FoldController {
 
   private readonly all = new Set<() => void>();
 
+  /** Сколько блоков скрылось или показалось при последнем изменении: большие разделы сворачиваются без анимации. */
+  changed = 0;
+
   /** Растёт при каждом изменении набора скрытых блоков: по нему подписываются те, кому нужен весь набор целиком. */
   version = 0;
 
@@ -66,6 +69,7 @@ export class FoldController {
 
     this.hidden = next;
     this.hiders = new Set(next.values());
+    this.changed = changed.length;
     this.version += 1;
 
     for (const id of changed)

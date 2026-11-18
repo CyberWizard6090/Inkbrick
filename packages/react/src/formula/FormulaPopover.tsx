@@ -6,7 +6,6 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { createPortal } from 'react-dom';
 
 import { MAX_FORMULA_LENGTH } from '@inkbrick/document';
 
@@ -18,6 +17,7 @@ import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import { FormulaView } from '../math/FormulaView';
 import { applyInlineFormula } from './actions';
+import { PortalPresence } from '../ui/Presence';
 import { LazyFormulaPalette } from './LazyFormulaPalette';
 import { useSnippetInsert } from './snippet';
 import type { FormulaEditorState } from './FormulaController';
@@ -172,10 +172,12 @@ export function FormulaPopover() {
     view.formula.getState,
   );
 
-  if (!state.open || readOnly || typeof document === 'undefined') return null;
-
-  return createPortal(
-    <Body key={`${state.mode}:${state.blockId}:${state.from}:${state.to}`} state={state} />,
-    document.body,
+  return (
+    <PortalPresence
+      open={state.open && !readOnly}
+      render={() => (
+        <Body key={`${state.mode}:${state.blockId}:${state.from}:${state.to}`} state={state} />
+      )}
+    />
   );
 }

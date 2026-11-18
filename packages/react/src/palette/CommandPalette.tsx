@@ -7,11 +7,11 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { createPortal } from 'react-dom';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
+import { PortalPresence } from '../ui/Presence';
 import { useT } from '../hooks/useT';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { builtinCommands, formatShortcut } from './builtin';
@@ -104,8 +104,6 @@ export function CommandPalette({ commands = [], builtin = true }: CommandPalette
   // Закрытие вместе с редактором.
   useEffect(() => () => controller.close(), [controller]);
 
-  if (!open || typeof document === 'undefined') return null;
-
   const optionId = (index: number) => `${id}-option-${index}`;
   const other = t('slash.group.other');
 
@@ -114,129 +112,133 @@ export function CommandPalette({ commands = [], builtin = true }: CommandPalette
     command.run(context);
   };
 
-  return createPortal(
-    <div
-      data-inkbrick-ui="palette-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) controller.closeAndRestore();
-      }}
-    >
-      <div
-        data-inkbrick-ui="palette"
-        data-testid="command-palette"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('palette.label')}
-      >
-        <input
-          ref={input}
-          data-inkbrick-part="query"
-          type="text"
-          role="combobox"
-          aria-expanded
-          aria-controls={`${id}-list`}
-          aria-activedescendant={visible.length > 0 ? optionId(active) : undefined}
-          aria-autocomplete="list"
-          value={query}
-          placeholder={t('palette.placeholder')}
-          aria-label={t('palette.placeholder')}
-          spellCheck={false}
-          autoComplete="off"
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.nativeEvent.isComposing) return;
-
-            switch (event.key) {
-              case 'ArrowDown':
-                event.preventDefault();
-                setActive((index) => (visible.length ? (index + 1) % visible.length : 0));
-                break;
-              case 'ArrowUp':
-                event.preventDefault();
-                setActive((index) =>
-                  visible.length ? (index - 1 + visible.length) % visible.length : 0,
-                );
-                break;
-              case 'Home':
-                if (query === '') {
-                  event.preventDefault();
-                  setActive(0);
-                }
-                break;
-              case 'End':
-                if (query === '') {
-                  event.preventDefault();
-                  setActive(Math.max(0, visible.length - 1));
-                }
-                break;
-              case 'Enter':
-                event.preventDefault();
-                if (visible[active]) run(visible[active]);
-                break;
-              case 'Escape':
-                event.preventDefault();
-                event.stopPropagation();
-                controller.closeAndRestore();
-                break;
-              case 'Tab':
-                // Фокус остаётся в окне.
-                event.preventDefault();
-                break;
-            }
-          }}
-        />
+  return (
+    <PortalPresence
+      open={open}
+      render={() => (
         <div
-          ref={list}
-          id={`${id}-list`}
-          data-inkbrick-part="list"
-          role="listbox"
-          aria-label={t('palette.label')}
+          data-inkbrick-ui="palette-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) controller.closeAndRestore();
+          }}
         >
-          {visible.length === 0 && (
-            <div data-inkbrick-part="empty" role="presentation">
-              {t('palette.empty')}
-            </div>
-          )}
-          {visible.map((command, index) => {
-            const group = query.trim() === '' ? (command.group ?? other) : undefined;
-            const previous = index > 0 ? visible[index - 1] : undefined;
-            const header =
-              group !== undefined && (!previous || (previous.group ?? other) !== group);
+          <div
+            data-inkbrick-ui="palette"
+            data-testid="command-palette"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('palette.label')}
+          >
+            <input
+              ref={input}
+              data-inkbrick-part="query"
+              type="text"
+              role="combobox"
+              aria-expanded
+              aria-controls={`${id}-list`}
+              aria-activedescendant={visible.length > 0 ? optionId(active) : undefined}
+              aria-autocomplete="list"
+              value={query}
+              placeholder={t('palette.placeholder')}
+              aria-label={t('palette.placeholder')}
+              spellCheck={false}
+              autoComplete="off"
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
 
-            return (
-              <div key={command.id} role="presentation">
-                {header && (
-                  <div data-inkbrick-part="group" role="presentation">
-                    {group}
-                  </div>
-                )}
-                <div
-                  id={optionId(index)}
-                  role="option"
-                  aria-selected={index === active}
-                  data-inkbrick-part="option"
-                  data-command={command.id}
-                  onMouseMove={() => setActive(index)}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => run(command)}
-                >
-                  {command.icon && <span data-inkbrick-part="icon">{command.icon}</span>}
-                  <span data-inkbrick-part="title">
-                    {command.title}
-                    {command.description && (
-                      <span data-inkbrick-part="description">{command.description}</span>
-                    )}
-                  </span>
-                  {command.shortcut && (
-                    <kbd data-inkbrick-part="shortcut">{formatShortcut(command.shortcut)}</kbd>
-                  )}
+                switch (event.key) {
+                  case 'ArrowDown':
+                    event.preventDefault();
+                    setActive((index) => (visible.length ? (index + 1) % visible.length : 0));
+                    break;
+                  case 'ArrowUp':
+                    event.preventDefault();
+                    setActive((index) =>
+                      visible.length ? (index - 1 + visible.length) % visible.length : 0,
+                    );
+                    break;
+                  case 'Home':
+                    if (query === '') {
+                      event.preventDefault();
+                      setActive(0);
+                    }
+                    break;
+                  case 'End':
+                    if (query === '') {
+                      event.preventDefault();
+                      setActive(Math.max(0, visible.length - 1));
+                    }
+                    break;
+                  case 'Enter':
+                    event.preventDefault();
+                    if (visible[active]) run(visible[active]);
+                    break;
+                  case 'Escape':
+                    event.preventDefault();
+                    event.stopPropagation();
+                    controller.closeAndRestore();
+                    break;
+                  case 'Tab':
+                    // Фокус остаётся в окне.
+                    event.preventDefault();
+                    break;
+                }
+              }}
+            />
+            <div
+              ref={list}
+              id={`${id}-list`}
+              data-inkbrick-part="list"
+              role="listbox"
+              aria-label={t('palette.label')}
+            >
+              {visible.length === 0 && (
+                <div data-inkbrick-part="empty" role="presentation">
+                  {t('palette.empty')}
                 </div>
-              </div>
-            );
-          })}
+              )}
+              {visible.map((command, index) => {
+                const group = query.trim() === '' ? (command.group ?? other) : undefined;
+                const previous = index > 0 ? visible[index - 1] : undefined;
+                const header =
+                  group !== undefined && (!previous || (previous.group ?? other) !== group);
+
+                return (
+                  <div key={command.id} role="presentation">
+                    {header && (
+                      <div data-inkbrick-part="group" role="presentation">
+                        {group}
+                      </div>
+                    )}
+                    <div
+                      id={optionId(index)}
+                      role="option"
+                      aria-selected={index === active}
+                      data-inkbrick-part="option"
+                      data-command={command.id}
+                      onMouseMove={() => setActive(index)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => run(command)}
+                    >
+                      {command.icon && <span data-inkbrick-part="icon">{command.icon}</span>}
+                      <span data-inkbrick-part="title">
+                        {command.title}
+                        {command.description && (
+                          <span data-inkbrick-part="description">{command.description}</span>
+                        )}
+                      </span>
+                      {command.shortcut && (
+                        <kbd data-inkbrick-part="shortcut">{formatShortcut(command.shortcut)}</kbd>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>,
-    document.body,
+      )}
+    />
   );
 }

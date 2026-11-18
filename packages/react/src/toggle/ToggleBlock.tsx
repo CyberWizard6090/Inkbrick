@@ -9,6 +9,7 @@ import { useChildren } from '../hooks/useChildren';
 import { useEditor } from '../hooks/useEditor';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
+import { useCollapse } from '../ui/collapse';
 
 /**
  * Переключатель: стрелка и строка заголовка; вложенные блоки видны, только пока блок раскрыт. Состояние (`open`) хранится
@@ -24,6 +25,9 @@ export function ToggleBlock({ block, selected, readOnly }: BlockProps) {
   const [local, setLocal] = useState<boolean | null>(null);
   const open = readOnly && local !== null ? local : block.props.open !== false;
   const label = t(open ? 'fold.collapse' : 'fold.expand');
+  // Вложенные блоки раскрываются и сворачиваются плавно: пока они уходят, остаются в дереве.
+  // Анимируется только сворачивание и разворачивание: первый вложенный блок (Enter в заголовке) появляется сразу.
+  const nested = useCollapse<HTMLDivElement>(open);
 
   const toggle = () => {
     if (readOnly) setLocal(!open);
@@ -62,8 +66,8 @@ export function ToggleBlock({ block, selected, readOnly }: BlockProps) {
         <Editable block={block} />
       </div>
 
-      {open && children.length > 0 && (
-        <div className="block-nested-children" data-inkbrick-part="children">
+      {nested.mounted && children.length > 0 && (
+        <div ref={nested.ref} className="block-nested-children" data-inkbrick-part="children">
           <BlockChildren id={block.id} />
         </div>
       )}

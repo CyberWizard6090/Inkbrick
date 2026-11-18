@@ -7,9 +7,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type SyntheticEvent,
 } from 'react';
-import { createPortal } from 'react-dom';
 
 import { Icon } from '../icons/Icon';
+import { PortalPresence } from './Presence';
 
 export interface SelectOption {
   readonly value: string;
@@ -213,42 +213,49 @@ export function Select({
         <span data-inkbrick-part="select-value">{current?.label ?? value}</span>
         <Icon name="chevron-down" data-inkbrick-part="select-chevron" />
       </button>
-      {open &&
-        createPortal(
-          <div
-            ref={list}
-            id={`${id}-list`}
-            role="listbox"
-            tabIndex={-1}
-            aria-label={label}
-            aria-activedescendant={`${id}-${active}`}
-            data-inkbrick-ui="select"
-            data-side={placement.side}
-            style={{ top: placement.top, left: placement.left, minWidth: placement.minWidth }}
-            onKeyDown={onListKeyDown}
-            onPointerDown={stop}
-            onMouseDown={stop}
-            onClick={stop}
-          >
-            {options.map((option, index) => (
-              <div
-                key={option.value}
-                id={`${id}-${index}`}
-                role="option"
-                aria-selected={option.value === value}
-                data-inkbrick-part="option"
-                data-value={option.value}
-                data-active={index === active || undefined}
-                onPointerMove={() => setActive(index)}
-                onClick={() => choose(index)}
-              >
-                <span data-inkbrick-part="option-label">{option.label}</span>
-                {option.value === value && <Icon name="check" data-inkbrick-part="option-check" />}
-              </div>
-            ))}
-          </div>,
-          document.body,
-        )}
+      <PortalPresence
+        open={open}
+        render={() => {
+          const place = placement!;
+
+          return (
+            <div
+              ref={list}
+              id={`${id}-list`}
+              role="listbox"
+              tabIndex={-1}
+              aria-label={label}
+              aria-activedescendant={`${id}-${active}`}
+              data-inkbrick-ui="select"
+              data-side={place.side}
+              style={{ top: place.top, left: place.left, minWidth: place.minWidth }}
+              onKeyDown={onListKeyDown}
+              onPointerDown={stop}
+              onMouseDown={stop}
+              onClick={stop}
+            >
+              {options.map((option, index) => (
+                <div
+                  key={option.value}
+                  id={`${id}-${index}`}
+                  role="option"
+                  aria-selected={option.value === value}
+                  data-inkbrick-part="option"
+                  data-value={option.value}
+                  data-active={index === active || undefined}
+                  onPointerMove={() => setActive(index)}
+                  onClick={() => choose(index)}
+                >
+                  <span data-inkbrick-part="option-label">{option.label}</span>
+                  {option.value === value && (
+                    <Icon name="check" data-inkbrick-part="option-check" />
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        }}
+      />
     </>
   );
 }

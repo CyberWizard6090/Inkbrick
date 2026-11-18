@@ -15,6 +15,49 @@ async function typeBlocks(page: Page, texts: string[]) {
   }
 }
 
+const animationOf = (page: Page, selector: string) =>
+  page.locator(selector).evaluate((element) => {
+    const style = getComputedStyle(element);
+
+    return { name: style.animationName, duration: style.animationDuration };
+  });
+
+test.describe('Command palette appearance', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['hello world']);
+  });
+
+  test('the dimming fades in and the window drops in', async ({ page }) => {
+    await page.keyboard.press(`${modifier}+Shift+p`);
+    await expect(page.locator(palette)).toBeVisible();
+
+    expect(await animationOf(page, '[data-inkbrick-ui="palette-backdrop"]')).toEqual({
+      name: 'inkbrick-fade-in',
+      duration: '0.1s',
+    });
+    expect(await animationOf(page, palette)).toEqual({
+      name: 'inkbrick-slide-down',
+      duration: '0.1s',
+    });
+
+    // После анимации окно стоит на своём месте.
+    await page.waitForTimeout(250);
+    expect(await page.locator(palette).evaluate((el) => getComputedStyle(el).transform)).toBe(
+      'none',
+    );
+  });
+
+  test('is off with prefers-reduced-motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.keyboard.press(`${modifier}+Shift+p`);
+    await expect(page.locator(palette)).toBeVisible();
+
+    expect((await animationOf(page, palette)).name).toBe('none');
+    expect((await animationOf(page, '[data-inkbrick-ui="palette-backdrop"]')).name).toBe('none');
+  });
+});
+
 test.describe('Command palette', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?lang=en');
