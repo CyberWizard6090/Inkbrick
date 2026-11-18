@@ -62,6 +62,13 @@ export interface BlockSlashItem<TProps extends BlockProps = BlockProps> {
   readonly icon?: string;
   /** Группа пункта в меню вставки: `basic`, `media`, `advanced` или своя; без группы пункт идёт после всех групп. */
   readonly group?: string;
+  /**
+   * Ключи словаря приложения для названия, описания и слов поиска (через запятую): редактор берёт строки из словаря
+   * текущего языка, а `title`, `description` и `keywords` остаются запасными, если ключа в словаре нет.
+   */
+  readonly titleKey?: string;
+  readonly descriptionKey?: string;
+  readonly keywordsKey?: string;
   readonly props?: Partial<TProps>;
 }
 

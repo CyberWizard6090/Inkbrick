@@ -12,7 +12,7 @@ import {
   resolveMessages,
 } from '../i18n/translate';
 import { temmlRenderer, type FormulaRenderer } from '../math/renderer';
-import type { PartialMessages } from '../i18n/en';
+import type { AppMessages } from '../i18n/translate';
 import { resolveKeymap } from '../keymap/keymap';
 import type { KeyBinding } from '../keymap/types';
 import { resolveSlashItems } from '../slash/defaultSlashItems';
@@ -74,9 +74,9 @@ export interface EditorProviderProps {
    * Словари, подключаемые только к этому редактору: `{ de: { 'menu.delete': 'Löschen', … } }`.
    * Словарь может быть неполным — недостающее берётся из английского. Держите объект стабильным.
    */
-  readonly locales?: Readonly<Record<string, PartialMessages>>;
+  readonly locales?: Readonly<Record<string, AppMessages>>;
   /** Точечные замены строк поверх выбранного языка: `{ 'menu.delete': 'Убрать' }`. Держите объект стабильным. */
-  readonly messages?: PartialMessages;
+  readonly messages?: AppMessages;
   /**
    * Свои привязки клавиш. Привязка с `id` стандартной (`'undo'`, `'format.bold'`, `'indent'`, …) заменяет её,
    * новая проверяется раньше стандартных; `unbind('id')` отключает стандартную. Держите массив стабильным.

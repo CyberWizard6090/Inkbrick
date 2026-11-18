@@ -162,6 +162,31 @@ export const defaultSlashItems: readonly SlashMenuItem[] = Object.freeze([
 const messageKey = (id: string, part: 'title' | 'description' | 'keywords') =>
   `slash.item.${id}.${part}` as MessageKey;
 
+/** Строка приложения по ключу; `undefined`, если ключа нет в словаре (переводчик в этом случае возвращает сам ключ). */
+const appText = (t: TFunction, key: string | undefined): string | undefined => {
+  if (!key) return undefined;
+
+  const value = t(key as MessageKey);
+
+  return value === '' || value === key ? undefined : value;
+};
+
+/** Название, описание и слова поиска из словаря приложения по `titleKey`, `descriptionKey`, `keywordsKey`. */
+function localizeByKeys(item: SlashMenuItem, t: TFunction): SlashMenuItem {
+  if (!item.titleKey && !item.descriptionKey && !item.keywordsKey) return item;
+
+  const keywords = appText(t, item.keywordsKey);
+
+  return {
+    ...item,
+    title: appText(t, item.titleKey) ?? item.title,
+    description: appText(t, item.descriptionKey) ?? item.description,
+    keywords: keywords
+      ? [...new Set([...(item.keywords ?? []), ...splitKeywords(keywords)])]
+      : item.keywords,
+  };
+}
+
 const splitKeywords = (value: string) =>
   value
     .split(',')
@@ -194,24 +219,26 @@ export function resolveSlashItems(
 
   if (!custom || custom.length === 0) return defaults;
 
-  const overrides = new Map(custom.map((item) => [item.id, item]));
+  const overrides = new Map(custom.map((item) => [item.id, t ? localizeByKeys(item, t) : item]));
   const merged = defaults.map((item) => overrides.get(item.id) ?? item);
   const extra = custom
     .filter((item) => !defaultSlashItems.some((d) => d.id === item.id))
     .map((item) =>
-      t && messageKey(item.id, 'title') in en
-        ? {
-            ...item,
-            title: t(messageKey(item.id, 'title')),
-            description: t(messageKey(item.id, 'description')),
-            keywords: [
-              ...new Set([
-                ...(item.keywords ?? []),
-                ...splitKeywords(t(messageKey(item.id, 'keywords'))),
-              ]),
-            ],
-          }
-        : item,
+      t && (item.titleKey || item.descriptionKey || item.keywordsKey)
+        ? localizeByKeys(item, t)
+        : t && messageKey(item.id, 'title') in en
+          ? {
+              ...item,
+              title: t(messageKey(item.id, 'title')),
+              description: t(messageKey(item.id, 'description')),
+              keywords: [
+                ...new Set([
+                  ...(item.keywords ?? []),
+                  ...splitKeywords(t(messageKey(item.id, 'keywords'))),
+                ]),
+              ],
+            }
+          : item,
     );
 
   return [...merged, ...extra];

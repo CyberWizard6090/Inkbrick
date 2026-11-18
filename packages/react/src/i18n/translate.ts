@@ -11,13 +11,19 @@ export type MessageParams = Readonly<Record<string, string | number>>;
 export type TFunction = (key: MessageKey, params?: MessageParams) => string;
 
 // Английский всегда под рукой (из него берутся недостающие ключи), остальные языки подгружаются по требованию.
-const registry = new Map<string, PartialMessages>([['en', en]]);
+/**
+ * Словарь приложения: ключи редактора (можно не все) и свои ключи для строк приложения (названия своих блоков в slash-меню,
+ * см. `titleKey` у пункта).
+ */
+export type AppMessages = PartialMessages & Readonly<Record<string, string | undefined>>;
+
+const registry = new Map<string, AppMessages>([['en', en]]);
 
 /**
  * Подключает словарь под кодом языка (`'de'`, `'uk'`, `'pt-BR'`). Словарь может быть неполным: недостающие
  * ключи берутся из английского. Повторная регистрация того же кода заменяет словарь (в том числе встроенный).
  */
-export function registerLocale(code: string, messages: PartialMessages): void {
+export function registerLocale(code: string, messages: AppMessages): void {
   registry.set(normalize(code), messages);
 }
 
@@ -62,17 +68,21 @@ const normalize = (code: string) => code.trim().toLowerCase();
 
 function lookup(
   code: string,
-  locales: Readonly<Record<string, PartialMessages>> | undefined,
-): PartialMessages | undefined {
+  locales: Readonly<Record<string, AppMessages>> | undefined,
+): AppMessages | undefined {
   const wanted = normalize(code);
   const own = locales
     ? Object.fromEntries(Object.entries(locales).map(([key, value]) => [normalize(key), value]))
     : undefined;
 
   for (const candidate of [wanted, wanted.split('-')[0]]) {
-    const found = own?.[candidate] ?? registry.get(candidate);
+    const found = own?.[candidate];
+    const registered = registry.get(candidate);
 
-    if (found) return found;
+    // Словарь провайдера важнее подключённого, но не заменяет его: недостающие строки берутся из подключённого языка
+    // (так приложение добавляет свои ключи к встроенному языку, не копируя его целиком).
+    if (found && registered) return { ...registered, ...found };
+    if (found ?? registered) return found ?? registered;
   }
 
   return undefined;
@@ -80,8 +90,8 @@ function lookup(
 
 export interface ResolveMessagesOptions {
   readonly locale?: string;
-  readonly locales?: Readonly<Record<string, PartialMessages>>;
-  readonly messages?: PartialMessages;
+  readonly locales?: Readonly<Record<string, AppMessages>>;
+  readonly messages?: AppMessages;
 }
 
 export function resolveMessages(options: ResolveMessagesOptions = {}): Messages {
@@ -90,12 +100,12 @@ export function resolveMessages(options: ResolveMessagesOptions = {}): Messages 
   return { ...en, ...stripEmpty(base), ...stripEmpty(options.messages) };
 }
 
-function stripEmpty(messages: PartialMessages | undefined): PartialMessages {
+function stripEmpty(messages: AppMessages | undefined): AppMessages {
   if (!messages) return {};
 
   return Object.fromEntries(
     Object.entries(messages).filter(([, value]) => typeof value === 'string'),
-  ) as PartialMessages;
+  ) as AppMessages;
 }
 
 export function interpolate(template: string, params?: MessageParams): string {
@@ -107,7 +117,8 @@ export function interpolate(template: string, params?: MessageParams): string {
 }
 
 export function createTranslator(messages: Messages): TFunction {
-  return (key, params) => interpolate(messages[key] ?? en[key], params);
+  // Нет строки ни в словаре, ни в английском (ключ приложения без перевода): возвращается сам ключ.
+  return (key, params) => interpolate(messages[key] ?? en[key] ?? key, params);
 }
 
 export const defaultT: TFunction = createTranslator(en);

@@ -137,6 +137,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 - Footnotes (`docs/footnotes.md`): `footnoteBlocks` (opt-in, like the table of contents) with a reference object in the text (`footnote` inline attribute) and a `block:footnote` text block at the end of the note. `/footnote`, the command palette or `insertFootnote()` add both in one undo step; numbers are computed from the order of the references, so they never go stale; click the number to jump to the text, «↩» to jump back; a footnote without a reference shows «?». Exported to HTML (`<sup>`, `<aside id="fn-…">`), Markdown (`[^1]`, `[^1]: …`) and plain text. New: `SlashMenuItem.run`/`canRun` (an item that runs an action instead of turning the block) and `ReactBlockDefinition.slashActions`. A block that ends with an object (formula or footnote) now gets a trailing `<br>` so the caret can be placed after it.
 
+- Slash items of your own blocks follow the language: `titleKey`, `descriptionKey` and `keywordsKey` on an item (`BlockSlashItem`, `SlashMenuItem`) take the text from the app dictionary, `title`, `description` and `keywords` stay as the fallback. Dictionaries are typed `AppMessages` (editor keys plus your own), a key found nowhere comes back as itself, and the dictionary passed to the provider (`locales`) now adds to the connected language instead of replacing it (missing keys come from `en`/`ru` rather than only from English). `docs/i18n.md`.
+
 ### Changed
 
 - Adding a language to `@inkbrick/locales` is mechanical: a new `src/<code>.ts` plus one line in `localeLoaders`. The package `exports` (`./*`) and the `tsup` entries use a mask, and `pnpm check:i18n` and the package tests walk every language file (same keys and placeholders as English, a loader for every file).
@@ -216,6 +218,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   by a container with `overflow: hidden` and never leaves the document's left edge.
 
 ### Fixed
+
+- Backspace at the start of the block under a folded section and Delete at the end of a folded heading no longer merge text into a block you cannot see: the section unfolds first (one undo step, the caret stays), the next press merges as usual (`docs/heading-folding.md`).
 
 - Enter in a list item no longer copies `collapsed` to the new item: the new one starts expanded and the nested blocks stay with the first part.
 - Virtual renderer: the nested blocks of a closed toggle (and of a collapsed list item) are no longer counted in the height estimate, so they leave
