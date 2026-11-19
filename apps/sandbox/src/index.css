@@ -5,6 +5,17 @@ body {
   color: var(--inkbrick-text-primary);
 }
 
+/* В тёмной теме фон страницы того же цвета, что и панель редактора (#191919). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-inkbrick-theme='light']) body {
+    background-color: var(--inkbrick-bg-surface);
+  }
+}
+
+[data-inkbrick-theme='dark'] body {
+  background-color: var(--inkbrick-bg-surface);
+}
+
 .playground-header {
   margin: 0 0 16px;
   font-family: Inter, sans-serif;
