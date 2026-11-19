@@ -165,12 +165,31 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
 }
 
 export function TableRowBlock({ block }: BlockProps) {
+  const editor = useEditor();
+  const ref = useRef<HTMLTableRowElement>(null);
+  const cells = block.children.length;
+  // Первая строка задаёт число столбцов: по нему таблица не уже своего минимума. Строка перерисовывается, когда
+  // меняются её ячейки (добавили или удалили столбец), а сама таблица на это не реагирует.
+  const first = editor.store.getBlock(block.parentId ?? '')?.children[0] === block.id;
+
+  useLayoutEffect(() => {
+    if (!first) return;
+
+    const table = ref.current?.closest('table');
+
+    // Ячейка не уже своего минимума: при многих столбцах таблица шире блока и прокручивается, а не сжимает ячейки.
+    if (table) table.style.minWidth = `${cells * MIN_CELL_WIDTH}px`;
+  }, [cells, first]);
+
   return (
-    <tr data-inkbrick-block="table-row" data-block-id={block.id}>
+    <tr ref={ref} data-inkbrick-block="table-row" data-block-id={block.id}>
       <Children id={block.id} />
     </tr>
   );
 }
+
+/** Наименьшая ширина ячейки в пикселях: совпадает с `min-width` ячейки в стилях. */
+const MIN_CELL_WIDTH = 64;
 
 /** Толщина границы с одной стороны ячейки; `undefined` — сторона не задана. */
 function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | undefined {

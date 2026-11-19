@@ -438,6 +438,22 @@ test.describe('Table controls', () => {
     await expect(page.locator('[data-inkbrick-part="grid"]')).toHaveAttribute('aria-label', /.+/);
   });
 
+  test('many columns keep their minimum width, the table scrolls instead of squeezing them', async ({
+    page,
+  }) => {
+    for (let added = 0; added < 12; added++) {
+      await hover(page, 0, 0);
+      await page.locator(part('column-insert')).nth(1).click();
+    }
+
+    const widths = await page
+      .locator(`${table} tr:first-child td`)
+      .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().width));
+
+    expect(widths).toHaveLength(15);
+    expect(Math.min(...widths)).toBeGreaterThanOrEqual(60);
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 
