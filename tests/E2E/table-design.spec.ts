@@ -217,3 +217,49 @@ test.describe('Table style gallery and borders', () => {
     ).toEqual([]);
   });
 });
+
+test.describe('Table design on a phone', () => {
+  test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
+  test.skip(({ browserName }) => browserName === 'firefox', 'Firefox has no mobile emulation');
+
+  test('the table menu with the styles and borders fits the screen and has big enough buttons', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+
+    const cell = (await page.locator(cells).nth(4).boundingBox())!;
+
+    await page.touchscreen.tap(cell.x + 10, cell.y + 10);
+    await page.locator('[data-inkbrick-part="table-grip"]').tap();
+
+    const menu = page.locator(blockMenu);
+
+    await expect(menu).toBeVisible();
+
+    const inside = await menu.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+
+      return box.left >= 0 && box.right <= window.innerWidth && box.top >= 0;
+    });
+
+    expect(inside).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      375,
+    );
+
+    // Секции лежат ниже пунктов: меню прокручивается, пальцу нужны кнопки не меньше 44 пикселей.
+    await menu.locator('[data-action="table-border-all"]').scrollIntoViewIfNeeded();
+
+    for (const action of ['table-border-all', 'table-border-width-thick', 'table-style-blue']) {
+      expect(
+        (await menu.locator(`[data-action="${action}"]`).boundingBox())!.height,
+      ).toBeGreaterThanOrEqual(44);
+    }
+
+    await menu.locator('[data-action="table-border-width-thick"]').tap();
+    await menu.locator('[data-action="table-border-all"]').tap();
+
+    expect(await cellBorder(page, 4, 'top')).toBe('thick');
+  });
+});

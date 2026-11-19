@@ -311,6 +311,11 @@ body {
     border-left: none;
   }
 
+  /* Переключатель примеров прижат к низу окна: конец документа докручивается выше него. */
+  .playground-editor {
+    padding-bottom: 64px;
+  }
+
   /* Шторка не закрывает конец документа: его можно докрутить выше неё. */
   .playground-editor:has(.debug-panel) {
     padding-bottom: 58vh;

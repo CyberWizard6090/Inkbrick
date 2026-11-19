@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { isSafeImageUrl, normalizeLinkUrl } from '@inkbrick/document';
+import { isSafeImageUrl, normalizeLinkUrl, toHtml } from '@inkbrick/document';
 
 import { Editor, fragmentToHtml, fragmentToPlainText, type CaretResult } from '../src';
+
+/** Превращает первый абзац заметки в картинку. */
+function setupImage(editor: Editor) {
+  const noteId = editor.document.getBlock(editor.document.rootId)!.children[0];
+  const firstId = editor.document.getBlock(noteId)!.children[0];
+
+  editor.dispatch({
+    type: 'convertBlock',
+    payload: { blockId: firstId, flavour: 'block:image' },
+  } as never);
+
+  return { firstId, children: () => editor.document.getBlock(noteId)!.children };
+}
 
 function setup() {
   const editor = new Editor();
@@ -65,8 +78,56 @@ describe('image block', () => {
       caption: '',
       width: 100,
       align: 'center',
+      aspect: 'auto',
+      zoom: 1,
+      cropX: 50,
+      cropY: 50,
     });
     expect(editor.schema.getBlockSchema('block:image')!.inline).toBe(false);
+  });
+
+  it('the crop (ratio, zoom, position) is validated by the schema and is exported to HTML', () => {
+    const { editor } = setup();
+
+    for (const bad of [
+      { aspect: 'diagonal' },
+      { zoom: 0.5 },
+      { zoom: 6 },
+      { cropX: -1 },
+      { cropY: 101 },
+    ]) {
+      expect(() => editor.schema.createProps('block:image', bad)).toThrow();
+    }
+
+    const props = editor.schema.createProps('block:image', {
+      src: 'https://a.b/c.png',
+      aspect: '16:9',
+      zoom: 2,
+      cropX: 30,
+      cropY: 70,
+    });
+
+    expect(props).toMatchObject({ aspect: '16:9', zoom: 2, cropX: 30, cropY: 70 });
+
+    const { firstId, children } = setupImage(editor);
+
+    expect(firstId).toBeTruthy();
+
+    const imageId = children()[0];
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: {
+        blockId: imageId,
+        props: { src: 'https://a.b/c.png', aspect: '16:9', cropX: 30, cropY: 70 },
+      },
+    });
+
+    const html = toHtml(editor.document);
+
+    expect(html).toContain('aspect-ratio:16/9');
+    expect(html).toContain('object-fit:cover');
+    expect(html).toContain('object-position:30% 70%');
   });
 
   it('props are validated by the schema: unsafe src, width and align are rejected', () => {

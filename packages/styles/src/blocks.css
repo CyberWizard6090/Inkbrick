@@ -1283,6 +1283,158 @@
     border-radius: var(--inkbrick-radius-surface);
   }
 
+  /*
+   * Кадрирование: кадр задаёт пропорции (`aspect-ratio` в разметке), картинка внутри закрывает его целиком и сдвинута
+   * и увеличена по положению и масштабу (`left`, `top`, `width`, `height` в процентах кадра).
+   */
+  :where([data-inkbrick-part='frame']) {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-part='frame'] > [data-inkbrick-part='image']) {
+    position: absolute;
+    max-width: none;
+    border-radius: 0;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-part='crop']) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  :where([data-inkbrick-part='crop-frame']) {
+    border-radius: var(--inkbrick-radius-surface);
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 0;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-part='crop-frame']:active) {
+    cursor: grabbing;
+  }
+
+  :where([data-inkbrick-part='crop-frame']:focus-visible) {
+    outline-width: 3px;
+  }
+
+  :where([data-inkbrick-part='crop-hint']) {
+    margin: 0;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-part='crop-aspects']) {
+    display: flex;
+    gap: 6px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  :where([data-inkbrick-part='crop-aspect']),
+  :where([data-inkbrick-part='crop-reset']),
+  :where([data-inkbrick-part='crop-cancel']),
+  :where([data-inkbrick-part='crop-done']) {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-sizing: border-box;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    font-size: var(--inkbrick-font-size-ui);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-part='crop-aspect']:hover),
+  :where([data-inkbrick-part='crop-reset']:hover),
+  :where([data-inkbrick-part='crop-cancel']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-part='crop-aspect'][aria-checked='true']) {
+    border-color: var(--inkbrick-brand-bg);
+    background: var(--inkbrick-brand-tint);
+    color: var(--inkbrick-brand-fg);
+  }
+
+  /* Основная кнопка: фон «нажатого» акцента, потому что белый текст на обычном акценте не дотягивает до 4.5:1. */
+  :where([data-inkbrick-part='crop-done']) {
+    border-color: var(--inkbrick-brand-bg-pressed);
+    background: var(--inkbrick-brand-bg-pressed);
+    color: var(--inkbrick-fg-on-brand);
+  }
+
+  :where([data-inkbrick-part='crop-done']:hover) {
+    filter: brightness(1.08);
+  }
+
+  :where([data-inkbrick-part='crop-aspect']:focus-visible),
+  :where([data-inkbrick-part='crop-reset']:focus-visible),
+  :where([data-inkbrick-part='crop-cancel']:focus-visible),
+  :where([data-inkbrick-part='crop-done']:focus-visible),
+  :where([data-inkbrick-part='crop-zoom'] input:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='crop-zoom']) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--inkbrick-font-size-ui);
+  }
+
+  :where([data-inkbrick-part='crop-zoom'] input) {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='crop-zoom'] output) {
+    min-width: 3.5em;
+    color: var(--inkbrick-fg-3);
+    text-align: end;
+  }
+
+  :where([data-inkbrick-part='crop-actions']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  :where([data-inkbrick-part='crop-actions'] > span) {
+    flex: 1;
+  }
+
+  /* Палец не наводится и попадает хуже: кнопки кадра крупнее. */
+  @media (pointer: coarse) {
+    :where([data-inkbrick-part='crop-aspect']),
+    :where([data-inkbrick-part='crop-reset']),
+    :where([data-inkbrick-part='crop-cancel']),
+    :where([data-inkbrick-part='crop-done']) {
+      min-height: 44px;
+      padding: 0 16px;
+    }
+
+    :where([data-inkbrick-part='crop-zoom'] input) {
+      min-height: 44px;
+    }
+  }
+
   :where([data-inkbrick-part='caption']) {
     margin-top: 6px;
     color: var(--inkbrick-fg-3);

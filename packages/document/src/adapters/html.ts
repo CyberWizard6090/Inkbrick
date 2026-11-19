@@ -3,6 +3,7 @@ import type { BaseBlock, InlineNode } from '../model';
 import { exportColor, getBlockBackgroundColor, isHexColor } from '../utils/colors';
 import { isFootnoteNode } from '../utils/footnote';
 import { isFormulaNode } from '../utils/formula';
+import { IMAGE_ASPECTS } from '../schema/blocks/ImageSchema';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
@@ -61,6 +62,23 @@ function borderStyle(cell: BaseBlock): string[] {
       ? [`border-${side}:${BORDER_PX[width]} solid ${color}`]
       : [];
   });
+}
+
+/** Кадрирование картинки как `style`: пропорции кадра и положение (масштаб в HTML не передаётся, нужен стиль страницы). */
+function cropStyle(block: BaseBlock): string {
+  const aspect = block.props.aspect;
+  const x = Number(block.props.cropX);
+  const y = Number(block.props.cropY);
+  const ratio = typeof aspect === 'string' ? aspect : 'auto';
+
+  if (!(IMAGE_ASPECTS as readonly string[]).includes(ratio) || ratio === 'auto') return '';
+
+  const position =
+    Number.isFinite(x) && Number.isFinite(y)
+      ? `;object-position:${Math.min(100, Math.max(0, x))}% ${Math.min(100, Math.max(0, y))}%`
+      : '';
+
+  return ` style="aspect-ratio:${ratio.replace(':', '/')};object-fit:cover;width:100%${position}"`;
 }
 
 function inlineToHtml(nodes: readonly InlineNode[], inCode = false): string {
@@ -163,7 +181,7 @@ function renderBlock(block: BaseBlock): string {
 
       if (!isSafeImageUrl(src)) return caption ? `<p>${escapeHtml(caption)}</p>` : '';
 
-      const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(stringProp(block, 'alt'))}">`;
+      const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(stringProp(block, 'alt'))}"${cropStyle(block)}>`;
 
       return caption
         ? `<figure>${img}<figcaption>${escapeHtml(caption)}</figcaption></figure>`

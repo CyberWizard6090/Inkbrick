@@ -1744,6 +1744,35 @@
     height: 3px;
   }
 
+  /* Палец не наводится и попадает хуже: кнопки стилей и границ крупнее (44 пикселя, как рекомендуют для касания). */
+  @media (pointer: coarse) {
+    :where(
+      :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
+        :is(
+          [data-inkbrick-part='style-option'],
+          [data-inkbrick-part='border-mode'],
+          [data-inkbrick-part='border-width']
+        )
+    ) {
+      min-height: 44px;
+    }
+
+    :where(
+      :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
+        [data-inkbrick-part='border-colors']
+    ) {
+      grid-template-columns: repeat(auto-fill, 36px);
+    }
+
+    :where(
+      :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
+        [data-inkbrick-part='border-color']
+    ) {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
   /* Секция контекстного меню со своим содержимым: заголовок и содержимое. */
   :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='label']) {
     padding: 6px 12px 2px;
