@@ -663,8 +663,13 @@ describe('table controls: resizing', () => {
     const t = mountTable();
 
     t.focus(0, 0);
-    act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowRight' }));
+    const grip = t.$$('resize')[1] as HTMLElement;
+
+    grip.focus();
+    act(() => void fireEvent.keyDown(grip, { key: 'ArrowRight' }));
     expect(t.tableProps().widths).toEqual([100, 110, 90]);
+    // Фокус не уходит с ручки: следующая стрелка продолжает менять ширину.
+    expect(document.activeElement).toBe(grip);
 
     // Второй шаг считается от сохранённых ширин: столбец 1 вернулся к 100, а соседний столбец 2 — к 100.
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowLeft' }));

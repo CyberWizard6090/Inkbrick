@@ -839,8 +839,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     event.preventDefault();
     const start = widthsNow();
     const next = resized(start, column, step);
+    const indexes = columnsToWrite(start, next);
 
-    perform(() => writeWidths(next, columnsToWrite(start, next)));
+    // Фокус остаётся на ручке: иначе следующая стрелка уже уходила бы в документ.
+    if (indexes.length === 0) return;
+
+    editor.sealHistory();
+    flushSync(() => {
+      writeWidths(next, indexes);
+    });
   };
 
   const { table, row, cell, edges } = layout;
