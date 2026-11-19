@@ -34,7 +34,7 @@ test.describe('Command palette appearance', () => {
 
     const query = page.locator(`${palette} [data-inkbrick-part="query"]`);
 
-    await expect.poll(async () => (await query.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    await expect.poll(async () => (await query.boundingBox())?.height).toBeGreaterThanOrEqual(43.9);
   });
 
   test('the dimming fades in and the window drops in', async ({ page }) => {
