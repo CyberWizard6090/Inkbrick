@@ -118,7 +118,7 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
     const pastePlain = (text: string, selection: DocSelection) => {
       const trimmed = text.trim();
 
-      // Адрес поверх выделенного текста делает его ссылкой (как в Slack), а не заменяет.
+      // Адрес поверх выделенного текста делает его ссылкой, а не заменяет.
       if (
         !selection.collapsed &&
         selection.from.blockId === selection.to.blockId &&
