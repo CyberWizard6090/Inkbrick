@@ -150,7 +150,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Every package has a `README.md` for its npm page: what it does, how to install it, a short example. The root
   README lists the optional blocks and tools, `@inkbrick/locales` and all the guides; the size of the React editor
   there is up to date (~61 KB gzip).
-- Smooth appearance, like in Notion: the block handle fades in and slides in a few pixels from the left, the slash menu, the
+- Smooth appearance: the block handle fades in and slides in a few pixels from the left, the slash menu, the
   block menu and the context menu fade in and slide in from the caret, the handle or the click point (from below when a menu opens
   above it; `data-side="top|bottom"` on the menu), the floating toolbar rises over the selection or drops under it through the
   `translate` property, so its own `transform` positioning is not touched (`inkbrick-toolbar-in`, `inkbrick-toolbar-in-down`), the command palette dims the page and drops its window in (`inkbrick-slide-down`), the find panel drops in from the top edge, the formula popover, the option list of a table cell and the tag suggestions fade in like menus and the column properties dialog like the palette, the drop line fades in while a block is dragged, and the dragged block dims instead of blinking. Pure CSS (`@keyframes inkbrick-handle-in`,
