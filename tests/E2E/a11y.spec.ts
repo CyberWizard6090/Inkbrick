@@ -51,7 +51,7 @@ test.describe('Accessibility (axe)', () => {
     }
 
     // Выбран свой цвет: образец и индикатор с произвольным значением тоже проходят проверку.
-    await page.locator(`${toolbar} [data-kind="highlight"] input[type="color"]`).fill('#12ab34');
+    await page.locator(`${toolbar} [data-kind="highlight"] input[type="color"]`).fill('#8ee0a0');
     await page.locator(`${toolbar} [data-format="highlight"]`).click();
     expect(await violations(page)).toEqual([]);
   });

@@ -367,10 +367,10 @@ test.describe('Text color and highlight', () => {
     await page.evaluate(() =>
       document.documentElement.setAttribute('data-inkbrick-theme', 'light'),
     );
-    await expect(span).toHaveCSS('color', 'rgb(229, 25, 43)');
+    await expect(span).toHaveCSS('color', 'rgb(196, 52, 45)');
 
     await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
-    await expect(span).toHaveCSS('color', 'rgb(255, 90, 103)');
+    await expect(span).toHaveCSS('color', 'rgb(255, 115, 105)');
   });
 
   test('the color is one undo step and typing after colored text keeps the color', async ({
@@ -452,12 +452,12 @@ test.describe('Text color and highlight', () => {
     await page.evaluate(() =>
       document.documentElement.setAttribute('data-inkbrick-theme', 'light'),
     );
-    await expect(span).toHaveCSS('color', 'rgb(15, 118, 110)');
-    await expect(span).toHaveCSS('background-color', 'rgb(245, 208, 254)');
+    await expect(span).toHaveCSS('color', 'rgb(43, 122, 115)');
+    await expect(span).toHaveCSS('background-color', 'rgb(241, 220, 238)');
 
     await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
-    await expect(span).toHaveCSS('color', 'rgb(45, 212, 191)');
-    await expect(span).toHaveCSS('background-color', 'rgb(162, 28, 175)');
+    await expect(span).toHaveCSS('color', 'rgb(63, 181, 167)');
+    await expect(span).toHaveCSS('background-color', 'rgb(81, 55, 77)');
   });
 
   test('"Custom color…" stores #rrggbb for text and highlight and shows it on the toolbar', async ({
