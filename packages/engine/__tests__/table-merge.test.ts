@@ -238,8 +238,8 @@ describe('merged cells in export and the clipboard', () => {
     const { editor } = merged();
     const html = toHtml(editor.document, { schema: editor.schema, title: false });
 
-    expect(html).toContain('<th colspan="2">Qty</th>');
-    expect(html).toContain('<td rowspan="2">a<br>d</td>');
+    expect(html).toContain('<th colspan="2" style="border:1px solid #e9e9e7">Qty</th>');
+    expect(html).toContain('<td rowspan="2" style="border:1px solid #e9e9e7">a<br>d</td>');
     expect(html.match(/<th[ >]/g)).toHaveLength(2);
     expect(html.match(/<td[ >]/g)).toHaveLength(5);
   });

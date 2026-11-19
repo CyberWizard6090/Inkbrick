@@ -207,8 +207,8 @@ describe('table export', () => {
     expect(toHtml(document)).toBe(
       '<p>before</p>\n' +
         '<table><colgroup><col style="width:120px"><col></colgroup>' +
-        '<thead><tr><th style="text-align:center">A &lt;b&gt;</th><th>B</th></tr></thead>' +
-        '<tbody><tr><td><strong>x</strong><br>y</td><td></td></tr></tbody></table>\n' +
+        '<thead><tr><th style="text-align:center;border:1px solid #e9e9e7">A &lt;b&gt;</th><th style="border:1px solid #e9e9e7">B</th></tr></thead>' +
+        '<tbody><tr><td style="border:1px solid #e9e9e7"><strong>x</strong><br>y</td><td style="border:1px solid #e9e9e7"></td></tr></tbody></table>\n' +
         '<p>after</p>',
     );
   });
@@ -216,7 +216,9 @@ describe('table export', () => {
   it('html without a header row has only <tbody>', () => {
     const html = toHtml(build([['a', 'b']], { header: false }));
 
-    expect(html).toContain('<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>');
+    expect(html).toContain(
+      '<table><tbody><tr><td style="border:1px solid #e9e9e7">a</td><td style="border:1px solid #e9e9e7">b</td></tr></tbody></table>',
+    );
     expect(html).not.toContain('<thead>');
   });
 
@@ -260,7 +262,9 @@ describe('table export', () => {
   it('rows shorter than the first one are padded', () => {
     const document = build([['a', 'b', 'c'], ['d']], {}, { unchecked: true });
 
-    expect(toHtml(document)).toContain('<td>d</td><td></td><td></td>');
+    expect(toHtml(document)).toContain(
+      '<td style="border:1px solid #e9e9e7">d</td><td></td><td></td>',
+    );
     expect(toMarkdown(document)).toContain('| d |  |  |');
   });
 

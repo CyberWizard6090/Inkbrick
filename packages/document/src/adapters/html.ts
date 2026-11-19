@@ -50,7 +50,10 @@ function alignStyle(block: BaseBlock, extra: readonly string[] = []): string {
 const BORDER_PX = { thin: '1px', medium: '2px', thick: '3px' } as const;
 
 /** Границы ячейки в `style`: толщина и цвет (оттенок светлой темы) по сторонам; «без линии» — `none`. */
-function borderStyle(cell: BaseBlock): string[] {
+/** Линия по умолчанию у ячейки таблицы в редакторе (`--inkbrick-stroke-2`, светлая тема). */
+const DEFAULT_CELL_LINE = '#e9e9e7';
+
+function borderStyle(cell: BaseBlock, defaults = false): string[] {
   const color = exportColor(cell.props.borderColor, 'text') ?? '#bdbdbd';
   // Начертание линий ячейки одно на все стороны: сплошная, прерывистая или точками (как в редакторе).
   const line =
@@ -58,14 +61,27 @@ function borderStyle(cell: BaseBlock): string[] {
       ? cell.props.borderStyle
       : 'solid';
 
-  return (['top', 'right', 'bottom', 'left'] as const).flatMap((side) => {
+  // Все четыре стороны без своих линий: одна запись вместо четырёх.
+  const sides = ['top', 'right', 'bottom', 'left'] as const;
+  const unset = sides.every(
+    (side) =>
+      !['none', 'thin', 'medium', 'thick'].includes(
+        String(cell.props[`border${side[0].toUpperCase()}${side.slice(1)}`]),
+      ),
+  );
+
+  if (defaults && unset) return [`border:1px solid ${DEFAULT_CELL_LINE}`];
+
+  return sides.flatMap((side) => {
     const width = cell.props[`border${side[0].toUpperCase()}${side.slice(1)}`];
 
     if (width === 'none') return [`border-${side}:none`];
 
-    return width === 'thin' || width === 'medium' || width === 'thick'
-      ? [`border-${side}:${BORDER_PX[width]} ${line} ${color}`]
-      : [];
+    if (width === 'thin' || width === 'medium' || width === 'thick')
+      return [`border-${side}:${BORDER_PX[width]} ${line} ${color}`];
+
+    // Сторона без своей линии: в редакторе она рисуется линией таблицы по умолчанию, и в HTML — так же.
+    return defaults ? [`border-${side}:1px solid ${DEFAULT_CELL_LINE}`] : [];
   });
 }
 
@@ -227,7 +243,7 @@ function renderTable(node: ExportNode): string {
     const name = rowHeader ? 'th' : tag;
     const scope = rowHeader ? ' scope="row"' : '';
 
-    return `<${name}${scope}${spans}${cell ? alignStyle(cell, borderStyle(cell)) : ''}>${inlineToHtml(cell?.content ?? [])}</${name}>`;
+    return `<${name}${scope}${spans}${cell ? alignStyle(cell, borderStyle(cell, borders !== false)) : ''}>${inlineToHtml(cell?.content ?? [])}</${name}>`;
   };
   const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th', rowIndex: number) => {
     // Полосатость: каждая вторая строка тела; цвет светлой темы, потому что стилей темы в экспорте нет.
