@@ -75,11 +75,12 @@ test.describe('Selection across blocks', () => {
     await expect(page.locator(editable).first()).toHaveText('');
   });
 
-  test('Ctrl/Cmd+A selects the whole document; Backspace leaves one empty paragraph', async ({
+  test('Ctrl/Cmd+A twice picks every block; Backspace leaves one empty paragraph', async ({
     page,
   }) => {
     await typeBlocks(page, ['one', 'two', 'three']);
 
+    await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press('Backspace');
 
@@ -206,7 +207,8 @@ test.describe('Selection across blocks', () => {
     });
 
     await page.locator(editable).first().click();
-    await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${modifier}+Shift+End`);
     await page.keyboard.press('Backspace');
 
     await expect(page.locator('[data-unknown-flavour="block:mystery"]')).toHaveCount(1);

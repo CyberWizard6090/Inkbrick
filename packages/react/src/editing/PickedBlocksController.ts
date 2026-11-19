@@ -1,6 +1,7 @@
 /**
- * Выбранные блоки целиком (Esc в блоке, Shift+стрелки, рамка мышью): подряд идущие соседи одного родителя. Это не выделение
- * текста: действия (удалить, дублировать, перенести, копировать) применяются к блокам, а не к символам.
+ * Выбранные блоки целиком (Esc в блоке, Shift+стрелки, рамка мышью, Ctrl/Cmd+клик по ручке): соседи одного родителя,
+ * подряд или вразброс. Это не выделение текста: действия (удалить, дублировать, перенести, копировать) применяются
+ * к блокам, а не к символам.
  */
 export interface PickedState {
   /** Блоки в порядке документа. */
@@ -19,6 +20,9 @@ export class PickedBlocksController {
   private ids: ReadonlySet<string> = new Set();
 
   private readonly listeners = new Set<() => void>();
+
+  /** Вызывается после каждого изменения, до слушателей: ставит `data-picked` на нарисованные блоки одним проходом. */
+  constructor(private readonly onChange: () => void = () => {}) {}
 
   getState = (): PickedState => this.state;
 
@@ -51,6 +55,8 @@ export class PickedBlocksController {
 
     this.state = ids.length === 0 ? NONE : { ids, anchor, focus };
     this.ids = new Set(ids);
+
+    this.onChange();
 
     for (const listener of [...this.listeners]) listener();
   }

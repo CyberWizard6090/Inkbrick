@@ -5,6 +5,8 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
+import { pickRangeTo, togglePick } from '../pick/actions';
+import { readDocSelection } from '../editing/selection';
 import { addBlockBelow, buildBlockActions } from './actions';
 import { DefaultBlockHandle } from './DefaultBlockHandle';
 import { DefaultBlockMenu } from './DefaultBlockMenu';
@@ -54,9 +56,29 @@ export function BlockHandleHost() {
       cleanup.current?.();
 
       const anchor = hover;
+      const { shiftKey, ctrlKey, metaKey } = event;
       const cancel = startGripGesture(drag, blockId, event.nativeEvent, {
         onTap: () => {
           cleanup.current = null;
+
+          // Shift+клик — диапазон от якоря (или блока под кареткой), Ctrl/Cmd+клик — добавить блок в выбор или убрать.
+          if (ctrlKey || metaKey) {
+            togglePick(editor, view, blockId);
+            return;
+          }
+
+          if (shiftKey) {
+            const root = view.getRoot();
+
+            pickRangeTo(
+              editor,
+              view,
+              blockId,
+              (root && readDocSelection(root)?.from.blockId) || undefined,
+            );
+            return;
+          }
+
           if (anchor) view.blocks.openMenu({ blockId, x: anchor.x, y: anchor.y + 30 });
         },
       });

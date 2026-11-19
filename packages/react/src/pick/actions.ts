@@ -21,6 +21,19 @@ export function pickableBlock(editor: Editor, blockId: string): string | undefin
   return block && parent && parent.flavour !== 'block:page' ? block.id : undefined;
 }
 
+/** Блок верхнего уровня заметки, в котором лежит `blockId` (или он сам). */
+export function topBlock(editor: Editor, blockId: string): string | undefined {
+  for (
+    let block = editor.store.getBlock(blockId);
+    block?.parentId;
+    block = editor.store.getBlock(block.parentId)
+  ) {
+    if (editor.store.getBlock(block.parentId)?.flavour === 'block:note') return block.id;
+  }
+
+  return undefined;
+}
+
 /** Соседи блока (дети его родителя) в порядке документа. */
 function siblingsOf(editor: Editor, blockId: string): readonly string[] {
   const parent = editor.store.getBlock(blockId)?.parentId;
@@ -73,9 +86,17 @@ export function pickRun(
   dropTextSelection(view);
 }
 
-/** Расширяет выбор на соседа сверху или снизу от подвижного края; от якоря в обратную сторону выбор сужается. */
+/** Блоки в порядке документа (соседи `like`): выбор всегда хранится так, даже если он собран вразброс. */
+function inOrder(editor: Editor, like: string, ids: ReadonlySet<string>): string[] {
+  return siblingsOf(editor, like).filter((id) => ids.has(id));
+}
+
+/**
+ * Расширяет выбор на соседа сверху или снизу от подвижного края; если сосед уже выбран (путь назад к якорю), выбор
+ * сужается на край. Блоки, выбранные вразброс, остаются.
+ */
 export function extendPick(editor: Editor, view: EditorView, direction: 1 | -1): boolean {
-  const { anchor, focus } = view.picked.getState();
+  const { ids, anchor, focus } = view.picked.getState();
 
   if (!anchor || !focus) return false;
 
@@ -84,14 +105,111 @@ export function extendPick(editor: Editor, view: EditorView, direction: 1 | -1):
 
   if (!next) return true;
 
-  const run = runBetween(editor, anchor, next);
+  const rest = new Set(ids);
 
-  if (!run) return true;
+  if (rest.has(next)) rest.delete(focus);
+  else rest.add(next);
 
-  view.picked.set(run, anchor, next);
+  view.picked.set(inOrder(editor, focus, rest), anchor, next);
   view.getElement(next)?.scrollIntoView?.({ block: 'nearest' });
 
   return true;
+}
+
+/** Сосед `blockId` (или он сам) под родителем `parentId`: блок, который лежит на пути от `blockId` к этому родителю. */
+function siblingUnder(editor: Editor, blockId: string, parentId: string): string | undefined {
+  for (
+    let block = editor.store.getBlock(blockId);
+    block;
+    block = block.parentId ? editor.store.getBlock(block.parentId) : undefined
+  ) {
+    if (block.parentId === parentId) return block.id;
+  }
+
+  return undefined;
+}
+
+/**
+ * Shift+клик по блоку или ручке: выбор расширяется от якоря до кликнутого блока (диапазон). Без выбора якорь — `from`
+ * (блок под кареткой), а если и его нет — выбирается один кликнутый блок. Блок из другой ветки ставит новый выбор.
+ */
+export function pickRangeTo(
+  editor: Editor,
+  view: EditorView,
+  blockId: string,
+  from?: string,
+): boolean {
+  const target = pickableBlock(editor, blockId);
+
+  if (!target) return false;
+
+  const anchor = view.picked.getState().anchor ?? (from && pickableBlock(editor, from));
+  const parent = anchor ? editor.store.getBlock(anchor)?.parentId : undefined;
+  const end = parent ? siblingUnder(editor, target, parent) : undefined;
+  const run = anchor && end ? runBetween(editor, anchor, end) : undefined;
+
+  if (!anchor || !end || !run) return pickBlock(editor, view, target);
+
+  view.picked.set(run, anchor, end);
+  dropTextSelection(view);
+
+  return true;
+}
+
+/**
+ * Ctrl/Cmd+клик по ручке: блок добавляется в выбор или убирается из него. Выбор может быть несвязным; блок из другой
+ * ветки начинает выбор заново.
+ */
+export function togglePick(editor: Editor, view: EditorView, blockId: string): boolean {
+  const target = pickableBlock(editor, blockId);
+
+  if (!target) return false;
+
+  const { ids } = view.picked.getState();
+  const same =
+    ids.length > 0 &&
+    editor.store.getBlock(ids[0])?.parentId === editor.store.getBlock(target)?.parentId;
+
+  if (!same) return pickBlock(editor, view, target);
+
+  if (!ids.includes(target)) {
+    view.picked.set(inOrder(editor, target, new Set([...ids, target])), target, target);
+    dropTextSelection(view);
+
+    return true;
+  }
+
+  const rest = ids.filter((id) => id !== target);
+
+  // Снятый последним блок уводит выбор: каретка клавиш остаётся на последнем из оставшихся.
+  view.picked.set(rest, rest[0], rest.at(-1));
+
+  return true;
+}
+
+/**
+ * Выбирает все блоки того же уровня (Ctrl/Cmd+A); если они уже выбраны, поднимается на уровень выше. `false`, если
+ * выбирать некуда.
+ */
+export function pickAll(editor: Editor, view: EditorView, blockId?: string): boolean {
+  let base: string | undefined = blockId ?? view.picked.getState().ids[0];
+
+  while (base) {
+    const level = siblingsOf(editor, base);
+    const done = level.length > 0 && level.every((id) => view.picked.has(id));
+    const up: string | null | undefined = editor.store.getBlock(base)?.parentId;
+
+    if (!done) {
+      view.picked.set(level, level[0], level.at(-1));
+      dropTextSelection(view);
+
+      return true;
+    }
+
+    base = up ? pickableBlock(editor, up) : undefined;
+  }
+
+  return false;
 }
 
 /** Переносит выбор на соседа без расширения. */
@@ -151,7 +269,10 @@ export function deleteBlocks(editor: Editor, view: EditorView, ids: readonly str
     });
   });
 
-  const target = after ?? before ?? parent;
+  // Удалены все блоки родителя: редактор оставляет в нём один пустой абзац, каретка идёт в него (а не в сам родитель,
+  // у которого нет редактируемого элемента: Firefox и Safari в этом случае теряют каретку и ввод уходит в пустоту).
+  const target =
+    after ?? before ?? (parent ? editor.store.getBlock(parent)?.children[0] : undefined) ?? parent;
   const block = target ? editor.store.getBlock(target) : undefined;
 
   if (block) {
@@ -203,8 +324,8 @@ export function duplicateBlocks(
 }
 
 /**
- * Сдвигает блоки на одну позицию (перед предыдущим соседом или после следующего) одной правкой. `false`, если дальше
- * некуда или движок не принимает такой перенос.
+ * Сдвигает блоки на одну позицию (перед предыдущим соседом или после следующего) одной правкой; выбор вразброс сдвигается
+ * блок за блоком, порядок выбранных сохраняется. `false`, если дальше некуда или движок не принимает такой перенос.
  */
 export function moveBlocks(
   editor: Editor,
@@ -214,28 +335,30 @@ export function moveBlocks(
 ): boolean {
   if (ids.length === 0) return false;
 
-  const siblings = siblingsOf(editor, ids[0]);
-  const first = siblings.indexOf(ids[0]);
-  const last = siblings.indexOf(ids.at(-1)!);
-  const neighbour = siblings[direction === -1 ? first - 1 : last + 1];
-
-  if (!neighbour) return false;
-
+  const chosen = new Set(ids);
+  const moves: { blockId: string; targetId: string; position: 'before' | 'after' }[] = [];
   const position = direction === -1 ? 'before' : 'after';
-  // Вверх переносим блоки по порядку перед соседом, вниз — с конца после соседа: порядок выбранных сохраняется.
+  // Вверх идём по порядку, вниз — с конца: блок упирается в тот, что уже стоит у края, и не обгоняет его.
   const order = direction === -1 ? [...ids] : [...ids].reverse();
+  const level = [...siblingsOf(editor, ids[0])];
 
-  if (!order.every((id) => editor.can('moveBlock', { blockId: id, targetId: neighbour, position })))
-    return false;
+  for (const blockId of order) {
+    const at = level.indexOf(blockId);
+    const targetId = level[at + direction];
+
+    if (!targetId || chosen.has(targetId)) continue;
+
+    moves.push({ blockId, targetId, position });
+    level.splice(at, 1);
+    level.splice(level.indexOf(targetId) + (direction === -1 ? 0 : 1), 0, blockId);
+  }
+
+  if (moves.length === 0) return false;
+  if (!moves.every((move) => editor.can('moveBlock', move))) return false;
 
   flushSync(() => {
     editor.batch(() => {
-      for (const id of order) {
-        editor.dispatch({
-          type: 'moveBlock',
-          payload: { blockId: id, targetId: neighbour, position },
-        });
-      }
+      for (const move of moves) editor.dispatch({ type: 'moveBlock', payload: move });
     });
   });
 
@@ -328,15 +451,41 @@ export function setBackgrounds(
   return targets;
 }
 
-/** Фрагмент для буфера обмена: выбранные блоки целиком. */
+/** Самый глубокий последний потомок блока (или он сам): конец блока вместе со вложенными. */
+function lastDescendant(editor: Editor, blockId: string) {
+  let block = editor.store.getBlock(blockId);
+
+  for (let last = block?.children.at(-1); last; last = block?.children.at(-1))
+    block = editor.store.getBlock(last);
+
+  return block;
+}
+
+/** Фрагмент для буфера обмена: выбранные блоки целиком; блоки, выбранные вразброс, идут подряд, без тех, что между ними. */
 export function pickedFragment(editor: Editor, ids: readonly string[]): Fragment | null {
-  const first = editor.store.getBlock(ids[0]);
-  const last = editor.store.getBlock(ids.at(-1)!);
+  const blocks: Fragment['blocks'] = [];
+  const place = new Map(siblingsOf(editor, ids[0]).map((id, index) => [id, index]));
+  let start = 0;
 
-  if (!first || !last) return null;
+  for (let i = 1; i <= ids.length; i++) {
+    if (i < ids.length && place.get(ids[i]) === place.get(ids[i - 1])! + 1) continue;
 
-  return editor.copyFragment(
-    { blockId: first.id, offset: 0 },
-    { blockId: last.id, offset: editor.engine.inline.length(last.content) },
-  );
+    const first = editor.store.getBlock(ids[start]);
+    const last = lastDescendant(editor, ids[i - 1]);
+
+    start = i;
+
+    if (!first || !last) return null;
+
+    const part = editor.copyFragment(
+      { blockId: first.id, offset: 0 },
+      { blockId: last.id, offset: editor.engine.inline.length(last.content) },
+    );
+
+    if (!part) return null;
+
+    blocks.push(...part.blocks);
+  }
+
+  return { blocks };
 }

@@ -541,8 +541,9 @@ test.describe('Image: clipboard and HTML', () => {
       html: `<figure><img src="${PNG_DATA_URL}" alt="pic"><figcaption>Cap</figcaption></figure><p>tail</p>`,
     });
     await page.locator(editable).last().click();
+    await page.keyboard.press(`${modifier}+A`); // первое нажатие — текст блока, второе — все блоки
     await page.keyboard.press(`${modifier}+A`);
-    await expect(page.locator('.block-image[data-selected="true"]')).toHaveCount(1); // выбранная картинка подсвечена
+    await expect(page.locator('[data-picked]')).toHaveCount(2); // выбранные блоки подсвечены, картинка тоже
     await page.keyboard.press(`${modifier}+C`);
 
     const { html, text } = await page.evaluate(async () => {
@@ -697,6 +698,7 @@ test.describe('Select all with blocks that have no text', () => {
 
     await page.locator(editable).last().click();
     await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press('Backspace');
 
     expect(await kinds(page)).toEqual(['paragraph']);
@@ -720,6 +722,8 @@ test.describe('Select all with blocks that have no text', () => {
     expect((await kinds(page))[0]).toBe('divider');
 
     await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press('Backspace');
     await page.keyboard.type('x');
 
     expect((await doc(page)).map((r) => [r.flavour, r.text])).toEqual([['paragraph', 'x']]);
@@ -730,6 +734,7 @@ test.describe('Select all with blocks that have no text', () => {
       html: `<figure><img src="${PNG_DATA_URL}" alt="pic"><figcaption>Cap</figcaption></figure><p>text</p>`,
     });
     await page.locator(editable).last().click();
+    await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press(`${modifier}+C`);
 

@@ -30,7 +30,7 @@ export class EditorView {
   readonly selection = new BlockSelectionController();
 
   /** Блоки, выбранные целиком (не выделение текста). */
-  readonly picked = new PickedBlocksController();
+  readonly picked = new PickedBlocksController(() => this.markPicked());
 
   readonly folds = new FoldController();
   readonly cells = new CellSelectionController();
@@ -70,6 +70,18 @@ export class EditorView {
     return () => {
       if (this.root === element) this.root = null;
     };
+  }
+
+  /**
+   * Ставит `data-picked` на нарисованные блоки: один проход по тем, что сейчас в DOM (в виртуальном рендере их сотни),
+   * независимо от размера выбора. Блоки, которые появятся позже, отмечает сам `BlockRenderer` при монтировании.
+   */
+  markPicked(): void {
+    const { picked } = this;
+
+    for (const element of this.root?.querySelectorAll('[data-block-id]') ?? []) {
+      element.toggleAttribute('data-picked', picked.has(element.getAttribute('data-block-id')!));
+    }
   }
 
   getRoot(): HTMLElement | null {

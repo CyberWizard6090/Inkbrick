@@ -365,6 +365,21 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
     const onCopy = (event: ClipboardEvent) => writeSelection(event, false);
     const onCut = (event: ClipboardEvent) => writeSelection(event, true);
 
+    // Блоки выбраны, выделения текста нет: браузер отправляет copy и cut не в корень, а в body. Берём их, пока фокус в корне.
+    const outside = (handler: (event: ClipboardEvent) => void) => (event: ClipboardEvent) => {
+      if (
+        !event.defaultPrevented &&
+        view.picked.size > 0 &&
+        globalThis.document.activeElement === root &&
+        !(event.target instanceof Node && root.contains(event.target))
+      )
+        handler(event);
+    };
+    const onPageCopy = outside(onCopy);
+    const onPageCut = outside(onCut);
+
+    globalThis.document.addEventListener('copy', onPageCopy);
+    globalThis.document.addEventListener('cut', onPageCut);
     root.addEventListener('copy', onCopy);
     root.addEventListener('cut', onCut);
     root.addEventListener('paste', onPaste);
@@ -374,6 +389,8 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
 
     return () => {
       clearTimeout(plainTimer);
+      globalThis.document.removeEventListener('copy', onPageCopy);
+      globalThis.document.removeEventListener('cut', onPageCut);
       root.removeEventListener('copy', onCopy);
       root.removeEventListener('cut', onCut);
       root.removeEventListener('paste', onPaste);

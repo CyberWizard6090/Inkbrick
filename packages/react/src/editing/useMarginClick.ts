@@ -2,7 +2,7 @@ import { useEffect, type RefObject } from 'react';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { pickRun } from '../pick/actions';
+import { startMarquee, type Marquee } from '../pick/marquee';
 import { findPoint } from './selection';
 
 const EDITABLE = '.editable[data-id]';
@@ -80,37 +80,17 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
       const bounds = root.getBoundingClientRect();
       const gutter = event.clientX < bounds.left || event.clientX > bounds.right;
       const start = { x: event.clientX, y: event.clientY };
-      let frame: HTMLElement | null = null;
+      let marquee: Marquee | null = null;
 
       const onMove = (move: MouseEvent) => {
         if ((move.buttons & 1) === 0) return finish();
 
-        if (gutter && !frame && Math.hypot(move.clientX - start.x, move.clientY - start.y) > 4) {
+        if (gutter && !marquee && Math.hypot(move.clientX - start.x, move.clientY - start.y) > 4) {
           selection.removeAllRanges();
-          frame = globalThis.document.createElement('div');
-          frame.setAttribute('data-inkbrick-ui', 'marquee');
-          frame.style.cssText = 'position:fixed;pointer-events:none;';
-          globalThis.document.body.appendChild(frame);
+          marquee = startMarquee(editor, view, start);
         }
 
-        if (frame) {
-          const left = Math.min(start.x, move.clientX);
-          const top = Math.min(start.y, move.clientY);
-          const height = Math.abs(move.clientY - start.y);
-
-          Object.assign(frame.style, {
-            left: `${left}px`,
-            top: `${top}px`,
-            width: `${Math.abs(move.clientX - start.x)}px`,
-            height: `${height}px`,
-          });
-
-          const ids = blocksInBand(editor, view, top, top + height);
-
-          view.picked.set(ids, ids[0] ?? null, ids.at(-1) ?? null);
-
-          return;
-        }
+        if (marquee) return marquee.move(move.clientX, move.clientY);
 
         const focus = pointAt(root, move.clientX, move.clientY);
 
@@ -123,14 +103,8 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
         globalThis.document.removeEventListener('mouseup', finish);
         stop = null;
 
-        if (frame) {
-          frame.remove();
-          frame = null;
-
-          const { ids, anchor: first, focus: last } = view.picked.getState();
-
-          if (ids.length > 0) pickRun(view, ids, first ?? undefined, last ?? undefined);
-        }
+        marquee?.end();
+        marquee = null;
       };
 
       globalThis.document.addEventListener('mousemove', onMove);
@@ -229,24 +203,4 @@ function caretFromPoint(x: number, y: number): DomPoint | null {
   }
 
   return null;
-}
-
-/** Блоки верхнего уровня заметки, чьи строки пересекают полосу `top`–`bottom` (координаты окна). */
-function blocksInBand(
-  editor: ReturnType<typeof useEditor>,
-  view: ReturnType<typeof useEditorView>,
-  top: number,
-  bottom: number,
-): string[] {
-  const root = view.getRoot();
-  const note = editor.document.getBlock(editor.document.rootId)?.children[0];
-
-  if (!root || !note) return [];
-
-  return (editor.store.getBlock(note)?.children ?? []).filter((id) => {
-    const element = root.querySelector(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
-    const rect = element?.getBoundingClientRect();
-
-    return !!rect && rect.height > 0 && rect.bottom >= top && rect.top <= bottom;
-  });
 }

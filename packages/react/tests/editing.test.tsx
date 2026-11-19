@@ -249,14 +249,13 @@ describe('keyboard (keymap)', () => {
     expect(outline()).toEqual(['list:a', 'list:b']);
   });
 
-  it('Ctrl+A selects the whole document', () => {
+  it('Ctrl+A selects the text of the block first (the second press picks every block)', () => {
     const { ids, caret, key } = mountEditor(['one', 'two']);
 
     caret(ids[0], 1);
     key('a', { ctrl: true });
 
-    expect(getSelection()!.toString()).toContain('one');
-    expect(getSelection()!.toString()).toContain('two');
+    expect(getSelection()!.toString()).toBe('one');
   });
 });
 

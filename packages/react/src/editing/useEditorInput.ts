@@ -11,6 +11,7 @@ import { useEditorUI } from '../ui/EditorUIContext';
 import { goToFootnote } from '../footnote/actions';
 import { applyBeforeInput } from './beforeInput';
 import { createInputActions } from './inputActions';
+import { pickRangeTo } from '../pick/actions';
 import { readDocSelection } from './selection';
 
 const NAVIGATION_KEYS = new Set([
@@ -37,6 +38,10 @@ function diffText(before: string, after: string) {
 
   return { from: start, to: endBefore, text: after.slice(start, endAfter) };
 }
+
+/** Клик по этим элементам вне корня (меню, панели, ручка) выбор блоков не снимает: они работают с самим выбором. */
+const OUTSIDE_KEEPS =
+  '[data-inkbrick-ui], [data-inkbrick-block-ui], [role="menu"], [role="dialog"]';
 
 /** События из полей ввода и кнопок внутри пользовательских компонентов редактор не перехватывает. */
 function isForeignControl(target: EventTarget | null): boolean {
@@ -166,11 +171,32 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
         view.lastPointerType = event.pointerType;
 
       view.pointerDown = true;
-      // Клик в документе снимает выбор блоков (выделение текста ставит сам браузер).
-      view.picked.clear();
+
+      // Shift+клик по блоку при выбранных блоках растягивает выбор до него (см. `onMouseDown`), остальной клик его снимает.
+      if (!(view.picked.size > 0 && event.shiftKey && event.button === 0)) view.picked.clear();
+
       view.contextMenu.close();
       view.toolbar.closeLink();
       view.toolbar.hide();
+    };
+    // Shift+клик в тексте при выбранных блоках: выбор расширяется до кликнутого блока, каретка не ставится.
+    const onMouseDown = (event: MouseEvent) => {
+      if (!event.shiftKey || event.button !== 0 || view.picked.size === 0) return;
+      if (!(event.target instanceof Element) || isForeignControl(event.target)) return;
+
+      const id = event.target.closest('[data-block-id]')?.getAttribute('data-block-id');
+
+      if (!id) return;
+
+      event.preventDefault();
+      pickRangeTo(editor, view, id);
+    };
+    // Клик вне редактора (но не в его меню и панелях) тоже снимает выбор.
+    const onOutsidePointerDown = (event: PointerEvent) => {
+      if (view.picked.size === 0 || !(event.target instanceof Element)) return;
+      if (root.contains(event.target) || event.target.closest(OUTSIDE_KEEPS)) return;
+
+      view.picked.clear();
     };
     const onPointerUp = () => {
       if (!view.pointerDown) return;
@@ -228,6 +254,8 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
     root.addEventListener('focusout', closeSlash);
     root.addEventListener('pointerdown', onPointerDown);
     root.addEventListener('click', onClick);
+    root.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('pointerdown', onOutsidePointerDown);
     document.addEventListener('pointerup', onPointerUp);
     document.addEventListener('pointercancel', onPointerUp);
     document.addEventListener('selectionchange', onSelectionChange);
@@ -245,6 +273,8 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
       root.removeEventListener('focusout', closeSlash);
       root.removeEventListener('pointerdown', onPointerDown);
       root.removeEventListener('click', onClick);
+      root.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('pointerdown', onOutsidePointerDown);
       document.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('pointercancel', onPointerUp);
       document.removeEventListener('selectionchange', onSelectionChange);
