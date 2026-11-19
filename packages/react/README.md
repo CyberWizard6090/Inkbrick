@@ -67,17 +67,17 @@ const editor = new Editor({ blocks });
 </EditorProvider>;
 ```
 
-| Export                                                  | What it adds                                                |
-| ------------------------------------------------------- | ----------------------------------------------------------- |
-| `tableBlocks`                                           | Tables: column types, sorting, filters, views, merged cells |
-| `tocBlocks`, `TocPanel`                                 | Table of contents block and side panel                      |
-| `columnsBlocks`                                         | Blocks side by side                                         |
-| `toggleBlocks`                                          | Collapsible toggle blocks                                   |
-| `footnoteBlocks`                                        | Numbered footnotes                                          |
-| `FindReplacePanel`, `findReplace`, `useFind`            | Find and replace (Ctrl/Cmd+F, Ctrl/Cmd+H)                   |
-| `CommandPalette`, `commandPalette`, `useCommandPalette` | Command palette (Ctrl/Cmd+Shift+P) with your own commands   |
-| `TagHighlights`                                         | `#tags`: highlighting, suggestions, Ctrl/Cmd+click          |
-| `WordCount`, `useWordCount`                             | Word and character counter                                  |
+| Export                                                  | What it adds                                              |
+| ------------------------------------------------------- | --------------------------------------------------------- |
+| `tableBlocks`                                           | Tables: column types, sorting, merged cells               |
+| `tocBlocks`, `TocPanel`                                 | Table of contents block and side panel                    |
+| `columnsBlocks`                                         | Blocks side by side                                       |
+| `toggleBlocks`                                          | Collapsible toggle blocks                                 |
+| `footnoteBlocks`                                        | Numbered footnotes                                        |
+| `FindReplacePanel`, `findReplace`, `useFind`            | Find and replace (Ctrl/Cmd+F, Ctrl/Cmd+H)                 |
+| `CommandPalette`, `commandPalette`, `useCommandPalette` | Command palette (Ctrl/Cmd+Shift+P) with your own commands |
+| `TagHighlights`                                         | `#tags`: highlighting, suggestions, Ctrl/Cmd+click        |
+| `WordCount`, `useWordCount`                             | Word and character counter                                |
 
 Formula rendering, code highlighting, the HTML paste parser and the less common menus load as separate chunks on first
 use.

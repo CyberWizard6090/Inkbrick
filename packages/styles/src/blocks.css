@@ -275,93 +275,6 @@
     background: var(--inkbrick-bg-3);
   }
 
-  /* Вид таблицы: полоса над таблицей, пока часть её скрыта фильтрами или скрытием столбцов. */
-  :where([data-inkbrick-block='table'] > [data-inkbrick-part='view-bar']) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    padding: 2px 0 6px;
-    color: var(--inkbrick-fg-3);
-    font-size: var(--inkbrick-font-size-caption);
-  }
-
-  :where([data-inkbrick-part='view-tabs']) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 2px;
-  }
-
-  :where([data-inkbrick-part='view-tab']),
-  :where([data-inkbrick-part='view-add']),
-  :where([data-inkbrick-part='view-rename-button']),
-  :where([data-inkbrick-part='view-delete']) {
-    padding: 0 8px;
-    border: none;
-    border-radius: var(--inkbrick-radius-control);
-    background: none;
-    color: var(--inkbrick-fg-2);
-    font: inherit;
-    line-height: 24px;
-    cursor: pointer;
-  }
-
-  :where([data-inkbrick-part='view-tab']:hover),
-  :where([data-inkbrick-part='view-add']:hover),
-  :where([data-inkbrick-part='view-rename-button']:hover),
-  :where([data-inkbrick-part='view-delete']:hover) {
-    background: var(--inkbrick-bg-3);
-  }
-
-  :where([data-inkbrick-part='view-tab'][data-active]) {
-    background: var(--inkbrick-bg-4);
-    color: var(--inkbrick-fg-1);
-    font-weight: var(--inkbrick-font-weight-semibold);
-  }
-
-  :where([data-inkbrick-part='view-rename']) {
-    height: 24px;
-    padding: 0 6px;
-    border: 1px solid var(--inkbrick-stroke-2);
-    border-radius: var(--inkbrick-radius-control);
-    background: var(--inkbrick-bg-1);
-    color: inherit;
-    font: inherit;
-  }
-
-  :where([data-inkbrick-part='view-reset']) {
-    padding: 0 6px;
-    border: none;
-    border-radius: var(--inkbrick-radius-control);
-    background: none;
-    color: var(--inkbrick-brand-fg);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  :where([data-inkbrick-part='view-reset']:hover) {
-    background: var(--inkbrick-bg-3);
-  }
-
-  :where([data-inkbrick-block='table-row'][hidden]),
-  :where([data-inkbrick-block='table-cell'][hidden]) {
-    display: none;
-  }
-
-  /* Столбцы со свойствами: текст ячейки флажка и выбора остаётся в документе (клавиатура, копирование), но не виден. */
-  :where(
-    [data-inkbrick-block='table-cell'][data-column-type='checkbox'] [data-inkbrick-part='content'],
-    [data-inkbrick-block='table-cell'][data-column-type='select'] [data-inkbrick-part='content'],
-    [data-inkbrick-block='table-cell'][data-column-type='multiselect']
-      [data-inkbrick-part='content']
-  ) {
-    height: 0;
-    min-height: 0;
-    overflow: hidden;
-    opacity: 0;
-  }
-
   :where([data-inkbrick-part='cell-checkbox']) {
     margin: 4px 0;
     cursor: pointer;
@@ -386,44 +299,6 @@
 
   :where([data-inkbrick-part='cell-chips']:disabled) {
     cursor: default;
-  }
-
-  :where([data-inkbrick-part='chip']) {
-    padding: 0 8px;
-    border-radius: 4px;
-    background: var(--inkbrick-highlight-gray);
-    color: var(--inkbrick-fg-1);
-    font-size: var(--inkbrick-font-size-caption);
-    line-height: 20px;
-    white-space: nowrap;
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='brown']) {
-    background: var(--inkbrick-highlight-brown);
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='orange']) {
-    background: var(--inkbrick-highlight-orange);
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='yellow']) {
-    background: var(--inkbrick-highlight-yellow);
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='green']) {
-    background: var(--inkbrick-highlight-green);
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='blue']) {
-    background: var(--inkbrick-highlight-blue);
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='purple']) {
-    background: var(--inkbrick-highlight-purple);
-  }
-
-  :where([data-inkbrick-part='chip'][data-color='pink']) {
-    background: var(--inkbrick-highlight-pink);
   }
 
   :where([data-inkbrick-part='cell-link']),
