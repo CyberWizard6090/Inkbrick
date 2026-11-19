@@ -52,6 +52,11 @@ const BORDER_PX = { thin: '1px', medium: '2px', thick: '3px' } as const;
 /** Границы ячейки в `style`: толщина и цвет (оттенок светлой темы) по сторонам; «без линии» — `none`. */
 function borderStyle(cell: BaseBlock): string[] {
   const color = exportColor(cell.props.borderColor, 'text') ?? '#bdbdbd';
+  // Начертание линий ячейки одно на все стороны: сплошная, прерывистая или точками (как в редакторе).
+  const line =
+    cell.props.borderStyle === 'dashed' || cell.props.borderStyle === 'dotted'
+      ? cell.props.borderStyle
+      : 'solid';
 
   return (['top', 'right', 'bottom', 'left'] as const).flatMap((side) => {
     const width = cell.props[`border${side[0].toUpperCase()}${side.slice(1)}`];
@@ -59,7 +64,7 @@ function borderStyle(cell: BaseBlock): string[] {
     if (width === 'none') return [`border-${side}:none`];
 
     return width === 'thin' || width === 'medium' || width === 'thick'
-      ? [`border-${side}:${BORDER_PX[width]} solid ${color}`]
+      ? [`border-${side}:${BORDER_PX[width]} ${line} ${color}`]
       : [];
   });
 }

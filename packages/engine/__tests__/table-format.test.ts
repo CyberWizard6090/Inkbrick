@@ -577,3 +577,22 @@ describe('pasting a copied range into an existing table', () => {
     });
   });
 });
+
+describe('the HTML export of the line style', () => {
+  it('a dashed or dotted cell line is written as dashed or dotted', () => {
+    const { run, editor, cell } = setup();
+
+    run('setTableCellsBorders', { range: MIDDLE_CELL, mode: 'all', width: 'thin' });
+    run('setTableCellsBorders', { range: MIDDLE_CELL, mode: 'keep', style: 'dashed' });
+
+    const html = toHtml(editor.document);
+
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderStyle).toBe('dashed');
+    expect(html).toContain('border-top:1px dashed');
+
+    run('setTableCellsBorders', { range: MIDDLE_CELL, mode: 'keep', style: 'dotted' });
+    expect(toHtml(editor.document)).toContain('border-top:1px dotted');
+  });
+});
+
+const MIDDLE_CELL: TableRange = { top: 1, left: 1, bottom: 1, right: 1 };
