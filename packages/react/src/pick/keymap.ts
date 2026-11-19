@@ -5,11 +5,13 @@ import {
   extendPick,
   leavePick,
   moveBlocks,
+  pickAll,
   pickBlock,
   pickRun,
   pickableBlock,
   runBetween,
   stepPick,
+  topBlock,
 } from './actions';
 
 const picked = ({ view }: KeymapContext) => view.picked.size > 0;
@@ -132,6 +134,46 @@ export const pickKeymap: readonly KeyBinding[] = [
       const ids = actionTargets(context);
 
       return moveBlocks(context.editor, context.view, ids, 1) ? undefined : false;
+    },
+  },
+  {
+    // Первое нажатие выделяет весь текст блока, второе (или если текста нет) — все блоки того же уровня.
+    id: 'pick.selectAll',
+    keys: 'Mod-a',
+    when: (context) =>
+      idle(context) &&
+      !panelOpen(context) &&
+      !context.view.slash.getState().open &&
+      !context.view.cells.get(),
+    run: (context) => {
+      const { editor, view } = context;
+      const current = context.selection();
+
+      if (!current) return view.picked.size > 0 && pickAll(editor, view) ? undefined : false;
+
+      const { from, to } = current;
+      const length = editor.engine.inline.length(
+        editor.store.getBlock(from.blockId)?.content ?? [],
+      );
+
+      // Выделен не весь текст блока: сначала он (в одном блоке и вне выбора).
+      if (
+        view.picked.size === 0 &&
+        from.blockId === to.blockId &&
+        length > 0 &&
+        !(from.offset === 0 && to.offset === length)
+      ) {
+        view.placeSelection(
+          { blockId: from.blockId, offset: 0 },
+          { blockId: to.blockId, offset: length },
+        );
+        return;
+      }
+
+      // Все блоки документа — верхнего уровня; если выбор уже внутри (toggle, колонка), он растёт уровень за уровнем.
+      const target = view.picked.size > 0 ? undefined : topBlock(editor, from.blockId);
+
+      return pickAll(editor, view, target) ? undefined : false;
     },
   },
   {

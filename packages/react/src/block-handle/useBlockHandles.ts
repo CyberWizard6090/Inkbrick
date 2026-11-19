@@ -4,6 +4,8 @@ import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { blockAtPoint, blockElement, hasHandle, probePoint, rowRect } from './geometry';
 
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Meta', 'Alt']);
+
 /**
  * Следит за указателем: показывает ручку у блока под курсором (в том числе в полосе слева от текста),
  * на сенсорном экране — у блока, которого коснулись; закрывает меню по клику снаружи/Esc/прокрутке
@@ -88,6 +90,9 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') view.blocks.closeMenu();
+
+      // Сами модификаторы ручку не прячут: Shift+клик и Ctrl/Cmd+клик по ручке (выбор блоков) начинаются с их нажатия.
+      if (MODIFIER_KEYS.has(event.key)) return;
 
       if (view.blocks.getState().hover && !event.metaKey && !event.ctrlKey)
         view.blocks.setHover(null);

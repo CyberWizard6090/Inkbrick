@@ -116,7 +116,8 @@ test.describe('Quote, code and divider', () => {
     await page.keyboard.type('--- ');
     await page.keyboard.type('bottom');
 
-    await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+Home`);
+    await page.keyboard.press(`${modifier}+Shift+End`);
     await page.keyboard.press('Backspace');
 
     await expect(page.locator('.block-divider')).toHaveCount(0);

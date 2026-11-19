@@ -37,11 +37,6 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     () => view.folds.isHidden(id),
     () => false,
   );
-  const picked = useSyncExternalStore(
-    view.picked.subscribe,
-    () => view.picked.has(id),
-    () => false,
-  );
   const block = useBlock(id);
 
   // Блок, который скрыл свёрнутый заголовок, не пропадает сразу: пока идёт анимация, он ещё нарисован (`gone` — он уже ушёл).
@@ -51,14 +46,18 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
 
   if (!folded && gone) setGone(false);
 
-  // Блок выбран целиком (Esc, рамка): отметка ставится на его элемент, компоненты блоков про неё не знают.
-  useLayoutEffect(() => {
-    const element = view
-      .getRoot()
-      ?.querySelector(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
+  // Блок выбран целиком (Esc, рамка): отметку на уже нарисованные блоки ставит `view.picked` одним проходом, без подписки
+  // каждого блока. Здесь — только блок, который появился (прокрутка, смена типа) уже при выборе.
+  const flavour = block?.flavour;
 
-    element?.toggleAttribute('data-picked', picked);
-  }, [view, id, picked, block]);
+  useLayoutEffect(() => {
+    if (view.picked.size === 0 || !view.picked.has(id)) return;
+
+    view
+      .getRoot()
+      ?.querySelector(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`)
+      ?.setAttribute('data-picked', '');
+  }, [view, id, flavour]);
 
   useLayoutEffect(() => view.folds.register(id), [view, id]);
 

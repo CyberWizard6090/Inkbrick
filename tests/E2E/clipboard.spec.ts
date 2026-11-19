@@ -112,6 +112,7 @@ test.describe('Copy', () => {
     await typeBlocks(page, ['# Title', 'plain bold']);
     for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+ArrowLeft');
     await page.keyboard.press(`${modifier}+B`);
+    await page.keyboard.press(`${modifier}+A`); // первое нажатие — текст блока, второе — все блоки
     await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press(`${modifier}+C`);
 
@@ -136,8 +137,9 @@ test.describe('Copy', () => {
 
     const before = await outline(page);
     await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+A`);
     await page.keyboard.press(`${modifier}+C`);
-    await page.keyboard.press('ArrowRight'); // каретка в конец документа
+    await page.keyboard.press('Escape'); // снять выбор: каретка в конец документа
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter'); // пустой пункт → параграф
     await page.keyboard.press(`${modifier}+V`);
@@ -392,7 +394,8 @@ test.describe('Paste: rich HTML', () => {
     page,
   }) => {
     await typeBlocks(page, ['one', 'two', 'three']);
-    await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+Home`);
+    await page.keyboard.press(`${modifier}+Shift+End`);
     await pasteData(page, { html: '<h2>New</h2><p>content</p>' });
 
     expect(await outline(page)).toEqual(['heading:New', 'paragraph:content']);

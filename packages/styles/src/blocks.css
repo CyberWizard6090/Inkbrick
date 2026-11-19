@@ -1941,11 +1941,15 @@
     background-color: color-mix(in srgb, var(--inkbrick-block-background) 35%, transparent);
   }
 
-  /* Блок выбран целиком (Esc в блоке, Shift+стрелки, рамка): подсветка поверх фона блока. */
+  /*
+   * Блок выбран целиком (Esc в блоке, Shift+стрелки, рамка): сплошная голубая заливка на всю ширину блока,
+   * без рамки и теней. Заливка лежит слоем поверх цвета фона блока (`background-image`), а не заменяет его.
+   */
   :where([data-picked]) {
-    background-color: color-mix(in srgb, var(--inkbrick-brand-bg) 16%, transparent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--inkbrick-brand-bg) 45%, transparent);
-    border-radius: var(--inkbrick-radius-control);
+    --inkbrick-picked-color: var(--inkbrick-picked-bg, rgba(35, 131, 227, 0.14));
+
+    background-image: linear-gradient(var(--inkbrick-picked-color), var(--inkbrick-picked-color));
+    border-radius: 4px;
   }
 
   :where([data-inkbrick-root][data-picking]) {

@@ -582,7 +582,8 @@ test.describe('Text alignment', () => {
     await page.keyboard.press('Enter');
 
     await page.keyboard.type('three');
-    await page.keyboard.press(`${modifier}+A`);
+    await page.keyboard.press(`${modifier}+Home`);
+    await page.keyboard.press(`${modifier}+Shift+End`);
     await page.keyboard.press(`${modifier}+Shift+E`);
 
     const result = await rows(page);

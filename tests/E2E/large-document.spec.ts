@@ -124,17 +124,13 @@ test.describe('Large document (virtual renderer)', () => {
     await expect(block(page, id)).toBeInViewport();
   });
 
-  test('Ctrl+A selects the whole document and copy takes every block', async ({ page }) => {
+  test('Ctrl+A twice picks the whole document and copy takes every block', async ({ page }) => {
     await scrollTo(page, 'middle');
     await block(page, (await visibleParagraphs(page))[0]).click();
     await page.keyboard.press(`${modifier}+a`);
+    await page.keyboard.press(`${modifier}+a`);
 
     const copied = await page.evaluate(() => {
-      const range = getSelection()!.getRangeAt(0);
-      const id = (node: Node) =>
-        (node.nodeType === 1 ? (node as Element) : node.parentElement)!.closest<HTMLElement>(
-          '.editable',
-        )!.dataset.id;
       const data = new DataTransfer();
 
       document
@@ -148,15 +144,11 @@ test.describe('Large document (virtual renderer)', () => {
         );
 
       return {
-        from: id(range.startContainer),
-        to: id(range.endContainer),
         blocks: JSON.parse(data.getData('application/x-inkbrick-fragment')).blocks.length as number,
         text: data.getData('text/plain'),
       };
     });
 
-    expect(copied.from).toBe('large-0');
-    expect(copied.to).toBe(`large-${SIZE - 1}`);
     expect(copied.blocks).toBeGreaterThanOrEqual(SIZE);
     expect(copied.text).toContain(`Block ${SIZE - 1}:`);
   });
@@ -268,6 +260,92 @@ test.describe('Large document (virtual renderer)', () => {
     await expect
       .poll(async () => Math.max(...(await stepsOf())), { timeout: 3000 })
       .toBeLessThan(80);
+  });
+
+  test('a frame dragged in the gutter does not search all 50 000 blocks on every move', async ({
+    page,
+  }) => {
+    await scrollTo(page, 'middle');
+
+    const box = (await page.locator('.inkbrick-editor').first().boundingBox())!;
+    const x = Math.max(5, box.x - 30);
+    const height = page.viewportSize()!.height;
+
+    await page.evaluate(() => {
+      const counts = { query: 0, rects: 0 };
+      const query = Element.prototype.querySelector;
+      const rect = Element.prototype.getBoundingClientRect;
+
+      Element.prototype.querySelector = function (this: Element, selector: string) {
+        counts.query++;
+
+        return query.call(this, selector);
+      };
+      Element.prototype.getBoundingClientRect = function (this: Element) {
+        counts.rects++;
+
+        return rect.call(this);
+      };
+      Object.assign(window, { __counts: counts });
+    });
+
+    await page.mouse.move(x, 100);
+    await page.mouse.down();
+
+    const moves = 40;
+
+    for (let i = 0; i < moves; i++)
+      await page.mouse.move(x + (i % 2), 100 + ((height - 200) * i) / moves);
+
+    const counts = await page.evaluate(
+      () => (window as unknown as { __counts: { query: number; rects: number } }).__counts,
+    );
+
+    await page.mouse.up();
+
+    // Раньше на каждое движение шёл поиск по 50 000 блоков заметки: десятки тысяч обращений к DOM на одно движение.
+    expect(counts.query).toBeLessThan(moves * 5);
+    expect(counts.rects).toBeLessThan(moves * 600);
+    expect(await page.locator('[data-picked]').count()).toBeGreaterThan(3);
+  });
+
+  test('Ctrl+A twice picks every block; blocks drawn later while scrolling come out picked', async ({
+    page,
+  }) => {
+    await scrollTo(page, 'middle');
+    await block(page, (await visibleParagraphs(page))[0]).click();
+    await page.keyboard.press(`${modifier}+a`);
+    await page.keyboard.press(`${modifier}+a`);
+
+    const marks = () =>
+      page.evaluate(() => {
+        const { editor } = window.__inkbrick!.main;
+        const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+        const top = new Set(editor.document.getBlock(note)!.children);
+        const blocks = [...document.querySelectorAll('.inkbrick-editor [data-block-id]')].filter(
+          (element) => top.has(element.getAttribute('data-block-id')!),
+        );
+
+        return {
+          all: blocks.length,
+          picked: blocks.filter((b) => b.hasAttribute('data-picked')).length,
+        };
+      });
+
+    await expect.poll(async () => (await marks()).picked).toBeGreaterThan(5);
+
+    const first = await marks();
+
+    expect(first.picked).toBe(first.all);
+
+    await scrollTo(page, 3000);
+
+    const later = await marks();
+
+    expect(later.picked).toBe(later.all);
+
+    await page.keyboard.press('Escape');
+    await expect.poll(async () => (await marks()).picked).toBe(0);
   });
 
   test('the document has six heading levels and mixed blocks', async ({ page }) => {
