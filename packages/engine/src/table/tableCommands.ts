@@ -202,7 +202,12 @@ export const SetTableColumnTypeCommand = defineBlockCommand<
 });
 
 /** Строки таблицы и их порядок после сортировки по столбцу; заголовок остаётся первым. */
-function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
+function sortPlan(
+  context: Context,
+  column: number,
+  direction: 'asc' | 'desc',
+  decimal?: ',' | '.',
+) {
   const { block, transaction } = context;
   const fixed = block.props.header === false ? 0 : 1;
   const type = block.props.columnTypes?.[column] ?? 'text';
@@ -210,7 +215,7 @@ function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
   const keys = rows.map((rowId) => {
     const cell = transaction.getBlock(transaction.getBlock(rowId)?.children[column] ?? '');
 
-    return sortKey(context.engine.inline.toPlainText(cell?.content ?? []), type);
+    return sortKey(context.engine.inline.toPlainText(cell?.content ?? []), type, decimal);
   });
 
   return { fixed, rows, order: sortedOrder(keys, direction) };
@@ -222,23 +227,23 @@ function sortPlan(context: Context, column: number, direction: 'asc' | 'desc') {
  */
 export const SortTableRowsCommand = defineBlockCommand<
   TableProps,
-  { column: number; direction: 'asc' | 'desc' }
+  { column: number; direction: 'asc' | 'desc'; decimal?: ',' | '.' }
 >({
   type: 'sortTableRows',
 
-  canExecute(context, { column, direction }) {
+  canExecute(context, { column, direction, decimal }) {
     if (!isIndex(column, columnsOf(context) - 1) || (direction !== 'asc' && direction !== 'desc'))
       return false;
 
     return (
       !hasMerges(context) &&
-      sortPlan(context, column, direction).order.some((from, to) => from !== to)
+      sortPlan(context, column, direction, decimal).order.some((from, to) => from !== to)
     );
   },
 
-  execute(context, { column, direction }) {
+  execute(context, { column, direction, decimal }) {
     const { engine, transaction, block } = context;
-    const { fixed, rows, order } = sortPlan(context, column, direction);
+    const { fixed, rows, order } = sortPlan(context, column, direction, decimal);
 
     order.forEach((from, to) => {
       if (transaction.getBlock(block.id)!.children[fixed + to] !== rows[from]) {

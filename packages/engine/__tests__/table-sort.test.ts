@@ -136,3 +136,22 @@ describe('table column types and sorting', () => {
     );
   });
 });
+
+describe('parseNumber with the decimal separator of the language', () => {
+  it('a comma is the decimal separator when the language uses it', () => {
+    expect(parseNumber('0,125', ',')).toBe(0.125);
+    expect(parseNumber('2,500', ',')).toBe(2.5);
+    expect(parseNumber('1 000,5', ',')).toBe(1000.5);
+    expect(parseNumber('-3,25', ',')).toBe(-3.25);
+  });
+
+  it('a dot is the decimal separator and a comma groups thousands otherwise', () => {
+    expect(parseNumber('1,234', '.')).toBe(1234);
+    expect(parseNumber('1,234.5', '.')).toBe(1234.5);
+  });
+
+  it('without a language the old reading stays', () => {
+    expect(parseNumber('1,234')).toBe(1234);
+    expect(parseNumber('1,5')).toBe(1.5);
+  });
+});

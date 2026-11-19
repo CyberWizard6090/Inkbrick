@@ -223,7 +223,9 @@ function GripTip({ t }: { t: TFunction }) {
 export function TableControls({ block, tableRef, onPreview }: TableControlsProps) {
   const editor = useEditor();
   const view = useEditorView();
-  const { slots, t } = useEditorUI();
+  const { slots, t, locale } = useEditorUI();
+  // Дробная часть числа в языке интерфейса: по ней сортировка читает «0,125» как дробь, а не как тысячи.
+  const decimal: ',' | '.' = locale.startsWith('ru') ? ',' : '.';
   const [hover, setHover] = useState<Position | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [layout, setLayout] = useState<Layout | null>(null);
@@ -622,15 +624,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       id: 'column-sort-asc',
       title: t('table.column.sortAsc'),
       icon: <Icon name="arrow-up" />,
-      disabled: !can('sortTableRows', { column, direction: 'asc' }),
-      run: () => perform(() => void run('sortTableRows', { column, direction: 'asc' })),
+      disabled: !can('sortTableRows', { column, direction: 'asc', decimal }),
+      run: () => perform(() => void run('sortTableRows', { column, direction: 'asc', decimal })),
     },
     {
       id: 'column-sort-desc',
       title: t('table.column.sortDesc'),
       icon: <Icon name="arrow-down" />,
-      disabled: !can('sortTableRows', { column, direction: 'desc' }),
-      run: () => perform(() => void run('sortTableRows', { column, direction: 'desc' })),
+      disabled: !can('sortTableRows', { column, direction: 'desc', decimal }),
+      run: () => perform(() => void run('sortTableRows', { column, direction: 'desc', decimal })),
     },
     {
       id: 'column-auto-width',

@@ -6,7 +6,7 @@ export type SortKey = number | string | undefined;
 const NUMBER = /[-+−]?\d[\d\s  .,]*/;
 
 /** Первое число в тексте: «1 234,5 ₽», «$1,234.50», «−3%» → 1234.5, 1234.5, −3. */
-export function parseNumber(text: string): number | undefined {
+export function parseNumber(text: string, decimal?: ',' | '.'): number | undefined {
   const found = NUMBER.exec(text)?.[0];
 
   if (!found) return undefined;
@@ -15,6 +15,14 @@ export function parseNumber(text: string): number | undefined {
   let digits = found.replace(/^[-+−]/, '').replace(/[\s  ]/g, '');
 
   digits = digits.replace(/[.,]+$/, '');
+
+  // Язык известен (например, русский: запятая — дробная): разделитель тысяч другой, и угадывать не нужно.
+  if (decimal) {
+    const groups = decimal === ',' ? /\./g : /,/g;
+    const value = Number(digits.replace(groups, '').replace(decimal, '.'));
+
+    return Number.isFinite(value) ? (negative ? -value : value) : undefined;
+  }
 
   const lastDot = digits.lastIndexOf('.');
   const lastComma = digits.lastIndexOf(',');
@@ -55,11 +63,11 @@ export function parseDate(text: string): number | undefined {
 }
 
 /** Ключ сортировки по типу столбца. */
-export function sortKey(text: string, type: TableColumnType): SortKey {
+export function sortKey(text: string, type: TableColumnType, decimal?: ',' | '.'): SortKey {
   const value = text.trim();
 
   if (value === '') return undefined;
-  if (type === 'number') return parseNumber(value);
+  if (type === 'number') return parseNumber(value, decimal);
   if (type === 'date') return parseDate(value);
 
   return value;
