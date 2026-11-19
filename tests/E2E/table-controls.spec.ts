@@ -415,6 +415,21 @@ test.describe('Table controls', () => {
     await expect(page.locator(`${table} td[data-cell-selected]`)).toHaveCount(4);
   });
 
+  test('typing over a selection replaces the anchor cell only', async ({ page }) => {
+    await page.locator(cells).nth(0).locator(editable).click();
+    await page
+      .locator(cells)
+      .nth(4)
+      .click({ modifiers: ['Shift'] });
+    await page.keyboard.type('Z');
+
+    const after = await grid(page);
+
+    expect(after[0][0]).toBe('Z');
+    expect(after[0][1]).toBe('r0c1');
+    expect(after[1][1]).toBe('r1c1');
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 

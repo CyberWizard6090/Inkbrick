@@ -170,7 +170,15 @@ export function useCellSelection(
         if (event.shiftKey) selectTableCells(editor, view, tableId, selection.anchor, head);
         else place(head.row, head.column);
       } else if (event.key.length === 1 && !mod) {
-        place(selection.anchor.row, selection.anchor.column);
+        // Как в таблицах: символ заменяет содержимое ячейки-якоря, остальные ячейки выделения не трогаются.
+        const { id } = visibleCell(editor, tableId, selection.anchor.row, selection.anchor.column);
+
+        view.cells.clear();
+
+        if (id) {
+          flushSync(() => clearTableCells(editor, [id]));
+          view.placeCaret(id, 0);
+        }
       } else if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault();
         place(selection.anchor.row, selection.anchor.column);
