@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 
 import {
+  BLOCK_BACKGROUNDS,
   COLOR_NAMES,
+  TABLE_BORDER_STYLES,
   TABLE_STYLES,
+  getBlockBackgroundColor,
+  isHexColor,
   type BaseBlock,
   type ColorName,
+  type TableBorderStyle,
   type TableBorderWidth,
   type TableProps,
   type TableStyle,
@@ -12,10 +17,14 @@ import {
 import { TABLE_BORDER_MODES, type Editor, type TableBorderMode } from '@inkbrick/engine';
 
 import type { BlockMenuPanel } from '../block-handle/types';
+import type { ContextMenuItem } from '../context-menu/types';
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { TFunction } from '../i18n/translate';
 import { useT } from '../hooks/useT';
+import { Icon } from '../icons/Icon';
 import type { MessageKey } from '../i18n/en';
+import { CustomColorSwatch } from '../ui/CustomColorSwatch';
+import { backgroundCells } from './cellFormatting';
 import { backgroundTarget } from './tableFormatActions';
 
 const WIDTHS = ['thin', 'medium', 'thick'] as const satisfies readonly TableBorderWidth[];
@@ -81,7 +90,7 @@ const GLYPH_LINES = [
   ['v', 10, 3, 10, 17],
 ] as const;
 
-const GLYPH_MODES: Readonly<Record<TableBorderMode, readonly string[]>> = {
+const GLYPH_MODES: Readonly<Record<Exclude<TableBorderMode, 'keep'>, readonly string[]>> = {
   all: ['top', 'bottom', 'left', 'right', 'h', 'v'],
   outside: ['top', 'bottom', 'left', 'right'],
   inside: ['h', 'v'],
@@ -98,7 +107,7 @@ const GLYPH_MODES: Readonly<Record<TableBorderMode, readonly string[]>> = {
  * Значок режима границ: бледная сетка 3 × 3 и поверх неё яркими линиями те, что меняет пункт. «Нет границы» — только
  * бледная сетка с косой чертой.
  */
-function BorderGlyph({ mode }: { mode: TableBorderMode }) {
+function BorderGlyph({ mode }: { mode: Exclude<TableBorderMode, 'keep'> }) {
   const active = new Set(GLYPH_MODES[mode]);
 
   return (
@@ -181,6 +190,117 @@ function StyleGallery({
   );
 }
 
+/**
+ * Оформление линий, которое запоминается между открытиями меню: толщина, начертание и цвет, с которыми рисуются границы
+ * из пунктов «Все», «Внешние» и т. д. Выбор толщины, начертания или цвета сразу меняет и уже существующие линии выделенных
+ * ячеек (режим `keep`), поэтому ничего дополнительно нажимать не нужно.
+ */
+const look: { width: TableBorderWidth; style: TableBorderStyle; color: ColorName | null } = {
+  width: 'thin',
+  style: 'solid',
+  color: null,
+};
+
+type Placement = Exclude<TableBorderMode, 'keep'>;
+
+/** Меняет границы выделенных ячеек (а без выделения — всей таблицы) и запоминает выбранное оформление. */
+function applyBorders(
+  editor: Editor,
+  block: BaseBlock,
+  picked: CellSelection | null,
+  run: (action: () => void) => void,
+  change: {
+    mode: TableBorderMode;
+    width?: TableBorderWidth;
+    color?: ColorName | null;
+    style?: TableBorderStyle;
+  },
+) {
+  const target = backgroundTarget(editor, block, picked);
+
+  if (!target) return;
+
+  run(() =>
+    editor.dispatch({
+      type: 'setTableCellsBorders',
+      payload: { blockId: block.id, range: target.range, ...change },
+    } as never),
+  );
+}
+
+/** Образец линии для пунктов толщины и начертания. */
+function LineSample({ width, style }: { width?: TableBorderWidth; style?: TableBorderStyle }) {
+  const px = width === 'thick' ? 3 : width === 'medium' ? 2 : 1;
+
+  return (
+    <span
+      aria-hidden="true"
+      data-inkbrick-part="line-sample"
+      style={{ borderTopWidth: px, borderTopStyle: style ?? 'solid' }}
+    />
+  );
+}
+
+/**
+ * Круглые образцы цвета с кнопкой «Убрать цвет» сверху; при `custom` внизу есть «+» для своего цвета. Общие для фона ячейки и
+ * цвета границ. `current` — выбранный сейчас цвет (`null` — нет цвета).
+ */
+function ColorDots({
+  names,
+  current,
+  custom,
+  onPick,
+}: {
+  names: readonly string[];
+  current: string | null;
+  custom: boolean;
+  onPick: (color: string | null) => void;
+}) {
+  const t = useT();
+
+  return (
+    <div data-inkbrick-part="dot-panel">
+      <button
+        type="button"
+        role="menuitemradio"
+        aria-checked={current === null}
+        data-inkbrick-part="dot-remove"
+        data-action="color-remove"
+        onClick={() => onPick(null)}
+      >
+        <span aria-hidden="true" data-inkbrick-part="none-mark" />
+        {t('color.remove')}
+      </button>
+      <div data-inkbrick-part="dots" role="group">
+        {names.map((name) => (
+          <button
+            key={name}
+            type="button"
+            role="menuitemradio"
+            aria-checked={current === name}
+            data-inkbrick-part="dot"
+            data-color={name}
+            data-action={`color-${name}`}
+            aria-label={t(`color.${name}` as MessageKey)}
+            title={t(`color.${name}` as MessageKey)}
+            style={{ '--inkbrick-dot': `var(--inkbrick-highlight-${name})` } as CSSProperties}
+            onClick={() => onPick(name)}
+          />
+        ))}
+        {custom && (
+          <CustomColorSwatch
+            value={isHexColor(current) ? current : undefined}
+            fallback="#ffe74a"
+            label={t('color.custom')}
+            pressed={isHexColor(current)}
+            onPick={(hex) => onPick(hex)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function BordersPanel({
   editor,
   block,
@@ -193,20 +313,24 @@ function BordersPanel({
   run: (action: () => void) => void;
 }) {
   const t = useT();
-  const [width, setWidth] = useState<TableBorderWidth>('thin');
-  const [color, setColor] = useState<ColorName | null>(null);
-
-  const apply = (mode: TableBorderMode) => {
-    const target = backgroundTarget(editor, block, picked);
-
-    if (!target) return;
-
-    run(() =>
-      editor.dispatch({
-        type: 'setTableCellsBorders',
-        payload: { blockId: block.id, range: target.range, mode, width, color },
-      } as never),
-    );
+  const [width, setWidth] = useState<TableBorderWidth>(look.width);
+  const [style, setStyle] = useState<TableBorderStyle>(look.style);
+  const [color, setColor] = useState<ColorName | null>(look.color);
+  const apply = (mode: Placement) =>
+    applyBorders(editor, block, picked, run, {
+      mode,
+      ...(mode === 'none' ? {} : { width }),
+      color,
+      style,
+    });
+  // Толщина, начертание и цвет сразу меняют существующие линии выделенных ячеек.
+  const change = (patch: {
+    width?: TableBorderWidth;
+    style?: TableBorderStyle;
+    color?: ColorName | null;
+  }) => {
+    Object.assign(look, patch);
+    applyBorders(editor, block, picked, run, { mode: 'keep', ...patch });
   };
 
   return (
@@ -239,9 +363,32 @@ function BordersPanel({
             data-action={`table-border-width-${value}`}
             aria-label={t(`table.border.${value}` as MessageKey)}
             title={t(`table.border.${value}` as MessageKey)}
-            onClick={() => setWidth(value)}
+            onClick={() => {
+              setWidth(value);
+              change({ width: value });
+            }}
           >
             <span aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+      <div data-inkbrick-part="border-styles" role="group" aria-label={t('table.border.styleMenu')}>
+        {TABLE_BORDER_STYLES.map((value) => (
+          <button
+            key={value}
+            type="button"
+            role="menuitemradio"
+            aria-checked={style === value}
+            data-inkbrick-part="border-style"
+            data-action={`table-border-style-${value}`}
+            aria-label={t(`table.border.${value}` as MessageKey)}
+            title={t(`table.border.${value}` as MessageKey)}
+            onClick={() => {
+              setStyle(value);
+              change({ style: value });
+            }}
+          >
+            <LineSample style={value} />
           </button>
         ))}
       </div>
@@ -255,7 +402,10 @@ function BordersPanel({
           data-action="table-border-color-default"
           aria-label={t('table.border.colorDefault')}
           title={t('table.border.colorDefault')}
-          onClick={() => setColor(null)}
+          onClick={() => {
+            setColor(null);
+            change({ color: null });
+          }}
         />
         {COLOR_NAMES.map((name) => (
           <button
@@ -268,7 +418,10 @@ function BordersPanel({
             data-action={`table-border-color-${name}`}
             aria-label={t(`color.${name}` as MessageKey)}
             title={t(`color.${name}` as MessageKey)}
-            onClick={() => setColor(name)}
+            onClick={() => {
+              setColor(name);
+              change({ color: name });
+            }}
           />
         ))}
       </div>
@@ -298,6 +451,127 @@ export function tableDesignPanels(
       id: 'table-border-lines',
       title: t('table.border.heading'),
       content: <BordersPanel editor={editor} block={block} picked={picked} run={run} />,
+    },
+  ];
+}
+
+/**
+ * Пункты контекстного меню ячейки с вложенными меню, как в офисных редакторах: «Фон ячейки» (палитра), «Границы ячеек»
+ * (расположение линий, а в нём «Толщина», «Стиль» и «Цвет границ») и «Стиль таблицы» (галерея). Действие закрывает меню.
+ */
+export function tableDesignMenuItems(
+  editor: Editor,
+  block: BaseBlock,
+  t: TFunction,
+  picked: CellSelection | null,
+  run: (action: () => void) => void,
+): ContextMenuItem[] {
+  const target = backgroundTarget(editor, block, picked);
+
+  if (!target) return [];
+
+  const backgrounds = new Set(
+    [...target.ids].map((id) => {
+      const cell = editor.store.getBlock(id);
+
+      return cell ? getBlockBackgroundColor(cell) : undefined;
+    }),
+  );
+  const currentBackground = backgrounds.size === 1 ? ([...backgrounds][0] ?? null) : null;
+  const apply = (change: Parameters<typeof applyBorders>[4]) =>
+    applyBorders(editor, block, picked, run, change);
+  const change = (patch: {
+    width?: TableBorderWidth;
+    style?: TableBorderStyle;
+    color?: ColorName | null;
+  }) => {
+    Object.assign(look, patch);
+    apply({ mode: 'keep', ...patch });
+  };
+
+  return [
+    {
+      id: 'table-cell-background',
+      title: t('table.format.cellsBackground'),
+      icon: <Icon name="palette" />,
+      separatorBefore: true,
+      flyout: (
+        <ColorDots
+          names={BLOCK_BACKGROUNDS}
+          current={currentBackground}
+          custom
+          onPick={(color) => run(() => void backgroundCells(editor, target, color))}
+        />
+      ),
+      run: () => undefined,
+    },
+    {
+      id: 'table-cell-borders',
+      title: t('table.border.cells'),
+      icon: <Icon name="table" />,
+      submenu: [
+        ...TABLE_BORDER_MODES.map((mode): ContextMenuItem => ({
+          id: `table-border-${mode}`,
+          title: t(`table.border.${mode}` as MessageKey),
+          icon: <BorderGlyph mode={mode} />,
+          run: () =>
+            apply({
+              mode,
+              ...(mode === 'none' ? {} : { width: look.width }),
+              color: look.color,
+              style: look.style,
+            }),
+        })),
+        {
+          id: 'table-border-widthMenu',
+          title: t('table.border.widthMenu'),
+          icon: <LineSample width="medium" />,
+          separatorBefore: true,
+          submenu: WIDTHS.map((value): ContextMenuItem => ({
+            id: `table-border-width-${value}`,
+            title: t(`table.border.${value}` as MessageKey),
+            icon: <LineSample width={value} />,
+            checked: look.width === value,
+            run: () => change({ width: value }),
+          })),
+          run: () => undefined,
+        },
+        {
+          id: 'table-border-styleMenu',
+          title: t('table.border.styleMenu'),
+          icon: <LineSample style="dashed" />,
+          submenu: TABLE_BORDER_STYLES.map((value): ContextMenuItem => ({
+            id: `table-border-style-${value}`,
+            title: t(`table.border.${value}` as MessageKey),
+            icon: <LineSample style={value} />,
+            checked: look.style === value,
+            run: () => change({ style: value }),
+          })),
+          run: () => undefined,
+        },
+        {
+          id: 'table-border-colorMenu',
+          title: t('table.border.colorMenu'),
+          icon: <Icon name="palette" />,
+          flyout: (
+            <ColorDots
+              names={COLOR_NAMES}
+              current={look.color}
+              custom={false}
+              onPick={(color) => change({ color: color as ColorName | null })}
+            />
+          ),
+          run: () => undefined,
+        },
+      ],
+      run: () => undefined,
+    },
+    {
+      id: 'table-style',
+      title: t('table.style.heading'),
+      icon: <Icon name="table" />,
+      flyout: <StyleGallery editor={editor} block={block} run={run} />,
+      run: () => undefined,
     },
   ];
 }

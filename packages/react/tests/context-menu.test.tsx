@@ -351,36 +351,55 @@ describe('table items', () => {
     };
   }
 
-  it('have the sections of the table styles and of the borders, and a style closes the menu', async () => {
+  it('have nested menus: a style, borders with a width and a background, each closes the menu', async () => {
     const { editable, root, caret, cell, tableId, editor } = await mountTable();
+    const open = () => {
+      fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+    };
+    const flyout = (id: string) => document.querySelector(`[data-flyout="${id}"]`);
 
     root.focus();
     caret(cell(1, 1), 0);
 
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+    open();
+    // Вложенные панели закрыты, пока на пункт не нажали.
+    expect(flyout('table-style')).toBeNull();
 
-    // Идентификаторы пунктов и секций не повторяются: иначе React предупреждает о совпадении ключей.
-    expect(errors.mock.calls.map((call) => String(call[0]))).not.toContainEqual(
-      expect.stringContaining('same key'),
-    );
-    errors.mockRestore();
-
-    const section = (id: string) =>
-      $menu()!.querySelector(`[data-inkbrick-part="section"][data-section="${id}"]`);
-
+    fireEvent.click(item('table-style'));
     expect(
-      section('table-style')?.querySelectorAll('[data-inkbrick-part="style-option"]'),
+      flyout('table-style')?.querySelectorAll('[data-inkbrick-part="style-option"]'),
     ).toHaveLength(8);
-    expect(
-      section('table-border-lines')?.querySelectorAll('[data-inkbrick-part="border-mode"]'),
-    ).toHaveLength(10);
-
-    fireEvent.click(section('table-style')!.querySelector('[data-action="table-style-green"]')!);
+    fireEvent.click(flyout('table-style')!.querySelector('[data-action="table-style-green"]')!);
 
     expect($menu()).toBeNull();
     expect(editor.document.getBlock(tableId)?.props.tableStyle).toBe('green');
+
+    open();
+    fireEvent.click(item('table-cell-borders'));
+
+    const borders = flyout('table-cell-borders')!;
+
+    // Расположение линий, а за ним толщина, начертание и цвет — каждые своим вложенным меню.
+    expect(borders.querySelectorAll('[data-action^="table-border-"]')).not.toHaveLength(0);
+    expect(borders.querySelector('[data-action="table-border-outside"]')).not.toBeNull();
+    fireEvent.click(borders.querySelector('[data-action="table-border-widthMenu"]')!);
+    fireEvent.click(
+      flyout('table-border-widthMenu')!.querySelector('[data-action="table-border-width-thick"]')!,
+    );
+    expect($menu()).toBeNull();
+    expect(editor.document.getBlock(cell(1, 1))?.props.borderTop).toBe('thick');
+
+    open();
+    fireEvent.click(item('table-cell-background'));
+    fireEvent.click(flyout('table-cell-background')!.querySelector('[data-action="color-blue"]')!);
+    expect($menu()).toBeNull();
+    expect(editor.document.getBlock(cell(1, 1))?.props.background).toBe('blue');
+
+    // Ни повторяющихся ключей, ни других ошибок React при отрисовке вложенных меню.
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
   });
 
   it('are added under the standard ones and edit the row and column under the caret', async () => {
@@ -412,8 +431,11 @@ describe('table items', () => {
       'table-freezeRow',
       'table-freezeColumn',
       'table-reset-widths',
+      'table-cell-background',
+      'table-cell-borders',
+      'table-style',
     ]);
-    // Разделители: перед пунктами таблицы, перед её форматированием и перед секциями стилей и границ.
+    // Разделители: перед пунктами таблицы, перед её форматированием и перед вложенными меню оформления.
     expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(3);
 
     fireEvent.click(item('table-row-below'));

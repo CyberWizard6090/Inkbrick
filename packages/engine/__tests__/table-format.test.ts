@@ -211,6 +211,17 @@ describe('setTableCellsBackground', () => {
     expect(can('setTableCellsBackground', { range: ALL, background: 'url(x)' })).toBe(false);
     expect(can('setTableCellsBackground', { range: ALL, background: 'red' })).toBe(true);
   });
+
+  it('takes a colour of its own as #rrggbb and nothing else', () => {
+    const { can, run, cell, editor } = setup();
+
+    expect(can('setTableCellsBackground', { range: ALL, background: '#12ab34' })).toBe(true);
+    expect(can('setTableCellsBackground', { range: ALL, background: '#fff' })).toBe(false);
+    expect(can('setTableCellsBackground', { range: ALL, background: 'red; x' })).toBe(false);
+
+    run('setTableCellsBackground', { range: ALL, background: '#12ab34' });
+    expect(editor.document.getBlock(cell(1, 1))!.props.background).toBe('#12ab34');
+  });
 });
 
 describe('table properties', () => {
@@ -447,6 +458,50 @@ describe('table borders', () => {
 
     expect(sides(editor, cell(1, 1)).borderTop).toBeUndefined();
     expect(sides(editor, cell(0, 0)).borderLeft).toBeUndefined();
+  });
+
+  it('keep changes the look of the existing lines only: a width, a style and a color', () => {
+    const { run, can, cell, editor } = setup();
+
+    // Без явных границ линиями считаются обычные границы таблицы: толщина ложится на все стороны ячеек выбранного диапазона.
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', width: 'thick' });
+    expect(sides(editor, cell(1, 1))).toMatchObject({
+      borderTop: 'thick',
+      borderRight: 'thick',
+      borderBottom: 'thick',
+      borderLeft: 'thick',
+    });
+    // Соседи получили свою сторону той же линии, остальные их стороны не тронуты.
+    expect(sides(editor, cell(0, 1)).borderBottom).toBe('thick');
+    expect(sides(editor, cell(0, 1)).borderTop).toBeUndefined();
+
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', style: 'dashed', color: 'red' });
+    expect(editor.document.getBlock(cell(1, 1))!.props).toMatchObject({
+      borderStyle: 'dashed',
+      borderColor: 'red',
+    });
+    // Сплошная — обычное начертание: свойство снимается.
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', style: 'solid' });
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderStyle).toBeUndefined();
+
+    // Убранные линии не возвращаются: меняется только оформление тех, что есть.
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'none' });
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', width: 'medium' });
+    expect(sides(editor, cell(1, 1)).borderTop).toBe('none');
+
+    expect(can('setTableCellsBorders', { range: ALL, mode: 'keep' })).toBe(false);
+    expect(can('setTableCellsBorders', { range: ALL, mode: 'keep', width: 'none' })).toBe(false);
+    expect(can('setTableCellsBorders', { range: ALL, mode: 'keep', style: 'wavy' })).toBe(false);
+  });
+
+  it('the style travels with a copied range', () => {
+    const { run, editor, tableId } = setup();
+
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'all', width: 'thin', style: 'dotted' });
+
+    const fragment = tableRangeFragment((id) => editor.document.getBlock(id), tableId, MIDDLE);
+
+    expect(JSON.stringify(fragment)).toContain('dotted');
   });
 
   it('the borders and the color are exported to HTML', () => {

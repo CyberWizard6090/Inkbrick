@@ -175,6 +175,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Контекстное меню ячейки: фон, границы и стиль таблицы — вложенными меню, как в офисных редакторах («Фон ячейки» с круглыми образцами и своим цветом, «Границы ячеек» с толщиной, стилем и цветом границ, «Стиль таблицы»). Пункты меню могут нести `submenu`, `flyout` и `checked`.
+- Толщина, начертание и цвет границ сразу меняют существующие линии выделенных ячеек (режим `keep` команды `setTableCellsBorders`); раньше они только запоминались и действовали после нажатия на расположение границы.
+- Новое: начертание линий границы ячейки (`borderStyle`: сплошная, прерывистая, точками), свой цвет фона ячейки `#rrggbb`.
+- Ручки таблицы: плашка строки стоит слева от таблицы рядом со строкой, язычок блока у таблицы поднят над ней, ручка таблицы перенесена в правый верхний угол, подсказка у неё тёмная и над таблицей; у соседних таблиц ручки не показываются одновременно; отступ сверху и снизу таблицы 20 пикселей.
+
 - Ручки таблицы: плашки столбца и строки с шестью точками, круглые маркеры на их концах вставляют столбец или строку по границе, у ручек есть подсказка «Нажмите, чтобы открыть меню».
 
 - The parser of pasted HTML (Google Docs, Word, browsers; `htmlToFragment`) is a separate chunk loaded right after the editor mounts, so the core of `@inkbrick/react` is about 3.0 KB gzip lighter (63.4 → 60.4 KB) and the chunk is 4.3 KB. A paste of foreign HTML stays synchronous once the chunk is in (it normally is by the first paste); in the first moments after mount it waits for the chunk and lands at the same place. Pasting the editor's own format and plain text never waits. `htmlToFragment` and `embeddedFragment` are still exported for your own code.

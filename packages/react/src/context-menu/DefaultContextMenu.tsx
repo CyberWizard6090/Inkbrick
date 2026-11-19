@@ -1,6 +1,15 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 import { useT } from '../hooks/useT';
+import { Icon } from '../icons/Icon';
 import type { ContextMenuItem, ContextMenuProps } from './types';
 
 const MARGIN = 8;
@@ -87,6 +96,23 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
     >
       {formatting}
       {formatting && items.length > 0 && <div data-inkbrick-part="separator" role="separator" />}
+      <MenuList items={items} onRun={run} />
+    </div>
+  );
+}
+
+/** Список пунктов: общий для самого меню и его вложенных панелей. Открытой может быть одна вложенная панель на уровне. */
+function MenuList({
+  items,
+  onRun,
+}: {
+  items: readonly ContextMenuItem[];
+  onRun: (item: ContextMenuItem) => void;
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  return (
+    <>
       {items.map((item, index) => (
         <Fragment key={item.id}>
           {item.separatorBefore && index > 0 && (
@@ -102,37 +128,210 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
               </div>
             </>
           ) : (
-            <div
-              role="menuitem"
-              tabIndex={item.disabled ? -1 : 0}
-              aria-disabled={item.disabled || undefined}
-              data-action={item.id}
-              data-inkbrick-part="item"
-              data-disabled={item.disabled || undefined}
-              className="inkbrick-context-menu__item"
-              onClick={() => run(item)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  run(item);
-                }
-              }}
-            >
-              {item.icon !== undefined && (
-                <span className="inkbrick-context-menu__icon" data-inkbrick-part="icon">
-                  {item.icon}
-                </span>
-              )}
-              {item.title}
-              {item.shortcut && (
-                <span className="inkbrick-context-menu__shortcut" data-inkbrick-part="shortcut">
-                  {item.shortcut}
-                </span>
-              )}
-            </div>
+            <Row
+              item={item}
+              open={openId === item.id}
+              setOpen={(open) => setOpenId(open ? item.id : null)}
+              onRun={onRun}
+            />
           )}
         </Fragment>
       ))}
+    </>
+  );
+}
+
+function Row({
+  item,
+  open,
+  setOpen,
+  onRun,
+}: {
+  item: ContextMenuItem;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  onRun: (item: ContextMenuItem) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  // Фокус переходит во вложенную панель, только если она открыта с клавиатуры.
+  const [byKeyboard, setByKeyboard] = useState(false);
+  const nested = (item.submenu !== undefined || item.flyout !== undefined) && !item.disabled;
+  const checkable = item.checked !== undefined;
+
+  return (
+    <div
+      ref={ref}
+      role={checkable ? 'menuitemradio' : 'menuitem'}
+      aria-checked={checkable ? item.checked : undefined}
+      aria-haspopup={nested ? 'menu' : undefined}
+      aria-expanded={nested ? open : undefined}
+      tabIndex={item.disabled ? -1 : 0}
+      aria-disabled={item.disabled || undefined}
+      data-action={item.id}
+      data-inkbrick-part="item"
+      data-disabled={item.disabled || undefined}
+      data-checked={item.checked || undefined}
+      className="inkbrick-context-menu__item"
+      // Наведение открывает вложенную панель этого пункта и закрывает панель соседнего.
+      onPointerEnter={() => {
+        setByKeyboard(false);
+        setOpen(nested);
+      }}
+      onClick={() => {
+        if (nested) {
+          setByKeyboard(false);
+          setOpen(!open);
+        } else onRun(item);
+      }}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+
+        if (event.key === 'Enter' || event.key === ' ' || (nested && event.key === 'ArrowRight')) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (nested) {
+            setByKeyboard(true);
+            setOpen(true);
+          } else onRun(item);
+        }
+      }}
+    >
+      {item.icon !== undefined && (
+        <span className="inkbrick-context-menu__icon" data-inkbrick-part="icon">
+          {item.icon}
+        </span>
+      )}
+      {item.title}
+      {item.shortcut && (
+        <span className="inkbrick-context-menu__shortcut" data-inkbrick-part="shortcut">
+          {item.shortcut}
+        </span>
+      )}
+      {item.checked && (
+        <span data-inkbrick-part="check" aria-hidden="true">
+          <Icon name="check" />
+        </span>
+      )}
+      {nested && (
+        <span data-inkbrick-part="chevron" aria-hidden="true">
+          <Icon name="chevron-right" />
+        </span>
+      )}
+      {nested &&
+        open &&
+        createPortal(
+          <Flyout
+            anchor={ref}
+            item={item}
+            focusFirst={byKeyboard}
+            onBack={() => {
+              setOpen(false);
+              ref.current?.focus();
+            }}
+            onRun={onRun}
+          />,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+/** Вложенная панель справа от пункта (слева, если справа не хватает места); целиком остаётся в окне. */
+function Flyout({
+  anchor,
+  item,
+  focusFirst,
+  onBack,
+  onRun,
+}: {
+  anchor: { readonly current: HTMLElement | null };
+  item: ContextMenuItem;
+  focusFirst: boolean;
+  onBack: () => void;
+  onRun: (item: ContextMenuItem) => void;
+}) {
+  const t = useT();
+  const ref = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<{ left: number; top: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const panel = ref.current;
+    const row = anchor.current?.getBoundingClientRect();
+
+    if (!panel || !row) return;
+
+    const width = panel.offsetWidth;
+    const height = panel.offsetHeight;
+    const right = row.right + 4;
+    const left = right + width + MARGIN > window.innerWidth ? row.left - width - 4 : right;
+
+    setPlace({
+      left: Math.max(MARGIN, Math.min(left, window.innerWidth - width - MARGIN)),
+      top: Math.max(MARGIN, Math.min(row.top - 4, window.innerHeight - height - MARGIN)),
+    });
+  }, [anchor]);
+
+  useEffect(() => {
+    if (!focusFirst) return;
+
+    ref.current
+      ?.querySelector<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')
+      ?.focus({ preventScroll: true });
+  }, [focusFirst]);
+
+  const move = (delta: number) => {
+    const entries = [
+      ...(ref.current?.querySelectorAll<HTMLElement>(
+        ':scope > [role^="menuitem"]:not([aria-disabled="true"])',
+      ) ?? []),
+    ];
+    const index = entries.indexOf(document.activeElement as HTMLElement);
+
+    entries[(index + delta + entries.length) % entries.length]?.focus();
+  };
+
+  const keys = (event: ReactKeyboardEvent) => {
+    // Клавиши панели не доходят до главного меню (React пускает события через портал вверх по дереву).
+    event.stopPropagation();
+
+    if (event.target instanceof HTMLInputElement) return;
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      onBack();
+    } else if (item.submenu && event.key === 'ArrowDown') {
+      event.preventDefault();
+      move(1);
+    } else if (item.submenu && event.key === 'ArrowUp') {
+      event.preventDefault();
+      move(-1);
+    }
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="inkbrick-context-menu"
+      data-inkbrick-ui="context-menu"
+      data-inkbrick-part="flyout"
+      data-flyout={item.id}
+      role="menu"
+      aria-label={item.title || t('contextMenu.label')}
+      style={{
+        left: place?.left ?? 0,
+        top: place?.top ?? 0,
+        visibility: place ? undefined : 'hidden',
+      }}
+      onMouseDown={(event) => {
+        if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
+      }}
+      onContextMenu={(event) => event.preventDefault()}
+      // Панель лежит в портале, но по дереву React это потомок пункта: без этого её клики переключали бы сам пункт.
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={keys}
+    >
+      {item.submenu ? <MenuList items={item.submenu} onRun={onRun} /> : item.flyout}
     </div>
   );
 }

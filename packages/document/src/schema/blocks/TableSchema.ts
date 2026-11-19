@@ -2,7 +2,8 @@ import * as z from '../zod';
 
 import type { BaseBlock } from '../../model/BaseBlock';
 import type { BlockSchema, BlockTemplate } from '../BlockSchema';
-import { BLOCK_BACKGROUNDS, COLOR_NAMES } from '../../utils/colors';
+import { COLOR_NAMES } from '../../utils/colors';
+import { blockBackgroundSchema } from './blockBackground';
 
 export const TABLE = 'block:table';
 export const TABLE_ROW = 'block:table-row';
@@ -38,6 +39,11 @@ export type TableStyle = (typeof TABLE_STYLES)[number];
 export const TABLE_BORDER_WIDTHS = ['none', 'thin', 'medium', 'thick'] as const;
 
 export type TableBorderWidth = (typeof TABLE_BORDER_WIDTHS)[number];
+
+/** Начертание линий границы ячейки: сплошная, прерывистая, точками. */
+export const TABLE_BORDER_STYLES = ['solid', 'dashed', 'dotted'] as const;
+
+export type TableBorderStyle = (typeof TABLE_BORDER_STYLES)[number];
 
 /** Стороны ячейки, у которых можно задать границу. */
 export const TABLE_BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const;
@@ -86,8 +92,8 @@ export const tableRowPropsSchema = z.object({});
 
 export const tableCellPropsSchema = z.object({
   align: z.enum(['left', 'center', 'right', 'justify']).optional(),
-  /** Цвет фона ячейки (`BLOCK_BACKGROUNDS`); без него фона нет. */
-  background: z.enum(BLOCK_BACKGROUNDS).optional(),
+  /** Фон ячейки: имя из `BLOCK_BACKGROUNDS` или свой цвет `#rrggbb`; без него фона нет. */
+  background: blockBackgroundSchema.optional(),
   /** Границы ячейки по сторонам (`TABLE_BORDER_WIDTHS`); сторона без значения рисуется по оформлению таблицы. */
   borderTop: z.enum(TABLE_BORDER_WIDTHS).optional(),
   borderRight: z.enum(TABLE_BORDER_WIDTHS).optional(),
@@ -95,6 +101,8 @@ export const tableCellPropsSchema = z.object({
   borderLeft: z.enum(TABLE_BORDER_WIDTHS).optional(),
   /** Цвет линий границы: имя из палитры цветов текста; без него — обычный цвет линий. */
   borderColor: z.enum(COLOR_NAMES).optional(),
+  /** Начертание линий границы (`TABLE_BORDER_STYLES`); без него — сплошная. Одно на все стороны ячейки. */
+  borderStyle: z.enum(TABLE_BORDER_STYLES).optional(),
 });
 
 /** Заготовка таблицы `rows` × `columns` с пустыми ячейками. */

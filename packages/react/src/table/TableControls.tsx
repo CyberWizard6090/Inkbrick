@@ -154,6 +154,26 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
 const sameLayout = (a: Layout | null, b: Layout | null) =>
   a === b || (!!a && !!b && JSON.stringify(a) === JSON.stringify(b));
 
+/**
+ * Какая таблица сейчас под указателем. Ручки есть у таблицы под мышью и у таблицы с кареткой; когда мышь над другой
+ * таблицей, ручки той, где стоит каретка, прячутся: иначе две соседние таблицы рисуют их друг поверх друга.
+ */
+let hoveredTable: string | null = null;
+const hoverListeners = new Set<() => void>();
+
+function setHoveredTable(id: string | null) {
+  if (hoveredTable === id) return;
+
+  hoveredTable = id;
+  hoverListeners.forEach((listener) => listener());
+}
+
+const subscribeHovered = (listener: () => void) => {
+  hoverListeners.add(listener);
+
+  return () => void hoverListeners.delete(listener);
+};
+
 /** Подсказка у ручки: «Нажмите, чтобы открыть меню». Видна при наведении мыши и фокусе с клавиатуры (стили в ui.css). */
 function GripTip({ t }: { t: TFunction }) {
   return (
@@ -200,7 +220,12 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const caretPosition: Position | null = caret
     ? { row: Number(caret.split(':')[0]), column: Number(caret.split(':')[1]) }
     : null;
-  const position = menu?.position ?? hover ?? caretPosition;
+  const otherHovered = useSyncExternalStore(
+    subscribeHovered,
+    () => hoveredTable !== null && hoveredTable !== block.id,
+    () => false,
+  );
+  const position = menu?.position ?? hover ?? (otherHovered ? null : caretPosition);
   const active =
     position && position.row < size.rows && position.column < size.columns ? position : null;
 
@@ -255,6 +280,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
 
         if (!inside) {
           setHover(null);
+          if (hoveredTable === block.id) setHoveredTable(null);
           return;
         }
 
@@ -268,13 +294,18 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         const found = id ? locateTableCell(getBlock, id) : undefined;
         const next = found?.tableId === block.id ? { row: found.row, column: found.column } : null;
 
+        if (next) setHoveredTable(block.id);
+
         setHover((previous) =>
           previous?.row === next?.row && previous?.column === next?.column ? previous : next,
         );
       });
     };
     const onOut = (event: PointerEvent) => {
-      if (!event.relatedTarget && !frozen.current) setHover(null);
+      if (!event.relatedTarget && !frozen.current) {
+        setHover(null);
+        if (hoveredTable === block.id) setHoveredTable(null);
+      }
     };
 
     document.addEventListener('pointermove', onMove);
@@ -743,8 +774,11 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.handle')}
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'table'}
-        style={{ left: table.left - 22, top: table.top - 22 }}
-        onClick={() => open('table', table.left, table.top + 4)}
+        style={{
+          left: Math.min(table.left + table.width + 6, window.innerWidth - 24),
+          top: table.top - 22,
+        }}
+        onClick={() => open('table', table.left + table.width - 8, table.top + 4)}
       >
         <GripTip t={t} />
       </button>
@@ -756,13 +790,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'row'}
         style={{
-          left: table.left - 5,
+          left: table.left - 20,
           top: row.top + 6,
           height: Math.max(16, row.height - 12),
         }}
         onClick={() => open('row', table.left + 8, row.top + row.height / 2 + 14)}
       >
-        <GripTip t={t} />
+        <span data-inkbrick-part="dots" aria-hidden="true" />
       </button>
       <button
         {...control}
@@ -772,7 +806,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.row.insertAbove')}
         title={t('table.row.insertAbove')}
         disabled={!canAddRow}
-        style={{ left: table.left - 5, top: row.top - 5 }}
+        style={{ left: table.left - 19, top: row.top - 5 }}
         onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
       />
       <button
@@ -783,7 +817,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.row.insertBelow')}
         title={t('table.row.insertBelow')}
         disabled={!canAddRow}
-        style={{ left: table.left - 5, top: row.top + row.height - 5 }}
+        style={{ left: table.left - 19, top: row.top + row.height - 5 }}
         onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
       />
       <button
@@ -800,7 +834,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         }}
         onClick={() => open('column', cell.left + 6, table.top + 10)}
       >
-        <GripTip t={t} />
+        <span data-inkbrick-part="dots" aria-hidden="true" />
       </button>
       <button
         {...control}

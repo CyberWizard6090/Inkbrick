@@ -23,6 +23,15 @@ export interface ContextMenuItem {
    * ним, а сам пункт не нажимается (`run` не вызывается).
    */
   readonly content?: ReactNode;
+  /**
+   * Вложенное меню: пункт с шевроном открывает справа от себя список пунктов (они могут вкладываться дальше). Сам пункт не
+   * нажимается: `run` не вызывается.
+   */
+  readonly submenu?: readonly ContextMenuItem[];
+  /** Вложенная панель со своим содержимым (например, палитра цветов); открывается так же, как `submenu`. */
+  readonly flyout?: ReactNode;
+  /** Пункт выбран (текущее значение): рисуется с галочкой и `aria-checked`. */
+  readonly checked?: boolean;
   readonly run: () => void;
 }
 

@@ -145,9 +145,10 @@
     text-decoration: line-through;
   }
 
+  /* Поля сверху и снизу оставляют место ручкам таблицы (плашке столбца над ней и кнопке «+» под ней) и разводят соседние таблицы. */
   :where([data-inkbrick-block='table']) {
     max-width: 100%;
-    margin: 4px 0;
+    margin: 20px 0;
     overflow-x: auto;
   }
 
@@ -510,6 +511,15 @@
 
   :where([data-inkbrick-block='table-cell'][data-border-left]) {
     border-left-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+  }
+
+  /* Начертание линий ячейки (одно на все стороны): сплошная — по умолчанию. */
+  :where([data-inkbrick-block='table-cell'][data-border-style='dashed']) {
+    border-style: dashed;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-style='dotted']) {
+    border-style: dotted;
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-top='none']) {

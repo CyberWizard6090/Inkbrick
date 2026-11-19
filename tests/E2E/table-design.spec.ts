@@ -126,11 +126,10 @@ test.describe('Table style gallery and borders', () => {
     expect(header.borderTopColor).not.toBe('rgb(0, 0, 0)');
   });
 
-  test('all borders of the whole table: width and color, then no borders', async ({ page }) => {
+  test('width and color change the lines at once, then no borders', async ({ page }) => {
+    // Толщина и цвет сразу меняют существующие линии: ничего больше нажимать не нужно.
     await openTableMenu(page);
     await page.locator('[data-action="table-border-width-thick"]').click();
-    await page.locator('[data-action="table-border-color-red"]').click();
-    await page.locator('[data-action="table-border-all"]').click();
 
     for (const index of [0, 4, 8]) {
       for (const side of ['top', 'right', 'bottom', 'left']) {
@@ -139,6 +138,13 @@ test.describe('Table style gallery and borders', () => {
     }
 
     expect((await cellStyle(page, 4)).borderTopWidth).toBe('3px');
+
+    await openTableMenu(page);
+    await page.locator('[data-action="table-border-style-dashed"]').click();
+    expect(await page.locator(cells).nth(4).getAttribute('data-border-style')).toBe('dashed');
+
+    await openTableMenu(page);
+    await page.locator('[data-action="table-border-color-red"]').click();
     expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
 
     await openTableMenu(page);
@@ -168,34 +174,76 @@ test.describe('Table style gallery and borders', () => {
     expect(await cellBorder(page, 8, 'top')).toBeNull();
   });
 
-  test('the cell context menu has the same sections: a style and borders apply and close it', async ({
+  test('the cell context menu has nested menus: a style, borders and a background apply and close it', async ({
     page,
   }) => {
     const box = (await page.locator(cells).nth(4).boundingBox())!;
-
-    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
-
     const context = page.locator('[data-testid="context-menu"]');
+    const flyout = (name: string) => page.locator(`[data-flyout="${name}"]`);
+    const openContext = async () => {
+      await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+      await expect(context).toBeVisible();
+    };
 
-    await expect(context).toBeVisible();
-    await expect(context.locator('[data-inkbrick-part="style-option"]')).toHaveCount(8);
-    await expect(context.locator('[data-inkbrick-part="border-mode"]')).toHaveCount(10);
+    await openContext();
+    await context.locator('[data-action="table-style"]').hover();
+    await expect(flyout('table-style').locator('[data-inkbrick-part="style-option"]')).toHaveCount(
+      8,
+    );
 
-    // Предпросмотр и в этом меню: наведение красит таблицу, документ не меняется.
-    await context.locator('[data-action="table-style-orange"]').hover();
+    // Предпросмотр и здесь: наведение красит таблицу, документ не меняется.
+    await flyout('table-style').locator('[data-action="table-style-orange"]').hover();
     await expect.poll(() => tableStyle(page)).toBe('orange');
     expect(await modelStyle(page)).toBeNull();
 
-    await context.locator('[data-action="table-style-orange"]').click();
+    await flyout('table-style').locator('[data-action="table-style-orange"]').click();
     await expect(context).toBeHidden();
     expect(await modelStyle(page)).toBe('orange');
 
-    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
-    await expect(context).toBeVisible();
-    await context.locator('[data-action="table-border-outside"]').click();
+    await openContext();
+    await context.locator('[data-action="table-cell-borders"]').hover();
+    await expect(
+      flyout('table-cell-borders').locator('[data-action^="table-border-"]'),
+    ).not.toHaveCount(0);
+    await flyout('table-cell-borders').locator('[data-action="table-border-outside"]').click();
     await expect(context).toBeHidden();
     expect(await cellBorder(page, 0, 'top')).toBe('thin');
     expect(await cellBorder(page, 4, 'top')).toBeNull();
+
+    // Фон ячейки: цвет из круглых образцов, затем «Убрать цвет».
+    await openContext();
+    await context.locator('[data-action="table-cell-background"]').hover();
+    await flyout('table-cell-background').locator('[data-action="color-green"]').click();
+    await expect(context).toBeHidden();
+    expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBe('green');
+
+    await openContext();
+    await context.locator('[data-action="table-cell-background"]').hover();
+    await flyout('table-cell-background').locator('[data-action="color-remove"]').click();
+    expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBeNull();
+  });
+
+  test('a width, a style and a colour from the nested menus change the existing lines', async ({
+    page,
+  }) => {
+    const box = (await page.locator(cells).nth(4).boundingBox())!;
+    const context = page.locator('[data-testid="context-menu"]');
+    const pick = async (menu: string, action: string) => {
+      await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+      await context.locator('[data-action="table-cell-borders"]').hover();
+      await page.locator('[data-flyout="table-cell-borders"] [data-action="' + menu + '"]').hover();
+      await page.locator(`[data-flyout="${menu}"] [data-action="${action}"]`).click();
+      await expect(context).toBeHidden();
+    };
+
+    await pick('table-border-widthMenu', 'table-border-width-thick');
+    expect(await cellBorder(page, 4, 'top')).toBe('thick');
+
+    await pick('table-border-styleMenu', 'table-border-style-dotted');
+    expect(await page.locator(cells).nth(4).getAttribute('data-border-style')).toBe('dotted');
+
+    await pick('table-border-colorMenu', 'color-red');
+    expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
   });
 
   test('the menu with the gallery and the borders passes the accessibility check', async ({
@@ -268,12 +316,22 @@ test.describe('Table handles', () => {
 
     await page.mouse.move(cell.x + 20, cell.y + 10);
 
-    const grip = (await page.locator('[data-inkbrick-part="column-grip"]').boundingBox())!;
+    const grip = (await page.locator('[data-inkbrick-part="table-grip"]').boundingBox())!;
 
     await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2, { steps: 6 });
-    await expect(page.locator('[data-inkbrick-part="tip"]:visible')).toHaveText(
-      'Click to open the menu',
-    );
+
+    const tip = page.locator('[data-inkbrick-part="tip"]:visible');
+
+    await expect(tip).toHaveText('Click to open the menu');
+    // Подсказка тёмная в обеих темах и стоит над таблицей, а не на ней.
+    await expect(tip).toHaveCSS('background-color', 'rgb(43, 43, 43)');
+
+    const [tipBox, tableBox] = await Promise.all([
+      tip.boundingBox(),
+      page.locator(table).boundingBox(),
+    ]);
+
+    expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(tableBox!.y + 1);
   });
 });
 
@@ -316,8 +374,8 @@ test.describe('Table design on a phone', () => {
       ).toBeGreaterThanOrEqual(44);
     }
 
+    // Толщина меняет линии сразу и закрывает меню.
     await menu.locator('[data-action="table-border-width-thick"]').tap();
-    await menu.locator('[data-action="table-border-all"]').tap();
 
     expect(await cellBorder(page, 4, 'top')).toBe('thick');
   });

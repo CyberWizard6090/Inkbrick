@@ -43,7 +43,10 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
             wrapper.getBoundingClientRect().left -
               Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0),
           ),
-          y: Math.round(row.top),
+          // Язычок таблицы стоит над ней: слева от первой строки место занято плашкой строки.
+          y:
+            Math.round(row.top) -
+            (editor.store.getBlock(blockId)?.flavour === 'block:table' ? 20 : 0),
         });
       }
     };

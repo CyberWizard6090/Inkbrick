@@ -326,7 +326,7 @@
 
   /* Плашка строки уже плашки столбца: слева от таблицы стоит ручка блока, и широкая плашка налезала бы на неё. */
   :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
-    width: 10px;
+    width: 12px;
     height: 24px;
   }
 
@@ -367,6 +367,14 @@
   ) {
     background: var(--inkbrick-brand-bg);
     color: var(--inkbrick-fg-on-brand);
+  }
+
+  /* Плашка и маркеры строки стоят слева от таблицы рядом с язычком блока: они выше него, чтобы нажатие доставалось им. */
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-insert']
+  ) {
+    z-index: calc(var(--inkbrick-z-handle) + 1);
   }
 
   /* Круглый маркер на границе: кольцо, а при наведении — кнопка «+». */
@@ -412,30 +420,30 @@
       1.5px 8px;
   }
 
-  /* Подсказка у ручки: тёмная плашка под ней, жирное «Нажмите». Только там, где есть наведение. */
+  /* Подсказка у ручки таблицы в углу: тёмная плашка над ней, чтобы не закрывать плашки, ячейки и язычок блока. Цвета те же в обеих темах. */
   :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='tip']) {
     display: none;
   }
 
   @media (hover: hover) {
     :where(
-      [data-inkbrick-ui='table-controls']:is(
-          [data-inkbrick-part='row-grip'],
-          [data-inkbrick-part='column-grip'],
-          [data-inkbrick-part='table-grip']
-        ):is(:hover, :focus-visible):not([aria-expanded='true'])
+      [data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']:is(
+          :hover,
+          :focus-visible
+        ):not([aria-expanded='true'])
         > [data-inkbrick-part='tip']
     ) {
       position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
+      right: 0;
+      bottom: calc(100% + 6px);
       z-index: 1;
       display: block;
       padding: 6px 10px;
+      border: 1px solid rgb(255 255 255 / 12%);
       border-radius: 8px;
-      background: var(--inkbrick-fg-1);
+      background: #2b2b2b;
       box-shadow: var(--inkbrick-shadow-8);
-      color: color-mix(in srgb, var(--inkbrick-bg-1) 65%, transparent);
+      color: rgb(255 255 255 / 65%);
       font-size: var(--inkbrick-font-size-caption);
       line-height: 16px;
       white-space: nowrap;
@@ -443,7 +451,7 @@
     }
 
     :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='tip'] > strong) {
-      color: var(--inkbrick-bg-1);
+      color: #fff;
       font-weight: 600;
     }
   }
@@ -696,6 +704,130 @@
     padding-left: 16px;
     color: var(--inkbrick-fg-3);
     font-size: var(--inkbrick-font-size-caption);
+  }
+
+  /* Вложенные меню: шеврон у пункта, галочка у выбранного значения, открытый пункт подсвечен, панель справа от него. */
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='check'],
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='chevron']
+  ) {
+    display: inline-grid;
+    margin-left: auto;
+    padding-left: 12px;
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='check'] + [data-inkbrick-part='chevron']
+  ) {
+    margin-left: 0;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item'][aria-expanded='true']) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='context-menu'][data-inkbrick-part='flyout']) {
+    min-width: 200px;
+  }
+
+  /* Образец линии для толщины и начертания границ. */
+  :where([data-inkbrick-part='line-sample']) {
+    display: inline-block;
+    width: 20px;
+    height: 0;
+    border-top: 1px solid currentColor;
+  }
+
+  /* Панель цветов: «Убрать цвет», круглые образцы и «+» для своего цвета. */
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-panel']) {
+    display: grid;
+    gap: 8px;
+    padding: 4px;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-remove']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-remove']:hover,
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-remove'][aria-checked='true']
+  ) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='none-mark']) {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    background: linear-gradient(
+      to top right,
+      transparent calc(50% - 1px),
+      currentColor calc(50% - 1px),
+      currentColor calc(50% + 1px),
+      transparent calc(50% + 1px)
+    );
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dots']) {
+    display: grid;
+    grid-template-columns: repeat(7, 24px);
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--inkbrick-stroke-3);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot'],
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dots'] [data-inkbrick-part='swatch']
+  ) {
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot']) {
+    background: var(--inkbrick-dot);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dots'] [data-inkbrick-part='swatch']
+  ) {
+    background: var(
+      --inkbrick-custom-color,
+      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
+    );
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot'][aria-checked='true'],
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-part='dots']
+      [data-inkbrick-part='swatch'][data-pressed]
+  ) {
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
   }
 
   :where([data-inkbrick-ui='drop-indicator']) {

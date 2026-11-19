@@ -14,7 +14,7 @@ import type { BlockContextMenuContext } from '../blocks/defineBlock';
 import type { ContextMenuItem } from '../context-menu/types';
 import { Icon } from '../icons/Icon';
 import { visibleCell } from './cellSelection';
-import { tableDesignPanels } from './TableDesignPanels';
+import { tableDesignMenuItems } from './TableDesignPanels';
 import { tableFormatActions } from './tableFormatActions';
 
 /** Правый клик в ячейке: вставить и удалить строку и столбец, в которых стоит курсор. */
@@ -104,21 +104,15 @@ export function tableContextMenu({
       }).map((item, index): ContextMenuItem => ({ ...item, separatorBefore: index === 0 }))
     : [];
 
-  // Стили и границы: те же секции, что в меню ручки таблицы; действие закрывает меню.
+  // Фон ячейки, границы и стиль таблицы: вложенные меню; действие закрывает меню.
   const design = tableBlock
-    ? tableDesignPanels(editor, tableBlock, t, picked, (action) => {
+    ? tableDesignMenuItems(editor, tableBlock, t, picked, (action) => {
         editor.sealHistory();
         flushSync(() => {
           action();
         });
         close();
-      }).map((panel, index): ContextMenuItem => ({
-        id: panel.id,
-        title: panel.title,
-        content: panel.content,
-        separatorBefore: index === 0,
-        run: () => undefined,
-      }))
+      })
     : [];
 
   return [

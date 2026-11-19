@@ -1,7 +1,9 @@
 import {
   isAlignment,
   isBlockBackground,
+  isHexColor,
   isColorName,
+  TABLE_BORDER_STYLES,
   TABLE_BORDER_WIDTHS,
   type BaseBlock,
   type BlockId,
@@ -103,9 +105,12 @@ export function tableRangeFragment(
 
       return {
         ...(isAlignment(align) && align !== 'left' ? { align } : {}),
-        ...(isBlockBackground(background) ? { background } : {}),
+        ...(isBlockBackground(background) || isHexColor(background) ? { background } : {}),
         ...borders,
         ...(isColorName(props.borderColor) ? { borderColor: props.borderColor } : {}),
+        ...(TABLE_BORDER_STYLES.includes(props.borderStyle as never)
+          ? { borderStyle: props.borderStyle }
+          : {}),
       };
     }),
   );
