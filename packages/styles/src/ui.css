@@ -374,7 +374,7 @@
     [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
     [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-insert']
   ) {
-    z-index: calc(var(--inkbrick-z-handle) + 1);
+    z-index: calc(var(--inkbrick-z-handle) - 1);
   }
 
   /* Круглый маркер на границе: кольцо, а при наведении — кнопка «+». */

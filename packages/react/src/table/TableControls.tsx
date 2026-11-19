@@ -876,6 +876,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   };
 
   const { table, row, cell, edges } = layout;
+  // Угловая ручка стоит справа от таблицы, но не правее окна.
+  const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
   const control = {
     'data-inkbrick-ui': 'table-controls',
@@ -892,10 +894,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.handle')}
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'table'}
-        style={{
-          left: Math.min(table.left + table.width + 6, window.innerWidth - 24),
-          top: table.top - 22,
-        }}
+        style={{ left: cornerLeft, top: table.top - 22 }}
         // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
         onClick={() => {
           setMenu(null);
@@ -923,7 +922,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'row'}
         style={{
-          left: table.left - 20,
+          // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
+          left: Math.max(2, table.left - 20),
           top: row.top + 6,
           height: Math.max(16, row.height - 12),
         }}
@@ -939,7 +939,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.row.insertAbove')}
         title={t('table.row.insertAbove')}
         disabled={!canAddRow}
-        style={{ left: table.left - 19, top: row.top - 5 }}
+        style={{ left: Math.max(2, table.left - 19), top: row.top - 5 }}
         onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
       />
       <button
@@ -950,7 +950,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.row.insertBelow')}
         title={t('table.row.insertBelow')}
         disabled={!canAddRow}
-        style={{ left: table.left - 19, top: row.top + row.height - 5 }}
+        style={{ left: Math.max(2, table.left - 19), top: row.top + row.height - 5 }}
         onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
       />
       <button
@@ -963,7 +963,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         style={{
           left: cell.left + 6,
           top: table.top - 22,
-          width: Math.max(24, cell.width - 12),
+          // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
+          width: Math.max(14, Math.min(cell.width - 12, cornerLeft - 6 - (cell.left + 6))),
         }}
         onClick={() => open('column', cell.left + 6, table.top + 10)}
       >
