@@ -131,7 +131,7 @@ export function ContextMenuPanel() {
       },
     ];
 
-    const context = { editor, view, selection, t };
+    const context = { editor, view, selection, t, close };
 
     for (const contribute of contextMenu) {
       const extra = contribute(context).map((item) => ({

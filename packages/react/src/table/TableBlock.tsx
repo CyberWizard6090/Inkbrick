@@ -3,8 +3,11 @@ import { useContext, useMemo, useRef, useState, useSyncExternalStore } from 'rea
 import {
   getBlockAlign,
   getBlockBackground,
+  isColorName,
   normalizeMerges,
+  TABLE_BORDER_WIDTHS,
   type BaseBlock,
+  type TableBorderWidth,
   type TableProps,
 } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
@@ -66,7 +69,7 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
-  const { header, headerColumn, striped, borders, widths, freezeRow, freezeColumn } =
+  const { header, headerColumn, striped, borders, tableStyle, widths, freezeRow, freezeColumn } =
     block.props as TableProps;
   const editor = useEditor();
   const table = useRef<HTMLTableElement>(null);
@@ -94,6 +97,7 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-header-column={headerColumn || undefined}
       data-striped={striped || undefined}
       data-borders={borders === false ? 'none' : undefined}
+      data-table-style={tableStyle && tableStyle !== 'plain' ? tableStyle : undefined}
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
     >
@@ -124,6 +128,15 @@ export function TableRowBlock({ block }: BlockProps) {
   );
 }
 
+/** Толщина границы с одной стороны ячейки; `undefined` — сторона не задана. */
+function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | undefined {
+  const value = block.props[key];
+
+  return TABLE_BORDER_WIDTHS.includes(value as TableBorderWidth)
+    ? (value as TableBorderWidth)
+    : undefined;
+}
+
 export function TableCellBlock({ block, selected }: BlockProps) {
   const view = useEditorView();
   const merge = useContext(TableMergeContext).get(block.id);
@@ -143,6 +156,11 @@ export function TableCellBlock({ block, selected }: BlockProps) {
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
       data-background={getBlockBackground(block)}
+      data-border-top={borderOf(block, 'borderTop')}
+      data-border-right={borderOf(block, 'borderRight')}
+      data-border-bottom={borderOf(block, 'borderBottom')}
+      data-border-left={borderOf(block, 'borderLeft')}
+      data-border-color={isColorName(block.props.borderColor) ? block.props.borderColor : undefined}
       data-selected={selected || undefined}
       data-cell-selected={picked || undefined}
       colSpan={merge && merge.colSpan > 1 ? merge.colSpan : undefined}

@@ -27,6 +27,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableLine } from './cellSelection';
+import { tableDesignPanels } from './TableDesignPanels';
 import { cellsBackgroundMenu, tableFormatActions } from './tableFormatActions';
 
 interface Position {
@@ -817,6 +818,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           background={
             menu.kind === 'table'
               ? cellsBackgroundMenu(editor, block, view.cells.get(), (action) =>
+                  perform(() => {
+                    action();
+                  }),
+                )
+              : undefined
+          }
+          panels={
+            menu.kind === 'table'
+              ? tableDesignPanels(editor, block, t, view.cells.get(), (action) =>
                   perform(() => {
                     action();
                   }),

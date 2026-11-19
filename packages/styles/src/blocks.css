@@ -352,6 +352,294 @@
     border-color: transparent;
   }
 
+  /*
+   * Оформление таблицы (`data-table-style`): задаёт цвета линий, заголовка и чередования через токены таблицы, а сами
+   * правила красят ячейки. Явный фон ячейки и границы ячейки (ниже) сильнее оформления.
+   */
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='grid']
+  ) {
+    --inkbrick-table-line: var(--inkbrick-stroke-accessible);
+    --inkbrick-table-head-bg: var(--inkbrick-bg-4);
+    --inkbrick-table-band-bg: var(--inkbrick-bg-2);
+  }
+
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='lines']
+  ) {
+    --inkbrick-table-line: var(--inkbrick-stroke-1);
+    --inkbrick-table-head-bg: transparent;
+    --inkbrick-table-band-bg: transparent;
+  }
+
+  :where(
+    [data-inkbrick-block='table'][data-table-style='lines'] [data-inkbrick-block='table-cell']
+  ) {
+    border-inline-color: transparent;
+  }
+
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='blue']
+  ) {
+    --inkbrick-table-line: color-mix(in srgb, var(--inkbrick-color-blue) 55%, var(--inkbrick-bg-1));
+    --inkbrick-table-head-bg: var(--inkbrick-highlight-blue);
+    --inkbrick-table-band-bg: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-blue) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='green']
+  ) {
+    --inkbrick-table-line: color-mix(
+      in srgb,
+      var(--inkbrick-color-green) 55%,
+      var(--inkbrick-bg-1)
+    );
+    --inkbrick-table-head-bg: var(--inkbrick-highlight-green);
+    --inkbrick-table-band-bg: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-green) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='orange']
+  ) {
+    --inkbrick-table-line: color-mix(
+      in srgb,
+      var(--inkbrick-color-orange) 55%,
+      var(--inkbrick-bg-1)
+    );
+    --inkbrick-table-head-bg: var(--inkbrick-highlight-orange);
+    --inkbrick-table-band-bg: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-orange) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='purple']
+  ) {
+    --inkbrick-table-line: color-mix(
+      in srgb,
+      var(--inkbrick-color-purple) 55%,
+      var(--inkbrick-bg-1)
+    );
+    --inkbrick-table-head-bg: var(--inkbrick-highlight-purple);
+    --inkbrick-table-band-bg: color-mix(
+      in srgb,
+      var(--inkbrick-highlight-purple) 35%,
+      var(--inkbrick-bg-1)
+    );
+  }
+
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='dark']
+  ) {
+    --inkbrick-table-line: var(--inkbrick-stroke-accessible);
+    --inkbrick-table-head-bg: var(--inkbrick-fg-1);
+    --inkbrick-table-head-fg: var(--inkbrick-bg-1);
+    --inkbrick-table-band-bg: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-block='table'][data-table-style] [data-inkbrick-block='table-cell']) {
+    border-color: var(--inkbrick-table-line);
+  }
+
+  :where(
+    [data-inkbrick-block='table'][data-table-style][data-header]
+      [data-inkbrick-block='table-row']:first-child
+      > [data-inkbrick-block='table-cell'],
+    [data-inkbrick-block='table'][data-table-style][data-header-column]
+      [data-inkbrick-block='table-row']
+      > [data-inkbrick-block='table-cell']:first-child
+  ) {
+    background: var(--inkbrick-table-head-bg);
+    color: var(--inkbrick-table-head-fg, inherit);
+  }
+
+  :where(
+    [data-inkbrick-block='table'][data-table-style][data-striped][data-header]
+      [data-inkbrick-block='table-row']:nth-child(odd):not(:first-child)
+      > [data-inkbrick-block='table-cell'],
+    [data-inkbrick-block='table'][data-table-style][data-striped]:not([data-header])
+      [data-inkbrick-block='table-row']:nth-child(even)
+      > [data-inkbrick-block='table-cell']
+  ) {
+    background: var(--inkbrick-table-band-bg);
+  }
+
+  /* Границы ячейки по сторонам: «без линии» остаётся в раскладке прозрачной, поэтому ширина ячеек не меняется. */
+  :where([data-inkbrick-block='table-cell'][data-border-top]) {
+    border-top-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-right]) {
+    border-right-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-bottom]) {
+    border-bottom-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-left]) {
+    border-left-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-top='none']) {
+    border-top-color: transparent;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-top='thin']) {
+    border-top-width: 1px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-top='medium']) {
+    border-top-width: 2px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-top='thick']) {
+    border-top-width: 3px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-right='none']) {
+    border-right-color: transparent;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-right='thin']) {
+    border-right-width: 1px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-right='medium']) {
+    border-right-width: 2px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-right='thick']) {
+    border-right-width: 3px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-bottom='none']) {
+    border-bottom-color: transparent;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-bottom='thin']) {
+    border-bottom-width: 1px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-bottom='medium']) {
+    border-bottom-width: 2px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-bottom='thick']) {
+    border-bottom-width: 3px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-left='none']) {
+    border-left-color: transparent;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-left='thin']) {
+    border-left-width: 1px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-left='medium']) {
+    border-left-width: 2px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-left='thick']) {
+    border-left-width: 3px;
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
+    --inkbrick-cell-border: var(--inkbrick-color-black);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
+    --inkbrick-cell-border: var(--inkbrick-color-white);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='gray']) {
+    --inkbrick-cell-border: var(--inkbrick-color-gray);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='brown']) {
+    --inkbrick-cell-border: var(--inkbrick-color-brown);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='orange']) {
+    --inkbrick-cell-border: var(--inkbrick-color-orange);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='yellow']) {
+    --inkbrick-cell-border: var(--inkbrick-color-yellow);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='green']) {
+    --inkbrick-cell-border: var(--inkbrick-color-green);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='blue']) {
+    --inkbrick-cell-border: var(--inkbrick-color-blue);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='purple']) {
+    --inkbrick-cell-border: var(--inkbrick-color-purple);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='pink']) {
+    --inkbrick-cell-border: var(--inkbrick-color-pink);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='lime']) {
+    --inkbrick-cell-border: var(--inkbrick-color-lime);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='teal']) {
+    --inkbrick-cell-border: var(--inkbrick-color-teal);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='cyan']) {
+    --inkbrick-cell-border: var(--inkbrick-color-cyan);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='indigo']) {
+    --inkbrick-cell-border: var(--inkbrick-color-indigo);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='magenta']) {
+    --inkbrick-cell-border: var(--inkbrick-color-magenta);
+  }
+
+  :where([data-inkbrick-block='table-cell'][data-border-color='red']) {
+    --inkbrick-cell-border: var(--inkbrick-color-red);
+  }
+
   :where([data-inkbrick-block='quote']) {
     display: block;
     margin: 0;

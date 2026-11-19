@@ -92,34 +92,45 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
           {item.separatorBefore && index > 0 && (
             <div data-inkbrick-part="separator" role="separator" />
           )}
-          <div
-            role="menuitem"
-            tabIndex={item.disabled ? -1 : 0}
-            aria-disabled={item.disabled || undefined}
-            data-action={item.id}
-            data-inkbrick-part="item"
-            data-disabled={item.disabled || undefined}
-            className="inkbrick-context-menu__item"
-            onClick={() => run(item)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                run(item);
-              }
-            }}
-          >
-            {item.icon !== undefined && (
-              <span className="inkbrick-context-menu__icon" data-inkbrick-part="icon">
-                {item.icon}
-              </span>
-            )}
-            {item.title}
-            {item.shortcut && (
-              <span className="inkbrick-context-menu__shortcut" data-inkbrick-part="shortcut">
-                {item.shortcut}
-              </span>
-            )}
-          </div>
+          {item.content !== undefined ? (
+            <>
+              <div data-inkbrick-part="label" role="presentation">
+                {item.title}
+              </div>
+              <div data-inkbrick-part="section" data-section={item.id}>
+                {item.content}
+              </div>
+            </>
+          ) : (
+            <div
+              role="menuitem"
+              tabIndex={item.disabled ? -1 : 0}
+              aria-disabled={item.disabled || undefined}
+              data-action={item.id}
+              data-inkbrick-part="item"
+              data-disabled={item.disabled || undefined}
+              className="inkbrick-context-menu__item"
+              onClick={() => run(item)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  run(item);
+                }
+              }}
+            >
+              {item.icon !== undefined && (
+                <span className="inkbrick-context-menu__icon" data-inkbrick-part="icon">
+                  {item.icon}
+                </span>
+              )}
+              {item.title}
+              {item.shortcut && (
+                <span className="inkbrick-context-menu__shortcut" data-inkbrick-part="shortcut">
+                  {item.shortcut}
+                </span>
+              )}
+            </div>
+          )}
         </Fragment>
       ))}
     </div>

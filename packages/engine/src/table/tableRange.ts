@@ -1,4 +1,11 @@
-import { isAlignment, isBlockBackground, type BaseBlock, type BlockId } from '@inkbrick/document';
+import {
+  isAlignment,
+  isBlockBackground,
+  isColorName,
+  TABLE_BORDER_WIDTHS,
+  type BaseBlock,
+  type BlockId,
+} from '@inkbrick/document';
 
 import type { Fragment } from '../clipboard/types';
 import { tableCellAt, tableSize } from './tableGrid';
@@ -6,6 +13,8 @@ import { tableFragment } from './tableFragment';
 import { mergesWithin, normalizeMerges } from './tableMerge';
 
 type GetBlock = (id: BlockId) => BaseBlock | undefined;
+
+const BORDER_KEYS = ['borderTop', 'borderRight', 'borderBottom', 'borderLeft'] as const;
 
 /** Прямоугольник ячеек: номера строк и столбцов с нуля, границы включительно. */
 export interface TableRange {
@@ -84,11 +93,19 @@ export function tableRangeFragment(
   const clamped = clampTableRange(getBlock, tableId, range)!;
   const own = cells.map((row) =>
     row.map((id) => {
-      const { align, background } = getBlock(id)?.props ?? {};
+      const props = getBlock(id)?.props ?? {};
+      const { align, background } = props;
+      const borders = Object.fromEntries(
+        BORDER_KEYS.filter((key) => TABLE_BORDER_WIDTHS.includes(props[key] as never)).map(
+          (key) => [key, props[key]],
+        ),
+      );
 
       return {
         ...(isAlignment(align) && align !== 'left' ? { align } : {}),
         ...(isBlockBackground(background) ? { background } : {}),
+        ...borders,
+        ...(isColorName(props.borderColor) ? { borderColor: props.borderColor } : {}),
       };
     }),
   );

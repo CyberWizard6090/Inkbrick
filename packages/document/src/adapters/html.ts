@@ -32,7 +32,7 @@ const escapeHtml = (text: string) =>
 const ALIGNED = new Set(['center', 'right', 'justify']);
 
 /** `style` блока: выравнивание и фон (оттенок светлой темы: в экспорте переменных темы нет). */
-function alignStyle(block: BaseBlock): string {
+function alignStyle(block: BaseBlock, extra: readonly string[] = []): string {
   const align = block.props.alignment ?? block.props.align;
   const color = getBlockBackgroundColor(block);
   // Свой цвет — с той же прозрачностью 35%, что и в редакторе (там он разбавлен, чтобы текст оставался читаемым).
@@ -40,9 +40,27 @@ function alignStyle(block: BaseBlock): string {
   const style = [
     typeof align === 'string' && ALIGNED.has(align) && `text-align:${align}`,
     background && `background-color:${background}`,
+    ...extra,
   ].filter(Boolean);
 
   return style.length > 0 ? ` style="${style.join(';')}"` : '';
+}
+
+const BORDER_PX = { thin: '1px', medium: '2px', thick: '3px' } as const;
+
+/** Границы ячейки в `style`: толщина и цвет (оттенок светлой темы) по сторонам; «без линии» — `none`. */
+function borderStyle(cell: BaseBlock): string[] {
+  const color = exportColor(cell.props.borderColor, 'text') ?? '#bdbdbd';
+
+  return (['top', 'right', 'bottom', 'left'] as const).flatMap((side) => {
+    const width = cell.props[`border${side[0].toUpperCase()}${side.slice(1)}`];
+
+    if (width === 'none') return [`border-${side}:none`];
+
+    return width === 'thin' || width === 'medium' || width === 'thick'
+      ? [`border-${side}:${BORDER_PX[width]} solid ${color}`]
+      : [];
+  });
 }
 
 function inlineToHtml(nodes: readonly InlineNode[], inCode = false): string {
@@ -186,7 +204,7 @@ function renderTable(node: ExportNode): string {
     const name = rowHeader ? 'th' : tag;
     const scope = rowHeader ? ' scope="row"' : '';
 
-    return `<${name}${scope}${spans}${cell ? alignStyle(cell) : ''}>${inlineToHtml(cell?.content ?? [])}</${name}>`;
+    return `<${name}${scope}${spans}${cell ? alignStyle(cell, borderStyle(cell)) : ''}>${inlineToHtml(cell?.content ?? [])}</${name}>`;
   };
   const row = (cells: readonly (BaseBlock | undefined)[], tag: 'td' | 'th', rowIndex: number) => {
     // Полосатость: каждая вторая строка тела; цвет светлой темы, потому что стилей темы в экспорте нет.
