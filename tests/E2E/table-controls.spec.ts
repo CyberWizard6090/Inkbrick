@@ -93,8 +93,8 @@ test.describe('Table controls', () => {
 
     await expect(page.locator(part('row-grip'))).toHaveAttribute('aria-label', /Row 2/);
     await expect(page.locator(part('column-grip'))).toHaveAttribute('aria-label', /Column 3/);
-    await expect(page.locator(part('add-row'))).toBeVisible();
-    await expect(page.locator(part('add-column'))).toBeVisible();
+    await expect(page.locator(part('row-insert'))).toHaveCount(2);
+    await expect(page.locator(part('column-insert'))).toHaveCount(2);
 
     await page.mouse.move(2, 2);
     await expect(page.locator(part('row-grip'))).toHaveCount(0);
@@ -114,15 +114,15 @@ test.describe('Table controls', () => {
     await expect(page.locator(menu)).toBeVisible();
   });
 
-  test('add row and add column grow the table; undo takes each back in one step', async ({
+  test('the markers on the boundaries grow the table; undo takes each back in one step', async ({
     page,
   }) => {
     await hover(page, 2, 2);
-    await page.locator(part('add-row')).click();
+    await page.locator(part('row-insert')).nth(1).click();
     expect(await grid(page)).toHaveLength(4);
 
     await hover(page, 0, 0);
-    await page.locator(part('add-column')).click();
+    await page.locator(part('column-insert')).nth(1).click();
     expect((await grid(page))[0]).toHaveLength(4);
 
     await page.keyboard.press(`${modifier}+z`);
@@ -226,6 +226,54 @@ test.describe('Table controls', () => {
     const undone = (await page.locator(cells).nth(0).boundingBox())!;
 
     expect(Math.abs(undone.width - before.width)).toBeLessThan(2);
+  });
+
+  test('the handles do not lag behind the table while the page scrolls', async ({ page }) => {
+    // Страница с запасом высоты: ручки стоят по `position: fixed` и должны ехать вместе с таблицей без отставания.
+    await page.locator('.playground-content').evaluate((node) => {
+      node.style.paddingBottom = '2000px';
+    });
+    await hover(page, 1, 1);
+
+    const worst = await page.evaluate(async () => {
+      const grip = document.querySelector('[data-inkbrick-part="column-grip"]') as HTMLElement;
+      const block = document.querySelector('[data-inkbrick-block="table"]') as HTMLElement;
+      const gap = () => grip.getBoundingClientRect().top - block.getBoundingClientRect().top;
+      const first = gap();
+      let max = 0;
+
+      for (let step = 0; step < 12; step++) {
+        window.scrollBy(0, 6);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        max = Math.max(max, Math.abs(gap() - first));
+      }
+
+      return max;
+    });
+
+    expect(worst).toBeLessThan(1.5);
+  });
+
+  test('the table cannot be stretched beyond the page', async ({ page }) => {
+    await hover(page, 0, 2);
+
+    const handle = (await page.locator(part('resize')).nth(2).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 3000, y, { steps: 8 });
+    await page.mouse.up();
+
+    // Таблица шире своего блока стать не может: прокрутки по горизонтали нет.
+    const fits = await page.locator(table).evaluate((node) => {
+      const block = node.closest('[data-inkbrick-block="table"]') as HTMLElement;
+
+      return block.scrollWidth <= block.clientWidth + 1;
+    });
+
+    expect(fits).toBe(true);
   });
 
   test('a double click on the border sets the width back to automatic', async ({ page }) => {

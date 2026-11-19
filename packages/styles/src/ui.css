@@ -461,32 +461,6 @@
     outline-offset: 1px;
   }
 
-  :where(
-    [data-inkbrick-ui='table-controls'][data-inkbrick-part='add-row'],
-    [data-inkbrick-ui='table-controls'][data-inkbrick-part='add-column']
-  ) {
-    display: inline-grid;
-    place-content: center;
-    width: 20px;
-    height: 20px;
-    border: 1px solid var(--inkbrick-stroke-2);
-    border-radius: 50%;
-    background: var(--inkbrick-bg-1);
-    color: var(--inkbrick-fg-3);
-    box-shadow: var(--inkbrick-shadow-4);
-    cursor: pointer;
-  }
-
-  :where(
-    [data-inkbrick-ui='table-controls']:is(
-        [data-inkbrick-part='add-row'],
-        [data-inkbrick-part='add-column']
-      ):hover:not(:disabled)
-  ) {
-    background: var(--inkbrick-bg-hover);
-    color: var(--inkbrick-fg-1);
-  }
-
   :where([data-inkbrick-ui='table-controls']:disabled) {
     opacity: 0.35;
     cursor: default;
@@ -2418,10 +2392,39 @@
     pointer-events: none;
   }
 
-  /*
-   * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
-   * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
-   */
+  /* Ручки таблицы появляются плавно (чуть вырастают из прозрачности) и слегка приподнимаются под курсором. */
+  @keyframes inkbrick-pop-in {
+    from {
+      opacity: 0;
+      scale: 0.85;
+    }
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+      [data-inkbrick-part='row-grip'],
+      [data-inkbrick-part='column-grip'],
+      [data-inkbrick-part='table-grip'],
+      [data-inkbrick-part='row-insert'],
+      [data-inkbrick-part='column-insert']
+    )
+  ) {
+    animation: inkbrick-pop-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+    transition-property: background-color, color, width, height, margin, scale;
+    transition-duration: var(--inkbrick-duration-fast);
+    transition-timing-function: var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-grip'],
+        [data-inkbrick-part='column-grip'],
+        [data-inkbrick-part='table-grip']
+      ):hover
+  ) {
+    scale: 1.06;
+  }
+
   /*
    * Панели цвета и меню «Преобразовать в» внутри контекстного меню: меню прокручивается, и плавающая панель
    * обрезалась его краем (верхний ряд, а в нём кнопка сброса цвета, пропадал). Поэтому они идут в потоке, под рядом кнопок.
@@ -2443,9 +2446,14 @@
     box-shadow: none;
   }
 
+  /*
+   * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
+   * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
+   */
   @media (prefers-reduced-motion: reduce) {
     :where([data-inkbrick-ui='select']),
     :where([data-inkbrick-ui='block-handle']),
+    :where([data-inkbrick-ui='table-controls']),
     :where([data-inkbrick-ui='drop-indicator']),
     :where([data-inkbrick-ui='slash-menu']),
     :where([data-inkbrick-ui='block-menu']),

@@ -98,15 +98,16 @@ function mountTable(props: Parameters<typeof mountEditor>[1] = {}) {
 }
 
 describe('table controls: visibility', () => {
-  it('shows the grips, the add buttons and a resize handle per column while the caret is in the table', () => {
+  it('shows the grips, the markers on the boundaries and a resize handle per column while the caret is in the table', () => {
     const { focus, $, $$ } = mountTable();
 
     focus(1, 2);
 
     expect($('row-grip')!.getAttribute('aria-label')).toBe('Row 2: click for options');
     expect($('column-grip')!.getAttribute('aria-label')).toBe('Column 3: click for options');
-    expect($('add-row')).not.toBeNull();
-    expect($('add-column')).not.toBeNull();
+    expect($$('row-insert')).toHaveLength(2);
+    expect($$('column-insert')).toHaveLength(2);
+    expect($('add-row')).toBeNull();
     expect($$('resize')).toHaveLength(3);
   });
 
@@ -115,7 +116,7 @@ describe('table controls: visibility', () => {
 
     caret(ids[0], 0);
     expect($('row-grip')).toBeNull();
-    expect($('add-row')).toBeNull();
+    expect($('row-insert')).toBeNull();
     expect($$('resize')).toHaveLength(0);
 
     cleanup();
@@ -125,7 +126,7 @@ describe('table controls: visibility', () => {
     act(() => readOnly.editor.setReadOnly(true));
     readOnly.focus(0, 0);
     expect(readOnly.$('row-grip')).toBeNull();
-    expect(readOnly.$('add-column')).toBeNull();
+    expect(readOnly.$('column-insert')).toBeNull();
   });
 
   it('the controls stay out of the editable root, so selection and copying never see them', () => {
@@ -187,23 +188,23 @@ describe('table controls: visibility', () => {
   });
 });
 
-describe('table controls: add buttons', () => {
-  it('add row appends a row and puts the caret into its first cell', () => {
-    const { focus, $, click, size, grid, editor } = mountTable();
+describe('table controls: markers on the boundaries', () => {
+  it('the lower marker of the last row appends a row', () => {
+    const { focus, $$, click, size, grid, editor } = mountTable();
 
-    focus(0, 0);
-    click($('add-row')!);
+    focus(2, 0);
+    click($$('row-insert')[1]);
 
     expect(size()).toEqual({ rows: 4, columns: 3 });
     expect(grid()[3]).toEqual(['', '', '']);
     expect(validateSnapshot(editor.serialize(), editor.schema)).toEqual([]);
   });
 
-  it('add column appends a column; both are one undo step', () => {
-    const { focus, $, click, size, editor } = mountTable();
+  it('the right marker of a column inserts a column; it is one undo step', () => {
+    const { focus, $$, click, size, editor } = mountTable();
 
     focus(1, 1);
-    click($('add-column')!);
+    click($$('column-insert')[1]);
     expect(size()).toEqual({ rows: 3, columns: 4 });
 
     editor.undo();
@@ -211,7 +212,7 @@ describe('table controls: add buttons', () => {
   });
 
   it('are disabled at the size limits', () => {
-    const { editor, tableId, focus, $ } = mountTable();
+    const { editor, tableId, focus, $$ } = mountTable();
 
     act(() => {
       for (let c = 3; c < MAX_TABLE_COLUMNS; c++)
@@ -222,8 +223,8 @@ describe('table controls: add buttons', () => {
     });
     focus(0, 0);
 
-    expect(($('add-column') as HTMLButtonElement).disabled).toBe(true);
-    expect(($('add-row') as HTMLButtonElement).disabled).toBe(false);
+    expect(($$('column-insert')[1] as HTMLButtonElement).disabled).toBe(true);
+    expect(($$('row-insert')[1] as HTMLButtonElement).disabled).toBe(false);
   });
 });
 

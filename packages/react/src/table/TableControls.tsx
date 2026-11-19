@@ -174,6 +174,31 @@ const subscribeHovered = (listener: () => void) => {
   return () => void hoverListeners.delete(listener);
 };
 
+/** Расстояние от точки до прямоугольника: 0, если точка внутри. */
+function distanceTo(rect: DOMRect, x: number, y: number): number {
+  const dx = Math.max(rect.left - x, 0, x - rect.right);
+  const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+
+  return Math.hypot(dx, dy);
+}
+
+/** Ближайшая к точке таблица документа: между двумя таблицами ручки показывает только она. */
+function nearestTable(x: number, y: number): Element | null {
+  let best: Element | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const element of document.querySelectorAll('[data-inkbrick-block="table"]')) {
+    const distance = distanceTo(element.getBoundingClientRect(), x, y);
+
+    if (distance < bestDistance) {
+      best = element;
+      bestDistance = distance;
+    }
+  }
+
+  return best;
+}
+
 /** Подсказка у ручки: «Нажмите, чтобы открыть меню». Видна при наведении мыши и фокусе с клавиатуры (стили в ui.css). */
 function GripTip({ t }: { t: TFunction }) {
   return (
@@ -245,15 +270,18 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (!table || !active) return;
 
     const update = () => refresh((n) => n + 1);
+    // Ручки стоят по `position: fixed`, поэтому при прокрутке их положение пересчитывается сразу, до отрисовки кадра:
+    // обычное (отложенное) обновление приходило бы на кадр позже, и ручки отставали бы от таблицы, дёргаясь.
+    const follow = () => flushSync(update);
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
 
     observer?.observe(table);
-    window.addEventListener('scroll', update, true);
+    window.addEventListener('scroll', follow, { capture: true, passive: true });
     window.addEventListener('resize', update);
 
     return () => {
       observer?.disconnect();
-      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('scroll', follow, true);
       window.removeEventListener('resize', update);
     };
   }, [tableRef, !!active]);
@@ -278,7 +306,11 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           event.clientY >= rect.top - REACH.top &&
           event.clientY <= rect.bottom + REACH.bottom;
 
-        if (!inside) {
+        // Между двумя таблицами указатель в зоне обеих: ручки показывает та, что ближе.
+        const ownBlock = table.closest('[data-inkbrick-block="table"]');
+        const nearest = inside ? nearestTable(event.clientX, event.clientY) : null;
+
+        if (!inside || (nearest && ownBlock && nearest !== ownBlock)) {
           setHover(null);
           if (hoveredTable === block.id) setHoveredTable(null);
           return;
@@ -670,6 +702,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     return result;
   };
 
+  /** Сколько места под таблицу на странице: видимая ширина самого блока таблицы (у него `max-width: 100%`). */
+  const availableWidth = (): number => {
+    const width =
+      tableRef.current?.closest<HTMLElement>('[data-inkbrick-block="table"]')?.clientWidth ?? 0;
+
+    // Без раскладки (скрытый блок, тестовое окружение) предела нет.
+    return width > 0 ? width : Number.POSITIVE_INFINITY;
+  };
+
   /**
    * Новые ширины при смещении правой границы столбца `column` на `delta`: у границы между столбцами меняются только два
    * соседних (сумма та же, остальные стоят), у правого края последнего столбца меняется он один, а с ним и таблица.
@@ -679,7 +720,11 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     const neighbour = column + 1 < start.length ? column + 1 : -1;
 
     if (neighbour < 0) {
-      next[column] = clamp(start[column] + delta, MIN_WIDTH, MAX_WIDTH);
+      // Таблица не шире страницы: последний столбец тянется, пока сумма ширин помещается в видимую область.
+      const others = start.reduce((sum, width, index) => (index === column ? sum : sum + width), 0);
+      const room = Math.max(MIN_WIDTH, availableWidth() - others);
+
+      next[column] = clamp(start[column] + delta, MIN_WIDTH, Math.min(MAX_WIDTH, room));
 
       return next;
     }
@@ -858,30 +903,6 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         style={{ left: cell.left + cell.width - 5, top: table.top - 20 }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
       />
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="add-column"
-        aria-label={t('table.addColumn')}
-        title={t('table.addColumn')}
-        disabled={!canAddColumn}
-        style={{ left: table.left + table.width + 6, top: table.top + table.height / 2 - 10 }}
-        onClick={() => perform(() => run('insertTableColumn', { index: size.columns }))}
-      >
-        <Icon name="plus" />
-      </button>
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="add-row"
-        aria-label={t('table.addRow')}
-        title={t('table.addRow')}
-        disabled={!canAddRow}
-        style={{ left: table.left + table.width / 2 - 10, top: table.top + table.height + 4 }}
-        onClick={() => perform(() => run('insertTableRow', { index: size.rows }))}
-      >
-        <Icon name="plus" />
-      </button>
       {edges.map((edge, column) => (
         <div
           {...control}

@@ -66,7 +66,7 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 | `block-handle`   | `button` (`data-action="add"`), `grip` (`data-action="grip"`)                                                                                                                                                                                 |
 | `block-menu`     | `item` (`data-action`), `icon`, `label`                                                                                                                                                                                                       |
 | `context-menu`   | `item` (`data-action`: `cut`, `copy`, `paste`, `selectAll`), `icon`, `shortcut`, `separator`; кнопки форматирования — `toolbar` с `data-placement="inline"`                                                                                   |
-| `table-controls` | `row-grip`, `column-grip`, `add-row`, `add-column`, `resize` (по одной на границу столбца)                                                                                                                                                    |
+| `table-controls` | `row-grip`, `column-grip`, `table-grip`, `row-insert`, `column-insert`, `resize` (по одной на границу столбца)                                                                                                                                |
 | `select`         | `option` (`data-value`, `aria-selected`, `data-active`), `option-label`, `option-check`; у кнопки — `select-value`, `select-chevron`                                                                                                          |
 
 Инлайн-форматирование внутри `content` — обычные теги `strong`, `em`, `u`, `s`, `code`, `a`. В блоке кода текст
