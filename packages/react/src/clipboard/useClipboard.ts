@@ -5,6 +5,7 @@ import {
   FRAGMENT_MIME,
   fragmentToHtml,
   fragmentToPlainText,
+  locateTableCell,
   sanitizeFragment,
   tableFragment,
   type CaretResult,
@@ -259,8 +260,12 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       // Что делать, когда ни фрагмент, ни HTML не подошли: таблица из текста с табуляциями или просто текст.
       const fallback = (target: DocSelection) => {
         // Текст с табуляциями, похожий на таблицу (Excel, Sheets, терминал), — таблица; Ctrl+Shift+V вставляет текстом.
+        // Внутри таблицы и одна строка с табуляциями ложится по ячейкам; вне таблицы нужно две строки и больше.
+        const inTable = !!locateTableCell((id) => editor.store.getBlock(id), target.from.blockId);
         const rows =
-          !plainOnly && !inCode && editor.schema.hasBlock('block:table') ? tabularText(text) : null;
+          !plainOnly && !inCode && editor.schema.hasBlock('block:table')
+            ? tabularText(text, { singleRow: inTable })
+            : null;
 
         if (rows && pasteFragment(tableFragment(rows, { header: false }), target)) return;
 
