@@ -124,6 +124,8 @@ export interface TableGrid {
   readonly rows: readonly (readonly InlineNode[][])[];
   readonly align: readonly (Alignment | undefined)[];
   readonly widths: readonly (number | null)[];
+  /** Свойства каждой ячейки (фон, границы, выравнивание и цвет линий) по строкам и столбцам; без них — пустой объект. */
+  readonly cellProps: readonly (readonly Record<string, unknown>[])[];
 }
 
 const isRow = (item: FragmentBlock) => item.flavour === TABLE_ROW;
@@ -141,6 +143,9 @@ export function readTable(table: FragmentBlock): TableGrid {
     header: table.props.header !== false,
     rows: rows.map((row) =>
       Array.from({ length: columns }, (_, column) => row[column]?.content ?? []),
+    ),
+    cellProps: rows.map((row) =>
+      Array.from({ length: columns }, (_, column) => row[column]?.props ?? {}),
     ),
     align: Array.from({ length: columns }, (_, column) => alignOf(rows[0]?.[column])),
     widths: Array.from({ length: columns }, (_, column) => {

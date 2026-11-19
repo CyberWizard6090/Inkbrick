@@ -547,3 +547,33 @@ function* document_tables(editor: Editor) {
     stack.push(...block.children);
   }
 }
+
+describe('pasting a copied range into an existing table', () => {
+  it('keeps the background and the alignment of each cell', () => {
+    const source = setup();
+
+    source.run('setTableCellsBackground', { range: ALL, background: 'blue' });
+    source.run('alignTableCells', { range: ALL, align: 'center' });
+
+    const fragment = tableRangeFragment(
+      (id) => source.editor.document.getBlock(id),
+      source.tableId,
+      ALL,
+    );
+    const target = setup();
+    const at = target.cell(1, 1);
+
+    target.editor.dispatch({
+      type: 'pasteFragment',
+      payload: { at: { blockId: at, offset: 0 }, fragment },
+    });
+
+    expect(target.editor.document.getBlock(at)!.props).toMatchObject({
+      background: 'blue',
+      align: 'center',
+    });
+    expect(target.editor.document.getBlock(target.cell(2, 2))!.props).toMatchObject({
+      background: 'blue',
+    });
+  });
+});

@@ -185,7 +185,7 @@ function fillTable(
 
   if (!position) return undefined;
 
-  const { rows } = readTable(source);
+  const { rows, cellProps } = readTable(source);
   const columns = rows[0]?.length ?? 0;
   const needRows = position.row + rows.length;
   const needColumns = position.column + columns;
@@ -208,6 +208,10 @@ function fillTable(
       const id = tableCellAt(getBlock, position.tableId, position.row + r, position.column + c)!;
 
       engine.block.updateContent(tx, id, structuredClone(content));
+      // Фон, границы и выравнивание ячеек переносятся вместе с текстом (как при копировании внутри таблицы).
+      const props = structuredClone(cellProps[r]?.[c] ?? {});
+
+      engine.block.update(tx, id, (cell) => ({ ...cell, props }));
       last = { blockId: id, offset: engine.inline.length(content) };
     }),
   );
