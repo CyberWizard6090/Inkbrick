@@ -96,9 +96,10 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
     if (!element) return;
 
     const measure = () => {
+      // Внешняя граница таблицы (border-collapse) добавляет пиксель сверх суммы ширин: на него место меньше.
       const width = element.clientWidth;
 
-      setAvailable(width > 0 ? width : Number.POSITIVE_INFINITY);
+      setAvailable(width > 0 ? width - 1 : Number.POSITIVE_INFINITY);
     };
 
     measure();

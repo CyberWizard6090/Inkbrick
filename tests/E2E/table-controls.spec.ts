@@ -358,6 +358,11 @@ test.describe('Table controls', () => {
     // Правый край последнего столбца тянем до упора: он растянется до края страницы.
     await drag(2, 3000);
 
+    // Ширины заполняют блок и не дают полосы прокрутки, даже на пиксель.
+    expect(
+      await page.locator('.block-table').evaluate((node) => node.scrollWidth - node.clientWidth),
+    ).toBeLessThanOrEqual(0);
+
     const third = await widthOf(2);
 
     // Окно сузили: отрисованные ширины подгоняются под страницу, модель не должна меняться.

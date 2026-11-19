@@ -71,6 +71,8 @@ export interface TableControlsProps {
 const REACH = { left: 28, top: 30, right: 40, bottom: 30 } as const;
 
 const MIN_WIDTH = 40;
+/** Внешняя граница таблицы с border-collapse: один пиксель сверх ширин столбцов. */
+const BORDER_PIXEL = 1;
 const MAX_WIDTH = 1200;
 const KEY_STEP = 10;
 
@@ -742,8 +744,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     const width =
       tableRef.current?.closest<HTMLElement>('[data-inkbrick-block="table"]')?.clientWidth ?? 0;
 
-    // Без раскладки (скрытый блок, тестовое окружение) предела нет.
-    return width > 0 ? width : Number.POSITIVE_INFINITY;
+    // Без раскладки (скрытый блок, тестовое окружение) предела нет. Внешняя граница таблицы (border-collapse) добавляет
+    // ещё пиксель сверх суммы ширин столбцов, поэтому места под столбцы на пиксель меньше.
+    return width > 0 ? width - BORDER_PIXEL : Number.POSITIVE_INFINITY;
   };
 
   /**
