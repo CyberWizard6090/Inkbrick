@@ -375,7 +375,8 @@ export function DefaultToolbar({
                   data-pressed={currentColor === name || undefined}
                   aria-label={t(`color.${name}`)}
                   title={t(`color.${name}`)}
-                  onClick={() => onApplyColor(colorKind, name)}
+                  // Повторный клик по применённому цвету снимает его.
+                  onClick={() => onApplyColor(colorKind, currentColor === name ? null : name)}
                 >
                   {panel === 'color' ? 'A' : null}
                 </button>

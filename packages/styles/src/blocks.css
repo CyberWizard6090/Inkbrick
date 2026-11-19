@@ -1791,6 +1791,11 @@
     color: var(--inkbrick-color-gray);
   }
 
+  /* Выбранный вручную цвет: 35% его силы поверх фона страницы, как приглушены заготовленные (тот же уровень, что в HTML-экспорте). */
+  :where([data-inkbrick-bg='custom']) {
+    background-color: color-mix(in srgb, var(--inkbrick-custom-bg) 35%, transparent);
+  }
+
   :where([data-inkbrick-bg='gray']) {
     background-color: var(--inkbrick-highlight-gray);
   }

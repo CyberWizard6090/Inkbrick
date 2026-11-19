@@ -2177,6 +2177,27 @@
    * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
    * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
    */
+  /*
+   * Панели цвета и меню «Преобразовать в» внутри контекстного меню: меню прокручивается, и плавающая панель
+   * обрезалась его краем (верхний ряд, а в нём кнопка сброса цвета, пропадал). Поэтому они идут в потоке, под рядом кнопок.
+   */
+  :where(
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-ui='toolbar'][data-placement='inline']
+      > [data-inkbrick-part='panel']
+  ),
+  :where(
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-ui='toolbar'][data-placement='inline']
+      > [data-inkbrick-part='turn-menu']
+  ) {
+    position: static;
+    flex: 0 0 100%;
+    max-height: none;
+    margin-top: 2px;
+    box-shadow: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     :where([data-inkbrick-ui='select']),
     :where([data-inkbrick-ui='block-handle']),

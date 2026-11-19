@@ -460,6 +460,70 @@ test.describe('Text color and highlight', () => {
     await expect(span).toHaveCSS('background-color', 'rgb(81, 55, 77)');
   });
 
+  test('a colour picked by hand is toned down and rounded like the ready-made ones', async ({
+    page,
+  }) => {
+    await typeLine(page, 'tint');
+    await selectLine(page);
+    await page.locator(`${toolbar} [data-format="highlight"]`).click();
+    await page.locator(`${toolbar} input[type="color"]`).first().fill('#ff0000');
+
+    expect((await rows(page))[0].content[0].attributes).toEqual({ backgroundColor: '#ff0000' });
+
+    const span = page.locator('[data-inkbrick-bg="custom"]');
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
+    // Не чистый красный, а его 35% поверх фона, и углы скруглены, как у заготовленных.
+    await expect(span).not.toHaveCSS('background-color', 'rgb(255, 0, 0)');
+    await expect(span).toHaveCSS('border-radius', '3px');
+
+    // Сброс: кнопка «Без выделения» снимает и вручную выбранный цвет.
+    await page.locator(`${toolbar} [data-format="highlight"]`).click();
+    await page.locator(`${toolbar} [data-inkbrick-part="panel"] [data-color=""]`).click();
+
+    expect((await rows(page))[0].content[0].attributes ?? {}).toEqual({});
+    await expect(span).toHaveCount(0);
+  });
+
+  test('in a short context menu the colour palette is not cut off, the reset swatch included', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 900, height: 420 });
+    await page.goto('/?lang=en');
+    await typeLine(page, 'tint');
+    await page.keyboard.press('Shift+Home');
+
+    const box = (await page.locator('.editable').first().boundingBox())!;
+
+    await page.mouse.click(box.x + 10, box.y + 5, { button: 'right' });
+
+    const menu = page.locator('[data-inkbrick-ui="context-menu"]');
+
+    await menu.locator('[data-format="highlight"]').click();
+
+    const reset = menu.locator('[data-inkbrick-part="panel"] [data-color=""]');
+    const [inner, outer] = await Promise.all([reset.boundingBox(), menu.boundingBox()]);
+
+    expect(inner!.y).toBeGreaterThanOrEqual(outer!.y);
+    expect(inner!.y + inner!.height).toBeLessThanOrEqual(outer!.y + outer!.height);
+
+    await expect(reset).toBeVisible();
+  });
+
+  test('a second click on the applied colour removes it', async ({ page }) => {
+    await typeLine(page, 'tint');
+    await selectLine(page);
+    await page.locator(`${toolbar} [data-format="highlight"]`).click();
+    await page.locator(`${toolbar} [data-inkbrick-part="panel"] [data-color="green"]`).click();
+
+    expect((await rows(page))[0].content[0].attributes).toEqual({ backgroundColor: 'green' });
+
+    await page.locator(`${toolbar} [data-format="highlight"]`).click();
+    await page.locator(`${toolbar} [data-inkbrick-part="panel"] [data-color="green"]`).click();
+
+    expect((await rows(page))[0].content[0].attributes ?? {}).toEqual({});
+  });
+
   test('"Custom color…" stores #rrggbb for text and highlight and shows it on the toolbar', async ({
     page,
   }) => {

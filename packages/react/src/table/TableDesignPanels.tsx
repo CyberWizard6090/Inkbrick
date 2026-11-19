@@ -295,7 +295,7 @@ export function tableDesignPanels(
       content: <StyleGallery editor={editor} block={block} run={run} />,
     },
     {
-      id: 'table-borders',
+      id: 'table-border-lines',
       title: t('table.border.heading'),
       content: <BordersPanel editor={editor} block={block} picked={picked} run={run} />,
     },

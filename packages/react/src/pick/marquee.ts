@@ -176,7 +176,13 @@ export function startMarquee(
     },
 
     end() {
-      cancelAnimationFrame(raf);
+      // Кадр с последним положением указателя мог не успеть выполниться: выбор считаем по нему сейчас, иначе отпущенная
+      // сразу после движения рамка теряет последние задетые блоки.
+      if (raf) {
+        cancelAnimationFrame(raf);
+        update();
+      }
+
       frame.remove();
 
       const { ids, anchor: first, focus: last } = view.picked.getState();

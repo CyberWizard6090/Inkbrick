@@ -69,7 +69,10 @@ describe('renderInline: colors', () => {
     const span = paint({ color: '#123456', backgroundColor: 'rgb(1, 2, 3)' });
 
     expect(span.style.color).toBe('rgb(18, 52, 86)');
-    expect(span.style.backgroundColor).toBe('rgb(1, 2, 3)');
+    // Фон пользователя уходит в переменную: стили смешивают его с фоном страницы, как заготовленные цвета.
+    expect(span.getAttribute('data-inkbrick-bg')).toBe('custom');
+    expect(span.style.getPropertyValue('--inkbrick-custom-bg')).toBe('rgb(1, 2, 3)');
+    expect(span.style.backgroundColor).toBe('');
   });
 
   it('unsafe values are ignored', () => {
