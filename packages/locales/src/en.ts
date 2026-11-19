@@ -204,6 +204,7 @@ export const en = {
   'table.column.alignCenter': 'Align column center',
   'table.column.alignRight': 'Align column right',
   'table.column.autoWidth': 'Automatic column width',
+  'table.name': 'Table',
   'table.handle': 'Table: click to select, right-click for options',
   'table.format.headerColumnOn': 'Make first column a header',
   'table.format.headerColumnOff': 'Make first column a regular column',

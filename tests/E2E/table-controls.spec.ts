@@ -430,6 +430,14 @@ test.describe('Table controls', () => {
     expect(after[1][1]).toBe('r1c1');
   });
 
+  test('the first row is the column header for screen readers and the table has a name', async ({
+    page,
+  }) => {
+    await expect(page.locator(cells).nth(0)).toHaveAttribute('role', 'columnheader');
+    await expect(page.locator(cells).nth(3)).not.toHaveAttribute('role', 'columnheader');
+    await expect(page.locator('[data-inkbrick-part="grid"]')).toHaveAttribute('aria-label', /.+/);
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 

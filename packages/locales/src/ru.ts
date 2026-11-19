@@ -202,6 +202,7 @@ export const ru: Messages = {
   'table.column.alignCenter': 'Выровнять столбец по центру',
   'table.column.alignRight': 'Выровнять столбец по правому краю',
   'table.column.autoWidth': 'Ширина столбца по содержимому',
+  'table.name': 'Таблица',
   'table.handle': 'Таблица: нажмите, чтобы выделить, правая кнопка — меню',
   'table.format.headerColumnOn': 'Сделать первый столбец заголовком',
   'table.format.headerColumnOff': 'Сделать первый столбец обычным',

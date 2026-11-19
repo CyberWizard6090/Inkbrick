@@ -24,6 +24,7 @@ import { Editable } from '../blocks/Editable';
 import { useChildren } from '../hooks/useChildren';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { useT } from '../hooks/useT';
 import { BlockRenderer } from '../renderer/BlockRenderer';
 import { fitWidths } from './fitWidths';
 import { TableControls } from './TableControls';
@@ -77,6 +78,7 @@ function Children({ id }: { readonly id: string }) {
  * если таблица шире документа.
  */
 export function TableBlock({ block, selected, readOnly }: BlockProps) {
+  const t = useT();
   const { header, headerColumn, striped, borders, tableStyle, widths, freezeRow, freezeColumn } =
     block.props as TableProps;
   const editor = useEditor();
@@ -138,7 +140,12 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
     >
-      <table ref={table} data-inkbrick-part="grid" style={total ? { width: total } : undefined}>
+      <table
+        ref={table}
+        data-inkbrick-part="grid"
+        aria-label={t('table.name')}
+        style={total ? { width: total } : undefined}
+      >
         {columns > 0 && (
           <colgroup>
             {shown.map((width, index) => (
@@ -176,6 +183,13 @@ function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | u
 
 export function TableCellBlock({ block, selected }: BlockProps) {
   const view = useEditorView();
+  const editor = useEditor();
+  const t = useT();
+  // Ячейка первой строки заголовочной таблицы: для программ чтения с экрана это заголовок столбца.
+  const row = editor.store.getBlock(block.parentId ?? '');
+  const tableBlock = row ? editor.store.getBlock(row.parentId ?? '') : undefined;
+  const headerCell =
+    !!tableBlock && tableBlock.props.header !== false && tableBlock.children[0] === row?.id;
   const merge = useContext(TableMergeContext).get(block.id);
   const picked = useSyncExternalStore(
     view.cells.subscribe,
@@ -193,6 +207,7 @@ export function TableCellBlock({ block, selected }: BlockProps) {
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
       {...backgroundAttrs(block)}
+      role={headerCell ? 'columnheader' : undefined}
       data-border-top={borderOf(block, 'borderTop')}
       data-border-right={borderOf(block, 'borderRight')}
       data-border-bottom={borderOf(block, 'borderBottom')}
