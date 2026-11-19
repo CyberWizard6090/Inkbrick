@@ -56,6 +56,14 @@ export function useCellSelection(
       return position?.tableId === tableId ? { row: position.row, column: position.column } : null;
     };
 
+    /** Ячейка этой таблицы, в которой стоит каретка, или `null`. */
+    const caretCell = (): TableCellRef | null => {
+      const id = view.caret.current;
+      const position = id ? locateTableCell((cell) => editor.store.getBlock(cell), id) : undefined;
+
+      return position?.tableId === tableId ? { row: position.row, column: position.column } : null;
+    };
+
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0 || event.pointerType === 'touch') return;
 
@@ -65,10 +73,15 @@ export function useCellSelection(
 
       const current = view.cells.get();
 
-      if (event.shiftKey && current?.tableId === tableId) {
-        event.preventDefault();
-        selectTableCells(editor, view, tableId, current.anchor, anchor);
-        return;
+      if (event.shiftKey) {
+        // Без выделения начало — ячейка с кареткой: Shift+клик протягивает выделение от неё, а не текстовое выделение.
+        const origin = current?.tableId === tableId ? current.anchor : caretCell();
+
+        if (origin) {
+          event.preventDefault();
+          selectTableCells(editor, view, tableId, origin, anchor);
+          return;
+        }
       }
 
       view.cells.clear();

@@ -403,6 +403,18 @@ test.describe('Table controls', () => {
     expect((await grid(page))[0][1]).toContain('Y');
   });
 
+  test('shift click without a selection selects the cells from the caret to the clicked one', async ({
+    page,
+  }) => {
+    await page.locator(cells).nth(0).locator(editable).click();
+    await page
+      .locator(cells)
+      .nth(4)
+      .click({ modifiers: ['Shift'] });
+
+    await expect(page.locator(`${table} td[data-cell-selected]`)).toHaveCount(4);
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 
