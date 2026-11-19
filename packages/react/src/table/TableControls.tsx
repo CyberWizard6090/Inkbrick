@@ -722,7 +722,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (neighbour < 0) {
       // Таблица не шире страницы: последний столбец тянется, пока сумма ширин помещается в видимую область.
       const others = start.reduce((sum, width, index) => (index === column ? sum : sum + width), 0);
-      const room = Math.max(MIN_WIDTH, availableWidth() - others);
+      const room = Math.max(MIN_WIDTH, Math.floor(availableWidth()) - Math.ceil(others));
 
       next[column] = clamp(start[column] + delta, MIN_WIDTH, Math.min(MAX_WIDTH, room));
 
@@ -740,8 +740,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   /** Записывает все ширины одним шагом истории: столбцы, которых не тянули, фиксируются как есть. */
   const writeWidths = (widths: readonly number[]) =>
     editor.batch(() => {
+      // Вниз, а не к ближайшему: сумма округлённых ширин не должна оказаться шире блока, иначе у таблицы появляется
+      // горизонтальная полоса прокрутки (у каждого столбца ошибка до полпикселя, и она накапливается).
       widths.forEach((width, index) =>
-        run('setTableColumnWidth', { index, width: Math.round(width) }),
+        run('setTableColumnWidth', { index, width: Math.floor(width) }),
       );
     });
 

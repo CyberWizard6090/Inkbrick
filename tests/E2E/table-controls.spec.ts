@@ -266,6 +266,38 @@ test.describe('Table controls', () => {
     expect(worst).toBeLessThan(1.5);
   });
 
+  test('resizing a column in the middle never makes the table scroll sideways', async ({
+    page,
+  }) => {
+    // Много столбцов: ошибка округления каждой ширины накапливается и давала бы лишние пиксели.
+    for (let added = 0; added < 4; added++) {
+      await hover(page, 0, 0);
+      await page.locator(part('column-insert')).nth(1).click();
+    }
+
+    for (const column of [0, 1, 3]) {
+      await hover(page, 0, column);
+
+      const handle = (await page.locator(part('resize')).nth(column).boundingBox())!;
+      const x = handle.x + handle.width / 2;
+      const y = handle.y + handle.height / 2;
+
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 37, y, { steps: 5 });
+      await page.mouse.up();
+
+      const overflow = await page.locator(table).evaluate((node) => {
+        const block = node.closest('[data-inkbrick-block="table"]') as HTMLElement;
+
+        return block.scrollWidth - block.clientWidth;
+      });
+
+      // Округление ширин не должно давать лишних пикселей: иначе внизу появляется полоса прокрутки.
+      expect(overflow).toBeLessThanOrEqual(0);
+    }
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 
