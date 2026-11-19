@@ -203,7 +203,6 @@ function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | u
 export function TableCellBlock({ block, selected }: BlockProps) {
   const view = useEditorView();
   const editor = useEditor();
-  const t = useT();
   // Ячейка первой строки заголовочной таблицы: для программ чтения с экрана это заголовок столбца.
   const row = editor.store.getBlock(block.parentId ?? '');
   const tableBlock = row ? editor.store.getBlock(row.parentId ?? '') : undefined;
