@@ -454,6 +454,24 @@ test.describe('Table controls', () => {
     expect(Math.min(...widths)).toBeGreaterThanOrEqual(60);
   });
 
+  test('after Escape in a cell a paste fills the table, as in MS Office, and adds no table', async ({
+    page,
+  }) => {
+    await page.locator(cells).nth(0).locator(editable).click();
+    await page
+      .locator(cells)
+      .nth(4)
+      .click({ modifiers: ['Shift'] });
+    await page.keyboard.press(`${modifier}+c`);
+
+    await page.locator(cells).nth(8).locator(editable).click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press(`${modifier}+v`);
+
+    await expect(page.locator(table)).toHaveCount(1);
+    expect((await grid(page))[2][2]).toBe('r0c0');
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 
