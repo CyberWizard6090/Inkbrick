@@ -256,7 +256,7 @@ function Flyout({
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  const [place, setPlace] = useState<{ left: number; top: number } | null>(null);
+  const [place, setPlace] = useState<{ left: number; top: number; maxWidth?: number } | null>(null);
 
   useLayoutEffect(() => {
     const panel = ref.current;
@@ -266,12 +266,19 @@ function Flyout({
 
     const width = panel.offsetWidth;
     const height = panel.offsetHeight;
-    const right = row.right + 4;
-    const left = right + width + MARGIN > window.innerWidth ? row.left - width - 4 : right;
+    // Справа или слева от пункта — с той стороны, где больше места. Если места меньше, чем нужно панели, она сужается
+    // (палитра и галерея переносятся по строкам), а не ложится поверх родительского меню.
+    const roomRight = window.innerWidth - MARGIN - (row.right + 4);
+    const roomLeft = row.left - 4 - MARGIN;
+    const onRight = roomRight >= roomLeft;
+    const room = Math.max(roomRight, roomLeft);
+    const fitted = Math.min(width, room);
+    const left = onRight ? row.right + 4 : row.left - 4 - fitted;
 
     setPlace({
-      left: Math.max(MARGIN, Math.min(left, window.innerWidth - width - MARGIN)),
+      left: Math.max(MARGIN, Math.min(left, window.innerWidth - fitted - MARGIN)),
       top: Math.max(MARGIN, Math.min(row.top - 4, window.innerHeight - height - MARGIN)),
+      maxWidth: fitted < width ? fitted : undefined,
     });
   }, [anchor]);
 
@@ -319,6 +326,7 @@ function Flyout({
       style={{
         left: place?.left ?? 0,
         top: place?.top ?? 0,
+        maxWidth: place?.maxWidth,
         visibility: place ? undefined : 'hidden',
       }}
       onMouseDown={(event) => {

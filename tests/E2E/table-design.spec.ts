@@ -297,6 +297,31 @@ test.describe('Table style gallery and borders', () => {
     expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(0, 0, 0)');
   });
 
+  test('in a narrow window the style panel does not cover the menu it opens from', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 520, height: 420 });
+    await page.goto('/?lang=en');
+    await insertTable(page);
+
+    const box = (await page.locator(cells).nth(8).boundingBox())!;
+    const context = page.locator('[data-testid="context-menu"]');
+
+    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+    await expect(context).toBeVisible();
+    await context.locator('[data-action="table-style"]').hover();
+
+    const flyout = (await page.locator('[data-flyout="table-style"]').boundingBox())!;
+    const menu = (await context.boundingBox())!;
+    const overlap = Math.max(
+      0,
+      Math.min(flyout.x + flyout.width, menu.x + menu.width) - Math.max(flyout.x, menu.x),
+    );
+
+    // Допуск на пиксель границ: без исправления перекрытие было около 47 пикселей.
+    expect(overlap).toBeLessThanOrEqual(2);
+  });
+
   test('the keyboard opens a nested panel, moves focus into it and walks its items', async ({
     page,
   }) => {
