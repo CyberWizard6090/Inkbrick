@@ -295,7 +295,7 @@ function Flyout({
 
     if (event.target instanceof HTMLInputElement) return;
 
-    if (event.key === 'ArrowLeft') {
+    if (event.key === 'ArrowLeft' || event.key === 'Escape') {
       event.preventDefault();
       onBack();
     } else if (event.key === 'ArrowDown') {

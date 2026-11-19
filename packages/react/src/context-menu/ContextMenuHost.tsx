@@ -82,6 +82,9 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
     // Esc закрывает меню и тогда, когда фокус остался в документе (кнопки меню его не забирают).
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || !view.contextMenu.getState().position) return;
+      // Во вложенной панели Escape закрывает только её: это делает сама панель.
+      if (event.target instanceof Element && event.target.closest('[data-inkbrick-part="flyout"]'))
+        return;
       if (event.target instanceof HTMLInputElement && onUi(event)) return;
 
       event.preventDefault();

@@ -325,6 +325,15 @@ test.describe('Table style gallery and borders', () => {
     await page.keyboard.press('ArrowLeft');
     expect(await inFlyout()).toBe(false);
     await expect(context).toBeVisible();
+
+    // Escape во вложенной панели закрывает только её, родительское меню остаётся.
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(inFlyout).toBe(true);
+    await page.keyboard.press('Escape');
+    expect(await inFlyout()).toBe(false);
+    // Выход анимируется: даём ей закончиться, родительское меню должно остаться.
+    await page.waitForTimeout(400);
+    await expect(context).toBeVisible();
   });
 
   test('a width, a style and a colour from the nested menus change the existing lines', async ({
