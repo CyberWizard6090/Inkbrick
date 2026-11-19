@@ -218,6 +218,65 @@ test.describe('Table style gallery and borders', () => {
   });
 });
 
+test.describe('Table handles', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+  });
+
+  test('the markers sit on the axis of their pill and on the boundaries', async ({ page }) => {
+    await page.locator(cells).nth(4).hover();
+
+    const centre = async (part: string, nth = 0) => {
+      const box = (await page.locator(`[data-inkbrick-part="${part}"]`).nth(nth).boundingBox())!;
+
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const [row, above, below, column, left, right] = await Promise.all([
+      centre('row-grip'),
+      centre('row-insert', 0),
+      centre('row-insert', 1),
+      centre('column-grip'),
+      centre('column-insert', 0),
+      centre('column-insert', 1),
+    ]);
+
+    // Маркеры строки лежат на оси плашки строки, маркеры столбца — на оси плашки столбца.
+    expect(Math.abs(above.x - row.x)).toBeLessThan(1);
+    expect(Math.abs(below.x - row.x)).toBeLessThan(1);
+    expect(Math.abs(left.y - column.y)).toBeLessThan(1);
+    expect(Math.abs(right.y - column.y)).toBeLessThan(1);
+    // Выше и ниже плашки строки, левее и правее плашки столбца.
+    expect(above.y).toBeLessThan(row.y);
+    expect(below.y).toBeGreaterThan(row.y);
+    expect(left.x).toBeLessThan(column.x);
+    expect(right.x).toBeGreaterThan(column.x);
+  });
+
+  test('a marker on a boundary inserts a column or a row there', async ({ page }) => {
+    await page.locator(cells).nth(4).hover();
+    await page.locator('[data-inkbrick-part="column-insert"]').nth(1).click();
+    await expect(page.locator(`${table} tr`).first().locator('td')).toHaveCount(4);
+
+    await page.locator(cells).nth(5).hover();
+    await page.locator('[data-inkbrick-part="row-insert"]').nth(0).click();
+    await expect(page.locator(`${table} tr`)).toHaveCount(4);
+  });
+
+  test('a hint tells how to open the menu', async ({ page }) => {
+    const cell = (await page.locator(cells).nth(4).boundingBox())!;
+
+    await page.mouse.move(cell.x + 20, cell.y + 10);
+
+    const grip = (await page.locator('[data-inkbrick-part="column-grip"]').boundingBox())!;
+
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2, { steps: 6 });
+    await expect(page.locator('[data-inkbrick-part="tip"]:visible')).toHaveText(
+      'Click to open the menu',
+    );
+  });
+});
+
 test.describe('Table design on a phone', () => {
   test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
   test.skip(({ browserName }) => browserName === 'firefox', 'Firefox has no mobile emulation');

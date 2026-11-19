@@ -175,6 +175,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Ручки таблицы: плашки столбца и строки с шестью точками, круглые маркеры на их концах вставляют столбец или строку по границе, у ручек есть подсказка «Нажмите, чтобы открыть меню».
+
 - The parser of pasted HTML (Google Docs, Word, browsers; `htmlToFragment`) is a separate chunk loaded right after the editor mounts, so the core of `@inkbrick/react` is about 3.0 KB gzip lighter (63.4 → 60.4 KB) and the chunk is 4.3 KB. A paste of foreign HTML stays synchronous once the chunk is in (it normally is by the first paste); in the first moments after mount it waits for the chunk and lands at the same place. Pasting the editor's own format and plain text never waits. `htmlToFragment` and `embeddedFragment` are still exported for your own code.
 
 - Adding a language to `@inkbrick/locales` is mechanical: a new `src/<code>.ts` plus one line in `localeLoaders`. The package `exports` (`./*`) and the `tsup` entries use a mask, and `pnpm check:i18n` and the package tests walk every language file (same keys and placeholders as English, a loader for every file).

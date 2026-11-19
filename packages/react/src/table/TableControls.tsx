@@ -24,6 +24,7 @@ import type { BlockMenuAction } from '../block-handle/types';
 import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableLine } from './cellSelection';
@@ -66,7 +67,7 @@ export interface TableControlsProps {
 }
 
 /** На сколько пикселей за краем таблицы управление остаётся доступным: с каждой стороны своё (кнопки добавления). */
-const REACH = { left: 24, top: 14, right: 40, bottom: 30 } as const;
+const REACH = { left: 28, top: 30, right: 40, bottom: 30 } as const;
 
 const MIN_WIDTH = 40;
 const MAX_WIDTH = 1200;
@@ -152,6 +153,18 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
 
 const sameLayout = (a: Layout | null, b: Layout | null) =>
   a === b || (!!a && !!b && JSON.stringify(a) === JSON.stringify(b));
+
+/** Подсказка у ручки: «Нажмите, чтобы открыть меню». Видна при наведении мыши и фокусе с клавиатуры (стили в ui.css). */
+function GripTip({ t }: { t: TFunction }) {
+  return (
+    <>
+      <span data-inkbrick-part="dots" aria-hidden="true" />
+      <span data-inkbrick-part="tip" aria-hidden="true">
+        <strong>{t('table.tip.click')}</strong> {t('table.tip.menu')}
+      </span>
+    </>
+  );
+}
 
 /**
  * Управление таблицей мышью: полоски у строки и столбца под курсором (меню действий), кнопки «добавить строку/столбец»
@@ -730,9 +743,11 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.handle')}
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'table'}
-        style={{ left: table.left - 16, top: table.top - 16 }}
+        style={{ left: table.left - 22, top: table.top - 22 }}
         onClick={() => open('table', table.left, table.top + 4)}
-      />
+      >
+        <GripTip t={t} />
+      </button>
       <button
         {...control}
         type="button"
@@ -740,8 +755,36 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.rowHandle', { row: active.row + 1 })}
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'row'}
-        style={{ left: table.left - 4, top: row.top + row.height / 2 - 12 }}
+        style={{
+          left: table.left - 5,
+          top: row.top + 6,
+          height: Math.max(16, row.height - 12),
+        }}
         onClick={() => open('row', table.left + 8, row.top + row.height / 2 + 14)}
+      >
+        <GripTip t={t} />
+      </button>
+      <button
+        {...control}
+        type="button"
+        data-inkbrick-part="row-insert"
+        data-edge="start"
+        aria-label={t('table.row.insertAbove')}
+        title={t('table.row.insertAbove')}
+        disabled={!canAddRow}
+        style={{ left: table.left - 5, top: row.top - 5 }}
+        onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
+      />
+      <button
+        {...control}
+        type="button"
+        data-inkbrick-part="row-insert"
+        data-edge="end"
+        aria-label={t('table.row.insertBelow')}
+        title={t('table.row.insertBelow')}
+        disabled={!canAddRow}
+        style={{ left: table.left - 5, top: row.top + row.height - 5 }}
+        onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
       />
       <button
         {...control}
@@ -750,8 +793,36 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.columnHandle', { column: active.column + 1 })}
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'column'}
-        style={{ left: cell.left + cell.width / 2 - 12, top: table.top - 4 }}
-        onClick={() => open('column', cell.left + cell.width / 2 - 12, table.top + 10)}
+        style={{
+          left: cell.left + 6,
+          top: table.top - 22,
+          width: Math.max(24, cell.width - 12),
+        }}
+        onClick={() => open('column', cell.left + 6, table.top + 10)}
+      >
+        <GripTip t={t} />
+      </button>
+      <button
+        {...control}
+        type="button"
+        data-inkbrick-part="column-insert"
+        data-edge="start"
+        aria-label={t('table.column.insertLeft')}
+        title={t('table.column.insertLeft')}
+        disabled={!canAddColumn}
+        style={{ left: cell.left - 5, top: table.top - 20 }}
+        onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
+      />
+      <button
+        {...control}
+        type="button"
+        data-inkbrick-part="column-insert"
+        data-edge="end"
+        aria-label={t('table.column.insertRight')}
+        title={t('table.column.insertRight')}
+        disabled={!canAddColumn}
+        style={{ left: cell.left + cell.width - 5, top: table.top - 20 }}
+        onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
       />
       <button
         {...control}

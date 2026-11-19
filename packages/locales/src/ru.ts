@@ -162,6 +162,8 @@ export const ru: Messages = {
   'table.addColumn': 'Добавить столбец',
   'table.rowHandle': 'Строка {row}: нажмите, чтобы открыть меню',
   'table.columnHandle': 'Столбец {column}: нажмите, чтобы открыть меню',
+  'table.tip.click': 'Нажмите,',
+  'table.tip.menu': 'чтобы открыть меню',
   'table.resize': 'Изменить ширину столбца {column}',
   'table.row.menu': 'Действия со строкой',
   'table.column.menu': 'Действия со столбцом',

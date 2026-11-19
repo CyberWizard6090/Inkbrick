@@ -164,6 +164,8 @@ export const en = {
   'table.addColumn': 'Add column',
   'table.rowHandle': 'Row {row}: click for options',
   'table.columnHandle': 'Column {column}: click for options',
+  'table.tip.click': 'Click',
+  'table.tip.menu': 'to open the menu',
   'table.resize': 'Resize column {column}',
   'table.row.menu': 'Row options',
   'table.column.menu': 'Column options',
