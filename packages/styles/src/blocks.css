@@ -1667,9 +1667,42 @@
     background: var(--inkbrick-brand-bg-pressed);
   }
 
-  :where([data-inkbrick-part='picker-upload']:focus-visible) {
+  :where([data-inkbrick-part='picker-upload']:focus-within) {
     outline: 2px solid var(--inkbrick-stroke-focus-2);
     outline-offset: 2px;
+  }
+
+  /* Поле файла лежит прозрачным поверх всей кнопки: касание попадает прямо в него. */
+  :where([data-inkbrick-part='picker-upload']) {
+    position: relative;
+    overflow: hidden;
+  }
+
+  :where([data-inkbrick-part='picker-file']) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    font-size: 0;
+    cursor: pointer;
+  }
+
+  /* Кнопки картинки не выделяются долгим нажатием: на телефоне это открывало панель форматирования текста. */
+  :where(
+    [data-inkbrick-block='image'] button,
+    [data-inkbrick-part='picker-upload'],
+    [data-inkbrick-part='picker']
+  ) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  :where([data-inkbrick-block='image'] input[type='text']) {
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   :where([data-inkbrick-part='picker-row']) {

@@ -221,6 +221,48 @@ test.describe('Image crop', () => {
   });
 });
 
+test.describe('Image picker', () => {
+  test('the file field lies over the Upload button, and selecting the button text does not open the text toolbar', async ({
+    page,
+  }) => {
+    await page.goto('/?formatting=toolbar&lang=en');
+    await page.locator(editable).first().click();
+    await page.keyboard.type('/image');
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('image-picker')).toBeVisible();
+
+    // Поле файла лежит прозрачным поверх кнопки (иначе во встроенных браузерах телефонов выбор файла не открывается).
+    const covered = await page.evaluate(() => {
+      const label = document.querySelector('[data-inkbrick-part="picker-upload"]')!;
+      const input = label.querySelector('input[type="file"]')!;
+      const a = label.getBoundingClientRect();
+      const b = input.getBoundingClientRect();
+
+      return (
+        Math.abs(a.width - b.width) < 1 &&
+        Math.abs(a.height - b.height) < 1 &&
+        getComputedStyle(input).opacity === '0'
+      );
+    });
+
+    expect(covered).toBe(true);
+
+    // Выделение текста кнопки (долгое нажатие на телефоне) не показывает панель форматирования.
+    await page.evaluate(() => {
+      const label = document.querySelector('[data-inkbrick-part="picker-upload"]')!;
+      const range = document.createRange();
+
+      range.selectNodeContents(label);
+      getSelection()!.removeAllRanges();
+      getSelection()!.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('[data-testid="toolbar"]')).toHaveCount(0);
+  });
+});
+
 test.describe('Image crop on a phone', () => {
   test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
   test.skip(({ browserName }) => browserName === 'firefox', 'Firefox has no mobile emulation');

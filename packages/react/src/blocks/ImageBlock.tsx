@@ -138,15 +138,24 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
             {dragging ? t('image.picker.drop') : t('image.picker.hint')}
           </span>
         </span>
-        <button
-          type="button"
-          className="image-picker__upload"
-          data-inkbrick-part="picker-upload"
-          onClick={() => file.current?.click()}
-        >
+        {/* Настоящее поле файла поверх кнопки: так выбор файла открывается и во встроенных браузерах телефонов (скрытое поле и `click()` из скрипта там не срабатывают). */}
+        <label className="image-picker__upload" data-inkbrick-part="picker-upload">
           <Icon name="upload" />
           {t('image.upload')}
-        </button>
+          <input
+            ref={file}
+            type="file"
+            className="image-picker__file"
+            data-inkbrick-part="picker-file"
+            data-testid="image-file"
+            aria-label={t('image.upload')}
+            accept={(images.acceptedTypes ?? DEFAULT_IMAGE_TYPES).join(',')}
+            onChange={(event) => {
+              void upload(event.target.files?.[0]);
+              event.target.value = '';
+            }}
+          />
+        </label>
       </div>
       <div className="image-picker__row" data-inkbrick-part="picker-row">
         <input
@@ -177,17 +186,6 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
         >
           {t('image.embed')}
         </button>
-        <input
-          ref={file}
-          type="file"
-          hidden
-          data-testid="image-file"
-          accept={(images.acceptedTypes ?? DEFAULT_IMAGE_TYPES).join(',')}
-          onChange={(event) => {
-            void upload(event.target.files?.[0]);
-            event.target.value = '';
-          }}
-        />
       </div>
       {error && (
         <div className="image-picker__error" data-inkbrick-part="picker-error" role="alert">

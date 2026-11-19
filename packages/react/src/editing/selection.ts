@@ -165,8 +165,12 @@ export function readDocSelection(root: HTMLElement): DocSelection | null {
 }
 
 function isAfter(root: HTMLElement, a: string, b: string): boolean {
-  const elementA = root.querySelector(`.editable[data-id="${CSS.escape(a)}"]`);
-  const elementB = root.querySelector(`.editable[data-id="${CSS.escape(b)}"]`);
+  // Блок без текста (картинка, разделитель) не имеет `.editable`: его положение — у самого блока.
+  const find = (id: string) =>
+    root.querySelector(`.editable[data-id="${CSS.escape(id)}"]`) ??
+    root.querySelector(`[data-block-id="${CSS.escape(id)}"]`);
+  const elementA = find(a);
+  const elementB = find(b);
 
   if (!elementA || !elementB) return false;
 
