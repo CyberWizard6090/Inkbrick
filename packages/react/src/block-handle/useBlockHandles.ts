@@ -38,10 +38,13 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
       if (wrapper && row) {
         view.blocks.setHover({
           blockId,
-          // Окрашенный блок выступает за колонку на отрицательный отступ: ручка стоит у края колонки, как у обычных.
+          // Окрашенный блок выступает за колонку на отрицательный отступ: ручка стоит у края колонки, как у обычных. У таблицы
+          // поле слева (место для плашки строки) тоже не сдвигает язычок: он остаётся у края колонки, а не у таблицы.
           x: Math.round(
             wrapper.getBoundingClientRect().left -
-              Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0),
+              (editor.store.getBlock(blockId)?.flavour === 'block:table'
+                ? parseFloat(getComputedStyle(wrapper).marginLeft) || 0
+                : Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0)),
           ),
           y: Math.round(row.top),
         });

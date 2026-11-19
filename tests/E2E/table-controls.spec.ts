@@ -228,6 +228,18 @@ test.describe('Table controls', () => {
     expect(Math.abs(undone.width - before.width)).toBeLessThan(2);
   });
 
+  test('the block tab sits left of the row handle: they never overlap', async ({ page }) => {
+    // Первая строка: язычок блока стоит на её высоте, плашка строки — ровно там же, но правее.
+    await hover(page, 0, 0);
+
+    const tab = (await page
+      .locator('[data-testid="block-handle"] [data-action="grip"]')
+      .boundingBox())!;
+    const row = (await page.locator(part('row-grip')).boundingBox())!;
+
+    expect(tab.x + tab.width).toBeLessThanOrEqual(row.x);
+  });
+
   test('the handles do not lag behind the table while the page scrolls', async ({ page }) => {
     // Страница с запасом высоты: ручки стоят по `position: fixed` и должны ехать вместе с таблицей без отставания.
     await page.locator('.playground-content').evaluate((node) => {
