@@ -385,6 +385,24 @@ test.describe('Table controls', () => {
     expect(Math.abs((await widthOf(2)) - third)).toBeLessThan(2);
   });
 
+  test('arrow down and up move to the same column of the next and the previous row', async ({
+    page,
+  }) => {
+    await page.locator(cells).nth(1).click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.type('X');
+
+    // Вниз из первой строки — в ту же колонку второй строки, а не в следующую ячейку по порядку.
+    expect((await grid(page))[1][1]).toContain('X');
+    expect((await grid(page))[0][2]).not.toContain('X');
+
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.type('Y');
+
+    expect((await grid(page))[0][1]).toContain('Y');
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 
