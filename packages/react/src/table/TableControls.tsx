@@ -777,13 +777,35 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     return next;
   };
 
+  /**
+   * Округляет ширины до целых пикселей так, чтобы их сумма осталась прежней (до целого): каждая ширина округляется вниз, а
+   * недостающие пиксели отдаются столбцам с наибольшей дробной частью. Иначе таблица теряла бы по пикселю на каждый столбец.
+   */
+  const roundWidths = (widths: readonly number[]): number[] => {
+    const floors = widths.map((width) => Math.floor(width));
+    const total = Math.round(widths.reduce((sum, width) => sum + width, 0));
+    let rest = total - floors.reduce((sum, width) => sum + width, 0);
+
+    const order = widths.map((_, index) => index).sort((a, b) => (widths[b] % 1) - (widths[a] % 1));
+
+    for (const index of order) {
+      if (rest <= 0) break;
+
+      floors[index] += 1;
+      rest -= 1;
+    }
+
+    return floors;
+  };
+
   /** Записывает ширины только изменённых столбцов одним шагом истории: остальные остаются как были в модели. */
   const writeWidths = (widths: readonly number[], indexes: readonly number[]) =>
     editor.batch(() => {
-      // Вниз, а не к ближайшему: сумма округлённых ширин не должна оказаться шире блока, иначе у таблицы появляется
-      // горизонтальная полоса прокрутки (у каждого столбца ошибка до полпикселя, и она накапливается).
+      // Сумма округлённых ширин совпадает с суммой настоящих: таблица не сужается и не выходит за блок.
+      const rounded = roundWidths(widths);
+
       for (const index of indexes)
-        run('setTableColumnWidth', { index, width: Math.floor(widths[index] ?? 0) });
+        run('setTableColumnWidth', { index, width: rounded[index] ?? 0 });
     });
 
   const resize = (column: number, event: ReactPointerEvent<HTMLElement>) => {

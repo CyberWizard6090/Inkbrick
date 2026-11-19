@@ -337,6 +337,12 @@ test.describe('Table controls', () => {
     await page.setViewportSize({ width: 900, height: 700 });
     await hover(page, 0, 0);
 
+    const tableWidth = () =>
+      page
+        .locator('.block-table [data-inkbrick-part="grid"]')
+        .evaluate((node) => node.getBoundingClientRect().width);
+    const before = await tableWidth();
+
     const drag = async (index: number, delta: number) => {
       const handle = (await page.locator(part('resize')).nth(index).boundingBox())!;
       const x = handle.x + handle.width / 2;
@@ -354,6 +360,9 @@ test.describe('Table controls', () => {
         .evaluate((node) => node.getBoundingClientRect().width);
 
     await drag(0, 60);
+    // Перетаскивание не сужает таблицу: округление ширин сохраняет сумму.
+    expect(Math.abs((await tableWidth()) - before)).toBeLessThan(1);
+
     await hover(page, 0, 2);
     // Правый край последнего столбца тянем до упора: он растянется до края страницы.
     await drag(2, 3000);
