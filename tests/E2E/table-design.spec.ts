@@ -100,18 +100,27 @@ test.describe('Table style gallery and borders', () => {
     await expect.poll(() => modelStyle(page)).toBeNull();
   });
 
+  /** Вычисленные стили ячейки простым объектом: `CSSStyleDeclaration` целиком Firefox и WebKit не передают. */
+  const cellStyle = (page: Page, index: number) =>
+    page
+      .locator(cells)
+      .nth(index)
+      .evaluate((node) => {
+        const style = getComputedStyle(node);
+
+        return {
+          backgroundColor: style.backgroundColor,
+          borderTopColor: style.borderTopColor,
+          borderTopWidth: style.borderTopWidth,
+        };
+      });
+
   test('a style paints the header and the lines with its colors', async ({ page }) => {
     await openTableMenu(page);
     await page.locator('[data-action="table-style-blue"]').click();
 
-    const header = await page
-      .locator(cells)
-      .first()
-      .evaluate((node) => getComputedStyle(node));
-    const plain = await page
-      .locator(cells)
-      .nth(4)
-      .evaluate((node) => getComputedStyle(node));
+    const header = await cellStyle(page, 0);
+    const plain = await cellStyle(page, 4);
 
     expect(header.backgroundColor).not.toBe(plain.backgroundColor);
     expect(header.borderTopColor).not.toBe('rgb(0, 0, 0)');
@@ -129,12 +138,7 @@ test.describe('Table style gallery and borders', () => {
       }
     }
 
-    const style = await page
-      .locator(cells)
-      .nth(4)
-      .evaluate((node) => getComputedStyle(node));
-
-    expect(style.borderTopWidth).toBe('3px');
+    expect((await cellStyle(page, 4)).borderTopWidth).toBe('3px');
     expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
 
     await openTableMenu(page);
