@@ -356,7 +356,16 @@ describe('table items', () => {
 
     root.focus();
     caret(cell(1, 1), 0);
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
     fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+
+    // Идентификаторы пунктов и секций не повторяются: иначе React предупреждает о совпадении ключей.
+    expect(errors.mock.calls.map((call) => String(call[0]))).not.toContainEqual(
+      expect.stringContaining('same key'),
+    );
+    errors.mockRestore();
 
     const section = (id: string) =>
       $menu()!.querySelector(`[data-inkbrick-part="section"][data-section="${id}"]`);
@@ -365,7 +374,7 @@ describe('table items', () => {
       section('table-style')?.querySelectorAll('[data-inkbrick-part="style-option"]'),
     ).toHaveLength(8);
     expect(
-      section('table-borders')?.querySelectorAll('[data-inkbrick-part="border-mode"]'),
+      section('table-border-lines')?.querySelectorAll('[data-inkbrick-part="border-mode"]'),
     ).toHaveLength(10);
 
     fireEvent.click(section('table-style')!.querySelector('[data-action="table-style-green"]')!);
