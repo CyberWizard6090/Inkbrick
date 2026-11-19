@@ -265,6 +265,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Цвет выделения, выбранный вручную, больше не режет глаз и скруглён: тон смешивается с фоном, как у заготовленных цветов, углы такие же, как у них.
+- Повторный клик по применённому цвету текста или выделения снимает его.
+- В контекстном меню панель цвета и меню «Преобразовать в» не обрезаются краем меню: раньше верхний ряд палитры, а в нём кнопка сброса цвета, пропадал.
+- Контекстное меню ячейки: секции стилей и границ получили разные идентификаторы, предупреждение React о совпадающем ключе `table-borders` ушло.
+
 - On touch screens the buttons of the table styles and borders are 44 px, and the sandbox leaves room under the document for the example switcher.
 - The table column/row menu and the column option list no longer stay open when the page scrolls: they are `position: fixed`, so after a scroll or a resize they hung where the grip used to be. They close on scroll and resize; scrolling inside the menu itself keeps it open.
 - Small UI fixes: the command palette's query line keeps its 44 px height (it was squeezed by a long list); the «Turn into» button of the formatting toolbar is wider and never wraps its chevron; the block handle of a painted block stands at the column edge like any other handle instead of switching to the compact plate.

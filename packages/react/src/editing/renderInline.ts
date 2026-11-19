@@ -156,7 +156,11 @@ function renderNode(
     else if (safeColor) span.style.color = safeColor;
 
     if (isColorName(background)) span.setAttribute('data-inkbrick-bg', background);
-    else if (safeBackground) span.style.backgroundColor = safeBackground;
+    else if (safeBackground) {
+      // Цвет пользователя смешивается с фоном (стили в blocks.css), как и заготовленные: чистый красный не режет глаз.
+      span.setAttribute('data-inkbrick-bg', 'custom');
+      span.style.setProperty('--inkbrick-custom-bg', safeBackground);
+    }
 
     node = span;
   }
