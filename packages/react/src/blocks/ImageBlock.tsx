@@ -11,10 +11,13 @@ import { formatImageError } from '../images/ImageError';
 import { fillImageBlock } from '../images/insertImages';
 import { normalizeImageUrl } from '../images/upload';
 import { DEFAULT_IMAGE_TYPES } from '../images/types';
+import { cropOf, cropProps, isDefaultCrop, type Crop } from '../images/crop';
+import { consumeCrop, dropCropRequest, requestCrop } from '../images/cropRequests';
 import { Select } from '../ui/Select';
 import { useEditorUI } from '../ui/EditorUIContext';
 import type { BlockViewProps } from '../ui/types';
 import { CommitInput } from './CommitInput';
+import { ImageCropper, ImageFrame } from './ImageCrop';
 
 const WIDTHS = [25, 50, 75, 100];
 const ALIGNS: ReadonlyArray<{ value: string; label: MessageKey; icon: IconName }> = [
@@ -50,12 +53,16 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
       return;
     }
 
+    // Запрос ставится до записи адреса: блок забирает его, когда получит картинку (и после неудачи снимаем).
+    if (images.cropOnAdd !== false) requestCrop(blockId);
+
     if (
       editor.dispatch({
         type: 'setBlockProps',
         payload: { blockId, props: { src: normalized } },
       }) === undefined
     ) {
+      dropCropRequest(blockId);
       setLinkError('image.error.unsupportedAddress');
     }
   };
@@ -64,7 +71,13 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
     if (!selected) return;
 
     setLinkError(null);
+
+    if (images.cropOnAdd !== false) requestCrop(blockId);
+
     await fillImageBlock(editor, view, images, blockId, selected);
+
+    // Файл не принят: блок остался без картинки, запрос на кадр не нужен.
+    if (!editor.store.getBlock(blockId)?.props.src) dropCropRequest(blockId);
   };
 
   useEffect(() => {
@@ -125,15 +138,24 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
             {dragging ? t('image.picker.drop') : t('image.picker.hint')}
           </span>
         </span>
-        <button
-          type="button"
-          className="image-picker__upload"
-          data-inkbrick-part="picker-upload"
-          onClick={() => file.current?.click()}
-        >
+        {/* Настоящее поле файла поверх кнопки: так выбор файла открывается и во встроенных браузерах телефонов (скрытое поле и `click()` из скрипта там не срабатывают). */}
+        <label className="image-picker__upload" data-inkbrick-part="picker-upload">
           <Icon name="upload" />
           {t('image.upload')}
-        </button>
+          <input
+            ref={file}
+            type="file"
+            className="image-picker__file"
+            data-inkbrick-part="picker-file"
+            data-testid="image-file"
+            aria-label={t('image.upload')}
+            accept={(images.acceptedTypes ?? DEFAULT_IMAGE_TYPES).join(',')}
+            onChange={(event) => {
+              void upload(event.target.files?.[0]);
+              event.target.value = '';
+            }}
+          />
+        </label>
       </div>
       <div className="image-picker__row" data-inkbrick-part="picker-row">
         <input
@@ -164,17 +186,6 @@ function ImagePicker({ blockId, editor }: { blockId: string; editor: Editor }) {
         >
           {t('image.embed')}
         </button>
-        <input
-          ref={file}
-          type="file"
-          hidden
-          data-testid="image-file"
-          accept={(images.acceptedTypes ?? DEFAULT_IMAGE_TYPES).join(',')}
-          onChange={(event) => {
-            void upload(event.target.files?.[0]);
-            event.target.value = '';
-          }}
-        />
       </div>
       {error && (
         <div className="image-picker__error" data-inkbrick-part="picker-error" role="alert">
@@ -200,8 +211,24 @@ export function ImageBlock({ block, editor, selected, readOnly }: BlockViewProps
   const address = typeof src === 'string' ? src : '';
 
   const [failed, setFailed] = useState(false);
+  const [natural, setNatural] = useState<number | null>(null);
+  const [cropping, setCropping] = useState(false);
+  const crop = cropOf(block.props);
 
-  useEffect(() => setFailed(false), [address]);
+  useEffect(() => {
+    setFailed(false);
+    setNatural(null);
+  }, [address]);
+
+  // Картинка только что добавлена из выбора: сразу открываем кадр (если не выключено `images.cropOnAdd`).
+  useEffect(() => {
+    if (address !== '' && !readOnly && consumeCrop(block.id)) setCropping(true);
+  }, [address, block.id, readOnly]);
+
+  const commitCrop = (next: Crop) => {
+    setCropping(false);
+    setProps(editor, block.id, cropProps(next));
+  };
 
   let content;
 
@@ -257,19 +284,48 @@ export function ImageBlock({ block, editor, selected, readOnly }: BlockViewProps
         data-inkbrick-part="figure"
         data-align={align}
         style={{ width: `${width}%` }}
+        // На сенсорном экране нет наведения: касание фокусирует кадр, и панель инструментов (`:focus-within`) показывается.
+        tabIndex={readOnly ? undefined : -1}
       >
-        <img
-          src={address}
-          alt={alt ?? ''}
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          data-inkbrick-part="image"
-          referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
-        />
+        {cropping && !readOnly ? (
+          <ImageCropper
+            src={address}
+            alt={alt ?? ''}
+            initial={crop}
+            natural={natural}
+            onNatural={setNatural}
+            onError={() => setFailed(true)}
+            onDone={commitCrop}
+            onCancel={() => setCropping(false)}
+          />
+        ) : isDefaultCrop(crop) ? (
+          <img
+            src={address}
+            alt={alt ?? ''}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            data-inkbrick-part="image"
+            referrerPolicy="no-referrer"
+            onLoad={(event) => {
+              const { naturalWidth, naturalHeight } = event.currentTarget;
 
-        {!readOnly && (
+              if (naturalWidth > 0 && naturalHeight > 0) setNatural(naturalWidth / naturalHeight);
+            }}
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <ImageFrame
+            src={address}
+            alt={alt ?? ''}
+            crop={crop}
+            natural={natural}
+            onNatural={setNatural}
+            onError={() => setFailed(true)}
+          />
+        )}
+
+        {!readOnly && !cropping && (
           <div
             className="image-tools"
             data-inkbrick-part="tools"
@@ -310,6 +366,17 @@ export function ImageBlock({ block, editor, selected, readOnly }: BlockViewProps
               value={alt ?? ''}
               onCommit={(value) => setProps(editor, block.id, { alt: value })}
             />
+            <button
+              type="button"
+              className="image-tools__button"
+              data-inkbrick-part="tool"
+              data-pressed={!isDefaultCrop(crop) || undefined}
+              aria-label={t('image.crop')}
+              title={t('image.crop')}
+              onClick={() => setCropping(true)}
+            >
+              <Icon name="crop" />
+            </button>
             <button
               type="button"
               className="image-tools__button"

@@ -32,4 +32,10 @@ export interface ImageOptions {
   /** Допустимые MIME-типы (по умолчанию PNG, JPEG, GIF, WebP, AVIF). SVG не поддерживается. */
   readonly acceptedTypes?: readonly string[];
   readonly onError?: (error: unknown, file: File) => void;
+  /**
+   * Открывать редактор кадра (сдвиг, масштаб, пропорции) сразу после добавления картинки из выбора: загрузкой файла или
+   * ссылкой. По умолчанию включено; `false` — только кнопка «Кадрировать» на панели картинки. Вставка из буфера и перенос
+   * файлов в текст кадр не открывают.
+   */
+  readonly cropOnAdd?: boolean;
 }

@@ -9,9 +9,15 @@ import type { DocSelection } from '../editing/selection';
 const isSingleBlock = (selection: DocSelection) => selection.from.blockId === selection.to.blockId;
 
 export function isFormattable(editor: Editor, selection: DocSelection): boolean {
-  return !(
-    isSingleBlock(selection) &&
-    editor.store.getBlock(selection.from.blockId)?.flavour === 'block:code'
+  if (!isSingleBlock(selection)) return true;
+
+  const block = editor.store.getBlock(selection.from.blockId);
+
+  // Код не форматируется, а у блока без текста (картинка, разделитель) форматировать нечего: выделение подписи
+  // или кнопки внутри него не должно открывать панель форматирования текста.
+  return (
+    block?.flavour !== 'block:code' &&
+    (!block || editor.schema.getBlockSchema(block.flavour)?.inline !== false)
   );
 }
 

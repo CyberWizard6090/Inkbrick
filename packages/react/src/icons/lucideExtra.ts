@@ -105,6 +105,10 @@ export const EXTRA_ICON_SHAPES = {
     ['path', { d: 'M6 10V5a2 2 0 0 1 2-2h2' }],
     ['rect', { x: '3', y: '14', width: '7', height: '7', rx: '1' }],
   ],
+  crop: [
+    ['path', { d: 'M6 2v14a2 2 0 0 0 2 2h14' }],
+    ['path', { d: 'M18 22V8a2 2 0 0 0-2-2H2' }],
+  ],
   columns: [
     ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
     ['path', { d: 'M12 3v18' }],

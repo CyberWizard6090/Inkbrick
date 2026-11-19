@@ -260,8 +260,13 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
     document.addEventListener('pointercancel', onPointerUp);
     document.addEventListener('selectionchange', onSelectionChange);
     window.addEventListener('scroll', syncIfOpen, true);
+    // Экранная клавиатура сжимает видимую область: курсор, оказавшийся под ней, прокручиваем в поле зрения.
+    const viewport = window.visualViewport;
+    const onViewportResize = () => revealCaret(root);
+    viewport?.addEventListener('resize', onViewportResize);
 
     return () => {
+      viewport?.removeEventListener('resize', onViewportResize);
       root.removeEventListener('beforeinput', onBeforeInput);
       root.removeEventListener('keydown', onKeyDown);
       root.removeEventListener('compositionstart', onCompositionStart);
@@ -284,4 +289,20 @@ export function useEditorInput(ref: RefObject<HTMLElement | null>, enabled = tru
       view.toolbar.hide();
     };
   }, [editor, view, ref, slashItems, keymap, enabled]);
+}
+
+/** Прокручивает курсор выше края видимой области (над экранной клавиатурой), если он за её пределами. */
+function revealCaret(root: HTMLElement): void {
+  const selection = window.getSelection();
+  const viewport = window.visualViewport;
+  if (!selection || selection.rangeCount === 0 || !viewport) return;
+  const anchor = selection.anchorNode;
+  if (!anchor || !root.contains(anchor)) return;
+  const node = anchor instanceof Element ? anchor : anchor.parentElement;
+  const rect = selection.getRangeAt(0).getClientRects()[0] ?? node?.getBoundingClientRect();
+  if (!rect || !node) return;
+  const margin = 24;
+  if (rect.bottom > viewport.height - margin || rect.top < margin) {
+    node.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+  }
 }
