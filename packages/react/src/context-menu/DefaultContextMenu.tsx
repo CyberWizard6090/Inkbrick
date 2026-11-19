@@ -237,6 +237,9 @@ function Row({
   );
 }
 
+/** Что в меню получает фокус: пункты и кнопки панелей (палитра, галерея), кроме отключённых. */
+const FOCUSABLE = '[role^="menuitem"]:not([aria-disabled="true"]), button:not(:disabled)';
+
 /** Вложенная панель справа от пункта (слева, если справа не хватает места); целиком остаётся в окне. */
 function Flyout({
   anchor,
@@ -273,19 +276,14 @@ function Flyout({
   }, [anchor]);
 
   useEffect(() => {
-    if (!focusFirst) return;
+    // Панель скрыта, пока не получила позицию (см. `place`): фокус ставим только после этого.
+    if (!focusFirst || !place) return;
 
-    ref.current
-      ?.querySelector<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')
-      ?.focus({ preventScroll: true });
-  }, [focusFirst]);
+    ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
+  }, [focusFirst, place]);
 
   const move = (delta: number) => {
-    const entries = [
-      ...(ref.current?.querySelectorAll<HTMLElement>(
-        ':scope > [role^="menuitem"]:not([aria-disabled="true"])',
-      ) ?? []),
-    ];
+    const entries = [...(ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
     const index = entries.indexOf(document.activeElement as HTMLElement);
 
     entries[(index + delta + entries.length) % entries.length]?.focus();
@@ -300,10 +298,10 @@ function Flyout({
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
       onBack();
-    } else if (item.submenu && event.key === 'ArrowDown') {
+    } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       move(1);
-    } else if (item.submenu && event.key === 'ArrowUp') {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       move(-1);
     }

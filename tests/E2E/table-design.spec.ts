@@ -271,6 +271,36 @@ test.describe('Table style gallery and borders', () => {
     expect(await columnsNow()).toBe(3);
   });
 
+  test('the keyboard opens a nested panel, moves focus into it and walks its items', async ({
+    page,
+  }) => {
+    const box = (await page.locator(cells).nth(4).boundingBox())!;
+    const context = page.locator('[data-testid="context-menu"]');
+
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+    await expect(context).toBeVisible();
+
+    const inFlyout = () =>
+      page.evaluate(() => !!document.activeElement?.closest('[data-inkbrick-part="flyout"]'));
+
+    await context.locator('[data-action="table-cell-background"]').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(inFlyout).toBe(true);
+
+    const first = await page.evaluate(() => document.activeElement?.getAttribute('data-action'));
+
+    await page.keyboard.press('ArrowDown');
+    expect(await inFlyout()).toBe(true);
+    expect(await page.evaluate(() => document.activeElement?.getAttribute('data-action'))).not.toBe(
+      first,
+    );
+
+    // Стрелка влево возвращает в родительский пункт, а не закрывает меню.
+    await page.keyboard.press('ArrowLeft');
+    expect(await inFlyout()).toBe(false);
+    await expect(context).toBeVisible();
+  });
+
   test('a width, a style and a colour from the nested menus change the existing lines', async ({
     page,
   }) => {
