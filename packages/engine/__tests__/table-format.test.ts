@@ -596,3 +596,16 @@ describe('the HTML export of the line style', () => {
 });
 
 const MIDDLE_CELL: TableRange = { top: 1, left: 1, bottom: 1, right: 1 };
+
+describe('the size limits hold for the commands too', () => {
+  it('a column and a row past the limit are refused by the command itself', () => {
+    const { run, can, tableId, editor } = setup();
+
+    for (let i = 0; i < 47; i++) run('insertTableColumn', { index: 3 + i });
+    expect(can('insertTableColumn', { index: 0 })).toBe(false);
+
+    for (let i = 0; i < 37; i++) run('insertTableRow', { index: 3 + i });
+    expect(editor.document.getBlock(tableId)!.children.length).toBe(40);
+    expect(can('insertTableRow', { index: 0 })).toBe(false);
+  });
+});

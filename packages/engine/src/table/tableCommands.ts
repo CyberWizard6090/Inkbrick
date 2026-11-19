@@ -12,6 +12,7 @@ import {
 } from './tableMerge';
 import { clampTableRange, type TableRange } from './tableRange';
 import { tableFormatCommands } from './tableFormat';
+import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from './tableFragment';
 
 type Context = BlockCommandContext<TableProps>;
 
@@ -57,7 +58,10 @@ function shrinkMerges(context: Context, axis: TableAxis, index: number): void {
 export const InsertTableRowCommand = defineBlockCommand<TableProps, { index: number }>({
   type: 'insertTableRow',
 
-  canExecute: (context, { index }) => isIndex(index, rowsOf(context)),
+  // Предел размера — тот же, что в меню: команда, вызванная напрямую, его тоже не перешагивает.
+  canExecute: (context, { index }) =>
+    isIndex(index, rowsOf(context)) &&
+    (rowsOf(context) + 1) * Math.max(columnsOf(context), 1) <= MAX_TABLE_CELLS,
 
   execute({ engine, transaction, block }, { index }): CaretResult {
     const [first] = addTableRow(engine, transaction, block.id, index);
@@ -106,7 +110,10 @@ export const MoveTableRowCommand = defineBlockCommand<TableProps, { from: number
 export const InsertTableColumnCommand = defineBlockCommand<TableProps, { index: number }>({
   type: 'insertTableColumn',
 
-  canExecute: (context, { index }) => isIndex(index, columnsOf(context)),
+  canExecute: (context, { index }) =>
+    isIndex(index, columnsOf(context)) &&
+    columnsOf(context) + 1 <= MAX_TABLE_COLUMNS &&
+    rowsOf(context) * (columnsOf(context) + 1) <= MAX_TABLE_CELLS,
 
   execute({ engine, transaction, block }, { index }): CaretResult {
     const [first] = addTableColumn(engine, transaction, block.id, index);
