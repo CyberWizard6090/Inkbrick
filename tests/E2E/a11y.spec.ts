@@ -5,8 +5,11 @@ import { useTool } from './sandbox';
 
 async function violations(page: Page) {
   // Меню и панели появляются плавно (100 мс): axe считает контраст по установившемуся виду, а не по полупрозрачному кадру.
+  // Отменённая анимация (уходящее меню, смена состояния) отвечает отказом `AbortError`: для проверки это то же «закончилась».
   await page.evaluate(() =>
-    Promise.all(document.getAnimations().map((animation) => animation.finished)),
+    Promise.all(
+      document.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+    ),
   );
 
   const result = await new AxeBuilder({ page })
