@@ -110,8 +110,10 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
     return () => observer?.disconnect();
   }, []);
 
-  const shown: readonly (number | null | undefined)[] =
-    preview ?? fitWidths(widths ?? [], available);
+  const shown: readonly (number | null | undefined)[] = fitWidths(
+    preview ?? widths ?? [],
+    available,
+  );
   const columns = shown.length;
   // Когда ширина задана у всех столбцов, таблица ровно такой ширины: растягивается только край последнего столбца,
   // остальные границы перераспределяют ширину между соседями. Пока у столбца ширины нет, он занимает остаток.

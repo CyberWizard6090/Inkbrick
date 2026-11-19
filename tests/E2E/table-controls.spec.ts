@@ -333,6 +333,44 @@ test.describe('Table controls', () => {
     expect(result.lastRight).toBeLessThanOrEqual(result.blockRight + 1);
   });
 
+  test('dragging on a narrow page keeps the widths the user set', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 700 });
+    await hover(page, 0, 0);
+
+    const drag = async (index: number, delta: number) => {
+      const handle = (await page.locator(part('resize')).nth(index).boundingBox())!;
+      const x = handle.x + handle.width / 2;
+      const y = handle.y + handle.height / 2;
+
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + delta, y, { steps: 6 });
+      await page.mouse.up();
+    };
+    const widthOf = (column: number) =>
+      page
+        .locator(cells)
+        .nth(column)
+        .evaluate((node) => node.getBoundingClientRect().width);
+
+    await drag(0, 60);
+    await hover(page, 0, 2);
+    // Правый край последнего столбца тянем до упора: он растянется до края страницы.
+    await drag(2, 3000);
+
+    const third = await widthOf(2);
+
+    // Окно сузили: отрисованные ширины подгоняются под страницу, модель не должна меняться.
+    await page.setViewportSize({ width: 375, height: 700 });
+    await hover(page, 0, 0);
+    await drag(0, 20);
+
+    await page.setViewportSize({ width: 900, height: 700 });
+    await hover(page, 0, 0);
+
+    expect(Math.abs((await widthOf(2)) - third)).toBeLessThan(2);
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 

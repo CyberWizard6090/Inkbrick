@@ -28,6 +28,7 @@ import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableCells, selectTableLine } from './cellSelection';
+import { fitWidths } from './fitWidths';
 import { tableDesignPanels } from './TableDesignPanels';
 import { cellsBackgroundMenu, tableFormatActions } from './tableFormatActions';
 
@@ -708,7 +709,32 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       left -= 1;
     }
 
-    return result;
+    // Перетаскивание считается по сохранённым ширинам: отрисованные уже подогнаны под страницу, и записать их — потерять
+    // пользовательские значения. Измеряются только столбцы без ширины.
+    return result.map((width, index) => {
+      const saved = props.widths?.[index];
+
+      return typeof saved === 'number' && saved > 0 ? saved : width;
+    });
+  };
+
+  /** Индексы столбцов, ширина которых изменилась (с округлением до пикселя). */
+  const changedColumns = (before: readonly number[], after: readonly number[]): number[] =>
+    after.flatMap((width, index) =>
+      Math.abs(width - (before[index] ?? width)) >= 1 ? [index] : [],
+    );
+
+  /**
+   * Что записывать после перетаскивания. Пока таблица помещается на страницу, отрисованные ширины — настоящие, и все
+   * столбцы фиксируются как есть (таблица становится ровно своей ширины). Когда страница уже таблицы, отрисованные ширины
+   * подогнаны, и записываются только изменённые столбцы: подогнанные значения в модель не попадают.
+   */
+  const columnsToWrite = (start: readonly number[], after: readonly number[]): number[] => {
+    const changed = changedColumns(start, after);
+
+    if (changed.length === 0) return [];
+
+    return fitWidths(start, availableWidth()) === start ? after.map((_, index) => index) : changed;
   };
 
   /** Сколько места под таблицу на странице: видимая ширина самого блока таблицы (у него `max-width: 100%`). */
@@ -731,9 +757,11 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (neighbour < 0) {
       // Таблица не шире страницы: последний столбец тянется, пока сумма ширин помещается в видимую область.
       const others = start.reduce((sum, width, index) => (index === column ? sum : sum + width), 0);
-      const room = Math.max(MIN_WIDTH, Math.floor(availableWidth()) - Math.ceil(others));
+      const room = Math.floor(availableWidth()) - Math.ceil(others);
+      // Растянуть дальше места нельзя, а сжать можно всегда: верхняя граница не ниже текущей ширины.
+      const upper = Math.max(start[column], Math.min(MAX_WIDTH, room));
 
-      next[column] = clamp(start[column] + delta, MIN_WIDTH, Math.min(MAX_WIDTH, room));
+      next[column] = clamp(start[column] + delta, MIN_WIDTH, upper);
 
       return next;
     }
@@ -746,14 +774,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     return next;
   };
 
-  /** Записывает все ширины одним шагом истории: столбцы, которых не тянули, фиксируются как есть. */
-  const writeWidths = (widths: readonly number[]) =>
+  /** Записывает ширины только изменённых столбцов одним шагом истории: остальные остаются как были в модели. */
+  const writeWidths = (widths: readonly number[], indexes: readonly number[]) =>
     editor.batch(() => {
       // Вниз, а не к ближайшему: сумма округлённых ширин не должна оказаться шире блока, иначе у таблицы появляется
       // горизонтальная полоса прокрутки (у каждого столбца ошибка до полпикселя, и она накапливается).
-      widths.forEach((width, index) =>
-        run('setTableColumnWidth', { index, width: Math.floor(width) }),
-      );
+      for (const index of indexes)
+        run('setTableColumnWidth', { index, width: Math.floor(widths[index] ?? 0) });
     });
 
   const resize = (column: number, event: ReactPointerEvent<HTMLElement>) => {
@@ -786,13 +813,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       document.removeEventListener('pointercancel', finish);
       frozen.current = false;
 
-      const changed = widths.some((width, index) => Math.abs(width - start[index]) >= 1);
+      const indexes = columnsToWrite(start, widths);
 
       // Предпросмотр снимается вместе с записью в модель: таблица не дёргается между двумя отрисовками.
       flushSync(() => {
-        if (changed) {
+        if (indexes.length > 0) {
           editor.sealHistory();
-          writeWidths(widths);
+          writeWidths(widths, indexes);
         }
 
         onPreview(null);
@@ -810,7 +837,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (step === 0) return;
 
     event.preventDefault();
-    perform(() => writeWidths(resized(widthsNow(), column, step)));
+    const start = widthsNow();
+    const next = resized(start, column, step);
+
+    perform(() => writeWidths(next, columnsToWrite(start, next)));
   };
 
   const { table, row, cell, edges } = layout;

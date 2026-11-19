@@ -666,15 +666,15 @@ describe('table controls: resizing', () => {
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowRight' }));
     expect(t.tableProps().widths).toEqual([100, 110, 90]);
 
-    // Ширина читается с экрана (в заглушке всегда 100), поэтому второй шаг считается от неё же.
+    // Второй шаг считается от сохранённых ширин: столбец 1 вернулся к 100, а соседний столбец 2 — к 100.
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowLeft' }));
-    expect(t.tableProps().widths).toEqual([100, 90, 110]);
+    expect(t.tableProps().widths).toEqual([100, 100, 100]);
 
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'a' }));
-    expect(t.tableProps().widths).toEqual([100, 90, 110]);
+    expect(t.tableProps().widths).toEqual([100, 100, 100]);
 
     act(() => void fireEvent.doubleClick(t.$$('resize')[1]));
-    expect(t.tableProps().widths).toEqual([100, null, 110]);
+    expect(t.tableProps().widths).toEqual([100, null, 100]);
 
     // Без заданной ширины двойной клик ничего не делает.
     cleanup();
