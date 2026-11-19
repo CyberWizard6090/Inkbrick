@@ -73,7 +73,7 @@ async function openTableMenu(page: Page) {
   const grip = page.locator('[data-inkbrick-ui="table-controls"][data-inkbrick-part="table-grip"]');
 
   await expect(grip).toBeVisible();
-  await grip.click();
+  await grip.click({ button: 'right' });
   await expect(page.locator(blockMenu)).toBeVisible();
 }
 

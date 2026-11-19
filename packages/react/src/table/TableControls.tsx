@@ -27,7 +27,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
-import { selectTableLine } from './cellSelection';
+import { selectTableCells, selectTableLine } from './cellSelection';
 import { tableDesignPanels } from './TableDesignPanels';
 import { cellsBackgroundMenu, tableFormatActions } from './tableFormatActions';
 
@@ -205,7 +205,7 @@ function GripTip({ t }: { t: TFunction }) {
     <>
       <span data-inkbrick-part="dots" aria-hidden="true" />
       <span data-inkbrick-part="tip" aria-hidden="true">
-        <strong>{t('table.tip.click')}</strong> {t('table.tip.menu')}
+        <strong>{t('table.tip.click')}</strong> {t('table.tip.select')}
       </span>
     </>
   );
@@ -294,6 +294,15 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       if (event.pointerType === 'touch' || frozen.current) return;
 
       cancelAnimationFrame(frame);
+
+      // Указатель над самими ручками (плашка, круглый маркер на границе): активные строка и столбец не меняются. Маркер
+      // лежит на границе, и без этого шаг мыши вверх по нему сразу переключал бы ручки на соседнюю строку.
+      if (
+        event.target instanceof Element &&
+        event.target.closest('[data-inkbrick-ui="table-controls"]')
+      )
+        return;
+
       frame = requestAnimationFrame(() => {
         const table = tableRef.current;
 
@@ -825,7 +834,22 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           left: Math.min(table.left + table.width + 6, window.innerWidth - 24),
           top: table.top - 22,
         }}
-        onClick={() => open('table', table.left + table.width - 8, table.top + 4)}
+        // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
+        onClick={() => {
+          setMenu(null);
+          selectTableCells(
+            editor,
+            view,
+            block.id,
+            { row: 0, column: 0 },
+            { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
+          );
+          rootFocus();
+        }}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          open('table', table.left + table.width - 8, table.top + 4);
+        }}
       >
         <GripTip t={t} />
       </button>

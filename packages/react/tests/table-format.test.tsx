@@ -233,7 +233,7 @@ describe('table menu', () => {
     const item = (id: string) =>
       document.querySelector<HTMLElement>(`[data-testid="block-menu"] [data-action="${id}"]`);
 
-    act(() => void fireEvent.click(grip));
+    act(() => void fireEvent.contextMenu(grip));
     expect(item('table-headerColumn')).not.toBeNull();
 
     act(() => void fireEvent.click(item('table-headerColumn')!));
@@ -305,7 +305,7 @@ describe('table menu', () => {
 async function clickGrip(t: ReturnType<typeof mount>) {
   const grip = await showGrip(t);
 
-  act(() => void fireEvent.click(grip));
+  act(() => void fireEvent.contextMenu(grip));
 }
 
 /** Ручка таблицы: она рисуется, когда в таблице стоит каретка. */

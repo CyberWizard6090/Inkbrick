@@ -12,7 +12,9 @@ import {
 
 import type { BlockContextMenuContext } from '../blocks/defineBlock';
 import type { ContextMenuItem } from '../context-menu/types';
+import type { CellSelection } from '../editing/CellSelectionController';
 import { Icon } from '../icons/Icon';
+import type { MessageKey } from '../i18n/en';
 import { visibleCell } from './cellSelection';
 import { tableDesignMenuItems } from './TableDesignPanels';
 import { tableFormatActions } from './tableFormatActions';
@@ -37,15 +39,44 @@ export function tableContextMenu({
   const column = picked?.head.column ?? cell?.column ?? 0;
   const merges = normalizeMerges(getBlock(tableId)?.props.merges, size.rows, size.columns);
   const inMerge = mergeAt(merges, row, column);
-  const canAddRow = size.rows * size.columns + size.columns <= MAX_TABLE_CELLS;
-  const canAddColumn =
-    size.columns < MAX_TABLE_COLUMNS && size.rows * (size.columns + 1) <= MAX_TABLE_CELLS;
+  // Выделен диапазон ячеек — строки и столбцы, которые он охватывает, вставляются и удаляются все сразу.
+  const span = picked?.range ?? { top: row, bottom: row, left: column, right: column };
+  const rowCount = span.bottom - span.top + 1;
+  const columnCount = span.right - span.left + 1;
+  const canAddRows = size.rows * size.columns + rowCount * size.columns <= MAX_TABLE_CELLS;
+  const canAddColumns =
+    size.columns + columnCount <= MAX_TABLE_COLUMNS &&
+    size.rows * (size.columns + columnCount) <= MAX_TABLE_CELLS;
+  const many = (count: number, single: MessageKey, plural: MessageKey) =>
+    count > 1 ? t(plural, { count }) : t(single);
+  const times = (count: number, index: (step: number) => number) =>
+    Array.from({ length: count }, (_, step) => ({ index: index(step) }));
 
   const perform = (type: string, payload: Record<string, unknown>, target: () => CaretResult) => {
     editor.sealHistory();
     flushSync(() => {
       view.cells.clear();
       editor.dispatch({ type, payload: { blockId: tableId, ...payload } } as never);
+    });
+
+    const caret = target();
+
+    if (view.getElement(caret.blockId)) view.placeCaret(caret.blockId, caret.offset);
+  };
+
+  /** Несколько команд одним шагом отмены (вставка и удаление нескольких строк или столбцов). */
+  const performMany = (
+    type: string,
+    payloads: readonly Record<string, unknown>[],
+    target: () => CaretResult,
+  ) => {
+    editor.sealHistory();
+    flushSync(() => {
+      view.cells.clear();
+      editor.batch(() => {
+        for (const payload of payloads)
+          editor.dispatch({ type, payload: { blockId: tableId, ...payload } } as never);
+      });
     });
 
     const caret = target();
@@ -104,9 +135,21 @@ export function tableContextMenu({
       }).map((item, index): ContextMenuItem => ({ ...item, separatorBefore: index === 0 }))
     : [];
 
+  // Фон ячейки и границы относятся к выделенным ячейкам, а без выделения — к одной ячейке под куркором, а не ко всей таблице.
+  const single: CellSelection | null =
+    !picked && cell && selection
+      ? {
+          tableId,
+          anchor: { row: cell.row, column: cell.column },
+          head: { row: cell.row, column: cell.column },
+          range: { top: cell.row, left: cell.column, bottom: cell.row, right: cell.column },
+          ids: new Set([selection.from.blockId]),
+        }
+      : null;
+
   // Фон ячейки, границы и стиль таблицы: вложенные меню; действие закрывает меню.
   const design = tableBlock
-    ? tableDesignMenuItems(editor, tableBlock, t, picked, (action) => {
+    ? tableDesignMenuItems(editor, tableBlock, t, picked ?? single, (action) => {
         editor.sealHistory();
         flushSync(() => {
           action();
@@ -119,45 +162,76 @@ export function tableContextMenu({
     ...items,
     {
       id: 'table-row-above',
-      title: t('table.row.insertAbove'),
+      title: many(rowCount, 'table.row.insertAbove', 'table.rows.insertAbove'),
       icon: <Icon name="plus" />,
-      disabled: !canAddRow,
-      run: () => perform('insertTableRow', { index: row }, after(row, column)),
+      disabled: !canAddRows,
+      run: () =>
+        performMany(
+          'insertTableRow',
+          times(rowCount, () => span.top),
+          after(span.top, column),
+        ),
     },
     {
       id: 'table-row-below',
-      title: t('table.row.insertBelow'),
+      title: many(rowCount, 'table.row.insertBelow', 'table.rows.insertBelow'),
       icon: <Icon name="plus" />,
-      disabled: !canAddRow,
-      run: () => perform('insertTableRow', { index: row + 1 }, after(row + 1, column)),
+      disabled: !canAddRows,
+      run: () =>
+        performMany(
+          'insertTableRow',
+          times(rowCount, () => span.bottom + 1),
+          after(span.bottom + 1, column),
+        ),
     },
     {
       id: 'table-row-delete',
-      title: t('table.row.delete'),
+      title: many(rowCount, 'table.row.delete', 'table.rows.delete'),
       icon: <Icon name="trash" />,
-      disabled: size.rows < 2,
-      run: () => perform('deleteTableRow', { index: row }, after(row, column)),
+      disabled: rowCount >= size.rows,
+      // С нижней строки к верхней: номера оставшихся строк не сдвигаются.
+      run: () =>
+        performMany(
+          'deleteTableRow',
+          times(rowCount, (step) => span.bottom - step),
+          after(span.top, column),
+        ),
     },
     {
       id: 'table-column-left',
-      title: t('table.column.insertLeft'),
+      title: many(columnCount, 'table.column.insertLeft', 'table.columns.insertLeft'),
       icon: <Icon name="plus" />,
-      disabled: !canAddColumn,
-      run: () => perform('insertTableColumn', { index: column }, after(row, column)),
+      disabled: !canAddColumns,
+      run: () =>
+        performMany(
+          'insertTableColumn',
+          times(columnCount, () => span.left),
+          after(row, span.left),
+        ),
     },
     {
       id: 'table-column-right',
-      title: t('table.column.insertRight'),
+      title: many(columnCount, 'table.column.insertRight', 'table.columns.insertRight'),
       icon: <Icon name="plus" />,
-      disabled: !canAddColumn,
-      run: () => perform('insertTableColumn', { index: column + 1 }, after(row, column + 1)),
+      disabled: !canAddColumns,
+      run: () =>
+        performMany(
+          'insertTableColumn',
+          times(columnCount, () => span.right + 1),
+          after(row, span.right + 1),
+        ),
     },
     {
       id: 'table-column-delete',
-      title: t('table.column.delete'),
+      title: many(columnCount, 'table.column.delete', 'table.columns.delete'),
       icon: <Icon name="trash" />,
-      disabled: size.columns < 2,
-      run: () => perform('deleteTableColumn', { index: column }, after(row, column)),
+      disabled: columnCount >= size.columns,
+      run: () =>
+        performMany(
+          'deleteTableColumn',
+          times(columnCount, (step) => span.right - step),
+          after(row, span.left),
+        ),
     },
     ...format,
     ...design,

@@ -1669,6 +1669,10 @@
   ),
   :where(
     :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
+      [data-inkbrick-part='border-styles']
+  ),
+  :where(
+    :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
       [data-inkbrick-part='border-colors']
   ) {
     display: grid;
@@ -1695,7 +1699,7 @@
 
   :where(
     :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
-      [data-inkbrick-part='border-widths']
+      :is([data-inkbrick-part='border-widths'], [data-inkbrick-part='border-styles'])
   ) {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1712,7 +1716,8 @@
       :is(
         [data-inkbrick-part='style-option'],
         [data-inkbrick-part='border-mode'],
-        [data-inkbrick-part='border-width']
+        [data-inkbrick-part='border-width'],
+        [data-inkbrick-part='border-style']
       )
   ) {
     display: flex;
@@ -1733,7 +1738,8 @@
       :is(
         [data-inkbrick-part='style-option'],
         [data-inkbrick-part='border-mode'],
-        [data-inkbrick-part='border-width']
+        [data-inkbrick-part='border-width'],
+        [data-inkbrick-part='border-style']
       ):hover
   ) {
     background: var(--inkbrick-bg-hover);
@@ -1743,7 +1749,8 @@
     :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
       :is(
         [data-inkbrick-part='style-option'],
-        [data-inkbrick-part='border-width']
+        [data-inkbrick-part='border-width'],
+        [data-inkbrick-part='border-style']
       )[aria-checked='true']
   ) {
     border-color: var(--inkbrick-brand-bg);
@@ -1970,7 +1977,8 @@
         :is(
           [data-inkbrick-part='style-option'],
           [data-inkbrick-part='border-mode'],
-          [data-inkbrick-part='border-width']
+          [data-inkbrick-part='border-width'],
+          [data-inkbrick-part='border-style']
         )
     ) {
       min-height: 44px;

@@ -298,6 +298,41 @@ test.describe('Table controls', () => {
     }
   });
 
+  test('columns added to a fully stretched table stay on the page', async ({ page }) => {
+    // Растянули последний столбец до предела страницы и добавили столбцы: они не должны уйти за правый край.
+    await hover(page, 0, 2);
+
+    const handle = (await page.locator(part('resize')).nth(2).boundingBox())!;
+    const x = handle.x + handle.width / 2;
+    const y = handle.y + handle.height / 2;
+
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 3000, y, { steps: 8 });
+    await page.mouse.up();
+
+    for (let added = 0; added < 3; added++) {
+      await hover(page, 0, 0);
+      await page.locator(part('column-insert')).nth(1).click();
+    }
+
+    const result = await page.locator(table).evaluate((node) => {
+      const block = node.closest('[data-inkbrick-block="table"]') as HTMLElement;
+      const last = [...node.querySelectorAll('tr:first-child > td')].at(-1) as HTMLElement;
+
+      return {
+        overflow: block.scrollWidth - block.clientWidth,
+        lastRight: last.getBoundingClientRect().right,
+        blockRight: block.getBoundingClientRect().right,
+        columns: node.querySelectorAll('tr:first-child > td').length,
+      };
+    });
+
+    expect(result.columns).toBe(6);
+    expect(result.overflow).toBeLessThanOrEqual(0);
+    expect(result.lastRight).toBeLessThanOrEqual(result.blockRight + 1);
+  });
+
   test('the table cannot be stretched beyond the page', async ({ page }) => {
     await hover(page, 0, 2);
 

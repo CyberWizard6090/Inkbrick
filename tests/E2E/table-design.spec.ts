@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
 
+const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 const editable = '.editable';
 const table = '.block-table';
 const cells = `${table} td`;
@@ -24,7 +25,7 @@ async function insertTable(page: Page) {
 
 async function openTableMenu(page: Page) {
   await page.locator(table).hover();
-  await page.locator('[data-inkbrick-part="table-grip"]').click();
+  await page.locator('[data-inkbrick-part="table-grip"]').click({ button: 'right' });
   await expect(page.locator(blockMenu)).toBeVisible();
 }
 
@@ -207,8 +208,11 @@ test.describe('Table style gallery and borders', () => {
     ).not.toHaveCount(0);
     await flyout('table-cell-borders').locator('[data-action="table-border-outside"]').click();
     await expect(context).toBeHidden();
-    expect(await cellBorder(page, 0, 'top')).toBe('thin');
-    expect(await cellBorder(page, 4, 'top')).toBeNull();
+    // Без выделения границы получает одна ячейка под кареткой (четвёртая), а не вся таблица.
+    expect(await cellBorder(page, 4, 'top')).toBe('thin');
+    expect(await cellBorder(page, 4, 'left')).toBe('thin');
+    expect(await cellBorder(page, 0, 'top')).toBeNull();
+    expect(await cellBorder(page, 8, 'bottom')).toBeNull();
 
     // Фон ячейки: цвет из круглых образцов, затем «Убрать цвет».
     await openContext();
@@ -216,11 +220,55 @@ test.describe('Table style gallery and borders', () => {
     await flyout('table-cell-background').locator('[data-action="color-green"]').click();
     await expect(context).toBeHidden();
     expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBe('green');
+    // Остальные ячейки не окрашены: фон относится к ячейке, а не ко всей таблице.
+    expect(await page.locator(cells).nth(0).getAttribute('data-background')).toBeNull();
+    expect(await page.locator(cells).nth(8).getAttribute('data-background')).toBeNull();
 
     await openContext();
     await context.locator('[data-action="table-cell-background"]').hover();
     await flyout('table-cell-background').locator('[data-action="color-remove"]').click();
     expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBeNull();
+  });
+
+  test('with several cells selected the context menu inserts and deletes all their rows and columns', async ({
+    page,
+  }) => {
+    const context = page.locator('[data-testid="context-menu"]');
+    const columnsNow = () => page.locator(`${table} tr`).first().locator('td').count();
+    const rowsNow = () => page.locator(`${table} tr`).count();
+    const openOn = async () => {
+      await dragCells(page, 0, 4);
+
+      const box = (await page.locator(cells).nth(4).boundingBox())!;
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+      await expect(context).toBeVisible();
+    };
+
+    // Выделены ячейки 0, 1, 3, 4: два столбца и две строки.
+    await openOn();
+    await expect(context.locator('[data-action="table-column-delete"]')).toHaveText(
+      'Delete columns (2)',
+    );
+    await context.locator('[data-action="table-column-delete"]').click();
+    expect(await columnsNow()).toBe(1);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await columnsNow()).toBe(3);
+
+    await openOn();
+    await context.locator('[data-action="table-row-delete"]').click();
+    expect(await rowsNow()).toBe(1);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await rowsNow()).toBe(3);
+
+    await openOn();
+    await context.locator('[data-action="table-column-right"]').click();
+    expect(await columnsNow()).toBe(5);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await columnsNow()).toBe(3);
   });
 
   test('a width, a style and a colour from the nested menus change the existing lines', async ({
@@ -311,7 +359,42 @@ test.describe('Table handles', () => {
     await expect(page.locator(`${table} tr`)).toHaveCount(4);
   });
 
-  test('a hint tells how to open the menu', async ({ page }) => {
+  test('the corner handle selects the whole table and the right button opens its menu', async ({
+    page,
+  }) => {
+    await page.locator(cells).nth(4).hover();
+    await page.locator('[data-inkbrick-part="table-grip"]').click();
+
+    await expect(page.locator(`${cells}[data-cell-selected]`)).toHaveCount(9);
+    await expect(page.locator(blockMenu)).toHaveCount(0);
+
+    await page.locator('[data-inkbrick-part="table-grip"]').click({ button: 'right' });
+    await expect(page.locator(blockMenu)).toBeVisible();
+  });
+
+  test('the handles stay on the row while the pointer moves over its boundary marker', async ({
+    page,
+  }) => {
+    const cell = (await page.locator(cells).nth(4).boundingBox())!;
+
+    await page.mouse.move(cell.x + 40, cell.y + cell.height / 2);
+
+    const marker = page.locator('[data-inkbrick-part="row-insert"]').first();
+    const box = (await marker.boundingBox())!;
+    const grip = page.locator('[data-inkbrick-part="row-grip"]');
+    const before = (await grip.boundingBox())!;
+
+    // Верхний маркер лежит на границе строки: шаг по нему вверх заходит в предыдущую строку, но ручки остаются на месте.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
+    await page.mouse.move(box.x + box.width / 2, box.y + 1, { steps: 4 });
+    await page.waitForTimeout(150);
+
+    const after = (await grip.boundingBox())!;
+
+    expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+  });
+
+  test('a hint tells that a click selects the table', async ({ page }) => {
     const cell = (await page.locator(cells).nth(4).boundingBox())!;
 
     await page.mouse.move(cell.x + 20, cell.y + 10);
@@ -322,7 +405,7 @@ test.describe('Table handles', () => {
 
     const tip = page.locator('[data-inkbrick-part="tip"]:visible');
 
-    await expect(tip).toHaveText('Click to open the menu');
+    await expect(tip).toHaveText('Click to select the table');
     // Подсказка тёмная в обеих темах и стоит над таблицей, а не на ней.
     await expect(tip).toHaveCSS('background-color', 'rgb(43, 43, 43)');
 
@@ -348,7 +431,7 @@ test.describe('Table design on a phone', () => {
     const cell = (await page.locator(cells).nth(4).boundingBox())!;
 
     await page.touchscreen.tap(cell.x + 10, cell.y + 10);
-    await page.locator('[data-inkbrick-part="table-grip"]').tap();
+    await page.locator('[data-inkbrick-part="table-grip"]').click({ button: 'right' });
 
     const menu = page.locator(blockMenu);
 

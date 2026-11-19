@@ -396,6 +396,11 @@ describe('table items', () => {
     fireEvent.click(flyout('table-cell-background')!.querySelector('[data-action="color-blue"]')!);
     expect($menu()).toBeNull();
     expect(editor.document.getBlock(cell(1, 1))?.props.background).toBe('blue');
+    // Без выделения меняется одна ячейка под кареткой, а не вся таблица.
+    expect(editor.document.getBlock(cell(0, 0))?.props.background).toBeUndefined();
+    expect(editor.document.getBlock(cell(2, 2))?.props.background).toBeUndefined();
+    // То же с границами: сторона соседней ячейки получает линию, остальные ячейки не тронуты.
+    expect(editor.document.getBlock(cell(2, 2))?.props.borderTop).toBeUndefined();
 
     // Ни повторяющихся ключей, ни других ошибок React при отрисовке вложенных меню.
     expect(errors).not.toHaveBeenCalled();

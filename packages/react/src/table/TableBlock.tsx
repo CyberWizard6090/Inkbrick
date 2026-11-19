@@ -1,4 +1,11 @@
-import { useContext, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 import {
   getBlockAlign,
@@ -18,6 +25,7 @@ import { useChildren } from '../hooks/useChildren';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { BlockRenderer } from '../renderer/BlockRenderer';
+import { fitWidths } from './fitWidths';
 import { TableControls } from './TableControls';
 import { TableMergeContext, type MergedCell } from './TableMergeContext';
 import { useCellSelection } from './useCellSelection';
@@ -78,7 +86,32 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
   const [preview, setPreview] = useState<readonly number[] | null>(null);
   useCellSelection(block.id, table, !readOnly);
 
-  const shown: readonly (number | null | undefined)[] = preview ?? widths ?? [];
+  const holder = useRef<HTMLDivElement>(null);
+  // Ширина страницы под таблицу: заданные ширины, которые в неё не помещаются, показываются уменьшенными.
+  const [available, setAvailable] = useState(Number.POSITIVE_INFINITY);
+
+  useLayoutEffect(() => {
+    const element = holder.current;
+
+    if (!element) return;
+
+    const measure = () => {
+      const width = element.clientWidth;
+
+      setAvailable(width > 0 ? width : Number.POSITIVE_INFINITY);
+    };
+
+    measure();
+
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+
+    observer?.observe(element);
+
+    return () => observer?.disconnect();
+  }, []);
+
+  const shown: readonly (number | null | undefined)[] =
+    preview ?? fitWidths(widths ?? [], available);
   const columns = shown.length;
   // Когда ширина задана у всех столбцов, таблица ровно такой ширины: растягивается только край последнего столбца,
   // остальные границы перераспределяют ширину между соседями. Пока у столбца ширины нет, он занимает остаток.
@@ -89,6 +122,7 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
 
   return (
     <div
+      ref={holder}
       className="block block-table"
       data-inkbrick-block="table"
       data-block-id={block.id}
