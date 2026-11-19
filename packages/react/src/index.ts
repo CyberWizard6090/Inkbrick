@@ -163,6 +163,7 @@ export type {
   BlockHandleProps,
   BlockMenuProps,
   BlockMenuAction,
+  BlockMenuPanel,
   DropIndicatorProps,
   GripProps,
 } from './block-handle/types';

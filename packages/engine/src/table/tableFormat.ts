@@ -4,14 +4,19 @@ import {
   isBlockBackground,
   isColorName,
   safeCssColor,
+  TABLE_BORDER_WIDTHS,
   type Alignment,
   type BlockBackground,
   type BlockId,
+  type ColorName,
+  type TableBorderSide,
+  type TableBorderWidth,
   type TableProps,
   type TextAttributes,
 } from '@inkbrick/document';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
+import { tableSize } from './tableGrid';
 import { clampTableRange, tableRangeCells, type TableRange } from './tableRange';
 
 type Context = BlockCommandContext<TableProps>;
@@ -193,11 +198,132 @@ export const ResetTableColumnWidthsCommand = defineBlockCommand<TableProps, obje
   },
 });
 
+/** Какие линии меняет пункт меню границ (как в офисных редакторах). */
+export const TABLE_BORDER_MODES = [
+  'all',
+  'outside',
+  'inside',
+  'insideHorizontal',
+  'insideVertical',
+  'top',
+  'bottom',
+  'left',
+  'right',
+  'none',
+] as const;
+
+export type TableBorderMode = (typeof TABLE_BORDER_MODES)[number];
+
+const FACING: Readonly<Record<TableBorderSide, TableBorderSide>> = {
+  top: 'bottom',
+  bottom: 'top',
+  left: 'right',
+  right: 'left',
+};
+
+const SIDE_PROP: Readonly<Record<TableBorderSide, string>> = {
+  top: 'borderTop',
+  right: 'borderRight',
+  bottom: 'borderBottom',
+  left: 'borderLeft',
+};
+
+/**
+ * Границы ячеек прямоугольника. `mode` выбирает линии: все, внешние, внутренние (горизонтальные и вертикальные вместе
+ * или по отдельности), одну из четырёх внешних сторон или «без границ» (убирает и линии на краю прямоугольника). Линия
+ * между двумя ячейками записывается в обе, поэтому соседняя ячейка вне прямоугольника не перебивает её. `width` —
+ * толщина (для `none` не нужна), `color` — цвет из палитры; без цвета остаётся прежний.
+ */
+export const SetTableCellsBordersCommand = defineBlockCommand<
+  TableProps,
+  { range: TableRange; mode: TableBorderMode; width?: TableBorderWidth; color?: ColorName | null }
+>({
+  type: 'setTableCellsBorders',
+
+  canExecute(context, { range, mode, width, color }) {
+    if (!TABLE_BORDER_MODES.includes(mode)) return false;
+    if (mode !== 'none' && (!width || width === 'none' || !TABLE_BORDER_WIDTHS.includes(width)))
+      return false;
+    if (color !== undefined && color !== null && !isColorName(color)) return false;
+
+    return cellsOf(context, range).length > 0;
+  },
+
+  execute(context, { range, mode, width, color }) {
+    const getBlock = (id: BlockId) => context.transaction.getBlock(id);
+    const size = tableSize(getBlock, context.block.id);
+    const clamped = clampTableRange(getBlock, context.block.id, range);
+
+    if (!size || !clamped) return;
+
+    const full = tableRangeCells(getBlock, context.block.id, {
+      top: 0,
+      left: 0,
+      bottom: size.rows - 1,
+      right: size.columns - 1,
+    });
+    const value: TableBorderWidth = mode === 'none' ? 'none' : (width ?? 'thin');
+    const touched = new Set<BlockId>();
+
+    const put = (row: number, column: number, side: TableBorderSide) => {
+      const id = full[row]?.[column];
+
+      if (!id) return;
+
+      touched.add(id);
+      context.engine.block.update(context.transaction, id, (cell) => ({
+        ...cell,
+        props: { ...cell.props, [SIDE_PROP[side]]: value },
+      }));
+    };
+    // Линия записывается и в ячейку, и в соседа с другой стороны (если он есть).
+    const line = (row: number, column: number, side: TableBorderSide) => {
+      put(row, column, side);
+
+      const dRow = side === 'top' ? -1 : side === 'bottom' ? 1 : 0;
+      const dColumn = side === 'left' ? -1 : side === 'right' ? 1 : 0;
+
+      put(row + dRow, column + dColumn, FACING[side]);
+    };
+
+    for (let row = clamped.top; row <= clamped.bottom; row++) {
+      for (let column = clamped.left; column <= clamped.right; column++) {
+        const first = row === clamped.top;
+        const last = row === clamped.bottom;
+        const left = column === clamped.left;
+        const right = column === clamped.right;
+        const all = mode === 'all' || mode === 'none';
+
+        if (all || mode === 'outside' || mode === 'top') if (all || first) line(row, column, 'top');
+        if (all || mode === 'outside' || mode === 'bottom')
+          if (all || last) line(row, column, 'bottom');
+        if (all || mode === 'outside' || mode === 'left')
+          if (all || left) line(row, column, 'left');
+        if (all || mode === 'outside' || mode === 'right')
+          if (all || right) line(row, column, 'right');
+        if ((mode === 'inside' || mode === 'insideHorizontal') && !first) line(row, column, 'top');
+        if ((mode === 'inside' || mode === 'insideVertical') && !left) line(row, column, 'left');
+      }
+    }
+
+    if (color !== undefined) {
+      for (const id of touched) {
+        context.engine.block.update(context.transaction, id, (cell) => {
+          const { borderColor: _previous, ...rest } = cell.props;
+
+          return { ...cell, props: color === null ? rest : { ...rest, borderColor: color } };
+        });
+      }
+    }
+  },
+});
+
 export const tableFormatCommands = [
   FormatTableCellsCommand,
   SetTableCellsColorCommand,
   ClearTableCellsFormatCommand,
   AlignTableCellsCommand,
   SetTableCellsBackgroundCommand,
+  SetTableCellsBordersCommand,
   ResetTableColumnWidthsCommand,
 ] as const;

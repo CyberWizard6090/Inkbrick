@@ -358,6 +358,128 @@ describe('copying and export', () => {
   });
 });
 
+describe('table borders', () => {
+  const sides = (editor: Editor, id: string) => {
+    const { borderTop, borderRight, borderBottom, borderLeft, borderColor } =
+      editor.document.getBlock(id)!.props;
+
+    return { borderTop, borderRight, borderBottom, borderLeft, borderColor };
+  };
+  const MIDDLE: TableRange = { top: 1, left: 1, bottom: 1, right: 1 };
+
+  it('outside borders go to the edge cells of the range and to their neighbours', () => {
+    const { run, cell, editor } = setup();
+
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'outside', width: 'thick' });
+
+    expect(sides(editor, cell(1, 1))).toMatchObject({
+      borderTop: 'thick',
+      borderRight: 'thick',
+      borderBottom: 'thick',
+      borderLeft: 'thick',
+    });
+    // Линия записана и в соседей: иначе их собственная линия перебила бы её.
+    expect(sides(editor, cell(0, 1)).borderBottom).toBe('thick');
+    expect(sides(editor, cell(2, 1)).borderTop).toBe('thick');
+    expect(sides(editor, cell(1, 0)).borderRight).toBe('thick');
+    expect(sides(editor, cell(1, 2)).borderLeft).toBe('thick');
+    expect(sides(editor, cell(0, 0)).borderBottom).toBeUndefined();
+  });
+
+  it('inside borders stay between the cells of the range', () => {
+    const { run, cell, editor } = setup();
+
+    run('setTableCellsBorders', { range: ALL, mode: 'inside', width: 'thin' });
+
+    expect(sides(editor, cell(1, 1))).toMatchObject({ borderTop: 'thin', borderLeft: 'thin' });
+    expect(sides(editor, cell(0, 0)).borderTop).toBeUndefined();
+    expect(sides(editor, cell(0, 0)).borderLeft).toBeUndefined();
+    expect(sides(editor, cell(2, 2)).borderBottom).toBeUndefined();
+  });
+
+  it('horizontal and vertical inside borders are separate', () => {
+    const { run, cell, editor } = setup();
+
+    run('setTableCellsBorders', { range: ALL, mode: 'insideHorizontal', width: 'medium' });
+
+    expect(sides(editor, cell(1, 1)).borderTop).toBe('medium');
+    expect(sides(editor, cell(1, 1)).borderLeft).toBeUndefined();
+
+    run('setTableCellsBorders', { range: ALL, mode: 'insideVertical', width: 'thin' });
+
+    expect(sides(editor, cell(1, 1)).borderLeft).toBe('thin');
+  });
+
+  it('one side, the color and removing all borders', () => {
+    const { run, cell, editor } = setup();
+
+    run('setTableCellsBorders', { range: ALL, mode: 'bottom', width: 'thin', color: 'red' });
+
+    expect(sides(editor, cell(2, 0))).toMatchObject({ borderBottom: 'thin', borderColor: 'red' });
+    expect(sides(editor, cell(0, 0)).borderBottom).toBeUndefined();
+
+    run('setTableCellsBorders', { range: ALL, mode: 'none' });
+
+    expect(sides(editor, cell(0, 0))).toMatchObject({
+      borderTop: 'none',
+      borderRight: 'none',
+      borderBottom: 'none',
+      borderLeft: 'none',
+    });
+  });
+
+  it('is one undo step and rejects wrong input', () => {
+    const { run, can, cell, editor } = setup();
+
+    expect(can('setTableCellsBorders', { range: ALL, mode: 'all' })).toBe(false);
+    expect(can('setTableCellsBorders', { range: ALL, mode: 'all', width: 'none' })).toBe(false);
+    expect(can('setTableCellsBorders', { range: ALL, mode: 'diagonal', width: 'thin' })).toBe(
+      false,
+    );
+    expect(
+      can('setTableCellsBorders', { range: ALL, mode: 'all', width: 'thin', color: 'nope' }),
+    ).toBe(false);
+
+    run('setTableCellsBorders', { range: ALL, mode: 'all', width: 'thin' });
+    expect(sides(editor, cell(1, 1)).borderTop).toBe('thin');
+
+    editor.undo();
+
+    expect(sides(editor, cell(1, 1)).borderTop).toBeUndefined();
+    expect(sides(editor, cell(0, 0)).borderLeft).toBeUndefined();
+  });
+
+  it('the borders and the color are exported to HTML', () => {
+    const { run, editor } = setup();
+
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'outside', width: 'thick', color: 'red' });
+
+    const html = toHtml(editor.document);
+
+    expect(html).toContain('border-top:3px solid');
+    expect(html).toContain('border-left:3px solid');
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'none' });
+    expect(toHtml(editor.document)).toContain('border-top:none');
+  });
+
+  it('the borders and the color travel with a copied range', () => {
+    const { run, cell, editor, tableId } = setup();
+
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'all', width: 'thick', color: 'blue' });
+
+    const fragment = tableRangeFragment(
+      (id: string) => editor.document.getBlock(id),
+      tableId,
+      MIDDLE,
+    );
+    const copied = JSON.stringify(fragment);
+
+    expect(copied).toContain('"borderTop":"thick"');
+    expect(copied).toContain('"borderColor":"blue"');
+    expect(cell(1, 1)).toBeTruthy();
+  });
+});
+
 function* document_tables(editor: Editor) {
   const stack = [editor.document.rootId];
 

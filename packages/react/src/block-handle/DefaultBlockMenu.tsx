@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { isHexColor } from '@inkbrick/document';
 
@@ -13,6 +13,7 @@ export function DefaultBlockMenu({
   actions,
   turnInto,
   background,
+  panels,
   onClose,
 }: BlockMenuProps) {
   const t = useT();
@@ -162,6 +163,15 @@ export function DefaultBlockMenu({
           </div>
         </>
       )}
+
+      {panels?.map((panel) => (
+        <Fragment key={panel.id}>
+          <div className="inkbrick-block-menu__label" data-inkbrick-part="label" role="separator">
+            {panel.title}
+          </div>
+          {panel.content}
+        </Fragment>
+      ))}
 
       {entries.length === 0 && (
         <div className="inkbrick-block-menu__label" data-inkbrick-part="label">

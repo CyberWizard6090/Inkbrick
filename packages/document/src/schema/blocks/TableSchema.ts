@@ -2,7 +2,7 @@ import * as z from '../zod';
 
 import type { BaseBlock } from '../../model/BaseBlock';
 import type { BlockSchema, BlockTemplate } from '../BlockSchema';
-import { BLOCK_BACKGROUNDS } from '../../utils/colors';
+import { BLOCK_BACKGROUNDS, COLOR_NAMES } from '../../utils/colors';
 
 export const TABLE = 'block:table';
 export const TABLE_ROW = 'block:table-row';
@@ -16,6 +16,33 @@ export const TABLE_DEFAULT_COLUMNS = 3;
 export const TABLE_COLUMN_TYPES = ['text', 'number', 'date'] as const;
 
 export type TableColumnType = (typeof TABLE_COLUMN_TYPES)[number];
+
+/**
+ * Готовые оформления таблицы (цвет заголовка, чередования и линий): `plain` — без оформления, `grid` — сетка,
+ * `lines` — только горизонтальные линии, остальные красят заголовок и линии в свой цвет.
+ */
+export const TABLE_STYLES = [
+  'plain',
+  'grid',
+  'lines',
+  'blue',
+  'green',
+  'orange',
+  'purple',
+  'dark',
+] as const;
+
+export type TableStyle = (typeof TABLE_STYLES)[number];
+
+/** Толщина границы ячейки с одной стороны: `none` — без линии. */
+export const TABLE_BORDER_WIDTHS = ['none', 'thin', 'medium', 'thick'] as const;
+
+export type TableBorderWidth = (typeof TABLE_BORDER_WIDTHS)[number];
+
+/** Стороны ячейки, у которых можно задать границу. */
+export const TABLE_BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const;
+
+export type TableBorderSide = (typeof TABLE_BORDER_SIDES)[number];
 
 /** Объединённые ячейки: прямоугольник `rows` × `columns` с началом в `row`, `column` (с нуля); текст хранит верхняя левая. */
 export const tableMergeSchema = z.object({
@@ -36,6 +63,8 @@ export const tablePropsSchema = z.object({
   striped: z.boolean().default(false),
   /** Границы ячеек; `false` — таблица без линий. */
   borders: z.boolean().default(true),
+  /** Готовое оформление (`TABLE_STYLES`); без него таблица выглядит по умолчанию. */
+  tableStyle: z.enum(TABLE_STYLES).optional(),
   /** Первая строка остаётся на виду при прокрутке таблицы. */
   freezeRow: z.boolean().default(false),
   /** Первый столбец остаётся на виду при горизонтальной прокрутке. */
@@ -59,6 +88,13 @@ export const tableCellPropsSchema = z.object({
   align: z.enum(['left', 'center', 'right', 'justify']).optional(),
   /** Цвет фона ячейки (`BLOCK_BACKGROUNDS`); без него фона нет. */
   background: z.enum(BLOCK_BACKGROUNDS).optional(),
+  /** Границы ячейки по сторонам (`TABLE_BORDER_WIDTHS`); сторона без значения рисуется по оформлению таблицы. */
+  borderTop: z.enum(TABLE_BORDER_WIDTHS).optional(),
+  borderRight: z.enum(TABLE_BORDER_WIDTHS).optional(),
+  borderBottom: z.enum(TABLE_BORDER_WIDTHS).optional(),
+  borderLeft: z.enum(TABLE_BORDER_WIDTHS).optional(),
+  /** Цвет линий границы: имя из палитры цветов текста; без него — обычный цвет линий. */
+  borderColor: z.enum(COLOR_NAMES).optional(),
 });
 
 /** Заготовка таблицы `rows` × `columns` с пустыми ячейками. */

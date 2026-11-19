@@ -68,6 +68,13 @@ export interface BlockMenuBackground {
   readonly onPick: (color: string | null) => void;
 }
 
+/** Своя секция меню блока (например, галерея стилей и границы таблицы): заголовок и содержимое. */
+export interface BlockMenuPanel {
+  readonly id: string;
+  readonly title: string;
+  readonly content: ReactNode;
+}
+
 export interface BlockMenuProps {
   readonly block: BaseBlock;
   readonly position: { readonly x: number; readonly y: number };
@@ -75,5 +82,7 @@ export interface BlockMenuProps {
   readonly turnInto: readonly BlockMenuAction[];
   /** Ряд цветов фона блока; свои меню (`slots.BlockMenu`) могут его не показывать. */
   readonly background?: BlockMenuBackground;
+  /** Дополнительные секции под пунктами; свои меню (`slots.BlockMenu`) могут их не показывать. */
+  readonly panels?: readonly BlockMenuPanel[];
   readonly onClose: () => void;
 }
