@@ -351,6 +351,29 @@ describe('table items', () => {
     };
   }
 
+  it('have the sections of the table styles and of the borders, and a style closes the menu', async () => {
+    const { editable, root, caret, cell, tableId, editor } = await mountTable();
+
+    root.focus();
+    caret(cell(1, 1), 0);
+    fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
+
+    const section = (id: string) =>
+      $menu()!.querySelector(`[data-inkbrick-part="section"][data-section="${id}"]`);
+
+    expect(
+      section('table-style')?.querySelectorAll('[data-inkbrick-part="style-option"]'),
+    ).toHaveLength(8);
+    expect(
+      section('table-borders')?.querySelectorAll('[data-inkbrick-part="border-mode"]'),
+    ).toHaveLength(10);
+
+    fireEvent.click(section('table-style')!.querySelector('[data-action="table-style-green"]')!);
+
+    expect($menu()).toBeNull();
+    expect(editor.document.getBlock(tableId)?.props.tableStyle).toBe('green');
+  });
+
   it('are added under the standard ones and edit the row and column under the caret', async () => {
     const { editable, root, caret, rows, columns, cell } = await mountTable();
 
@@ -358,8 +381,8 @@ describe('table items', () => {
     caret(cell(1, 1), 0);
     fireEvent.contextMenu(editable(cell(1, 1)), { clientX: 40, clientY: 20 });
 
-    const ids = [...$menu()!.querySelectorAll('[data-action]')].map((el) =>
-      el.getAttribute('data-action'),
+    const ids = [...$menu()!.querySelectorAll('[data-inkbrick-part="item"][data-action]')].map(
+      (el) => el.getAttribute('data-action'),
     );
 
     expect(ids).toEqual([
@@ -381,8 +404,8 @@ describe('table items', () => {
       'table-freezeColumn',
       'table-reset-widths',
     ]);
-    // Один разделитель перед пунктами таблицы и один перед её форматированием.
-    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(2);
+    // Разделители: перед пунктами таблицы, перед её форматированием и перед секциями стилей и границ.
+    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(3);
 
     fireEvent.click(item('table-row-below'));
     expect([rows(), columns(), $menu()]).toEqual([4, 3, null]);

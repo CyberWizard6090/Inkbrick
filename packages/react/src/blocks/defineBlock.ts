@@ -21,6 +21,8 @@ export interface BlockContextMenuContext {
   readonly view: EditorView;
   readonly selection: { readonly from: DocPoint; readonly to: DocPoint } | null;
   readonly t: TFunction;
+  /** Закрывает контекстное меню (нужно секциям со своим содержимым, у которых нет общего `run`). */
+  readonly close: () => void;
 }
 
 /**

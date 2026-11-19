@@ -18,6 +18,11 @@ export interface ContextMenuItem {
   readonly disabled?: boolean;
   /** Разделитель перед пунктом: отделяет группу пунктов блока от стандартных. */
   readonly separatorBefore?: boolean;
+  /**
+   * Секция со своим содержимым (например, галерея стилей таблицы): `title` становится заголовком, `content` рисуется под
+   * ним, а сам пункт не нажимается (`run` не вызывается).
+   */
+  readonly content?: ReactNode;
   readonly run: () => void;
 }
 

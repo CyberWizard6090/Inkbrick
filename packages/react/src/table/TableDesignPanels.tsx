@@ -44,7 +44,7 @@ function setPreview(blockId: string, style: TableStyle | null) {
   table.dataset.tableStyle = style;
 }
 
-/** Миниатюра стиля: настоящая разметка таблицы 4 × 3, которую красят те же правила, что и саму таблицу. */
+/** Миниатюра стиля: сетка из пустых клеток 3 × 4; красят её те же токены стиля, что и настоящую таблицу. */
 function StylePreview({
   style,
   header,
@@ -58,44 +58,35 @@ function StylePreview({
     <span
       aria-hidden="true"
       data-inkbrick-part="style-preview"
-      data-inkbrick-block="table"
       data-table-style={style === 'plain' ? undefined : style}
       data-header={header || undefined}
       data-striped={striped || undefined}
     >
-      <table data-inkbrick-part="grid">
-        <tbody>
-          {[0, 1, 2, 3].map((row) => (
-            <tr key={row} data-inkbrick-block="table-row">
-              {[0, 1, 2].map((column) => (
-                <td key={column} data-inkbrick-block="table-cell" />
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {[0, 1, 2, 3].flatMap((row) =>
+        [0, 1, 2].map((column) => (
+          <span key={`${row}-${column}`} data-inkbrick-part="preview-cell" data-row={row} />
+        )),
+      )}
     </span>
   );
 }
 
-/** Линии значка границ: имя, концы (сетка 3 × 3 в поле 20 × 20, внешняя рамка и по две внутренних линии). */
+/** Линии значка границ: сетка 2 × 2 в поле 20 × 20 (внешняя рамка и по одной внутренней линии). */
 const GLYPH_LINES = [
   ['top', 3, 3, 17, 3],
   ['bottom', 3, 17, 17, 17],
   ['left', 3, 3, 3, 17],
   ['right', 17, 3, 17, 17],
-  ['h1', 3, 7.67, 17, 7.67],
-  ['h2', 3, 12.33, 17, 12.33],
-  ['v1', 7.67, 3, 7.67, 17],
-  ['v2', 12.33, 3, 12.33, 17],
+  ['h', 3, 10, 17, 10],
+  ['v', 10, 3, 10, 17],
 ] as const;
 
 const GLYPH_MODES: Readonly<Record<TableBorderMode, readonly string[]>> = {
-  all: ['top', 'bottom', 'left', 'right', 'h1', 'h2', 'v1', 'v2'],
+  all: ['top', 'bottom', 'left', 'right', 'h', 'v'],
   outside: ['top', 'bottom', 'left', 'right'],
-  inside: ['h1', 'h2', 'v1', 'v2'],
-  insideHorizontal: ['h1', 'h2'],
-  insideVertical: ['v1', 'v2'],
+  inside: ['h', 'v'],
+  insideHorizontal: ['h'],
+  insideVertical: ['v'],
   top: ['top'],
   bottom: ['bottom'],
   left: ['left'],
@@ -112,12 +103,12 @@ function BorderGlyph({ mode }: { mode: TableBorderMode }) {
 
   return (
     <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
-      <g stroke="currentColor" strokeWidth="1" opacity="0.28" strokeLinecap="round">
+      <g stroke="currentColor" strokeWidth="1" opacity="0.3" strokeLinecap="round">
         {GLYPH_LINES.map(([name, x1, y1, x2, y2]) => (
           <line key={name} x1={x1} y1={y1} x2={x2} y2={y2} />
         ))}
       </g>
-      <g stroke="currentColor" strokeWidth="2" strokeLinecap="square">
+      <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="square">
         {GLYPH_LINES.filter(([name]) => active.has(name)).map(([name, x1, y1, x2, y2]) => (
           <line key={name} x1={x1} y1={y1} x2={x2} y2={y2} />
         ))}
@@ -254,12 +245,12 @@ function BordersPanel({
           </button>
         ))}
       </div>
-      <div data-inkbrick-part="swatches" role="group" aria-label={t('table.border.color')}>
+      <div data-inkbrick-part="border-colors" role="group" aria-label={t('table.border.color')}>
         <button
           type="button"
           role="menuitemradio"
           aria-checked={color === null}
-          data-inkbrick-part="swatch"
+          data-inkbrick-part="border-color"
           data-color=""
           data-action="table-border-color-default"
           aria-label={t('table.border.colorDefault')}
@@ -272,7 +263,7 @@ function BordersPanel({
             type="button"
             role="menuitemradio"
             aria-checked={color === name}
-            data-inkbrick-part="swatch"
+            data-inkbrick-part="border-color"
             data-color={name}
             data-action={`table-border-color-${name}`}
             aria-label={t(`color.${name}` as MessageKey)}

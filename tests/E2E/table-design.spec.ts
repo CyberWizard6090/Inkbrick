@@ -164,6 +164,36 @@ test.describe('Table style gallery and borders', () => {
     expect(await cellBorder(page, 8, 'top')).toBeNull();
   });
 
+  test('the cell context menu has the same sections: a style and borders apply and close it', async ({
+    page,
+  }) => {
+    const box = (await page.locator(cells).nth(4).boundingBox())!;
+
+    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+
+    const context = page.locator('[data-testid="context-menu"]');
+
+    await expect(context).toBeVisible();
+    await expect(context.locator('[data-inkbrick-part="style-option"]')).toHaveCount(8);
+    await expect(context.locator('[data-inkbrick-part="border-mode"]')).toHaveCount(10);
+
+    // Предпросмотр и в этом меню: наведение красит таблицу, документ не меняется.
+    await context.locator('[data-action="table-style-orange"]').hover();
+    await expect.poll(() => tableStyle(page)).toBe('orange');
+    expect(await modelStyle(page)).toBeNull();
+
+    await context.locator('[data-action="table-style-orange"]').click();
+    await expect(context).toBeHidden();
+    expect(await modelStyle(page)).toBe('orange');
+
+    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+    await expect(context).toBeVisible();
+    await context.locator('[data-action="table-border-outside"]').click();
+    await expect(context).toBeHidden();
+    expect(await cellBorder(page, 0, 'top')).toBe('thin');
+    expect(await cellBorder(page, 4, 'top')).toBeNull();
+  });
+
   test('the menu with the gallery and the borders passes the accessibility check', async ({
     page,
   }) => {

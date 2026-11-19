@@ -356,13 +356,23 @@
    * Оформление таблицы (`data-table-style`): задаёт цвета линий, заголовка и чередования через токены таблицы, а сами
    * правила красят ячейки. Явный фон ячейки и границы ячейки (ниже) сильнее оформления.
    */
-  :where([data-inkbrick-block='table'][data-table-style='grid']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='grid']
+  ) {
     --inkbrick-table-line: var(--inkbrick-stroke-accessible);
     --inkbrick-table-head-bg: var(--inkbrick-bg-4);
     --inkbrick-table-band-bg: var(--inkbrick-bg-2);
   }
 
-  :where([data-inkbrick-block='table'][data-table-style='lines']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='lines']
+  ) {
     --inkbrick-table-line: var(--inkbrick-stroke-1);
     --inkbrick-table-head-bg: transparent;
     --inkbrick-table-band-bg: transparent;
@@ -374,7 +384,12 @@
     border-inline-color: transparent;
   }
 
-  :where([data-inkbrick-block='table'][data-table-style='blue']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='blue']
+  ) {
     --inkbrick-table-line: color-mix(in srgb, var(--inkbrick-color-blue) 55%, var(--inkbrick-bg-1));
     --inkbrick-table-head-bg: var(--inkbrick-highlight-blue);
     --inkbrick-table-band-bg: color-mix(
@@ -384,7 +399,12 @@
     );
   }
 
-  :where([data-inkbrick-block='table'][data-table-style='green']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='green']
+  ) {
     --inkbrick-table-line: color-mix(
       in srgb,
       var(--inkbrick-color-green) 55%,
@@ -398,7 +418,12 @@
     );
   }
 
-  :where([data-inkbrick-block='table'][data-table-style='orange']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='orange']
+  ) {
     --inkbrick-table-line: color-mix(
       in srgb,
       var(--inkbrick-color-orange) 55%,
@@ -412,7 +437,12 @@
     );
   }
 
-  :where([data-inkbrick-block='table'][data-table-style='purple']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='purple']
+  ) {
     --inkbrick-table-line: color-mix(
       in srgb,
       var(--inkbrick-color-purple) 55%,
@@ -426,7 +456,12 @@
     );
   }
 
-  :where([data-inkbrick-block='table'][data-table-style='dark']) {
+  :where(
+    :is(
+      [data-inkbrick-block='table'],
+      [data-inkbrick-part='style-preview']
+    )[data-table-style='dark']
+  ) {
     --inkbrick-table-line: var(--inkbrick-stroke-accessible);
     --inkbrick-table-head-bg: var(--inkbrick-fg-1);
     --inkbrick-table-head-fg: var(--inkbrick-bg-1);
