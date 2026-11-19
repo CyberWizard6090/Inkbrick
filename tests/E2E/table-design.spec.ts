@@ -262,4 +262,28 @@ test.describe('Table design on a phone', () => {
 
     expect(await cellBorder(page, 4, 'top')).toBe('thick');
   });
+
+  test('the cell stays in view when the on-screen keyboard shrinks the window', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+
+    const cell = page.locator(cells).nth(4);
+    const box = (await cell.boundingBox())!;
+
+    await page.touchscreen.tap(box.x + 10, box.y + 10);
+    // Клавиатура съедает низ окна: ячейка оказывается под ней.
+    await page.setViewportSize({ width: 375, height: Math.max(200, Math.round(box.y) - 10) });
+
+    await expect
+      .poll(async () =>
+        cell.evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+
+          return rect.top >= 0 && rect.bottom <= (window.visualViewport?.height ?? innerHeight);
+        }),
+      )
+      .toBe(true);
+  });
 });
