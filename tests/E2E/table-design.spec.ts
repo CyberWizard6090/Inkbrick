@@ -271,6 +271,32 @@ test.describe('Table style gallery and borders', () => {
     expect(await columnsNow()).toBe(3);
   });
 
+  test('a white line is visible on the light page and a black one on the dark page', async ({
+    page,
+  }) => {
+    const pick = async (color: string) => {
+      await openTableMenu(page);
+      await page.locator(`[data-action="table-border-color-${color}"]`).click();
+      await openTableMenu(page);
+      await page.locator('[data-action="table-border-all"]').click();
+    };
+
+    await pick('white');
+    // На светлой странице белая линия заменяется серой: иначе её не видно.
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(139, 139, 139)');
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(255, 255, 255)');
+
+    await pick('black');
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(139, 139, 139)');
+
+    await page.evaluate(() =>
+      document.documentElement.setAttribute('data-inkbrick-theme', 'light'),
+    );
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(0, 0, 0)');
+  });
+
   test('the keyboard opens a nested panel, moves focus into it and walks its items', async ({
     page,
   }) => {

@@ -589,12 +589,38 @@
     border-left-width: 3px;
   }
 
+  /*
+   * Чёрная и белая линии должны быть видны на фоне своей темы: чёрная на светлом фоне, белая на тёмном. В противоположной
+   * теме их заменяет серая линия того же имени по смыслу (светлая для «чёрной», тёмная для «белой»), иначе линия пропадала бы.
+   */
   :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
     --inkbrick-cell-border: var(--inkbrick-color-black);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
+    --inkbrick-cell-border: #8b8b8b;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-inkbrick-theme='light'])
+      :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
+      --inkbrick-cell-border: var(--inkbrick-color-white);
+    }
+
+    :root:not([data-inkbrick-theme='light'])
+      :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
+      --inkbrick-cell-border: #8b8b8b;
+    }
+  }
+
+  :root[data-inkbrick-theme='dark']
+    :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
     --inkbrick-cell-border: var(--inkbrick-color-white);
+  }
+
+  :root[data-inkbrick-theme='dark']
+    :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
+    --inkbrick-cell-border: #8b8b8b;
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-color='gray']) {
