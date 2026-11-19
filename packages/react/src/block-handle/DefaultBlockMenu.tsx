@@ -18,7 +18,8 @@ export function DefaultBlockMenu({
 }: BlockMenuProps) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  const [flip, setFlip] = useState(false);
+  const [fit, setFit] = useState({ flip: false, height: 0 });
+  const { flip, height } = fit;
 
   const entries: BlockMenuAction[] = [...actions, ...turnInto].filter((entry) => !entry.disabled);
 
@@ -32,9 +33,11 @@ export function DefaultBlockMenu({
     const menu = ref.current;
 
     if (menu)
-      setFlip(
-        position.y + menu.offsetHeight > window.innerHeight && position.y - menu.offsetHeight > 0,
-      );
+      setFit({
+        flip:
+          position.y + menu.offsetHeight > window.innerHeight && position.y - menu.offsetHeight > 0,
+        height: menu.offsetHeight,
+      });
   }, [position.y]);
 
   const move = (delta: number) => {
@@ -92,7 +95,11 @@ export function DefaultBlockMenu({
           8,
           Math.min(position.x, window.innerWidth - (ref.current?.offsetWidth ?? 232) - 8),
         ),
-        top: flip ? Math.max(8, position.y - (ref.current?.offsetHeight ?? 0) - 32) : position.y,
+        // Снизу от ручки не помещается, а сверху тоже: меню сдвигается вверх, чтобы целиком остаться в окне.
+        top: flip
+          ? Math.max(8, position.y - height - 32)
+          : Math.max(8, Math.min(position.y, window.innerHeight - height - 8)),
+        maxHeight: `min(60vh, ${window.innerHeight - 16}px)`,
       }}
       onKeyDown={(event) => {
         if (event.key === 'ArrowDown') {
