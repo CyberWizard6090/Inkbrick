@@ -680,6 +680,53 @@ test.describe('Table design on a phone', () => {
       await expect(page.locator('[data-inkbrick-part="table-grip"]')).toHaveCount(0);
     });
 
+    test('on a phone the menus are bottom sheets: a backdrop closes them, a nested panel stacks with Back', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+      const menu = page.locator('[data-testid="context-menu"]');
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await expect(menu).toBeVisible();
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(350);
+
+      // Лист: во всю ширину, прижат к низу окна, за ним затемнение.
+      expect(await menu.getAttribute('data-sheet')).not.toBeNull();
+      const box = (await menu.boundingBox())!;
+      const size = page.viewportSize()!;
+
+      expect(box.x).toBe(0);
+      expect(Math.round(box.width)).toBe(size.width);
+      expect(Math.round(box.y + box.height)).toBe(size.height);
+      await expect(page.locator('[data-inkbrick-part="sheet-backdrop"]')).toBeVisible();
+
+      // Вложенная панель — второй лист с кнопкой «Назад».
+      await menu
+        .locator('[data-action="table-cell-borders"]')
+        .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await menu.locator('[data-action="table-cell-borders"]').tap();
+
+      const flyout = page.locator('[data-inkbrick-part="flyout"]');
+
+      await expect(flyout).toBeVisible();
+      await flyout.locator('[data-inkbrick-part="sheet-back"]').tap();
+      await expect(flyout).toHaveCount(0);
+      await expect(menu).toBeVisible();
+
+      // Касание затемнения закрывает меню и не доходит до документа: выделение остаётся.
+      await page.touchscreen.tap(size.width / 2, 40);
+      await expect(menu).toHaveCount(0);
+      expect(await picked(page)).toBe(1);
+    });
+
     test('the cell menu with the table sections fits the screen and has big enough buttons', async ({
       page,
     }) => {

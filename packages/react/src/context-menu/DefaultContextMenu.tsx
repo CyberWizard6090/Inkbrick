@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import type { ContextMenuItem, ContextMenuProps } from './types';
@@ -16,6 +17,7 @@ const MARGIN = 8;
 
 export function DefaultContextMenu({ position, formatting, items, onClose }: ContextMenuProps) {
   const t = useT();
+  const { sheet, inset } = useSheet();
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState({ left: position.x, top: position.y });
   // Меню открылось над точкой клика: при появлении оно выезжает снизу.
@@ -25,7 +27,8 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
   useLayoutEffect(() => {
     const menu = ref.current;
 
-    if (!menu) return;
+    // Лист снизу экрана положения не считает.
+    if (!menu || sheet) return;
 
     const width = menu.offsetWidth;
     const height = menu.offsetHeight;
@@ -38,7 +41,7 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
       left: Math.max(MARGIN, Math.min(left, window.innerWidth - width - MARGIN)),
       top: Math.max(MARGIN, Math.min(top, window.innerHeight - height - MARGIN)),
     });
-  }, [position.x, position.y, formatting !== null]);
+  }, [position.x, position.y, formatting !== null, sheet]);
 
   // Без кнопок форматирования фокус — на первом пункте, чтобы меню работало со стрелок.
   useEffect(() => {
@@ -65,39 +68,57 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
   };
 
   return (
-    <div
-      ref={ref}
-      className="inkbrick-context-menu"
-      data-inkbrick-ui="context-menu"
-      data-testid="context-menu"
-      data-side={above ? 'top' : 'bottom'}
-      role="menu"
-      aria-label={t('contextMenu.label')}
-      style={place}
-      // Клик по меню не уводит выделение из документа (кроме поля ссылки внутри кнопок форматирования).
-      onMouseDown={(event) => {
-        if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
-      }}
-      onContextMenu={(event) => event.preventDefault()}
-      onKeyDown={(event) => {
-        if (event.target instanceof HTMLInputElement) return;
+    <>
+      {sheet && <SheetBackdrop onClose={onClose} />}
+      <div
+        ref={ref}
+        className="inkbrick-context-menu"
+        data-inkbrick-ui="context-menu"
+        data-testid="context-menu"
+        data-side={above ? 'top' : 'bottom'}
+        data-sheet={sheet || undefined}
+        role="menu"
+        aria-label={t('contextMenu.label')}
+        style={sheet ? { bottom: inset } : place}
+        // Клик по меню не уводит выделение из документа (кроме поля ссылки внутри кнопок форматирования).
+        onMouseDown={(event) => {
+          if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
+        }}
+        onContextMenu={(event) => event.preventDefault()}
+        onKeyDown={(event) => {
+          if (event.target instanceof HTMLInputElement) return;
 
-        if (event.key === 'ArrowDown') {
-          event.preventDefault();
-          move(1);
-        } else if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          move(-1);
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          onClose();
-        }
-      }}
-    >
-      {formatting}
-      {formatting && items.length > 0 && <div data-inkbrick-part="separator" role="separator" />}
-      <MenuList items={items} onRun={run} />
-    </div>
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            move(1);
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            move(-1);
+          } else if (event.key === 'Escape') {
+            event.preventDefault();
+            onClose();
+          }
+        }}
+      >
+        {formatting}
+        {formatting && items.length > 0 && <div data-inkbrick-part="separator" role="separator" />}
+        <MenuList items={items} onRun={run} />
+      </div>
+    </>
+  );
+}
+
+/** Затемнение за листом: касание по нему закрывает меню и не доходит до документа под ним. */
+export function SheetBackdrop({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      data-inkbrick-ui="context-menu"
+      data-inkbrick-block-ui
+      data-inkbrick-part="sheet-backdrop"
+      aria-hidden="true"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClose}
+    />
   );
 }
 
@@ -277,6 +298,7 @@ function Flyout({
   onRun: (item: ContextMenuItem) => void;
 }) {
   const t = useT();
+  const { sheet, inset } = useSheet();
   const ref = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<{
     left: number;
@@ -289,7 +311,8 @@ function Flyout({
     const panel = ref.current;
     const row = anchor.current?.getBoundingClientRect();
 
-    if (!panel || !row) return;
+    // Лист снизу экрана положения не считает.
+    if (!panel || !row || sheet) return;
 
     const width = panel.offsetWidth;
     const height = panel.offsetHeight;
@@ -320,14 +343,14 @@ function Flyout({
       maxWidth: fitted < width ? fitted : undefined,
       maxHeight: height > maxHeight ? maxHeight : undefined,
     });
-  }, [anchor]);
+  }, [anchor, sheet]);
 
   useEffect(() => {
     // Панель скрыта, пока не получила позицию (см. `place`): фокус ставим только после этого.
-    if (!focusFirst || !place) return;
+    if (!focusFirst || (!place && !sheet)) return;
 
     ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
-  }, [focusFirst, place]);
+  }, [focusFirst, place, sheet]);
 
   const move = (delta: number) => {
     const entries = [...(ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
@@ -361,18 +384,23 @@ function Flyout({
       data-inkbrick-ui="context-menu"
       data-inkbrick-part="flyout"
       data-flyout={item.id}
+      data-sheet={sheet || undefined}
       role="menu"
       aria-label={item.title || t('contextMenu.label')}
-      style={{
-        left: place?.left ?? 0,
-        top: place?.top ?? 0,
-        maxWidth: place?.maxWidth,
-        // `min-width` из стилей меню не должен перебивать сужение под окно.
-        minWidth: place?.maxWidth !== undefined ? 0 : undefined,
-        maxHeight: place?.maxHeight,
-        overflowY: place?.maxHeight !== undefined ? 'auto' : undefined,
-        visibility: place ? undefined : 'hidden',
-      }}
+      style={
+        sheet
+          ? { bottom: inset }
+          : {
+              left: place?.left ?? 0,
+              top: place?.top ?? 0,
+              maxWidth: place?.maxWidth,
+              // `min-width` из стилей меню не должен перебивать сужение под окно.
+              minWidth: place?.maxWidth !== undefined ? 0 : undefined,
+              maxHeight: place?.maxHeight,
+              overflowY: place?.maxHeight !== undefined ? 'auto' : undefined,
+              visibility: place ? undefined : 'hidden',
+            }
+      }
       onMouseDown={(event) => {
         if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
       }}
@@ -381,6 +409,13 @@ function Flyout({
       onClick={(event) => event.stopPropagation()}
       onKeyDown={keys}
     >
+      {sheet && (
+        // Лист поверх листа: заголовок раздела и «Назад» к родительскому меню.
+        <button type="button" data-inkbrick-part="sheet-back" onClick={onBack}>
+          <Icon name="arrow-left" />
+          <span>{item.title || t('contextMenu.label')}</span>
+        </button>
+      )}
       {item.submenu ? <MenuList items={item.submenu} onRun={onRun} /> : item.flyout}
     </div>
   );

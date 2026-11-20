@@ -262,6 +262,54 @@ test.describe('Table controls', () => {
     }
   });
 
+  test('every stretch of a column border has its own width handle next to merged cells', async ({
+    page,
+  }) => {
+    // Пять строк, строки 2–3 объединены по двум столбцам: граница столбца 0 есть в строках 0–1 и в строке 4.
+    await page.evaluate(() => {
+      const { editor } = (window as never as { __inkbrick: { main: { editor: never } } }).__inkbrick
+        .main as never as {
+        editor: {
+          document: { rootId: string; getBlock: (id: string) => never };
+          dispatch: (intent: unknown) => unknown;
+        };
+      };
+      let found = '';
+      const walk = (block: { flavour: string; id: string; children: string[] } | undefined) => {
+        if (!block || found) return;
+        if (block.flavour === 'block:table') found = block.id;
+        block.children.forEach((id) => walk(editor.document.getBlock(id)));
+      };
+
+      walk(editor.document.getBlock(editor.document.rootId));
+      editor.dispatch({ type: 'insertTableRow', payload: { blockId: found, index: 3 } });
+      editor.dispatch({ type: 'insertTableRow', payload: { blockId: found, index: 4 } });
+      editor.dispatch({
+        type: 'mergeTableCells',
+        payload: { blockId: found, range: { top: 2, bottom: 3, left: 0, right: 1 } },
+      });
+    });
+    await hover(page, 0, 2);
+
+    const handles = await page.locator(part('resize')).evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const box = node.getBoundingClientRect();
+
+        return {
+          x: Math.round(box.left),
+          top: Math.round(box.top),
+          height: Math.round(box.height),
+        };
+      }),
+    );
+    const first = handles[0].x;
+    const onFirstBorder = handles.filter((handle) => Math.abs(handle.x - first) < 3);
+
+    // Два участка границы — две ручки: одна наверху, другая под объединением.
+    expect(onFirstBorder).toHaveLength(2);
+    expect(onFirstBorder[1].top).toBeGreaterThan(onFirstBorder[0].top + onFirstBorder[0].height);
+  });
+
   test('the handles do not lag behind the table while the page scrolls', async ({ page }) => {
     // Страница с запасом высоты: ручки стоят по `position: fixed` и должны ехать вместе с таблицей без отставания.
     await page.locator('.playground-content').evaluate((node) => {

@@ -55,6 +55,8 @@ interface Layout {
   readonly cell: Box;
   /** Правые края столбцов (по ячейкам первой строки). */
   readonly edges: readonly Edge[];
+  /** Все участки границ столбцов: у объединённых ячеек граница лежит кусками, и у каждого куска своя ручка. */
+  readonly segments: readonly (Edge & { column: number })[];
   /** Рамка выделения (телефон): прямоугольник выделенных ячеек, а без выделения — ячейка с кареткой. */
   readonly frame: Box;
 }
@@ -124,7 +126,10 @@ interface Edge {
  * номер ячейки — это столбец; объединённая ячейка даёт границу только своего последнего столбца. Участок — самая длинная
  * непрерывная цепочка строк с такой границей: ручка не лежит поверх текста объединённых ячеек.
  */
-function columnEdges(table: HTMLTableElement): Edge[] {
+function columnEdges(table: HTMLTableElement): {
+  edges: Edge[];
+  segments: (Edge & { column: number })[];
+} {
   const columns = table.rows[0]?.cells.length ?? 0;
   const found: { x: number; top: number; bottom: number }[][] = Array.from(
     { length: columns },
@@ -144,9 +149,10 @@ function columnEdges(table: HTMLTableElement): Edge[] {
   }
 
   const bounds = table.getBoundingClientRect();
+  const all: (Edge & { column: number })[] = [];
   let previous = bounds.left;
 
-  return found.map((segments) => {
+  const edges = found.map((segments, column) => {
     const runs: { x: number; top: number; bottom: number }[] = [];
 
     for (const segment of segments.sort((a, b) => a.top - b.top)) {
@@ -156,7 +162,12 @@ function columnEdges(table: HTMLTableElement): Edge[] {
       else runs.push({ ...segment });
     }
 
-    const best = runs.sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
+    // Ручка на каждом участке границы: объединение внизу не должно оставлять без ручки верхние строки.
+    for (const run of runs)
+      if (run.bottom - run.top >= MIN_SEGMENT)
+        all.push({ column, x: run.x, top: run.top, height: run.bottom - run.top });
+
+    const best = [...runs].sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
 
     previous = best?.x ?? previous;
 
@@ -164,7 +175,12 @@ function columnEdges(table: HTMLTableElement): Edge[] {
       ? { x: best.x, top: best.top, height: best.bottom - best.top }
       : { x: previous, top: bounds.top, height: bounds.height };
   });
+
+  return { edges, segments: all };
 }
+
+/** Участок границы короче этого не получает ручки: под палец он слишком мал. */
+const MIN_SEGMENT = 16;
 
 /**
  * Прямоугольник выделенных ячеек: хватает ячеек по периметру диапазона (скрытые ячейки объединений пропускаются, а их
@@ -213,7 +229,7 @@ function measure(table: HTMLTableElement, position: Position, range?: TableRange
     grid: boxOf(table),
     row: boxOf(row),
     cell: boxOf(cell),
-    edges: columnEdges(table),
+    ...columnEdges(table),
     frame: (range && rangeBox(table, range)) || boxOf(cell),
   };
 }
@@ -1099,7 +1115,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     document.addEventListener('pointercancel', finish);
   };
 
-  const { table, row, cell, edges } = layout;
+  const { table, row, cell, edges, segments } = layout;
   // Угловая ручка стоит справа от таблицы, но не правее окна.
   const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
   // Палец: плашки крупнее (см. ui.css), а маркеры вставки (18 px вместо 10) остаются на одной оси с ними:
@@ -1235,35 +1251,42 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
       />
-      {edges.map((edge, column) => (
-        <div
-          {...control}
-          key={column}
-          role="separator"
-          aria-orientation="vertical"
-          // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
-          aria-valuenow={Math.round(
-            edge.x - (column === 0 ? layout.grid.left : edges[column - 1].x),
-          )}
-          aria-valuemin={MIN_WIDTH}
-          aria-valuemax={MAX_WIDTH}
-          aria-label={t('table.resize', { column: column + 1 })}
-          tabIndex={0}
-          data-inkbrick-part="resize"
-          style={{ left: edge.x - 3, top: edge.top, height: edge.height }}
-          onPointerDown={(event) => resize(column, event)}
-          onKeyDown={(event) => resizeByKey(column, event)}
-          onDoubleClick={() => {
-            if (
-              can('setTableColumnWidth', { index: column, width: null }) &&
-              props.widths?.[column]
-            )
-              perform(() => {
-                run('setTableColumnWidth', { index: column, width: null });
-              });
-          }}
-        />
-      ))}
+      {segments.map(({ column, x, top, height }, order) => {
+        const edge = edges[column];
+        // Первый участок границы — фокусируемый разделитель, остальные только для мыши и пальца.
+        const first = order === 0 || segments[order - 1].column !== column;
+
+        return (
+          <div
+            {...control}
+            key={`${column}:${Math.round(top)}`}
+            role="separator"
+            aria-orientation="vertical"
+            // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
+            aria-valuenow={Math.round(
+              edge.x - (column === 0 ? layout.grid.left : edges[column - 1].x),
+            )}
+            aria-valuemin={MIN_WIDTH}
+            aria-valuemax={MAX_WIDTH}
+            aria-label={t('table.resize', { column: column + 1 })}
+            tabIndex={first ? 0 : -1}
+            aria-hidden={first ? undefined : true}
+            data-inkbrick-part="resize"
+            style={{ left: x - 3, top, height }}
+            onPointerDown={(event) => resize(column, event)}
+            onKeyDown={(event) => resizeByKey(column, event)}
+            onDoubleClick={() => {
+              if (
+                can('setTableColumnWidth', { index: column, width: null }) &&
+                props.widths?.[column]
+              )
+                perform(() => {
+                  run('setTableColumnWidth', { index: column, width: null });
+                });
+            }}
+          />
+        );
+      })}
       {coarse && !menu && !sizing && (picked || caretPosition) && (
         <>
           {/* Рамка выделения и точка на её углу (как в Notion на телефоне): точку тянут, чтобы выделить несколько ячеек. */}

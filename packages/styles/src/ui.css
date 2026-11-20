@@ -2587,6 +2587,94 @@
   }
 
   /*
+   * Телефон: меню — лист снизу экрана (как в Notion). Окошко у пальца закрывало таблицу и вылезало за край, а лист стоит
+   * на всю ширину под ней, поверх затемнения, которое закрывает меню касанием. Атрибут `data-sheet` ставят сами меню, когда
+   * основной указатель — палец и окно узкое (см. `useSheet`); положение листа (`bottom`) поднимает над экранной клавиатурой.
+   * Блок идёт после правил самих меню: у всех специфичность 0, побеждает более поздний.
+   */
+  :where(
+    [data-inkbrick-ui='context-menu'][data-sheet],
+    [data-inkbrick-ui='block-menu'][data-sheet]
+  ) {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: var(--inkbrick-z-menu);
+    box-sizing: border-box;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    max-height: min(72dvh, 560px);
+    margin: 0;
+    padding: 8px 8px max(12px, env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 32px rgb(0 0 0 / 28%);
+    animation: inkbrick-sheet-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* Вложенная панель — второй лист поверх первого. */
+  :where([data-inkbrick-part='flyout'][data-sheet]) {
+    z-index: calc(var(--inkbrick-z-menu) + 1);
+    max-height: min(80dvh, 640px);
+  }
+
+  /* Полоска-захват сверху листа. */
+  :where(
+    [data-inkbrick-ui='context-menu'][data-sheet]::before,
+    [data-inkbrick-ui='block-menu'][data-sheet]::before
+  ) {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 2px auto 10px;
+    border-radius: 2px;
+    background: var(--inkbrick-stroke-2);
+  }
+
+  :where([data-inkbrick-part='sheet-backdrop']) {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--inkbrick-z-menu) - 1);
+    width: auto;
+    min-width: 0;
+    max-height: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: rgb(0 0 0 / 38%);
+    box-shadow: none;
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='sheet-back']) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    margin: 0 0 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    font-weight: var(--inkbrick-font-weight-semibold);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  @keyframes inkbrick-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  /*
    * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
    * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
    */
@@ -2600,6 +2688,7 @@
     :where([data-inkbrick-ui='context-menu']),
     :where([data-inkbrick-ui='toolbar']),
     :where([data-inkbrick-ui='palette-backdrop']),
+    :where([data-inkbrick-part='sheet-backdrop']),
     :where([data-inkbrick-ui='palette']),
     :where([data-inkbrick-ui='find']),
     :where([data-inkbrick-ui='formula-popover']),
