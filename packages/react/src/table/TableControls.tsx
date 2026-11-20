@@ -18,6 +18,7 @@ import {
   tableCellAt,
   tableSize,
   type CaretResult,
+  type TableRange,
 } from '@inkbrick/engine';
 
 import type { BlockMenuAction } from '../block-handle/types';
@@ -54,6 +55,8 @@ interface Layout {
   readonly cell: Box;
   /** Правые края столбцов (по ячейкам первой строки). */
   readonly edges: readonly Edge[];
+  /** Рамка выделения (телефон): прямоугольник выделенных ячеек, а без выделения — ячейка с кареткой. */
+  readonly frame: Box;
 }
 
 interface MenuState {
@@ -78,6 +81,8 @@ const MIN_WIDTH = 40;
 /** Внешняя граница таблицы с border-collapse: один пиксель сверх ширин столбцов. */
 const BORDER_PIXEL = 1;
 const MAX_WIDTH = 1200;
+/** Насколько выше и левее точки рамки берётся ячейка под пальцем (палец закрывает саму точку). */
+const KNOB_REACH = 14;
 const KEY_STEP = 10;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -161,7 +166,42 @@ function columnEdges(table: HTMLTableElement): Edge[] {
   });
 }
 
-function measure(table: HTMLTableElement, position: Position): Layout | null {
+/**
+ * Прямоугольник выделенных ячеек: хватает ячеек по периметру диапазона (скрытые ячейки объединений пропускаются, а их
+ * видимая верхняя левая ячейка занимает всю площадь объединения).
+ */
+function rangeBox(table: HTMLTableElement, range: TableRange): Box | null {
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  const add = (cell: HTMLTableCellElement | undefined) => {
+    if (!cell || cell.hidden) return;
+
+    const box = cell.getBoundingClientRect();
+
+    if (box.width === 0) return;
+
+    left = Math.min(left, box.left);
+    top = Math.min(top, box.top);
+    right = Math.max(right, box.right);
+    bottom = Math.max(bottom, box.bottom);
+  };
+
+  for (let column = range.left; column <= range.right; column++) {
+    add(table.rows[range.top]?.cells[column]);
+    add(table.rows[range.bottom]?.cells[column]);
+  }
+
+  for (let row = range.top; row <= range.bottom; row++) {
+    add(table.rows[row]?.cells[range.left]);
+    add(table.rows[row]?.cells[range.right]);
+  }
+
+  return Number.isFinite(left) ? { left, top, width: right - left, height: bottom - top } : null;
+}
+
+function measure(table: HTMLTableElement, position: Position, range?: TableRange): Layout | null {
   const row = table.rows[position.row];
   const cell = row?.cells[position.column];
   const first = table.rows[0];
@@ -174,6 +214,7 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
     row: boxOf(row),
     cell: boxOf(cell),
     edges: columnEdges(table),
+    frame: (range && rangeBox(table, range)) || boxOf(cell),
   };
 }
 
@@ -280,6 +321,16 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const caretPosition: Position | null = caret
     ? { row: Number(caret.split(':')[0]), column: Number(caret.split(':')[1]) }
     : null;
+  // Выделенные ячейки этой таблицы: рамка с точкой (телефон) обводит их и позволяет расширить протяжкой.
+  const picked = useSyncExternalStore(
+    view.cells.subscribe,
+    () => {
+      const current = view.cells.get();
+
+      return current?.tableId === block.id ? current : null;
+    },
+    () => null,
+  );
   const otherHovered = useSyncExternalStore(
     subscribeHovered,
     () => hoveredTable !== null && hoveredTable !== block.id,
@@ -295,7 +346,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   // Положение элементов берётся из раскладки после каждой отрисовки; размер таблицы и прокрутка вызывают её заново.
   useLayoutEffect(() => {
     const table = tableRef.current;
-    const next = table && active ? measure(table, active) : null;
+    const next = table && active ? measure(table, active, picked?.range) : null;
 
     setLayout((previous) => (sameLayout(previous, next) ? previous : next));
   });
@@ -995,6 +1046,50 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     setSizing({ ...sizing, value: sizingBase.current[sizing.column] ?? sizing.value });
   };
 
+  /**
+   * Телефон: точка на углу рамки. Её тянут пальцем — выделение расширяется до ячейки под пальцем (начало — ячейка с
+   * кареткой или якорь выделения), а после отпускания открывается меню ячеек.
+   */
+  const dragKnob = (event: ReactPointerEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const { pointerId } = event;
+    const anchor = picked ? picked.anchor : { row: active.row, column: active.column };
+
+    frozen.current = true;
+    selectTableCells(editor, view, block.id, anchor, picked ? picked.head : anchor);
+
+    const move = (moved: PointerEvent) => {
+      if (moved.pointerId !== pointerId) return;
+
+      // Палец закрывает ячейку под точкой: голова — ячейка чуть выше и левее неё, внутри рамки.
+      const under = document
+        .elementsFromPoint(moved.clientX - KNOB_REACH, moved.clientY - KNOB_REACH)
+        .find((element) => element.matches('[data-inkbrick-block="table-cell"]'));
+      const id = under?.getAttribute('data-block-id');
+      const found = id ? locateTableCell(getBlock, id) : undefined;
+
+      if (found?.tableId === block.id)
+        selectTableCells(editor, view, block.id, anchor, { row: found.row, column: found.column });
+    };
+    const finish = (ended: PointerEvent) => {
+      if (ended.pointerId !== pointerId) return;
+
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', finish);
+      document.removeEventListener('pointercancel', finish);
+      frozen.current = false;
+
+      if (ended.type === 'pointerup' && view.cells.get()?.tableId === block.id)
+        view.contextMenu.open(Math.round(ended.clientX), Math.round(ended.clientY));
+    };
+
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', finish);
+    document.addEventListener('pointercancel', finish);
+  };
+
   const { table, row, cell, edges } = layout;
   // Угловая ручка стоит справа от таблицы, но не правее окна.
   const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
@@ -1004,6 +1099,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const gripInset = coarse ? 12 : 6;
   const rowInsertGap = coarse ? 15 : 19;
   const columnInsertRise = coarse ? 17 : 20;
+  // У последнего столбца правый маркер вставки (18 px) лежал бы поверх угловой ручки, которая жмётся к краю окна:
+  // на пальце он сдвигается внутрь таблицы.
+  const lastEndShift = coarse && active.column === size.columns - 1 ? 12 : 0;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
   const control = {
     'data-inkbrick-ui': 'table-controls',
@@ -1121,7 +1219,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.column.insertRight')}
         title={t('table.column.insertRight')}
         disabled={!canAddColumn}
-        style={{ left: cell.left + cell.width - 5, top: edgeTop(table.top - columnInsertRise) }}
+        style={{
+          left: cell.left + cell.width - 5 - lastEndShift,
+          top: edgeTop(table.top - columnInsertRise),
+        }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
       />
       {edges.map((edge, column) => (
@@ -1153,6 +1254,33 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           }}
         />
       ))}
+      {coarse && !menu && !sizing && (picked || caretPosition) && (
+        <>
+          {/* Рамка выделения и точка на её углу (как в Notion на телефоне): точку тянут, чтобы выделить несколько ячеек. */}
+          <div
+            {...control}
+            aria-hidden="true"
+            data-inkbrick-part="cell-frame"
+            style={{
+              left: layout.frame.left - 1,
+              top: layout.frame.top - 1,
+              width: layout.frame.width + 2,
+              height: layout.frame.height + 2,
+            }}
+          />
+          <button
+            {...control}
+            type="button"
+            data-inkbrick-part="cell-knob"
+            aria-label={t('table.selection.extend')}
+            style={{
+              left: layout.frame.left + layout.frame.width - 11,
+              top: layout.frame.top + layout.frame.height - 11,
+            }}
+            onPointerDown={dragKnob}
+          />
+        </>
+      )}
       {menu && (
         <Menu
           block={block}

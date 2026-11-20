@@ -96,7 +96,10 @@ test.describe('Table style gallery and borders', () => {
     await expect.poll(() => tableStyle(page)).toBe('green');
     expect(await modelStyle(page)).toBe('green');
 
-    // Один шаг undo.
+    // Меню остаётся открытым (стили пробуют один за другим); Esc возвращает фокус в документ, и undo — один шаг.
+    await expect(page.locator(blockMenu)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator(blockMenu)).toHaveCount(0);
     await page.keyboard.press('Control+z');
     await expect.poll(() => modelStyle(page)).toBeNull();
   });
@@ -131,6 +134,8 @@ test.describe('Table style gallery and borders', () => {
     // Толщина и цвет сразу меняют существующие линии: ничего больше нажимать не нужно.
     await openTableMenu(page);
     await page.locator('[data-action="table-border-width-thick"]').click();
+    // Толщина, начертание и цвет оставляют меню открытым: их пробуют подряд.
+    await expect(page.locator(blockMenu)).toBeVisible();
 
     for (const index of [0, 4, 8]) {
       for (const side of ['top', 'right', 'bottom', 'left']) {
@@ -140,16 +145,15 @@ test.describe('Table style gallery and borders', () => {
 
     expect((await cellStyle(page, 4)).borderTopWidth).toBe('3px');
 
-    await openTableMenu(page);
     await page.locator('[data-action="table-border-style-dashed"]').click();
     expect(await page.locator(cells).nth(4).getAttribute('data-border-style')).toBe('dashed');
 
-    await openTableMenu(page);
     await page.locator('[data-action="table-border-color-red"]').click();
     expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
 
-    await openTableMenu(page);
+    // Кнопка расположения линий применяется один раз и закрывает меню.
     await page.locator('[data-action="table-border-none"]').click();
+    await expect(page.locator(blockMenu)).toHaveCount(0);
 
     expect(await cellBorder(page, 4, 'top')).toBe('none');
     expect(await cellBorder(page, 0, 'left')).toBe('none');
@@ -277,7 +281,7 @@ test.describe('Table style gallery and borders', () => {
     const pick = async (color: string) => {
       await openTableMenu(page);
       await page.locator(`[data-action="table-border-color-${color}"]`).click();
-      await openTableMenu(page);
+      // Цвет оставил меню открытым: расположение линий выбирается в нём же.
       await page.locator('[data-action="table-border-all"]').click();
     };
 
@@ -547,8 +551,9 @@ test.describe('Table design on a phone', () => {
       ).toBeGreaterThanOrEqual(44);
     }
 
-    // Толщина меняет линии сразу и закрывает меню.
+    // Толщина меняет линии сразу, меню остаётся открытым.
     await menu.locator('[data-action="table-border-width-thick"]').tap();
+    await expect(menu).toBeVisible();
 
     expect(await cellBorder(page, 4, 'top')).toBe('thick');
   });
@@ -575,5 +580,171 @@ test.describe('Table design on a phone', () => {
         }),
       )
       .toBe(true);
+  });
+
+  // Касания с настоящей задержкой и протяжкой: только Chromium (CDP).
+  test.describe('with a finger', () => {
+    test.skip(({ browserName }) => browserName !== 'chromium', 'CDP touch events');
+
+    const finger = async (page: Page) => {
+      const cdp = await page.context().newCDPSession(page);
+      const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 0 }],
+        });
+
+      return {
+        down: (x: number, y: number) => send('touchStart', x, y),
+        move: (x: number, y: number) => send('touchMove', x, y),
+        up: () => send('touchEnd'),
+      };
+    };
+    const centre = async (page: Page, index: number) => {
+      const box = (await page.locator(cells).nth(index).boundingBox())!;
+
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const picked = (page: Page) => page.locator(`${cells}[data-cell-selected]`).count();
+
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/?lang=en');
+      await insertTable(page);
+      // Каретка в таблице не нужна: начинаем с пустого выделения.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    });
+
+    test('a long press selects a cell, a drag extends it and the cell menu opens on release', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const from = await centre(page, 0);
+      const to = await centre(page, 4);
+
+      await touch.down(from.x, from.y);
+      await page.waitForTimeout(700);
+      expect(await picked(page)).toBe(1);
+
+      await touch.move((from.x + to.x) / 2, (from.y + to.y) / 2);
+      await touch.move(to.x, to.y);
+      await expect.poll(() => picked(page)).toBe(4);
+      // Страница при протяжке не прокручивается.
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+      await touch.up();
+      await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+    });
+
+    test('a quick tap and a finger that scrolls select nothing', async ({ page }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(100);
+      await touch.up();
+      await page.waitForTimeout(600);
+      expect(await picked(page)).toBe(0);
+
+      await touch.down(at.x, at.y);
+      await touch.move(at.x, at.y + 40);
+      await page.waitForTimeout(700);
+      await touch.up();
+      expect(await picked(page)).toBe(0);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+    });
+
+    test('a tap shows a frame with a knob; dragging the knob selects a rectangle', async ({
+      page,
+    }) => {
+      await page.locator(cells).nth(4).tap();
+
+      const knob = page.locator('[data-inkbrick-part="cell-knob"]');
+
+      await expect(page.locator('[data-inkbrick-part="cell-frame"]')).toBeVisible();
+      await expect(knob).toBeVisible();
+
+      const handle = (await knob.boundingBox())!;
+      const last = (await page.locator(cells).nth(8).boundingBox())!;
+      const touch = await finger(page);
+
+      await touch.down(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await touch.move(last.x + last.width - 4, last.y + last.height - 4);
+      await expect.poll(() => picked(page)).toBe(4);
+      await touch.up();
+      await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+    });
+
+    test('the corner handle selects every cell and opens the table menu on a tap', async ({
+      page,
+    }) => {
+      await page.locator(cells).nth(4).tap();
+      await page.locator('[data-inkbrick-part="table-grip"]').tap();
+
+      expect(await picked(page)).toBe(9);
+      await expect(page.locator(blockMenu)).toBeVisible();
+    });
+
+    test('the width slider resizes the column live and writes one undo step on release', async ({
+      page,
+    }) => {
+      const width = (index: number) =>
+        page
+          .locator(cells)
+          .nth(index)
+          .evaluate((node) => Math.round(node.getBoundingClientRect().width));
+      const model = () =>
+        page.evaluate(() => {
+          const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+            .__inkbrick.main as never as {
+            editor: { document: { rootId: string; getBlock: (id: string) => never } };
+          };
+          let found: { props: { widths?: number[] } } | undefined;
+          const walk = (
+            block: { flavour: string; children: string[]; props: never } | undefined,
+          ) => {
+            if (!block || found) return;
+            if (block.flavour === 'block:table') found = block as never;
+            block.children.forEach((id) => walk(editor.document.getBlock(id)));
+          };
+
+          walk(editor.document.getBlock(editor.document.rootId));
+
+          return found?.props.widths ?? null;
+        });
+
+      await page.locator(cells).nth(1).tap();
+      await page.locator('[data-inkbrick-part="column-grip"]').first().tap();
+      await page.locator('[data-action="column-width-slider"]').tap();
+
+      const bar = page.locator('[data-inkbrick-ui="column-width-bar"]');
+      const slider = bar.locator('input[type="range"]');
+
+      await expect(bar).toBeVisible();
+
+      const before = await width(1);
+      const box = (await slider.boundingBox())!;
+      const touch = await finger(page);
+      const y = box.y + box.height / 2;
+      const min = Number(await slider.getAttribute('min'));
+      const max = Number(await slider.getAttribute('max'));
+      const start = box.x + box.width * ((Number(await slider.inputValue()) - min) / (max - min));
+
+      await touch.down(start, y);
+      await touch.move(start + 30, y);
+      await touch.move(start + 60, y);
+
+      // Живой предпросмотр: столбец уже шире, а документ ещё не записан.
+      await expect.poll(() => width(1)).toBeGreaterThan(before + 10);
+      expect(await model()).toBeNull();
+
+      await touch.up();
+      await expect.poll(model).not.toBeNull();
+
+      // «Готово» закрывает панель, одна отмена возвращает ширины.
+      await bar.locator('[data-action="column-width-done"]').tap();
+      await expect(bar).toHaveCount(0);
+      await page.getByRole('button', { name: /Undo/ }).tap();
+      await expect.poll(model).toBeNull();
+    });
   });
 });

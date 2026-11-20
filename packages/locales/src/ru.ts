@@ -193,6 +193,7 @@ export const ru: Messages = {
   'table.column.freezeOff': 'Открепить первый столбец',
   'table.row.headerOn': 'Сделать первую строку заголовком',
   'table.row.headerOff': 'Сделать первую строку обычной',
+  'table.selection.extend': 'Потяните, чтобы выделить больше ячеек',
   'table.width.label': 'Ширина столбца {column}',
   'table.width.auto': 'По содержимому',
   'table.width.fit': 'По содержимому',

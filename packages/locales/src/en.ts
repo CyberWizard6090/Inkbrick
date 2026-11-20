@@ -195,6 +195,7 @@ export const en = {
   'table.column.freezeOff': 'Stop keeping first column in view',
   'table.row.headerOn': 'Make first row a header',
   'table.row.headerOff': 'Make first row a regular row',
+  'table.selection.extend': 'Drag to select more cells',
   'table.width.label': 'Column {column} width',
   'table.width.auto': 'Fit content',
   'table.width.fit': 'Fit content',

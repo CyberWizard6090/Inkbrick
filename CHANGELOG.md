@@ -174,6 +174,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   nested block of a toggle, and blocks drawn for the first time, appear at once.
 
 - Tables on a phone (`docs/tables.md`, «На телефоне»): a long press (0.45 s) on a cell selects it with a short vibration and holds the page still, dragging the finger extends the selection to a rectangle, and releasing opens the cell menu (formatting, cut/copy/paste, rows, columns, width, borders, background). The corner handle taps select all cells and open the table menu (there is no right button). The column menu has «Column width…», a bar at the bottom of the window with a slider that resizes the column live (one undo step when the finger is lifted), −/+ buttons for one pixel and «Fit content». The browser's own long-press menu and the synthetic mouse events that follow are suppressed while a cell is held.
+- Tables on a phone, selection frame: a tap in a cell shows a blue frame around it (or around the selected cells) with a knob on its bottom right corner, as in Notion. Dragging the knob extends the selection to the cell under the finger (the page does not scroll) and releasing it opens the cell menu. It adds to the long press, which stays.
 
 ### Fixed
 
@@ -201,6 +202,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Undo after a row was added with Tab puts the caret back in the cell it started from instead of dropping it out of the table (`caretBefore` in a command payload reports where the caret was); after other table commands (insert markers, menu items) it lands in the first cell of the table when the recorded caret points at the table itself.
 
 ### Changed
+
+- The block handle of a table is a single grip above the top left corner of the grid (a «+» is not shown for a table): it never covers the text of a cell or the row handle, so it also works in a narrow window, where it used to be hidden. Dragging moves the block and a click or tap opens the block menu.
 
 - Контекстное меню ячейки: фон, границы и стиль таблицы — вложенными меню, как в офисных редакторах («Фон ячейки» с круглыми образцами и своим цветом, «Границы ячеек» с толщиной, стилем и цветом границ, «Стиль таблицы»). Пункты меню могут нести `submenu`, `flyout` и `checked`.
 - Толщина, начертание и цвет границ сразу меняют существующие линии выделенных ячеек (режим `keep` команды `setTableCellsBorders`); раньше они только запоминались и действовали после нажатия на расположение границы.

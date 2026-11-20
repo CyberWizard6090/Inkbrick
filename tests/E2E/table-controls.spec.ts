@@ -228,16 +228,38 @@ test.describe('Table controls', () => {
     expect(Math.abs(undone.width - before.width)).toBeLessThan(2);
   });
 
-  test('the block tab sits left of the row handle: they never overlap', async ({ page }) => {
-    // Первая строка: язычок блока стоит на её высоте, плашка строки — ровно там же, но правее.
+  test('the block handle is a single grip above the top left corner and overlaps no control', async ({
+    page,
+  }) => {
+    // Первая строка и первый столбец: у них маркеры вставки лежат ближе всего к углу.
     await hover(page, 0, 0);
 
-    const tab = (await page
-      .locator('[data-testid="block-handle"] [data-action="grip"]')
-      .boundingBox())!;
-    const row = (await page.locator(part('row-grip')).boundingBox())!;
+    const handle = page.locator('[data-testid="block-handle"]');
 
-    expect(tab.x + tab.width).toBeLessThanOrEqual(row.x);
+    await expect(handle).toHaveCount(1);
+    // «+» у таблицы нет: ниже таблицы всегда есть место для нового блока.
+    await expect(handle.locator('[data-action="add"]')).toHaveCount(0);
+
+    const tab = (await handle.locator('[data-action="grip"]').boundingBox())!;
+    const table = (await page.locator('[data-inkbrick-block="table"]').boundingBox())!;
+
+    expect(tab.x + tab.width).toBeLessThanOrEqual(table.x);
+    expect(tab.y + tab.height).toBeLessThanOrEqual(table.y);
+
+    for (const name of ['row-grip', 'column-grip', 'row-insert', 'column-insert', 'table-grip']) {
+      for (const box of await page.locator(part(name)).evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const { x, y, width, height } = node.getBoundingClientRect();
+
+          return { x, y, width, height };
+        }),
+      )) {
+        const overlapX = Math.min(tab.x + tab.width, box.x + box.width) - Math.max(tab.x, box.x);
+        const overlapY = Math.min(tab.y + tab.height, box.y + box.height) - Math.max(tab.y, box.y);
+
+        expect(overlapX > 1 && overlapY > 1, `${name} overlaps the block handle`).toBe(false);
+      }
+    }
   });
 
   test('the handles do not lag behind the table while the page scrolls', async ({ page }) => {

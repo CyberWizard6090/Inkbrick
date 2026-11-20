@@ -5,6 +5,8 @@ import { Icon } from '../icons/Icon';
 import type { BlockHandleProps } from './types';
 
 const HANDLE_WIDTH = 52;
+/** Ручка таблицы — одна, без «+»: перетаскивание и меню блока. */
+const CORNER_WIDTH = 24;
 
 export function DefaultBlockHandle({
   blockId,
@@ -21,11 +23,10 @@ export function DefaultBlockHandle({
   const view = useEditorView();
   // Ручка не выходит за левый край документа: полоса для неё — внутренний отступ корня.
   const edge = Math.max(2, Math.round(view.getRoot()?.getBoundingClientRect().left ?? 0));
-  const left = position.x - HANDLE_WIDTH;
-  const compact = left < edge;
-
-  // У таблицы в узком окне язычок лёг бы на текст первой ячейки. Её меню есть у ручки в углу таблицы и по правому клику.
-  if (compact && editor.store.getBlock(blockId)?.flavour === 'block:table') return null;
+  // Таблица: ручка стоит над левым верхним углом сетки (см. `useBlockHandles`) и состоит из одной кнопки.
+  const corner = editor.store.getBlock(blockId)?.flavour === 'block:table';
+  const left = position.x - (corner ? CORNER_WIDTH : HANDLE_WIDTH);
+  const compact = !corner && left < edge;
 
   return (
     <div
@@ -36,26 +37,30 @@ export function DefaultBlockHandle({
       data-inkbrick-block-ui
       // Слева от текста нет места (узкий экран): ручка ложится поверх текста отдельной плашкой.
       data-compact={compact || undefined}
+      data-corner={corner || undefined}
       style={{
-        left: Math.max(edge, left),
+        // Ручка таблицы может лечь на поле карточки слева от корня: там под ней нет текста, а справа лежат маркеры.
+        left: Math.max(corner ? 2 : edge, left),
         top: position.y,
         pointerEvents: dragging ? 'none' : undefined,
       }}
       // Не уводим фокус и выделение из редактора.
       onMouseDown={(event) => event.preventDefault()}
     >
-      <button
-        type="button"
-        className="inkbrick-block-handle__button"
-        data-inkbrick-part="button"
-        aria-label={t('handle.add')}
-        title={t('handle.add')}
-        data-action="add"
-        disabled={!canAdd}
-        onClick={onAdd}
-      >
-        <Icon name="plus" />
-      </button>
+      {!corner && (
+        <button
+          type="button"
+          className="inkbrick-block-handle__button"
+          data-inkbrick-part="button"
+          aria-label={t('handle.add')}
+          title={t('handle.add')}
+          data-action="add"
+          disabled={!canAdd}
+          onClick={onAdd}
+        >
+          <Icon name="plus" />
+        </button>
+      )}
       <button
         type="button"
         className="inkbrick-block-handle__button inkbrick-block-handle__grip"

@@ -420,6 +420,25 @@
       1.5px 8px;
   }
 
+  /* Телефон: рамка вокруг ячейки с кареткой или выделенных ячеек и точка на её углу, которую тянут пальцем. */
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='cell-frame']) {
+    border: 2px solid var(--inkbrick-brand-bg);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='cell-knob']) {
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--inkbrick-bg-1);
+    border-radius: 50%;
+    background: var(--inkbrick-brand-bg);
+    box-shadow: 0 0 0 1px var(--inkbrick-brand-bg);
+    /* Точку ведут пальцем: страница при этом не прокручивается. */
+    touch-action: none;
+    cursor: grab;
+  }
+
   /* Подсказка у ручки таблицы в углу: тёмная плашка над ней, чтобы не закрывать плашки, ячейки и язычок блока. Цвета те же в обеих темах. */
   :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='tip']) {
     display: none;

@@ -37,12 +37,17 @@ export function DefaultBlockMenu({
     // Ширина меню зависит от `left` (fixed-блок сжимается до места справа от него), а `left` — от ширины: без
     // фиксации меню менялось бы при каждой перерисовке (прокрутка внутри меню на телефоне). Мерим её один раз при
     // `left: 8` (там меню получает всё доступное место) и дальше держим.
+    // React ведёт эти свойства сам: после замера возвращаем то, что было, а не пустое значение (иначе, если левый край
+    // не изменится, React его не выставит снова, и меню окажется у левого края окна).
+    const { left, width } = menu.style;
+
     menu.style.width = '';
     menu.style.left = '8px';
 
     const natural = menu.offsetWidth;
 
-    menu.style.left = '';
+    menu.style.left = left;
+    menu.style.width = width;
     setFit({
       flip:
         position.y + menu.offsetHeight > window.innerHeight && position.y - menu.offsetHeight > 0,
