@@ -902,6 +902,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const { table, row, cell, edges } = layout;
   // Угловая ручка стоит справа от таблицы, но не правее окна.
   const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
+  // Палец: плашки крупнее (см. ui.css), и маркеры вставки уходят от них, а не лежат на их краях.
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  const gripInset = coarse ? 12 : 6;
+  const rowInsertGap = coarse ? 43 : 19;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
   const control = {
     'data-inkbrick-ui': 'table-controls',
@@ -963,7 +967,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.row.insertAbove')}
         title={t('table.row.insertAbove')}
         disabled={!canAddRow}
-        style={{ left: Math.max(2, table.left - 19), top: row.top - 5 }}
+        style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - 5 }}
         onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
       />
       <button
@@ -974,7 +978,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.row.insertBelow')}
         title={t('table.row.insertBelow')}
         disabled={!canAddRow}
-        style={{ left: Math.max(2, table.left - 19), top: row.top + row.height - 5 }}
+        style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top + row.height - 5 }}
         onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
       />
       <button
@@ -985,10 +989,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-haspopup="menu"
         aria-expanded={menu?.kind === 'column'}
         style={{
-          left: cell.left + 6,
+          left: cell.left + gripInset,
           top: edgeTop(table.top - 22),
           // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
-          width: Math.max(14, Math.min(cell.width - 12, cornerLeft - 6 - (cell.left + 6))),
+          width: Math.max(
+            14,
+            Math.min(cell.width - 2 * gripInset, cornerLeft - 6 - (cell.left + gripInset)),
+          ),
         }}
         onClick={() => open('column', cell.left + 6, table.top + 10)}
       >

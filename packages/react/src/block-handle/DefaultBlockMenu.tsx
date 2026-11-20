@@ -18,8 +18,8 @@ export function DefaultBlockMenu({
 }: BlockMenuProps) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  const [fit, setFit] = useState({ flip: false, height: 0 });
-  const { flip, height } = fit;
+  const [fit, setFit] = useState({ flip: false, height: 0, width: 0 });
+  const { flip, height, width } = fit;
 
   const entries: BlockMenuAction[] = [...actions, ...turnInto].filter((entry) => !entry.disabled);
 
@@ -32,13 +32,24 @@ export function DefaultBlockMenu({
   useLayoutEffect(() => {
     const menu = ref.current;
 
-    if (menu)
-      setFit({
-        flip:
-          position.y + menu.offsetHeight > window.innerHeight && position.y - menu.offsetHeight > 0,
-        height: menu.offsetHeight,
-      });
-  }, [position.y]);
+    if (!menu) return;
+
+    // Ширина меню зависит от `left` (fixed-блок сжимается до места справа от него), а `left` — от ширины: без
+    // фиксации меню менялось бы при каждой перерисовке (прокрутка внутри меню на телефоне). Мерим её один раз при
+    // `left: 8` (там меню получает всё доступное место) и дальше держим.
+    menu.style.width = '';
+    menu.style.left = '8px';
+
+    const natural = menu.offsetWidth;
+
+    menu.style.left = '';
+    setFit({
+      flip:
+        position.y + menu.offsetHeight > window.innerHeight && position.y - menu.offsetHeight > 0,
+      height: menu.offsetHeight,
+      width: natural,
+    });
+  }, [position.x, position.y]);
 
   const move = (delta: number) => {
     const items = [
@@ -91,10 +102,8 @@ export function DefaultBlockMenu({
       data-testid="block-menu"
       data-inkbrick-block-ui
       style={{
-        left: Math.max(
-          8,
-          Math.min(position.x, window.innerWidth - (ref.current?.offsetWidth ?? 232) - 8),
-        ),
+        left: Math.max(8, Math.min(position.x, window.innerWidth - (width || 232) - 8)),
+        width: width || undefined,
         // Снизу от ручки не помещается, а сверху тоже: меню сдвигается вверх, чтобы целиком остаться в окне.
         top: flip
           ? Math.max(8, position.y - height - 32)

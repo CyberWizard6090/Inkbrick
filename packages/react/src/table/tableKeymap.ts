@@ -39,10 +39,13 @@ const step = (direction: 1 | -1) => (context: KeymapContext) => {
   if (index < 0) return;
 
   if (index >= size.rows * size.columns) {
+    const caret = context.selection()?.from;
+
     context.run(() =>
       context.exec<CaretResult>({
         type: 'insertTableRow',
-        payload: { blockId: cell.tableId, index: size.rows },
+        // Откуда начали: отмена возвращает каретку в эту ячейку, а не в таблицу целиком.
+        payload: { blockId: cell.tableId, index: size.rows, caretBefore: caret },
       } as never),
     );
     return;

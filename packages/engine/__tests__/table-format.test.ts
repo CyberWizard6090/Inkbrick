@@ -657,3 +657,18 @@ describe('pasting a table into a cell of a table with merged cells', () => {
     );
   });
 });
+
+describe('the caret that undo gives back', () => {
+  it('is the one the caller reported: Tab into a new row returns to the cell it started from', () => {
+    const { editor, tableId, cell } = setup();
+    const from = { blockId: cell(2, 2), offset: 2 };
+
+    editor.sealHistory();
+    editor.dispatch({
+      type: 'insertTableRow',
+      payload: { blockId: tableId, index: 3, caretBefore: from },
+    });
+
+    expect(editor.undo()?.caret).toEqual(from);
+  });
+});
