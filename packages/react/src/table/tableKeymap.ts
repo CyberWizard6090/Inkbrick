@@ -59,8 +59,14 @@ const step = (direction: 1 | -1) => (context: KeymapContext) => {
   if (block) view.placeCaret(block.id, editor.engine.inline.length(block.content));
 };
 
+/**
+ * Каретка в ячейке и клавиша ещё не обработана. Выделение ячеек (useCellSelection) обрабатывает свои клавиши
+ * раньше, ставит каретку и гасит событие: вторая обработка сдвинула бы каретку ещё раз.
+ */
 const inCell = (context: KeymapContext) =>
-  !context.view.slash.getState().open && cellAtCaret(context) !== undefined;
+  !context.event.defaultPrevented &&
+  !context.view.slash.getState().open &&
+  cellAtCaret(context) !== undefined;
 
 /** Ближайший к каретке прямоугольник текста: у пустой строки или в конце строки он может быть пустым. */
 function caretRect(): DOMRect | undefined {
@@ -90,8 +96,10 @@ const vertical = (direction: 1 | -1) => (context: KeymapContext) => {
 
   const cellRect = element.getBoundingClientRect();
   // Каретка на последней (или первой) строке ячейки: до её края меньше одной строки текста.
-  // Порог — половина высоты ячейки: у однострочной ячейки это надёжно отличает последнюю строку от первой.
-  const reach = Math.max(6, cellRect.height / 2);
+  // Порог — половина высоты строки текста, а не ячейки: в многострочной ячейке вторая строка не считается краем.
+  const style = getComputedStyle(element);
+  const line = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5 || 16;
+  const reach = Math.max(6, line / 2);
   const edge =
     direction === 1 ? rect.bottom >= cellRect.bottom - reach : rect.top <= cellRect.top + reach;
 

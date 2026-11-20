@@ -233,7 +233,52 @@ export function tableContextMenu({
           after(row, span.left),
         ),
     },
+    // Ширина столбца с клавиатуры: ручки ширины на разделителях доступны только мышью.
+    ...widthItems(column),
     ...format,
     ...design,
   ];
+
+  /** Шире и уже на шаг от текущей ширины столбца под курсором (или выделением). */
+  function widthItems(index: number): ContextMenuItem[] {
+    const id = visibleCell(editor, tableId!, row, index).id;
+    const td = id ? view.getElement(id)?.closest('td') : null;
+    const measured = td?.getBoundingClientRect().width ?? 0;
+    const current = getBlock(tableId!)?.props.widths;
+    const saved = Array.isArray(current) ? current[index] : undefined;
+    const start = typeof saved === 'number' && saved > 0 ? saved : measured;
+    const resize = (delta: number) => {
+      const width = Math.min(
+        MAX_COLUMN_WIDTH,
+        Math.max(MIN_COLUMN_WIDTH, Math.round(start + delta)),
+      );
+
+      return () => perform('setTableColumnWidth', { index, width }, after(row, index));
+    };
+    const disabled = (width: number) =>
+      !editor.can('setTableColumnWidth', { blockId: tableId, index, width });
+
+    if (!(start > 0)) return [];
+
+    return [
+      {
+        id: 'table-column-wider',
+        title: t('table.column.wider'),
+        icon: <Icon name="arrow-right" />,
+        disabled: disabled(start + KEY_WIDTH_STEP) || start + KEY_WIDTH_STEP > MAX_COLUMN_WIDTH,
+        run: resize(KEY_WIDTH_STEP),
+      },
+      {
+        id: 'table-column-narrower',
+        title: t('table.column.narrower'),
+        icon: <Icon name="arrow-left" />,
+        disabled: disabled(start - KEY_WIDTH_STEP) || start - KEY_WIDTH_STEP < MIN_COLUMN_WIDTH,
+        run: resize(-KEY_WIDTH_STEP),
+      },
+    ];
+  }
 }
+
+const MIN_COLUMN_WIDTH = 40;
+const MAX_COLUMN_WIDTH = 1200;
+const KEY_WIDTH_STEP = 10;

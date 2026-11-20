@@ -1,4 +1,5 @@
 import { parseDelimited } from '@inkbrick/document';
+import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from '@inkbrick/engine';
 
 /**
  * Обычный текст с табуляциями (Excel, Google Sheets, терминал, CSV с табуляцией) → строки ячеек, если это
@@ -19,5 +20,10 @@ export function tabularText(
 
   const columns = rows[0].length;
 
-  return columns >= 2 && rows.every((row) => row.length === columns) ? rows : null;
+  if (columns < 2 || !rows.every((row) => row.length === columns)) return null;
+
+  // Больше предела таблицы — такой текст вставляется как текст, а не как таблица, которую потом нельзя расширить.
+  if (columns > MAX_TABLE_COLUMNS || rows.length * columns > MAX_TABLE_CELLS) return null;
+
+  return rows;
 }

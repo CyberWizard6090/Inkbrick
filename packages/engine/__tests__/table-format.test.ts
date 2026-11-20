@@ -6,6 +6,7 @@ import {
   createTableEditor,
   tableCellAt,
   tableIdOf,
+  tableFragment,
   tableRangeFragment,
   type TableRange,
 } from '../src';
@@ -607,5 +608,52 @@ describe('the size limits hold for the commands too', () => {
     for (let i = 0; i < 37; i++) run('insertTableRow', { index: 3 + i });
     expect(editor.document.getBlock(tableId)!.children.length).toBe(40);
     expect(can('insertTableRow', { index: 0 })).toBe(false);
+  });
+});
+
+describe('pasting a table into a cell of a table with merged cells', () => {
+  it('keeps the hidden cells of a merge: a table over them goes in as text', () => {
+    const target = setup();
+
+    target.run('mergeTableCells', { range: { top: 0, left: 0, bottom: 0, right: 1 } });
+
+    const merges = target.getBlock(target.tableId)!.props.merges;
+    const pasted = tableFragment([['X', 'Y']]);
+
+    target.editor.dispatch({
+      type: 'pasteFragment',
+      payload: { at: { blockId: target.cell(0, 0), offset: 0 }, fragment: pasted },
+    });
+
+    expect(target.getBlock(target.tableId)!.props.merges).toEqual(merges);
+    expect(target.editor.document.getBlock(target.cell(0, 1))!.content).toEqual([]);
+    expect(
+      target.editor.document
+        .getBlock(target.cell(0, 0))!
+        .content.map((n) => n.insert)
+        .join(''),
+    ).toContain('X');
+  });
+
+  it('moves the merges of a copied table to the place of the paste', () => {
+    const source = setup();
+
+    source.run('mergeTableCells', { range: { top: 0, left: 0, bottom: 0, right: 1 } });
+
+    const fragment = tableRangeFragment(
+      (id) => source.editor.document.getBlock(id),
+      source.tableId,
+      ALL,
+    );
+    const target = setup();
+
+    target.editor.dispatch({
+      type: 'pasteFragment',
+      payload: { at: { blockId: target.cell(1, 1), offset: 0 }, fragment },
+    });
+
+    expect(target.getBlock(target.tableId)!.props.merges).toEqual(
+      expect.arrayContaining([expect.objectContaining({ row: 1, column: 1, rows: 1, columns: 2 })]),
+    );
   });
 });

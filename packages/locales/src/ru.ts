@@ -193,6 +193,8 @@ export const ru: Messages = {
   'table.column.freezeOff': 'Открепить первый столбец',
   'table.row.headerOn': 'Сделать первую строку заголовком',
   'table.row.headerOff': 'Сделать первую строку обычной',
+  'table.column.wider': 'Столбец шире',
+  'table.column.narrower': 'Столбец уже',
   'table.column.insertLeft': 'Вставить столбец слева',
   'table.column.insertRight': 'Вставить столбец справа',
   'table.column.moveLeft': 'Переместить столбец влево',

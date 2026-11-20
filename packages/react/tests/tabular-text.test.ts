@@ -24,4 +24,16 @@ describe('tabularText', () => {
   it('a single column is never a table', () => {
     expect(tabularText('x\n', { singleRow: true })).toBeNull();
   });
+
+  it('a table over the limit of cells or columns stays text', () => {
+    const wide = Array.from({ length: 2 }, () =>
+      Array.from({ length: 51 }, (_, i) => `c${i}`).join('\t'),
+    );
+    const long = Array.from({ length: 100 }, () =>
+      Array.from({ length: 30 }, () => 'v').join('\t'),
+    );
+
+    expect(tabularText(wide.join('\n'))).toBeNull();
+    expect(tabularText(long.join('\n'))).toBeNull();
+  });
 });

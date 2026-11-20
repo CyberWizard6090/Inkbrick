@@ -195,6 +195,8 @@ export const en = {
   'table.column.freezeOff': 'Stop keeping first column in view',
   'table.row.headerOn': 'Make first row a header',
   'table.row.headerOff': 'Make first row a regular row',
+  'table.column.wider': 'Column wider',
+  'table.column.narrower': 'Column narrower',
   'table.column.insertLeft': 'Insert column left',
   'table.column.insertRight': 'Insert column right',
   'table.column.moveLeft': 'Move column left',

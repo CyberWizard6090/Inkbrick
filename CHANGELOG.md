@@ -173,6 +173,14 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   `useCollapse`), so no wrapper elements are added; the code block collapse uses the same token. Only the fold and unfold are animated: the first
   nested block of a toggle, and blocks drawn for the first time, appear at once.
 
+### Fixed
+
+- Table selection: Tab and Shift+Tab from a selected range keep the caret on its anchor cell, and the arrows up and down move one row from the selection, not two (the table keymap no longer handles a key the selection already took).
+- Arrow up and down inside a multi-line cell leave the cell only from its first or last line, not from the second one.
+- Pasting tab-separated text into a paragraph is no longer turned into a table larger than the limits (`MAX_TABLE_CELLS`, `MAX_TABLE_COLUMNS`); it stays text.
+- Pasting a table into a cell of another table never writes into the hidden cells of a merge (such a paste goes in as text), and the merges of the pasted table move to the place of the paste.
+- The cell context menu has «Column wider» and «Column narrower» (10 px steps), so a column width can be changed from the keyboard.
+
 ### Changed
 
 - Контекстное меню ячейки: фон, границы и стиль таблицы — вложенными меню, как в офисных редакторах («Фон ячейки» с круглыми образцами и своим цветом, «Границы ячеек» с толщиной, стилем и цветом границ, «Стиль таблицы»). Пункты меню могут нести `submenu`, `flyout` и `checked`.
