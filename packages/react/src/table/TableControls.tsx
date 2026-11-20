@@ -1128,17 +1128,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const gripInset = coarse ? 12 : 6;
   const rowInsertGap = coarse ? 15 : 19;
   const columnInsertRise = coarse ? 17 : 20;
-  // Плашка строки не длиннее 32 px: у высокой строки (длинный текст в ячейке) она стоит у середины видимой части строки,
-  // а не тянется на всю высоту за край экрана и за таблицу.
-  const rowPill = Math.min(32, Math.max(coarse ? 20 : 14, row.height - 2 * gripInset));
-  const rowPillGap = Math.min(gripInset, (row.height - rowPill) / 2);
-  const rowPillTop = Math.min(
-    Math.max(
-      (Math.max(row.top, 0) + Math.min(row.top + row.height, window.innerHeight)) / 2 - rowPill / 2,
-      row.top + rowPillGap,
-    ),
-    row.top + row.height - rowPill - rowPillGap,
-  );
+  // Плашка строки — по высоте строки, как плашка столбца по ширине: отступы по краям оставляют место маркерам вставки.
+  const rowPill = Math.max(coarse ? 20 : 14, row.height - 2 * gripInset);
+  const rowPillTop = row.top + (row.height - rowPill) / 2;
   // Палец, узкий столбец: крупные маркеры вставки по краям налезли бы на плашку столбца. Их нет, вставка — из меню столбца.
   const columnInserts = !coarse || cell.width >= 2 * gripInset + 40;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
