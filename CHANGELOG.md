@@ -187,7 +187,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Typing over a cell selection is one undo step: one Ctrl+Z restores the text of the anchor cell.
 - The submenu of the context menu opens on click and stays open (it no longer toggles shut right after hover).
 - The style gallery clears its live preview when it closes with Escape or a click outside.
-- The table design panels in the grip menu stay open after a change, so line weight and colour can be tried one after another.
+- The table design panels in the grip menu stay open after a line weight, line style, colour or table style change, so they can be tried one after another; a placement button (all, outside, none…) applies once and closes the menu.
+- In a narrow window the block tab is not shown over a table (it covered the text of the first cell); the table's menu stays on its corner handle and the right button.
 - The table corner handle does not claim to open a menu (`aria-haspopup` removed): a click selects the table's cells, the menu is opened by the right button or the menu key.
 - Table handles stay inside the top of the window when the table is close to the top edge.
 - Table handles follow the visible frame of a table that scrolls inside its block (a wide table scrolled sideways, a frozen header row scrolled down): the row handle no longer leaves the table to the left, the column and corner handles no longer jump to the top of the window.

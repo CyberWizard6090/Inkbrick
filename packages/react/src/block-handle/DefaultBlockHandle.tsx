@@ -1,3 +1,4 @@
+import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
@@ -16,10 +17,15 @@ export function DefaultBlockHandle({
   gripProps,
 }: BlockHandleProps) {
   const t = useT();
+  const editor = useEditor();
   const view = useEditorView();
   // Ручка не выходит за левый край документа: полоса для неё — внутренний отступ корня.
   const edge = Math.max(2, Math.round(view.getRoot()?.getBoundingClientRect().left ?? 0));
   const left = position.x - HANDLE_WIDTH;
+  const compact = left < edge;
+
+  // У таблицы в узком окне язычок лёг бы на текст первой ячейки. Её меню есть у ручки в углу таблицы и по правому клику.
+  if (compact && editor.store.getBlock(blockId)?.flavour === 'block:table') return null;
 
   return (
     <div
@@ -29,7 +35,7 @@ export function DefaultBlockHandle({
       data-block={blockId}
       data-inkbrick-block-ui
       // Слева от текста нет места (узкий экран): ручка ложится поверх текста отдельной плашкой.
-      data-compact={left < edge || undefined}
+      data-compact={compact || undefined}
       style={{
         left: Math.max(edge, left),
         top: position.y,

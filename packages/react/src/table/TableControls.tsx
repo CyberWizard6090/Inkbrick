@@ -1067,13 +1067,24 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           }
           panels={
             menu.kind === 'table'
-              ? // Панели оформления остаются открытыми: толщину и цвет линий видно сразу, без повторного открытия меню.
-                tableDesignPanels(editor, block, t, view.cells.get(), (action) => {
-                  editor.sealHistory();
-                  flushSync(() => {
-                    action();
-                  });
-                })
+              ? // Толщина, начертание, цвет линий и стиль меняются при открытом меню: результат виден сразу. Кнопка
+                // расположения линий (все, внешние, нет…) — разовое действие: после неё меню закрывается.
+                tableDesignPanels(
+                  editor,
+                  block,
+                  t,
+                  view.cells.get(),
+                  (action) => {
+                    editor.sealHistory();
+                    flushSync(() => {
+                      action();
+                    });
+                  },
+                  () => {
+                    setMenu(null);
+                    rootFocus();
+                  },
+                )
               : undefined
           }
           turnInto={[]}

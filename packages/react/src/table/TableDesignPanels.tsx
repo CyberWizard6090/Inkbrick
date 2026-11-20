@@ -309,23 +309,28 @@ function BordersPanel({
   block,
   picked,
   run,
+  close,
 }: {
   editor: Editor;
   block: BaseBlock;
   picked: CellSelection | null;
   run: (action: () => void) => void;
+  /** Закрыть меню: после кнопки расположения линий (все, внешние, нет…) — разовое действие. */
+  close?: () => void;
 }) {
   const t = useT();
   const [width, setWidth] = useState<TableBorderWidth>(look.width);
   const [style, setStyle] = useState<TableBorderStyle>(look.style);
   const [color, setColor] = useState<ColorName | null>(look.color);
-  const apply = (mode: Placement) =>
+  const apply = (mode: Placement) => {
     applyBorders(editor, block, picked, run, {
       mode,
       ...(mode === 'none' ? {} : { width }),
       color,
       style,
     });
+    close?.();
+  };
   // Толщина, начертание и цвет сразу меняют существующие линии выделенных ячеек.
   const change = (patch: {
     width?: TableBorderWidth;
@@ -443,6 +448,7 @@ export function tableDesignPanels(
   t: TFunction,
   picked: CellSelection | null,
   run: (action: () => void) => void,
+  close?: () => void,
 ): BlockMenuPanel[] {
   return [
     {
@@ -453,7 +459,9 @@ export function tableDesignPanels(
     {
       id: 'table-border-lines',
       title: t('table.border.heading'),
-      content: <BordersPanel editor={editor} block={block} picked={picked} run={run} />,
+      content: (
+        <BordersPanel editor={editor} block={block} picked={picked} run={run} close={close} />
+      ),
     },
   ];
 }
