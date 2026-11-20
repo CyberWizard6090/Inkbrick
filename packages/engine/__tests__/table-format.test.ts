@@ -667,7 +667,7 @@ describe('the caret that undo gives back', () => {
     editor.dispatch({
       type: 'insertTableRow',
       payload: { blockId: tableId, index: 3, caretBefore: from },
-    });
+    } as never);
 
     expect(editor.undo()?.caret).toEqual(from);
   });
