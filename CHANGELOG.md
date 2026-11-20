@@ -195,7 +195,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - A submenu of the context menu that has no room beside the menu (phone width) lies over the menu instead of going off the screen, opens on click there, and scrolls when it is taller than the window.
 - The hint over the table corner handle is hidden while the table menu is open.
 - The block menu (row, column and table menus) keeps its width and position while it scrolls: its width depended on its own `left`, and `left` on its width, so on a phone it grew and shifted on every redraw and its labels wrapped.
-- On a touch screen the row and column handles no longer overlap the insert markers: the row markers sit left of the handle, the column handle keeps clear of the column markers.
+- On a touch screen the larger insert markers sit on the same axis as the row and column handles (they were 4 px and 3 px off centre), the column handle keeps clear of the column markers at the cell edges, and the row handle is at least 24 px tall instead of 32 so it overlaps the markers by 3 px at most (it is drawn above them).
 - Undo after a row was added with Tab puts the caret back in the cell it started from instead of dropping it out of the table (`caretBefore` in a command payload reports where the caret was); after other table commands (insert markers, menu items) it lands in the first cell of the table when the recorded caret points at the table itself.
 
 ### Changed

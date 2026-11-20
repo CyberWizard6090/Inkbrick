@@ -495,7 +495,8 @@
   @media (pointer: coarse) {
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
       width: 20px;
-      min-height: 32px;
+      /* Не выше, чем помещается между маркерами вставки строки (они на той же оси, на границах строки). */
+      min-height: 24px;
     }
 
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {

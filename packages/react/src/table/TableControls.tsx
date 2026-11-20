@@ -902,10 +902,12 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const { table, row, cell, edges } = layout;
   // Угловая ручка стоит справа от таблицы, но не правее окна.
   const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
-  // Палец: плашки крупнее (см. ui.css), и маркеры вставки уходят от них, а не лежат на их краях.
+  // Палец: плашки крупнее (см. ui.css), а маркеры вставки (18 px вместо 10) остаются на одной оси с ними:
+  // у строки — по горизонтали, у столбца — по вертикали. Плашка столбца отступает от маркеров по краям ячейки.
   const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   const gripInset = coarse ? 12 : 6;
-  const rowInsertGap = coarse ? 43 : 19;
+  const rowInsertGap = coarse ? 15 : 19;
+  const columnInsertRise = coarse ? 17 : 20;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
   const control = {
     'data-inkbrick-ui': 'table-controls',
@@ -1009,7 +1011,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.column.insertLeft')}
         title={t('table.column.insertLeft')}
         disabled={!canAddColumn}
-        style={{ left: cell.left - 5, top: edgeTop(table.top - 20) }}
+        style={{ left: cell.left - 5, top: edgeTop(table.top - columnInsertRise) }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
       />
       <button
@@ -1020,7 +1022,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.column.insertRight')}
         title={t('table.column.insertRight')}
         disabled={!canAddColumn}
-        style={{ left: cell.left + cell.width - 5, top: edgeTop(table.top - 20) }}
+        style={{ left: cell.left + cell.width - 5, top: edgeTop(table.top - columnInsertRise) }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
       />
       {edges.map((edge, column) => (
