@@ -33,17 +33,52 @@ const escapeHtml = (text: string) =>
 
 const ALIGNED = new Set(['center', 'right', 'justify']);
 
+/** Фон ячейки таблицы: насыщенные цвета (как `--inkbrick-cell-*` в стилях), одинаковые в обеих темах. */
+const CELL_HEX: Readonly<Record<string, string>> = {
+  gray: '#9ca3af',
+  brown: '#a16207',
+  orange: '#f97316',
+  yellow: '#facc15',
+  green: '#22c55e',
+  blue: '#3b82f6',
+  purple: '#a855f7',
+  pink: '#ec4899',
+  red: '#ef4444',
+  lime: '#84cc16',
+  teal: '#14b8a6',
+  cyan: '#06b6d4',
+  indigo: '#6366f1',
+  magenta: '#d946ef',
+};
+
+/** Чёрный или белый текст на фоне `#rrggbb` — тот, что контрастнее (относительная яркость WCAG). */
+function textOn(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((at) => {
+    const channel = parseInt(hex.slice(at, at + 2), 16) / 255;
+
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.179 ? '#ffffff' : '#1a1a1a';
+}
+
 /** `style` блока: выравнивание и фон (оттенок светлой темы: в экспорте переменных темы нет). */
 function alignStyle(block: BaseBlock, extra: readonly string[] = []): string {
   const align = block.props.alignment ?? block.props.align;
   const color = getBlockBackgroundColor(block);
-  // Свой цвет блока — с той же прозрачностью 35%, что и в редакторе (там он разбавлен, чтобы текст оставался читаемым);
-  // у ячейки таблицы фон непрозрачный, как в редакторе.
-  const background = isHexColor(color)
-    ? block.flavour === TABLE_CELL
-      ? color
-      : `${color}59`
-    : exportColor(color, 'background');
+  // У ячейки таблицы фон непрозрачный и насыщенный, текст на нём по контрасту — как в редакторе. Свой цвет блока — с той же
+  // прозрачностью 35%, что и в редакторе (там он разбавлен, чтобы текст оставался читаемым).
+  const cell =
+    block.flavour === TABLE_CELL && color
+      ? isHexColor(color)
+        ? color
+        : CELL_HEX[color]
+      : undefined;
+  const background = cell
+    ? `${cell};color:${textOn(cell)}`
+    : isHexColor(color)
+      ? `${color}59`
+      : exportColor(color, 'background');
   const style = [
     typeof align === 'string' && ALIGNED.has(align) && `text-align:${align}`,
     background && `background-color:${background}`,

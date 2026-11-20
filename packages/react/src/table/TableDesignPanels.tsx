@@ -263,11 +263,14 @@ function ColorDots({
   names,
   current,
   custom,
+  tone,
   onPick,
 }: {
   names: readonly string[];
   current: string | null;
   custom: boolean;
+  /** Переменная цвета кружка: тот цвет, что ляжет на ячейку (`cell`) или на линию (`color`). */
+  tone: 'cell' | 'color';
   onPick: (color: string | null) => void;
 }) {
   const t = useT();
@@ -297,7 +300,14 @@ function ColorDots({
             data-action={`color-${name}`}
             aria-label={t(`color.${name}` as MessageKey)}
             title={t(`color.${name}` as MessageKey)}
-            style={{ '--inkbrick-dot': `var(--inkbrick-highlight-${name})` } as CSSProperties}
+            style={
+              {
+                '--inkbrick-dot':
+                  tone === 'color' && (name === 'black' || name === 'white')
+                    ? `var(--inkbrick-color-${name})`
+                    : `var(--inkbrick-${tone}-${name})`,
+              } as CSSProperties
+            }
             onClick={() => onPick(name)}
           />
         ))}
@@ -360,6 +370,7 @@ export function tableDesignMenuItems(
           names={BLOCK_BACKGROUNDS}
           current={currentBackground}
           custom
+          tone="cell"
           onPick={(color) => run(() => void backgroundCells(editor, target, color))}
         />
       ),
@@ -418,6 +429,7 @@ export function tableDesignMenuItems(
               names={COLOR_NAMES}
               current={lookOf(editor).color}
               custom={false}
+              tone="color"
               onPick={(color) => change({ color: color as ColorName | null })}
             />
           ),

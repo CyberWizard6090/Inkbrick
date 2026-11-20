@@ -207,6 +207,24 @@ function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | u
 
 const SIDES = ['Top', 'Right', 'Bottom', 'Left'] as const;
 
+/** Свой цвет фона ячейки (`#rrggbb`): текст на нём чёрный или белый — тот, что контрастнее (относительная яркость WCAG). */
+function readableText(background: unknown): CSSProperties | undefined {
+  if (typeof background !== 'string' || !/^#[0-9a-f]{6}$/i.test(background)) return undefined;
+
+  const [r, g, b] = [1, 3, 5].map((at) => {
+    const channel = parseInt(background.slice(at, at + 2), 16) / 255;
+
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // Контраст с чёрным (L + 0.05) / 0.05 против контраста с белым 1.05 / (L + 0.05): равны при L ≈ 0.179.
+  const light = luminance < 0.179;
+
+  return {
+    '--inkbrick-cell-text': `var(--inkbrick-cell-text-${light ? 'light' : 'dark'})`,
+  } as CSSProperties;
+}
+
 /**
  * Свой цвет и начертание сторон ячейки (`borderTopColor`, `borderTopStyle`…) — встроенным стилем: общая линия двух ячеек
  * красится у обеих, а остальные стороны соседа остаются прежними. Сторона «без линии» остаётся прозрачной. В `style`
@@ -258,7 +276,7 @@ export function TableCellBlock({ block, selected }: BlockProps) {
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
       {...attrs}
-      style={{ ...attrs.style, ...sideLook(block) }}
+      style={{ ...attrs.style, ...readableText(block.props.background), ...sideLook(block) }}
       role={headerCell ? 'columnheader' : undefined}
       data-border-top={borderOf(block, 'borderTop')}
       data-border-right={borderOf(block, 'borderRight')}

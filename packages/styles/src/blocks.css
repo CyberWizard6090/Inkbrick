@@ -2148,7 +2148,7 @@
     background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, transparent);
   }
 
-  /* Фон ячейки таблицы: цвет палитры как есть (как кружок в меню), без полей наружу и непрозрачный (закреплённые ячейки не просвечивают). */
+  /* Фон ячейки таблицы: насыщенный цвет (как кружок в меню) и текст по контрасту, без полей наружу и непрозрачный. */
   :where([data-inkbrick-block='table-cell'][data-background]) {
     margin-inline: 0;
     padding-inline: 8px;
@@ -2156,59 +2156,73 @@
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='gray']) {
-    background-color: var(--inkbrick-highlight-gray);
+    background-color: var(--inkbrick-cell-gray);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='brown']) {
-    background-color: var(--inkbrick-highlight-brown);
+    background-color: var(--inkbrick-cell-brown);
+    color: var(--inkbrick-cell-text-light);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='orange']) {
-    background-color: var(--inkbrick-highlight-orange);
+    background-color: var(--inkbrick-cell-orange);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='yellow']) {
-    background-color: var(--inkbrick-highlight-yellow);
+    background-color: var(--inkbrick-cell-yellow);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='green']) {
-    background-color: var(--inkbrick-highlight-green);
+    background-color: var(--inkbrick-cell-green);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='blue']) {
-    background-color: var(--inkbrick-highlight-blue);
+    background-color: var(--inkbrick-cell-blue);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='purple']) {
-    background-color: var(--inkbrick-highlight-purple);
+    background-color: var(--inkbrick-cell-purple);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='pink']) {
-    background-color: var(--inkbrick-highlight-pink);
+    background-color: var(--inkbrick-cell-pink);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='red']) {
-    background-color: var(--inkbrick-highlight-red);
+    background-color: var(--inkbrick-cell-red);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='lime']) {
-    background-color: var(--inkbrick-highlight-lime);
+    background-color: var(--inkbrick-cell-lime);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='teal']) {
-    background-color: var(--inkbrick-highlight-teal);
+    background-color: var(--inkbrick-cell-teal);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='cyan']) {
-    background-color: var(--inkbrick-highlight-cyan);
+    background-color: var(--inkbrick-cell-cyan);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='indigo']) {
-    background-color: var(--inkbrick-highlight-indigo);
+    background-color: var(--inkbrick-cell-indigo);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='magenta']) {
-    background-color: var(--inkbrick-highlight-magenta);
+    background-color: var(--inkbrick-cell-magenta);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-background='lime']) {
@@ -2236,9 +2250,10 @@
     background-color: color-mix(in srgb, var(--inkbrick-block-background) 35%, transparent);
   }
 
-  /* Свой цвет ячейки таблицы — ровно тот, что выбран, без прозрачности (как и цвета палитры у ячеек). */
+  /* Свой цвет ячейки таблицы — ровно тот, что выбран, без прозрачности; цвет текста по контрасту ставит сама ячейка. */
   :where([data-inkbrick-block='table-cell'][data-background='custom']) {
     background-color: var(--inkbrick-block-background);
+    color: var(--inkbrick-cell-text, inherit);
   }
 
   /*

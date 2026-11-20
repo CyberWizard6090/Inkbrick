@@ -138,6 +138,25 @@
     --inkbrick-highlight-indigo: #e0e2f5;
     --inkbrick-highlight-magenta: #f1dcee;
 
+    /* Фон ячейки таблицы: насыщенные цвета, как в табличных редакторах, одинаковые в обеих темах; текст на них — чёрный или
+       белый по контрасту (`--inkbrick-cell-text-dark` / `-light`). */
+    --inkbrick-cell-gray: #9ca3af;
+    --inkbrick-cell-brown: #a16207;
+    --inkbrick-cell-orange: #f97316;
+    --inkbrick-cell-yellow: #facc15;
+    --inkbrick-cell-green: #22c55e;
+    --inkbrick-cell-blue: #3b82f6;
+    --inkbrick-cell-purple: #a855f7;
+    --inkbrick-cell-pink: #ec4899;
+    --inkbrick-cell-red: #ef4444;
+    --inkbrick-cell-lime: #84cc16;
+    --inkbrick-cell-teal: #14b8a6;
+    --inkbrick-cell-cyan: #06b6d4;
+    --inkbrick-cell-indigo: #6366f1;
+    --inkbrick-cell-magenta: #d946ef;
+    --inkbrick-cell-text-dark: #1a1a1a;
+    --inkbrick-cell-text-light: #ffffff;
+
     --inkbrick-bg-2: #f7f6f3;
     --inkbrick-bg-4: #ebeceb;
     --inkbrick-inline-code-fg: #b92f2f;

@@ -253,6 +253,8 @@ test.describe('Table style gallery and borders', () => {
     });
 
     await expect(page.locator(cells).nth(4)).toHaveCSS('background-color', 'rgb(51, 102, 255)');
+    // Текст на тёмном своём цвете — белый (по контрасту).
+    await expect(page.locator(cells).nth(4)).toHaveCSS('color', 'rgb(255, 255, 255)');
 
     // Цвет палитры у ячейки — тот же, что у кружка в меню, без разбавления.
     await openTableMenu(page, 0);
@@ -278,6 +280,9 @@ test.describe('Table style gallery and borders', () => {
     }, dot);
 
     await expect(page.locator(cells).nth(0)).toHaveCSS('background-color', expected);
+    // Насыщенный цвет палитры одинаков в обеих темах, текст на синем — тёмный (он контрастнее).
+    await expect(page.locator(cells).nth(0)).toHaveCSS('background-color', 'rgb(59, 130, 246)');
+    await expect(page.locator(cells).nth(0)).toHaveCSS('color', 'rgb(26, 26, 26)');
   });
 
   test('with several cells selected the context menu inserts and deletes all their rows and columns', async ({

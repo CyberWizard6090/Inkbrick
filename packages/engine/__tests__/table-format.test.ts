@@ -343,7 +343,8 @@ describe('copying and export', () => {
     const html = toHtml(editor.document);
 
     expect(html).toContain('<table data-borders="none" data-striped>');
-    expect(html).toContain('<th style="background-color:#ffe74a">a</th>');
+    // Фон ячейки — насыщенный цвет, текст на нём по контрасту (как в редакторе).
+    expect(html).toContain('<th style="background-color:#facc15;color:#1a1a1a">a</th>');
     expect(html).toContain('<th style="text-align:center">b</th>');
     expect(html).toContain('<th scope="row">d</th>');
     // Вторая строка тела — полоса.
