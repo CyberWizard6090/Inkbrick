@@ -2350,6 +2350,8 @@
   /* Панель форматирования: «Превратить в» — кнопка с названием типа блока и список типов под панелью. */
   :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button'][data-format='turn-into']) {
     flex: none;
+    grid-auto-flow: column;
+    align-items: center;
     gap: 6px;
     width: auto;
     min-width: max-content;
@@ -2681,6 +2683,33 @@
   }
 
   /*
+   * Телефон: полоса форматирования — у нижнего края экрана во всю ширину, над экранной клавиатурой (`bottom` ставит сам
+   * toolbar), а не у выделения. Кнопки переносятся на второй ряд; палитры цветов и «Превратить в» открываются над полосой.
+   */
+  :where([data-inkbrick-ui='toolbar'][data-placement='docked']) {
+    inset: auto 0 0;
+    width: auto;
+    max-width: none;
+    padding: 6px 8px max(6px, env(safe-area-inset-bottom, 0px));
+    border-width: 1px 0 0;
+    border-radius: 0;
+    box-shadow: 0 -4px 16px rgb(0 0 0 / 14%);
+    transform: none;
+    animation: inkbrick-sheet-in var(--inkbrick-sheet-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='docked'] > [data-inkbrick-part='panel']) {
+    top: auto;
+    bottom: calc(100% + 6px);
+    left: 8px;
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='docked'] [data-inkbrick-part='turn-menu']) {
+    top: auto;
+    bottom: calc(100% + 4px);
+  }
+
+  /*
    * Лист закрывается: съезжает вниз, затемнение гаснет. Правила стоят после правил появления листа и затемнения (у всех
    * специфичность 0, побеждает более позднее), иначе у закрытого листа осталась бы анимация появления и он пропадал бы
    * рывком. `Presence` ждёт конца этой анимации и потом убирает лист.
@@ -2721,6 +2750,7 @@
     :where([data-inkbrick-ui='formula-popover']),
     :where([data-inkbrick-ui='tag-suggestions']),
     :where([data-inkbrick-presence][data-state='closed'] > *),
+    :where([data-inkbrick-ui='toolbar'][data-placement='docked']),
     :where([data-inkbrick-presence][data-state='closed'] [data-sheet]),
     :where([data-inkbrick-presence][data-state='closed'] [data-inkbrick-part='sheet-backdrop']) {
       animation: none;
