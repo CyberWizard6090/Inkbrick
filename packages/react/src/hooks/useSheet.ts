@@ -44,3 +44,21 @@ export function useSheet(): { sheet: boolean; inset: number } {
 
   return { sheet, inset: sheet ? inset : 0 };
 }
+
+/**
+ * Лист открылся, а в документе стоит курсор: экранная клавиатура осталась бы поднятой и закрыла бы половину листа.
+ * Фокус уходит из текста, клавиатура прячется; выделение ячеек и позиция курсора в модели остаются.
+ */
+export function hideKeyboard(): void {
+  const active = typeof document === 'undefined' ? null : document.activeElement;
+
+  if (
+    active instanceof HTMLElement &&
+    (active.isContentEditable ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement) &&
+    !active.closest('[data-inkbrick-ui]')
+  ) {
+    active.blur();
+  }
+}

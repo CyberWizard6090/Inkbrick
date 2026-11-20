@@ -42,6 +42,8 @@
     --inkbrick-disappear-duration: var(--inkbrick-duration-fast);
     /* Сворачивание переключателей, пунктов списка и разделов под заголовком: 0ms убирает движение */
     --inkbrick-collapse-duration: var(--inkbrick-duration-slow);
+    /* Лист меню на телефоне выезжает снизу и уезжает вниз: 0ms убирает движение */
+    --inkbrick-sheet-duration: var(--inkbrick-duration-slow);
 
     --inkbrick-z-handle: 9990;
     --inkbrick-z-menu: 9995;

@@ -2612,7 +2612,7 @@
     border-bottom: none;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -8px 32px rgb(0 0 0 / 28%);
-    animation: inkbrick-sheet-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+    animation: inkbrick-sheet-in var(--inkbrick-sheet-duration) var(--inkbrick-curve);
   }
 
   /* Вложенная панель — второй лист поверх первого, со своим затемнением: родительский лист под ним не нажимается. */
@@ -2681,6 +2681,27 @@
   }
 
   /*
+   * Лист закрывается: съезжает вниз, затемнение гаснет. Правила стоят после правил появления листа и затемнения (у всех
+   * специфичность 0, побеждает более позднее), иначе у закрытого листа осталась бы анимация появления и он пропадал бы
+   * рывком. `Presence` ждёт конца этой анимации и потом убирает лист.
+   */
+  :where([data-inkbrick-presence][data-state='closed'] [data-sheet]) {
+    animation: inkbrick-sheet-out var(--inkbrick-sheet-duration) var(--inkbrick-curve) forwards;
+    pointer-events: none;
+  }
+
+  :where([data-inkbrick-presence][data-state='closed'] [data-inkbrick-part='sheet-backdrop']) {
+    animation: inkbrick-fade-out var(--inkbrick-sheet-duration) var(--inkbrick-curve) forwards;
+    pointer-events: none;
+  }
+
+  @keyframes inkbrick-sheet-out {
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  /*
    * Без анимации при prefers-reduced-motion. Блок стоит в самом конце слоя: у всех правил специфичность 0, и среди равных
    * побеждает более поздняя, поэтому `animation: none` обязан идти после всех правил, которые анимацию задают.
    */
@@ -2699,7 +2720,9 @@
     :where([data-inkbrick-ui='find']),
     :where([data-inkbrick-ui='formula-popover']),
     :where([data-inkbrick-ui='tag-suggestions']),
-    :where([data-inkbrick-presence][data-state='closed'] > *) {
+    :where([data-inkbrick-presence][data-state='closed'] > *),
+    :where([data-inkbrick-presence][data-state='closed'] [data-sheet]),
+    :where([data-inkbrick-presence][data-state='closed'] [data-inkbrick-part='sheet-backdrop']) {
       animation: none;
     }
   }

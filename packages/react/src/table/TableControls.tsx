@@ -28,6 +28,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
+import { PortalPresence } from '../ui/Presence';
 import { selectTableCells, selectTableLine } from './cellSelection';
 import { ColumnWidthBar } from './ColumnWidthBar';
 import { fitWidths } from './fitWidths';
@@ -496,9 +497,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     };
 
     const onDown = (event: PointerEvent) => {
+      // Затемнение листа закрывает меню само, по клику: закрой его меню здесь, затемнение уже не ловило бы
+      // нажатие мыши, которое браузер шлёт после касания, и оно ставило бы курсор в документ под ним.
       if (
         event.target instanceof Element &&
-        event.target.closest('[data-inkbrick-ui="block-menu"], [data-inkbrick-ui="table-controls"]')
+        event.target.closest(
+          '[data-inkbrick-ui="block-menu"], [data-inkbrick-ui="table-controls"], [data-inkbrick-part="sheet-backdrop"]',
+        )
       )
         return;
 
@@ -516,7 +521,17 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     };
   }, [menu]);
 
-  if (typeof document === 'undefined' || !active || !layout) return null;
+  if (typeof document === 'undefined') return null;
+
+  // Ручек нет (каретка ушла из таблицы), а меню ещё уходит: его `PortalPresence` стоит на том же месте, что и в полной
+  // отрисовке ниже, и доигрывает анимацию закрытия, а не пропадает вместе с ручками.
+  if (!active || !layout)
+    return (
+      <>
+        {null}
+        <PortalPresence open={false} render={() => null} />
+      </>
+    );
 
   const rootFocus = () => view.getRoot()?.focus({ preventScroll: true });
 
@@ -1130,6 +1145,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const gripInset = coarse ? 12 : 6;
   const rowInsertGap = coarse ? 15 : 19;
   const columnInsertRise = coarse ? 17 : 20;
+  // Палец, узкий столбец: крупные маркеры вставки по краям налезли бы на плашку столбца. Их нет, вставка — из меню столбца.
+  const columnInserts = !coarse || cell.width >= 2 * gripInset + 40;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
   const control = {
     'data-inkbrick-ui': 'table-controls',
@@ -1137,254 +1154,270 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     onMouseDown: prevent,
   } as const;
 
-  return createPortal(
+  return (
     <>
-      {/* На телефоне угловой кнопки нет: меню таблицы там открывается долгим нажатием на ячейку, а выделение растёт точкой. */}
-      {!coarse && (
-        <button
-          {...control}
-          type="button"
-          data-inkbrick-part="table-grip"
-          aria-label={t('table.handle')}
-          // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
-          data-open={menu?.kind === 'table' || undefined}
-          style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
-          // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
-          onClick={() => {
-            setMenu(null);
-            selectTableCells(
-              editor,
-              view,
-              block.id,
-              { row: 0, column: 0 },
-              { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
-            );
-
-            rootFocus();
-          }}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            open('table', table.left + table.width - 8, table.top + 4);
-          }}
-        >
-          <GripTip t={t} />
-        </button>
-      )}
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="row-grip"
-        aria-label={t('table.rowHandle', { row: active.row + 1 })}
-        aria-haspopup="menu"
-        aria-expanded={menu?.kind === 'row'}
-        style={{
-          // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
-          left: Math.max(2, table.left - 20),
-          top: row.top + 6,
-          height: Math.max(16, row.height - 12),
-        }}
-        onClick={() => open('row', table.left + 8, row.top + row.height / 2 + 14)}
-      >
-        <span data-inkbrick-part="dots" aria-hidden="true" />
-      </button>
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="row-insert"
-        data-edge="start"
-        aria-label={t('table.row.insertAbove')}
-        title={t('table.row.insertAbove')}
-        disabled={!canAddRow}
-        style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - 5 }}
-        onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
-      />
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="row-insert"
-        data-edge="end"
-        aria-label={t('table.row.insertBelow')}
-        title={t('table.row.insertBelow')}
-        disabled={!canAddRow}
-        style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top + row.height - 5 }}
-        onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
-      />
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="column-grip"
-        aria-label={t('table.columnHandle', { column: active.column + 1 })}
-        aria-haspopup="menu"
-        aria-expanded={menu?.kind === 'column'}
-        style={{
-          left: cell.left + gripInset,
-          top: edgeTop(table.top - 22),
-          // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
-          width: Math.max(
-            14,
-            Math.min(
-              cell.width - 2 * gripInset,
-              coarse ? Infinity : cornerLeft - 6 - (cell.left + gripInset),
-            ),
-          ),
-        }}
-        onClick={() => open('column', cell.left + 6, table.top + 10)}
-      >
-        <span data-inkbrick-part="dots" aria-hidden="true" />
-      </button>
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="column-insert"
-        data-edge="start"
-        aria-label={t('table.column.insertLeft')}
-        title={t('table.column.insertLeft')}
-        disabled={!canAddColumn}
-        style={{ left: cell.left - 5, top: edgeTop(table.top - columnInsertRise) }}
-        onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
-      />
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="column-insert"
-        data-edge="end"
-        aria-label={t('table.column.insertRight')}
-        title={t('table.column.insertRight')}
-        disabled={!canAddColumn}
-        style={{
-          left: cell.left + cell.width - 5,
-          top: edgeTop(table.top - columnInsertRise),
-        }}
-        onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
-      />
-      {segments.map(({ column, x, top, height }, order) => {
-        const edge = edges[column];
-        // Первый участок границы — фокусируемый разделитель, остальные только для мыши и пальца.
-        const first = order === 0 || segments[order - 1].column !== column;
-
-        return (
-          <div
-            {...control}
-            key={`${column}:${Math.round(top)}`}
-            role="separator"
-            aria-orientation="vertical"
-            // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
-            aria-valuenow={Math.round(
-              edge.x - (column === 0 ? layout.grid.left : edges[column - 1].x),
-            )}
-            aria-valuemin={MIN_WIDTH}
-            aria-valuemax={MAX_WIDTH}
-            aria-label={t('table.resize', { column: column + 1 })}
-            tabIndex={first ? 0 : -1}
-            aria-hidden={first ? undefined : true}
-            data-inkbrick-part="resize"
-            style={{ left: x - 3, top, height }}
-            onPointerDown={(event) => resize(column, event)}
-            onKeyDown={(event) => resizeByKey(column, event)}
-            onDoubleClick={() => {
-              if (
-                can('setTableColumnWidth', { index: column, width: null }) &&
-                props.widths?.[column]
-              )
-                perform(() => {
-                  run('setTableColumnWidth', { index: column, width: null });
-                });
-            }}
-          />
-        );
-      })}
-      {coarse && !menu && !sizing && (picked || caretPosition) && (
+      {createPortal(
         <>
-          {/* Рамка выделения и точка на её углу (как в Notion на телефоне): точку тянут, чтобы выделить несколько ячеек. */}
-          <div
+          {/* На телефоне угловой кнопки нет: меню таблицы там открывается долгим нажатием на ячейку, а выделение растёт точкой. */}
+          {!coarse && (
+            <button
+              {...control}
+              type="button"
+              data-inkbrick-part="table-grip"
+              aria-label={t('table.handle')}
+              // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
+              data-open={menu?.kind === 'table' || undefined}
+              style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
+              // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
+              onClick={() => {
+                setMenu(null);
+                selectTableCells(
+                  editor,
+                  view,
+                  block.id,
+                  { row: 0, column: 0 },
+                  { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
+                );
+
+                rootFocus();
+              }}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                open('table', table.left + table.width - 8, table.top + 4);
+              }}
+            >
+              <GripTip t={t} />
+            </button>
+          )}
+          <button
             {...control}
-            aria-hidden="true"
-            data-inkbrick-part="cell-frame"
+            type="button"
+            data-inkbrick-part="row-grip"
+            aria-label={t('table.rowHandle', { row: active.row + 1 })}
+            aria-haspopup="menu"
+            aria-expanded={menu?.kind === 'row'}
             style={{
-              left: layout.frame.left - 1,
-              top: layout.frame.top - 1,
-              width: layout.frame.width + 2,
-              height: layout.frame.height + 2,
+              // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
+              left: Math.max(2, table.left - 20),
+              top: row.top + 6,
+              height: Math.max(16, row.height - 12),
             }}
+            onClick={() => open('row', table.left + 8, row.top + row.height / 2 + 14)}
+          >
+            <span data-inkbrick-part="dots" aria-hidden="true" />
+          </button>
+          <button
+            {...control}
+            type="button"
+            data-inkbrick-part="row-insert"
+            data-edge="start"
+            aria-label={t('table.row.insertAbove')}
+            title={t('table.row.insertAbove')}
+            disabled={!canAddRow}
+            style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - 5 }}
+            onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
           />
           <button
             {...control}
             type="button"
-            data-inkbrick-part="cell-knob"
-            aria-label={t('table.selection.extend')}
-            style={{
-              left: layout.frame.left + layout.frame.width - 11,
-              top: layout.frame.top + layout.frame.height - 11,
-            }}
-            onPointerDown={dragKnob}
+            data-inkbrick-part="row-insert"
+            data-edge="end"
+            aria-label={t('table.row.insertBelow')}
+            title={t('table.row.insertBelow')}
+            disabled={!canAddRow}
+            style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top + row.height - 5 }}
+            onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
           />
-        </>
-      )}
-      {menu && (
-        <Menu
-          block={block}
-          position={{ x: menu.x, y: menu.y }}
-          actions={
-            menu.kind === 'row'
-              ? rowActions(menu.position)
-              : menu.kind === 'column'
-                ? columnActions(menu.position)
-                : tableActions()
-          }
-          background={
-            menu.kind === 'table'
-              ? cellsBackgroundMenu(editor, block, view.cells.get(), (action) =>
-                  perform(() => {
-                    action();
-                  }),
-                )
-              : undefined
-          }
-          panels={
-            menu.kind === 'table'
-              ? // Толщина, начертание, цвет линий и стиль меняются при открытом меню: результат виден сразу. Кнопка
-                // расположения линий (все, внешние, нет…) — разовое действие: после неё меню закрывается.
-                tableDesignPanels(
-                  editor,
-                  block,
-                  t,
-                  view.cells.get(),
-                  (action) => {
-                    editor.sealHistory();
-                    flushSync(() => {
-                      action();
+          <button
+            {...control}
+            type="button"
+            data-inkbrick-part="column-grip"
+            aria-label={t('table.columnHandle', { column: active.column + 1 })}
+            aria-haspopup="menu"
+            aria-expanded={menu?.kind === 'column'}
+            style={{
+              left: cell.left + gripInset,
+              top: edgeTop(table.top - 22),
+              // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
+              width: Math.max(
+                14,
+                Math.min(
+                  cell.width - 2 * gripInset,
+                  coarse ? Infinity : cornerLeft - 6 - (cell.left + gripInset),
+                ),
+              ),
+            }}
+            onClick={() => open('column', cell.left + 6, table.top + 10)}
+          >
+            <span data-inkbrick-part="dots" aria-hidden="true" />
+          </button>
+          {columnInserts && (
+            <>
+              <button
+                {...control}
+                type="button"
+                data-inkbrick-part="column-insert"
+                data-edge="start"
+                aria-label={t('table.column.insertLeft')}
+                title={t('table.column.insertLeft')}
+                disabled={!canAddColumn}
+                style={{ left: cell.left - 5, top: edgeTop(table.top - columnInsertRise) }}
+                onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
+              />
+              <button
+                {...control}
+                type="button"
+                data-inkbrick-part="column-insert"
+                data-edge="end"
+                aria-label={t('table.column.insertRight')}
+                title={t('table.column.insertRight')}
+                disabled={!canAddColumn}
+                style={{
+                  left: cell.left + cell.width - 5,
+                  top: edgeTop(table.top - columnInsertRise),
+                }}
+                onClick={() =>
+                  perform(() => run('insertTableColumn', { index: active.column + 1 }))
+                }
+              />
+            </>
+          )}
+          {segments.map(({ column, x, top, height }, order) => {
+            const edge = edges[column];
+            // Первый участок границы — фокусируемый разделитель, остальные только для мыши и пальца.
+            const first = order === 0 || segments[order - 1].column !== column;
+
+            return (
+              <div
+                {...control}
+                key={`${column}:${Math.round(top)}`}
+                role="separator"
+                aria-orientation="vertical"
+                // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
+                aria-valuenow={Math.round(
+                  edge.x - (column === 0 ? layout.grid.left : edges[column - 1].x),
+                )}
+                aria-valuemin={MIN_WIDTH}
+                aria-valuemax={MAX_WIDTH}
+                aria-label={t('table.resize', { column: column + 1 })}
+                tabIndex={first ? 0 : -1}
+                aria-hidden={first ? undefined : true}
+                data-inkbrick-part="resize"
+                style={{ left: x - 3, top, height }}
+                onPointerDown={(event) => resize(column, event)}
+                onKeyDown={(event) => resizeByKey(column, event)}
+                onDoubleClick={() => {
+                  if (
+                    can('setTableColumnWidth', { index: column, width: null }) &&
+                    props.widths?.[column]
+                  )
+                    perform(() => {
+                      run('setTableColumnWidth', { index: column, width: null });
                     });
-                  },
-                  () => {
-                    setMenu(null);
-                    rootFocus();
-                  },
-                )
-              : undefined
-          }
-          turnInto={[]}
-          onClose={() => {
-            setMenu(null);
-            rootFocus();
-          }}
-          onDismiss={() => setMenu(null)}
-        />
+                }}
+              />
+            );
+          })}
+          {coarse && !menu && !sizing && (picked || caretPosition) && (
+            <>
+              {/* Рамка выделения и точка на её углу (как в Notion на телефоне): точку тянут, чтобы выделить несколько ячеек. */}
+              <div
+                {...control}
+                aria-hidden="true"
+                data-inkbrick-part="cell-frame"
+                style={{
+                  left: layout.frame.left - 1,
+                  top: layout.frame.top - 1,
+                  width: layout.frame.width + 2,
+                  height: layout.frame.height + 2,
+                }}
+              />
+              <button
+                {...control}
+                type="button"
+                data-inkbrick-part="cell-knob"
+                aria-label={t('table.selection.extend')}
+                style={{
+                  left: layout.frame.left + layout.frame.width - 11,
+                  top: layout.frame.top + layout.frame.height - 11,
+                }}
+                onPointerDown={dragKnob}
+              />
+            </>
+          )}
+          {sizing && (
+            <ColumnWidthBar
+              column={sizing.column + 1}
+              min={widthRange(sizingBase.current, sizing.column).min}
+              max={widthRange(sizingBase.current, sizing.column).max}
+              value={sizing.value}
+              auto={!props.widths?.[sizing.column]}
+              onInput={slideWidth}
+              onCommit={commitWidth}
+              onAuto={fitWidth}
+              onClose={stopSizing}
+            />
+          )}
+        </>,
+        document.body,
       )}
-      {sizing && (
-        <ColumnWidthBar
-          column={sizing.column + 1}
-          min={widthRange(sizingBase.current, sizing.column).min}
-          max={widthRange(sizingBase.current, sizing.column).max}
-          value={sizing.value}
-          auto={!props.widths?.[sizing.column]}
-          onInput={slideWidth}
-          onCommit={commitWidth}
-          onAuto={fitWidth}
-          onClose={stopSizing}
-        />
-      )}
-    </>,
-    document.body,
+      {/* Меню уходит плавно (на телефоне лист съезжает вниз), даже если ручки уже скрылись. */}
+      <PortalPresence
+        open={menu !== null}
+        render={() =>
+          menu && (
+            <Menu
+              block={block}
+              position={{ x: menu.x, y: menu.y }}
+              actions={
+                menu.kind === 'row'
+                  ? rowActions(menu.position)
+                  : menu.kind === 'column'
+                    ? columnActions(menu.position)
+                    : tableActions()
+              }
+              background={
+                menu.kind === 'table'
+                  ? cellsBackgroundMenu(editor, block, view.cells.get(), (action) =>
+                      perform(() => {
+                        action();
+                      }),
+                    )
+                  : undefined
+              }
+              panels={
+                menu.kind === 'table'
+                  ? // Толщина, начертание, цвет линий и стиль меняются при открытом меню: результат виден сразу. Кнопка
+                    // расположения линий (все, внешние, нет…) — разовое действие: после неё меню закрывается.
+                    tableDesignPanels(
+                      editor,
+                      block,
+                      t,
+                      view.cells.get(),
+                      (action) => {
+                        editor.sealHistory();
+                        flushSync(() => {
+                          action();
+                        });
+                      },
+                      () => {
+                        setMenu(null);
+                        rootFocus();
+                      },
+                    )
+                  : undefined
+              }
+              turnInto={[]}
+              onClose={() => {
+                setMenu(null);
+                rootFocus();
+              }}
+              onDismiss={() => setMenu(null)}
+            />
+          )
+        }
+      />
+    </>
   );
 }
 

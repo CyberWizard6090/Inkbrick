@@ -843,6 +843,71 @@ test.describe('Table design on a phone', () => {
       expect(await cellBorder(page, 4, 'top')).toBe('thin');
     });
 
+    test('a sheet hides the on-screen keyboard and slides down when it closes', async ({
+      page,
+    }) => {
+      const column = page.locator('[data-testid="block-menu"]');
+      const editing = () =>
+        page.evaluate(
+          () => (document.activeElement as HTMLElement | null)?.isContentEditable ?? false,
+        );
+
+      // Каретка в ячейке (клавиатура поднята), потом меню столбца: фокус уходит из текста, клавиатура прячется.
+      await page.locator(cells).nth(4).tap();
+      expect(await editing()).toBe(true);
+      await page.locator('[data-inkbrick-part="column-grip"]').first().tap();
+      await expect(column).toBeVisible();
+      expect(await editing()).toBe(false);
+      await page.waitForTimeout(350);
+
+      // Касание затемнения: лист не пропадает сразу, а уезжает вниз, и документ фокус не получает.
+      await page.touchscreen.tap(page.viewportSize()!.width / 2, 40);
+      await expect
+        .poll(() =>
+          column.evaluate((node) => ({
+            state: node.closest('[data-inkbrick-presence]')?.getAttribute('data-state'),
+            animation: getComputedStyle(node).animationName,
+          })),
+        )
+        .toEqual({ state: 'closed', animation: 'inkbrick-sheet-out' });
+      await expect(column).toHaveCount(0);
+      expect(await editing()).toBe(false);
+    });
+
+    test('a narrow column has no insert markers that would cover its pill', async ({ page }) => {
+      await page.evaluate(() => {
+        const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+          .__inkbrick.main as never as {
+          editor: {
+            document: { rootId: string; getBlock: (id: string) => never };
+            dispatch: (intent: unknown) => unknown;
+          };
+        };
+        let found: string | undefined;
+        const walk = (block: { id: string; flavour: string; children: string[] } | undefined) => {
+          if (!block || found) return;
+          if (block.flavour === 'block:table') found = block.id;
+          block.children.forEach((id) => walk(editor.document.getBlock(id)));
+        };
+
+        walk(editor.document.getBlock(editor.document.rootId));
+        editor.dispatch({
+          type: 'setTableColumnWidth',
+          payload: { blockId: found, index: 1, width: 48 },
+        });
+      });
+
+      const markers = page.locator('[data-inkbrick-part="column-insert"]');
+
+      await page.locator(cells).nth(4).tap();
+      await expect(page.locator('[data-inkbrick-part="column-grip"]')).toBeVisible();
+      await expect(markers).toHaveCount(0);
+
+      // В широком столбце маркеры на месте.
+      await page.locator(cells).nth(3).tap();
+      await expect(markers).toHaveCount(2);
+    });
+
     test('the width slider resizes the column live and writes one undo step on release', async ({
       page,
     }) => {

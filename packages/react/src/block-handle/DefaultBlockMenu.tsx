@@ -3,7 +3,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isHexColor } from '@inkbrick/document';
 
 import { SheetBackdrop } from '../context-menu/DefaultContextMenu';
-import { useSheet } from '../hooks/useSheet';
+import { hideKeyboard, useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
 import { Icon } from '../icons/Icon';
@@ -21,6 +21,11 @@ export function DefaultBlockMenu({
 }: BlockMenuProps) {
   const t = useT();
   const { sheet, inset } = useSheet();
+
+  // Лист на телефоне: экранная клавиатура прячется и не закрывает его.
+  useLayoutEffect(() => {
+    if (sheet) hideKeyboard();
+  }, [sheet]);
   const ref = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState({ flip: false, height: 0, width: 0 });
   const { flip, height, width } = fit;

@@ -6,11 +6,11 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { createPortal } from 'react-dom';
 
-import { useSheet } from '../hooks/useSheet';
+import { hideKeyboard, useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
+import { PortalPresence } from '../ui/Presence';
 import type { ContextMenuItem, ContextMenuProps } from './types';
 
 const MARGIN = 8;
@@ -48,6 +48,11 @@ export function DefaultContextMenu({
       top: Math.max(MARGIN, Math.min(top, window.innerHeight - height - MARGIN)),
     });
   }, [position.x, position.y, formatting !== null, sheet]);
+
+  // Лист на телефоне без кнопок форматирования: экранная клавиатура не закрывает его (кнопкам нужен курсор в тексте).
+  useLayoutEffect(() => {
+    if (sheet && !formatting) hideKeyboard();
+  }, [sheet]);
 
   // Без кнопок форматирования фокус — на первом пункте, чтобы меню работало со стрелок.
   useEffect(() => {
@@ -260,21 +265,23 @@ function Row({
           <Icon name="chevron-right" />
         </span>
       )}
-      {nested &&
-        open &&
-        createPortal(
-          <Flyout
-            anchor={ref}
-            item={item}
-            focusFirst={byKeyboard}
-            onBack={() => {
-              setOpen(false);
-              ref.current?.focus();
-            }}
-            onRun={onRun}
-          />,
-          document.body,
-        )}
+      {nested && (
+        <PortalPresence
+          open={open}
+          render={() => (
+            <Flyout
+              anchor={ref}
+              item={item}
+              focusFirst={byKeyboard}
+              onBack={() => {
+                setOpen(false);
+                ref.current?.focus();
+              }}
+              onRun={onRun}
+            />
+          )}
+        />
+      )}
     </div>
   );
 }
