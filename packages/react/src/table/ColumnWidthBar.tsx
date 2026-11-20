@@ -100,6 +100,9 @@ export function ColumnWidthBar({
             onInput(latest.current);
           }}
           onPointerUp={() => onCommit(latest.current)}
+          // Жест перехватил браузер (палец ушёл в прокрутку): pointerup не придёт, а ползунок уже сдвинут — ширина,
+          // которую видно на экране, записывается, иначе предпросмотр остался бы без записи в документ.
+          onPointerCancel={() => onCommit(latest.current)}
           onKeyUp={(event) => {
             if (event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End')
               onCommit(Number(event.currentTarget.value));

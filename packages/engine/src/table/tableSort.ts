@@ -16,14 +16,6 @@ export function parseNumber(text: string, decimal?: ',' | '.'): number | undefin
 
   digits = digits.replace(/[.,]+$/, '');
 
-  // Язык известен (например, русский: запятая — дробная): разделитель тысяч другой, и угадывать не нужно.
-  if (decimal) {
-    const groups = decimal === ',' ? /\./g : /,/g;
-    const value = Number(digits.replace(groups, '').replace(decimal, '.'));
-
-    return Number.isFinite(value) ? (negative ? -value : value) : undefined;
-  }
-
   const lastDot = digits.lastIndexOf('.');
   const lastComma = digits.lastIndexOf(',');
   const decimalAt = Math.max(lastDot, lastComma);
@@ -33,7 +25,10 @@ export function parseNumber(text: string, decimal?: ',' | '.'): number | undefin
     const fraction = digits.slice(decimalAt + 1);
     const mixed = lastDot >= 0 && lastComma >= 0;
     const repeated = digits.split(separator).length > 2;
-    const thousands = !mixed && (repeated || (separator === ',' && fraction.length === 3));
+    // Один разделитель и ровно три цифры после него («1.234», «0,125») — запись неоднозначна: её решает язык
+    // (`decimal`), а без него запятая считается разделителем тысяч. Остальные случаи видны по самой записи.
+    const thousands =
+      !mixed && (repeated || (fraction.length === 3 && separator !== (decimal ?? '.')));
 
     digits = thousands
       ? digits.replace(/[.,]/g, '')

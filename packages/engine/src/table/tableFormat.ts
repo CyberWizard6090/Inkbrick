@@ -298,14 +298,16 @@ export const SetTableCellsBordersCommand = defineBlockCommand<
         props: { ...cell.props, [SIDE_PROP[side]]: value },
       }));
     };
+    // Ячейка по другую сторону линии.
+    const near = (row: number, column: number, side: TableBorderSide) =>
+      [
+        row + (side === 'top' ? -1 : side === 'bottom' ? 1 : 0),
+        column + (side === 'left' ? -1 : side === 'right' ? 1 : 0),
+      ] as const;
     // Линия записывается и в ячейку, и в соседа с другой стороны (если он есть).
     const line = (row: number, column: number, side: TableBorderSide, value: TableBorderWidth) => {
       put(row, column, side, value);
-
-      const dRow = side === 'top' ? -1 : side === 'bottom' ? 1 : 0;
-      const dColumn = side === 'left' ? -1 : side === 'right' ? 1 : 0;
-
-      put(row + dRow, column + dColumn, FACING[side], value);
+      put(...near(row, column, side), FACING[side], value);
     };
     const value: TableBorderWidth = mode === 'none' ? 'none' : (width ?? 'thin');
 
@@ -316,7 +318,19 @@ export const SetTableCellsBordersCommand = defineBlockCommand<
             const current = (getBlock(full[row]?.[column] ?? '')?.props[SIDE_PROP[side]] ??
               fallback) as TableBorderWidth;
 
-            if (current !== 'none') line(row, column, side, width ?? current);
+            if (current === 'none') continue;
+
+            if (width !== undefined) {
+              line(row, column, side, width);
+              continue;
+            }
+
+            // Меняются только цвет или начертание: толщины не трогаем ни у ячейки, ни у соседа (иначе своя «тонкая» по
+            // умолчанию затёрла бы толстую линию соседа), но общая линия перекрашивается у обоих.
+            const [nearRow, nearColumn] = near(row, column, side);
+
+            for (const id of [full[row]?.[column], full[nearRow]?.[nearColumn]])
+              if (id) touched.add(id);
           }
 
           continue;

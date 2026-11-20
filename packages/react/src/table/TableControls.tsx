@@ -307,12 +307,21 @@ function GripTip({ t }: { t: TFunction }) {
  * корня: так выделение и буфер обмена не видят этих элементов. Показывается, пока над таблицей мышь или в ней каретка;
  * в режиме только чтения не показывается.
  */
+/** Дробный разделитель языка (`Intl`): «,» у русского, немецкого, французского…, «.» у английского. */
+function decimalSeparator(locale: string): ',' | '.' {
+  try {
+    return (1.5).toLocaleString(locale).includes(',') ? ',' : '.';
+  } catch {
+    return '.';
+  }
+}
+
 export function TableControls({ block, tableRef, onPreview }: TableControlsProps) {
   const editor = useEditor();
   const view = useEditorView();
   const { slots, t, locale } = useEditorUI();
   // Дробная часть числа в языке интерфейса: по ней сортировка читает «0,125» как дробь, а не как тысячи.
-  const decimal: ',' | '.' = locale.startsWith('ru') ? ',' : '.';
+  const decimal = decimalSeparator(locale);
   const [hover, setHover] = useState<Position | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   // Панель ширины столбца (телефон): ползунок вместо тонкой границы под палец.

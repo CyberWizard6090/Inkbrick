@@ -113,18 +113,26 @@ const vertical = (direction: 1 | -1) => (context: KeymapContext) => {
   if (row < 0 || row >= size.rows) return false;
 
   const merges = normalizeMerges(getBlock(cell.tableId)?.props.merges, size.rows, size.columns);
-  const covered = (r: number) => {
-    const found = mergeAt(merges, r, cell.column);
-
-    return !!found && !found.origin;
-  };
+  // Объединение, в котором стоит каретка: его скрытые строки пропускаются (оно уже пройдено целиком).
+  const own = mergeAt(merges, cell.row, cell.column)?.merge;
   let target = row;
+  let column = cell.column;
 
-  while (target >= 0 && target < size.rows && covered(target)) target += direction;
+  for (; target >= 0 && target < size.rows; target += direction) {
+    const found = mergeAt(merges, target, cell.column);
+
+    if (!found || found.origin) break;
+    if (found.merge === own) continue;
+
+    // Под кареткой чужое объединение (например, по ширине в соседний столбец): каретка встаёт в его видимую ячейку.
+    target = found.merge.row;
+    column = found.merge.column;
+    break;
+  }
 
   if (target < 0 || target >= size.rows) return false;
 
-  const id = tableCellAt(getBlock, cell.tableId, target, cell.column);
+  const id = tableCellAt(getBlock, cell.tableId, target, column);
   const block = id ? getBlock(id) : undefined;
 
   if (block) view.placeCaret(block.id, 0);

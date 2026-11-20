@@ -495,6 +495,27 @@ describe('table borders', () => {
     expect(can('setTableCellsBorders', { range: ALL, mode: 'keep', style: 'wavy' })).toBe(false);
   });
 
+  it('keep with only a color or a style leaves the widths of the cell and of its neighbours as they are', () => {
+    const { run, cell, editor } = setup();
+
+    // Над B2 — B1 без своей нижней границы; у B2 толстая верхняя линия.
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'top', width: 'thick' });
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: { blockId: cell(0, 1), props: { borderBottom: undefined } },
+    });
+
+    run('setTableCellsBorders', {
+      range: { top: 0, left: 1, bottom: 0, right: 1 },
+      mode: 'keep',
+      color: 'red',
+    });
+
+    expect(sides(editor, cell(1, 1)).borderTop).toBe('thick');
+    expect(sides(editor, cell(0, 1)).borderBottom).toBeUndefined();
+    expect(sides(editor, cell(0, 1)).borderColor).toBe('red');
+  });
+
   it('the style travels with a copied range', () => {
     const { run, editor, tableId } = setup();
 
@@ -575,6 +596,66 @@ describe('pasting a copied range into an existing table', () => {
     });
     expect(target.editor.document.getBlock(target.cell(2, 2))!.props).toMatchObject({
       background: 'blue',
+    });
+  });
+
+  it('plain text from a spreadsheet over several cells keeps their formatting', () => {
+    const target = setup();
+
+    target.run('setTableCellsBackground', { range: ALL, background: 'yellow' });
+    target.run('setTableCellsBorders', { range: ALL, mode: 'all', width: 'thick' });
+
+    target.editor.dispatch({
+      type: 'pasteFragment',
+      payload: {
+        at: { blockId: target.cell(0, 0), offset: 0 },
+        fragment: tableFragment([
+          ['1', '2'],
+          ['3', '4'],
+        ]),
+      },
+    });
+
+    expect(target.editor.document.getBlock(target.cell(1, 1))!.props).toMatchObject({
+      background: 'yellow',
+      borderTop: 'thick',
+    });
+    expect(
+      target.editor.document
+        .getBlock(target.cell(1, 1))!
+        .content.map((n) => n.insert)
+        .join(''),
+    ).toBe('4');
+  });
+
+  it('a forged fragment carries no unknown properties and no invalid formatting', () => {
+    const target = setup();
+    const forged = (props: Record<string, unknown>) => {
+      const fragment = tableFragment([['a']]);
+
+      (fragment.blocks[0].children[0].children[0] as { props: Record<string, unknown> }).props =
+        props;
+
+      return fragment;
+    };
+    const paste = (props: Record<string, unknown>) =>
+      target.editor.dispatch({
+        type: 'pasteFragment',
+        payload: { at: { blockId: target.cell(1, 1), offset: 0 }, fragment: forged(props) },
+      });
+
+    // Неизвестные свойства отбрасываются, известные с допустимыми значениями переносятся.
+    paste({ borderBottom: 'thick', align: 'center', foo: { bar: 1 } });
+    expect(target.editor.document.getBlock(target.cell(1, 1))!.props).toEqual({
+      borderBottom: 'thick',
+      align: 'center',
+    });
+
+    // Недопустимое значение — чужое оформление не переносится: у ячейки остаётся её собственное.
+    paste({ background: 'url(https://evil.example/x.png)', borderTop: 'huge', align: 'right' });
+    expect(target.editor.document.getBlock(target.cell(1, 1))!.props).toEqual({
+      borderBottom: 'thick',
+      align: 'center',
     });
   });
 });

@@ -514,6 +514,88 @@ test.describe('Table controls', () => {
     expect((await grid(page))[0][1]).toContain('Y');
   });
 
+  test('arrow down reaches a cell merged across columns from the column it covers', async ({
+    page,
+  }) => {
+    // B2:C2 объединены; каретка в C1, стрелка вниз — в объединённую ячейку (B2), а не через строку в C3.
+    await page.evaluate(() => {
+      const { editor } = (window as never as { __inkbrick: { main: { editor: never } } }).__inkbrick
+        .main as never as {
+        editor: {
+          document: { rootId: string; getBlock: (id: string) => never };
+          dispatch: (intent: unknown) => unknown;
+        };
+      };
+      let found = '';
+      const walk = (block: { flavour: string; id: string; children: string[] } | undefined) => {
+        if (!block || found) return;
+        if (block.flavour === 'block:table') found = block.id;
+        block.children.forEach((id) => walk(editor.document.getBlock(id)));
+      };
+
+      walk(editor.document.getBlock(editor.document.rootId));
+      editor.dispatch({
+        type: 'mergeTableCells',
+        payload: { blockId: found, range: { top: 1, bottom: 1, left: 1, right: 2 } },
+      });
+    });
+
+    await page.locator(cells).nth(2).click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.type('X');
+
+    expect((await grid(page))[1][1]).toContain('X');
+    expect((await grid(page))[2][2]).not.toContain('X');
+  });
+
+  test('«Wider» in the context menu of a cell merged across columns widens only its first column', async ({
+    page,
+  }) => {
+    const widths = () =>
+      page.evaluate(() => {
+        const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+          .__inkbrick.main as never as {
+          editor: {
+            document: { rootId: string; getBlock: (id: string) => never };
+            dispatch: (intent: unknown) => unknown;
+          };
+        };
+        let found: { id: string; props: { widths?: number[] } } | undefined;
+        const walk = (
+          block:
+            | { flavour: string; id: string; children: string[]; props: { widths?: number[] } }
+            | undefined,
+        ) => {
+          if (!block || found) return;
+          if (block.flavour === 'block:table') found = block;
+          block.children.forEach((id) => walk(editor.document.getBlock(id)));
+        };
+
+        walk(editor.document.getBlock(editor.document.rootId));
+        if (!found!.props.widths)
+          editor.dispatch({
+            type: 'mergeTableCells',
+            payload: { blockId: found!.id, range: { top: 0, bottom: 0, left: 0, right: 2 } },
+          });
+
+        return found!.props.widths ?? null;
+      });
+
+    expect(await widths()).toBeNull();
+    const column = await page
+      .locator(cells)
+      .nth(3)
+      .evaluate((node) => node.getBoundingClientRect().width);
+
+    await page.locator(cells).nth(0).click({ button: 'right' });
+    await page.locator('[data-action="table-column-wider"]').click();
+
+    // Шаг от ширины одного столбца, а не от всей объединённой ячейки.
+    await expect.poll(async () => (await widths())?.[0] ?? 0).toBeGreaterThan(column);
+    expect((await widths())![0]).toBeLessThan(column + 40);
+  });
+
   test('shift click without a selection selects the cells from the caret to the clicked one', async ({
     page,
   }) => {

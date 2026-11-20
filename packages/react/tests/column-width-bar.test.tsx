@@ -42,6 +42,15 @@ describe('the column width bar (phone)', () => {
     expect(onCommit).toHaveBeenCalledWith(180);
   });
 
+  it('a gesture taken over by the browser (pointercancel) still commits the shown width', () => {
+    const { container, onCommit } = mount();
+    const slider = container.querySelector<HTMLInputElement>('input[type="range"]')!;
+
+    fireEvent.input(slider, { target: { value: '150' } });
+    fireEvent.pointerCancel(slider);
+    expect(onCommit).toHaveBeenCalledWith(150);
+  });
+
   it('the − and + buttons nudge by one pixel and stop at the limits', () => {
     const { container, onCommit, rerender } = mount();
     const button = (action: string) =>

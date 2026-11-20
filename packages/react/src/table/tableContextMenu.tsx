@@ -243,7 +243,7 @@ export function tableContextMenu({
   function widthItems(index: number): ContextMenuItem[] {
     const id = visibleCell(editor, tableId!, row, index).id;
     const td = id ? view.getElement(id)?.closest('td') : null;
-    const measured = td?.getBoundingClientRect().width ?? 0;
+    const measured = td ? columnWidth(td, index) : 0;
     const current = getBlock(tableId!)?.props.widths;
     const saved = Array.isArray(current) ? current[index] : undefined;
     const start = typeof saved === 'number' && saved > 0 ? saved : measured;
@@ -282,3 +282,17 @@ export function tableContextMenu({
 const MIN_COLUMN_WIDTH = 40;
 const MAX_COLUMN_WIDTH = 1200;
 const KEY_WIDTH_STEP = 10;
+
+/**
+ * Ширина столбца `index` на экране: по первой его ячейке без объединения (скрытые ячейки объединений остаются в DOM,
+ * поэтому номер ячейки в строке — номер столбца). Если такой нет, — доля объединённой ячейки на столбец.
+ */
+function columnWidth(td: HTMLTableCellElement, index: number): number {
+  for (const row of td.closest('table')?.rows ?? []) {
+    const cell = row.cells[index];
+
+    if (cell && !cell.hidden && cell.colSpan <= 1) return cell.getBoundingClientRect().width;
+  }
+
+  return td.getBoundingClientRect().width / Math.max(1, td.colSpan);
+}

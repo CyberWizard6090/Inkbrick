@@ -150,6 +150,18 @@ describe('parseNumber with the decimal separator of the language', () => {
     expect(parseNumber('1,234.5', '.')).toBe(1234.5);
   });
 
+  it('a number written in the other convention is read by its own separators', () => {
+    // Оба разделителя: дробная часть — после последнего, независимо от языка.
+    expect(parseNumber('1.234,56', '.')).toBe(1234.56);
+    expect(parseNumber('$1,234.50', ',')).toBe(1234.5);
+    // Повтор разделителя — тысячи; одна-две цифры после разделителя — дробь.
+    expect(parseNumber('1.234.567', ',')).toBe(1234567);
+    expect(parseNumber('3.5', ',')).toBe(3.5);
+    // Неоднозначная запись решается языком.
+    expect(parseNumber('1.234', ',')).toBe(1234);
+    expect(parseNumber('1.234', '.')).toBe(1.234);
+  });
+
   it('without a language the old reading stays', () => {
     expect(parseNumber('1,234')).toBe(1234);
     expect(parseNumber('1,5')).toBe(1.5);

@@ -198,11 +198,25 @@ function StyleGallery({
  * из пунктов «Все», «Внешние» и т. д. Выбор толщины, начертания или цвета сразу меняет и уже существующие линии выделенных
  * ячеек (режим `keep`), поэтому ничего дополнительно нажимать не нужно.
  */
-const look: { width: TableBorderWidth; style: TableBorderStyle; color: ColorName | null } = {
-  width: 'thin',
-  style: 'solid',
-  color: null,
-};
+interface BorderLook {
+  width: TableBorderWidth;
+  style: TableBorderStyle;
+  color: ColorName | null;
+}
+
+/** У каждого редактора своё: выбор в одном редакторе страницы не меняет линии другого. */
+const looks = new WeakMap<Editor, BorderLook>();
+
+function lookOf(editor: Editor): BorderLook {
+  let look = looks.get(editor);
+
+  if (!look) {
+    look = { width: 'thin', style: 'solid', color: null };
+    looks.set(editor, look);
+  }
+
+  return look;
+}
 
 type Placement = Exclude<TableBorderMode, 'keep'>;
 
@@ -319,9 +333,9 @@ function BordersPanel({
   close?: () => void;
 }) {
   const t = useT();
-  const [width, setWidth] = useState<TableBorderWidth>(look.width);
-  const [style, setStyle] = useState<TableBorderStyle>(look.style);
-  const [color, setColor] = useState<ColorName | null>(look.color);
+  const [width, setWidth] = useState<TableBorderWidth>(lookOf(editor).width);
+  const [style, setStyle] = useState<TableBorderStyle>(lookOf(editor).style);
+  const [color, setColor] = useState<ColorName | null>(lookOf(editor).color);
   const apply = (mode: Placement) => {
     applyBorders(editor, block, picked, run, {
       mode,
@@ -337,7 +351,7 @@ function BordersPanel({
     style?: TableBorderStyle;
     color?: ColorName | null;
   }) => {
-    Object.assign(look, patch);
+    Object.assign(lookOf(editor), patch);
     applyBorders(editor, block, picked, run, { mode: 'keep', ...patch });
   };
 
@@ -496,7 +510,7 @@ export function tableDesignMenuItems(
     style?: TableBorderStyle;
     color?: ColorName | null;
   }) => {
-    Object.assign(look, patch);
+    Object.assign(lookOf(editor), patch);
     apply({ mode: 'keep', ...patch });
   };
 
@@ -528,9 +542,9 @@ export function tableDesignMenuItems(
           run: () =>
             apply({
               mode,
-              ...(mode === 'none' ? {} : { width: look.width }),
-              color: look.color,
-              style: look.style,
+              ...(mode === 'none' ? {} : { width: lookOf(editor).width }),
+              color: lookOf(editor).color,
+              style: lookOf(editor).style,
             }),
         })),
         {
@@ -542,7 +556,7 @@ export function tableDesignMenuItems(
             id: `table-border-width-${value}`,
             title: t(`table.border.${value}` as MessageKey),
             icon: <LineSample width={value} />,
-            checked: look.width === value,
+            checked: lookOf(editor).width === value,
             run: () => change({ width: value }),
           })),
           run: () => undefined,
@@ -555,7 +569,7 @@ export function tableDesignMenuItems(
             id: `table-border-style-${value}`,
             title: t(`table.border.${value}` as MessageKey),
             icon: <LineSample style={value} />,
-            checked: look.style === value,
+            checked: lookOf(editor).style === value,
             run: () => change({ style: value }),
           })),
           run: () => undefined,
@@ -567,7 +581,7 @@ export function tableDesignMenuItems(
           flyout: (
             <ColorDots
               names={COLOR_NAMES}
-              current={look.color}
+              current={lookOf(editor).color}
               custom={false}
               onPick={(color) => change({ color: color as ColorName | null })}
             />

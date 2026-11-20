@@ -28,7 +28,7 @@ import { useT } from '../hooks/useT';
 import { BlockRenderer } from '../renderer/BlockRenderer';
 import { fitWidths } from './fitWidths';
 import { TableControls } from './TableControls';
-import { TableMergeContext, type MergedCell } from './TableMergeContext';
+import { TableHeaderRowContext, TableMergeContext, type MergedCell } from './TableMergeContext';
 import { useCellSelection } from './useCellSelection';
 
 const NO_MERGES: ReadonlyMap<string, MergedCell> = new Map();
@@ -154,9 +154,13 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
           </colgroup>
         )}
         <tbody>
-          <TableMergeContext.Provider value={merged}>
-            <Children id={block.id} />
-          </TableMergeContext.Provider>
+          <TableHeaderRowContext.Provider
+            value={header !== false ? (block.children[0] ?? null) : null}
+          >
+            <TableMergeContext.Provider value={merged}>
+              <Children id={block.id} />
+            </TableMergeContext.Provider>
+          </TableHeaderRowContext.Provider>
         </tbody>
       </table>
       {!readOnly && <TableControls block={block} tableRef={table} onPreview={setPreview} />}
@@ -204,10 +208,8 @@ export function TableCellBlock({ block, selected }: BlockProps) {
   const view = useEditorView();
   const editor = useEditor();
   // Ячейка первой строки заголовочной таблицы: для программ чтения с экрана это заголовок столбца.
-  const row = editor.store.getBlock(block.parentId ?? '');
-  const tableBlock = row ? editor.store.getBlock(row.parentId ?? '') : undefined;
-  const headerCell =
-    !!tableBlock && tableBlock.props.header !== false && tableBlock.children[0] === row?.id;
+  const headerRow = useContext(TableHeaderRowContext);
+  const headerCell = headerRow !== null && block.parentId === headerRow;
   const merge = useContext(TableMergeContext).get(block.id);
   const picked = useSyncExternalStore(
     view.cells.subscribe,

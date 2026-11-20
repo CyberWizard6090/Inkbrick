@@ -1,4 +1,10 @@
-import { TABLE, type BaseBlock, type InlineNode, type TableMerge } from '@inkbrick/document';
+import {
+  TABLE,
+  TABLE_CELL,
+  type BaseBlock,
+  type InlineNode,
+  type TableMerge,
+} from '@inkbrick/document';
 
 import type { Fragment, FragmentBlock } from '../clipboard/types';
 import { addTableColumn, addTableRow } from '../table/tableOps';
@@ -188,7 +194,17 @@ function fillTable(
 
   if (!position) return undefined;
 
-  const { rows, cellProps } = readTable(source);
+  const read = readTable(source);
+  const { rows } = read;
+  // Оформление ячеек из буфера (его можно подделать) проверяется схемой ячейки: лишние свойства отбрасываются, а с
+  // недопустимым значением оформление этой ячейки не переносится вовсе.
+  const cellProps = read.cellProps.map((row) =>
+    row.map((props) => {
+      const result = engine.schema.validateProps(TABLE_CELL, props);
+
+      return result.success ? (result.data as Record<string, unknown>) : {};
+    }),
+  );
   const columns = rows[0]?.length ?? 0;
   const needRows = position.row + rows.length;
   const needColumns = position.column + columns;
@@ -220,18 +236,21 @@ function fillTable(
     addTableColumn(engine, tx, position.tableId, size.columns);
 
   let last: CaretResult | undefined;
+  // Фон, границы и выравнивание ячеек переносятся вместе с текстом (как при копировании внутри таблицы). Фрагмент без
+  // всякого оформления — простой текст (TSV из Excel, строки текста): оформление ячеек получателя он не стирает.
+  const styled = cellProps.some((row) => row.some((props) => Object.keys(props).length > 0));
 
   rows.forEach((row, r) =>
     row.forEach((content, c) => {
       const id = tableCellAt(getBlock, position.tableId, position.row + r, position.column + c)!;
 
       engine.block.updateContent(tx, id, structuredClone(content));
-      // Фон, границы и выравнивание ячеек переносятся вместе с текстом (как при копировании внутри таблицы).
-      // Одна ячейка без своего оформления (простой текст) оформления получателя не стирает.
-      const props = structuredClone(cellProps[r]?.[c] ?? {});
-      const plainSingle = rows.length === 1 && columns === 1 && Object.keys(props).length === 0;
 
-      if (!plainSingle) engine.block.update(tx, id, (cell) => ({ ...cell, props }));
+      if (styled) {
+        const props = structuredClone(cellProps[r]?.[c] ?? {});
+
+        engine.block.update(tx, id, (cell) => ({ ...cell, props }));
+      }
       last = { blockId: id, offset: engine.inline.length(content) };
     }),
   );
