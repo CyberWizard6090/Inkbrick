@@ -178,9 +178,10 @@ function Row({
         setOpen(nested);
       }}
       onClick={() => {
+        // Клик по пункту с подменю открывает его (наведение уже открыло): переключение закрывало бы его сразу.
         if (nested) {
           setByKeyboard(false);
-          setOpen(!open);
+          setOpen(true);
         } else onRun(item);
       }}
       onKeyDown={(event) => {

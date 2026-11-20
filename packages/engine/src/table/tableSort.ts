@@ -57,6 +57,9 @@ export function parseDate(text: string): number | undefined {
     return Number.isFinite(time) ? time : undefined;
   }
 
+  // Остальное разбирает `Date.parse`, но только текст с годом: голое число («10») браузер принимает за месяц и год.
+  if (!/\b\d{4}\b/.test(value)) return undefined;
+
   const time = Date.parse(value);
 
   return Number.isFinite(time) ? time : undefined;

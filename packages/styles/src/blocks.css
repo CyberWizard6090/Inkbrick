@@ -329,16 +329,6 @@
     font-weight: var(--inkbrick-font-weight-semibold);
   }
 
-  /* Заголовочный столбец: первая ячейка каждой строки выделена так же, как заголовочная строка. */
-  :where(
-    [data-inkbrick-block='table'][data-header-column]
-      [data-inkbrick-block='table-row']
-      > [data-inkbrick-block='table-cell']:first-child
-  ) {
-    background: var(--inkbrick-bg-3);
-    font-weight: var(--inkbrick-font-weight-semibold);
-  }
-
   /* Чередующиеся строки: каждая вторая строка тела (с заголовком — третья, пятая…, без него — вторая, четвёртая…). */
   :where(
     [data-inkbrick-block='table'][data-striped][data-header]
@@ -351,9 +341,14 @@
     background: color-mix(in srgb, var(--inkbrick-bg-3) 50%, var(--inkbrick-bg-1));
   }
 
-  /* Без границ: линии остаются в раскладке прозрачными, поэтому ширина ячеек не меняется. */
-  :where([data-inkbrick-block='table'][data-borders='none'] [data-inkbrick-block='table-cell']) {
-    border-color: transparent;
+  /* Заголовочный столбец: первая ячейка каждой строки выделена так же, как заголовочная строка. */
+  :where(
+    [data-inkbrick-block='table'][data-header-column]
+      [data-inkbrick-block='table-row']
+      > [data-inkbrick-block='table-cell']:first-child
+  ) {
+    background: var(--inkbrick-bg-3);
+    font-weight: var(--inkbrick-font-weight-semibold);
   }
 
   /*
@@ -380,12 +375,6 @@
     --inkbrick-table-line: var(--inkbrick-stroke-1);
     --inkbrick-table-head-bg: transparent;
     --inkbrick-table-band-bg: transparent;
-  }
-
-  :where(
-    [data-inkbrick-block='table'][data-table-style='lines'] [data-inkbrick-block='table-cell']
-  ) {
-    border-inline-color: transparent;
   }
 
   :where(
@@ -476,16 +465,16 @@
     border-color: var(--inkbrick-table-line);
   }
 
+  /* Эти два правила идут после общего цвета линий: при одинаковой специфичности побеждает последнее. */
   :where(
-    [data-inkbrick-block='table'][data-table-style][data-header]
-      [data-inkbrick-block='table-row']:first-child
-      > [data-inkbrick-block='table-cell'],
-    [data-inkbrick-block='table'][data-table-style][data-header-column]
-      [data-inkbrick-block='table-row']
-      > [data-inkbrick-block='table-cell']:first-child
+    [data-inkbrick-block='table'][data-table-style='lines'] [data-inkbrick-block='table-cell']
   ) {
-    background: var(--inkbrick-table-head-bg);
-    color: var(--inkbrick-table-head-fg, inherit);
+    border-inline-color: transparent;
+  }
+
+  /* Без границ: линии остаются в раскладке прозрачными, поэтому ширина ячеек не меняется. */
+  :where([data-inkbrick-block='table'][data-borders='none'] [data-inkbrick-block='table-cell']) {
+    border-color: transparent;
   }
 
   :where(
@@ -497,6 +486,18 @@
       > [data-inkbrick-block='table-cell']
   ) {
     background: var(--inkbrick-table-band-bg);
+  }
+
+  :where(
+    [data-inkbrick-block='table'][data-table-style][data-header]
+      [data-inkbrick-block='table-row']:first-child
+      > [data-inkbrick-block='table-cell'],
+    [data-inkbrick-block='table'][data-table-style][data-header-column]
+      [data-inkbrick-block='table-row']
+      > [data-inkbrick-block='table-cell']:first-child
+  ) {
+    background: var(--inkbrick-table-head-bg);
+    color: var(--inkbrick-table-head-fg, inherit);
   }
 
   /* Границы ячейки по сторонам: «без линии» остаётся в раскладке прозрачной, поэтому ширина ячеек не меняется. */

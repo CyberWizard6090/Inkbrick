@@ -175,9 +175,26 @@ export function useCellSelection(
 
         view.cells.clear();
 
-        if (id) {
-          flushSync(() => clearTableCells(editor, [id]));
-          view.placeCaret(id, 0);
+        if (id && !editor.readOnly) {
+          // Очистка и сам символ — один шаг undo: одна отмена возвращает и текст ячейки, и её содержимое до ввода.
+          event.preventDefault();
+          flushSync(() => {
+            editor.sealHistory();
+            editor.batch(() => {
+              const length = editor.engine.inline.length(editor.store.getBlock(id)?.content ?? []);
+
+              if (length > 0)
+                editor.dispatch({
+                  type: 'deleteText',
+                  payload: { blockId: id, from: 0, to: length },
+                });
+              editor.dispatch({
+                type: 'insertText',
+                payload: { text: event.key, selection: { anchor: { blockId: id, offset: 0 } } },
+              } as never);
+            });
+          });
+          view.placeCaret(id, event.key.length);
         }
       } else if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault();

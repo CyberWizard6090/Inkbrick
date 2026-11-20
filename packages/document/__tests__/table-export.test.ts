@@ -284,3 +284,22 @@ describe('table export', () => {
     expect(toPlainText(document, { title: false })).toBe('before\n\nafter');
   });
 });
+
+describe('a merge that starts in the header row', () => {
+  it('is cut at the header: rowspan does not cross thead and tbody', () => {
+    const html = toHtml(
+      build(
+        [
+          ['a', 'b', 'z'],
+          ['1', '2', '3'],
+          ['4', '5', '6'],
+        ],
+        { merges: [{ row: 0, column: 2, rows: 2, columns: 1 }] },
+      ),
+    );
+
+    expect(html).not.toContain('rowspan');
+    expect(html).toMatch(/<th[^>]*>z<\/th><\/tr><\/thead>/);
+    expect(html).toMatch(/<td[^>]*>3<\/td>/);
+  });
+});

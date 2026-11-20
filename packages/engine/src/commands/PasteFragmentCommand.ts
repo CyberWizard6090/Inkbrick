@@ -227,9 +227,11 @@ function fillTable(
 
       engine.block.updateContent(tx, id, structuredClone(content));
       // Фон, границы и выравнивание ячеек переносятся вместе с текстом (как при копировании внутри таблицы).
+      // Одна ячейка без своего оформления (простой текст) оформления получателя не стирает.
       const props = structuredClone(cellProps[r]?.[c] ?? {});
+      const plainSingle = rows.length === 1 && columns === 1 && Object.keys(props).length === 0;
 
-      engine.block.update(tx, id, (cell) => ({ ...cell, props }));
+      if (!plainSingle) engine.block.update(tx, id, (cell) => ({ ...cell, props }));
       last = { blockId: id, offset: engine.inline.length(content) };
     }),
   );

@@ -228,7 +228,8 @@ describe('table menu', () => {
     const t = mount();
     const grip = await showGrip(t);
 
-    expect(grip.getAttribute('aria-haspopup')).toBe('menu');
+    // Клик по ручке выделяет ячейки, а не открывает меню: объявлять меню нельзя.
+    expect(grip.getAttribute('aria-haspopup')).toBeNull();
 
     const item = (id: string) =>
       document.querySelector<HTMLElement>(`[data-testid="block-menu"] [data-action="${id}"]`);

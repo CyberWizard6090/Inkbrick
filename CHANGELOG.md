@@ -180,6 +180,16 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - Pasting tab-separated text into a paragraph is no longer turned into a table larger than the limits (`MAX_TABLE_CELLS`, `MAX_TABLE_COLUMNS`); it stays text.
 - Pasting a table into a cell of another table never writes into the hidden cells of a merge (such a paste goes in as text), and the merges of the pasted table move to the place of the paste.
 - The cell context menu has «Column wider» and «Column narrower» (10 px steps), so a column width can be changed from the keyboard.
+- HTML export: a merge that starts in the header row is cut at the header, so `rowspan` no longer crosses `thead` and `tbody`.
+- Sorting a date column: a bare number («10») is not a date; the `Date.parse` fallback needs a four-digit year.
+- Table styles: «Horizontal lines» and «Hide cell borders» are no longer overridden by the general line colour; a striped table keeps the header column colour.
+- Pasting a single unformatted cell keeps the background and alignment of the cell it lands in.
+- Typing over a cell selection is one undo step: one Ctrl+Z restores the text of the anchor cell.
+- The submenu of the context menu opens on click and stays open (it no longer toggles shut right after hover).
+- The style gallery clears its live preview when it closes with Escape or a click outside.
+- The table design panels in the grip menu stay open after a change, so line weight and colour can be tried one after another.
+- The table corner handle does not claim to open a menu (`aria-haspopup` removed): a click selects the table's cells, the menu is opened by the right button or the menu key.
+- Table handles stay inside the top of the window when the table is close to the top edge.
 
 ### Changed
 

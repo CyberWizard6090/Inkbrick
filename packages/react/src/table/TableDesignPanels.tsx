@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 import {
   BLOCK_BACKGROUNDS,
@@ -149,6 +149,9 @@ function StyleGallery({
   const t = useT();
   const props = block.props as TableProps;
   const current: TableStyle = props.tableStyle ?? 'plain';
+
+  // Меню закрыто клавишей Escape или кликом мимо — галерея уходит без `pointerleave`: предпросмотр сбрасываем сами.
+  useEffect(() => () => setPreview(block.id, null), [block.id]);
 
   return (
     <div

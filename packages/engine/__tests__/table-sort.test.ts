@@ -155,3 +155,10 @@ describe('parseNumber with the decimal separator of the language', () => {
     expect(parseNumber('1,5')).toBe(1.5);
   });
 });
+
+describe('parseDate and bare numbers', () => {
+  it('a bare number is not a date: it does not sort among real dates', () => {
+    expect(parseDate('10')).toBeUndefined();
+    expect(parseDate('2')).toBeUndefined();
+  });
+});

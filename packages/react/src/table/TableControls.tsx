@@ -78,6 +78,9 @@ const KEY_STEP = 10;
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+/** Верх ручки не уходит за верхний край окна: когда таблица почти у верха, ручки остаются доступны. */
+const edgeTop = (top: number) => Math.max(4, top);
+
 const prevent = (event: { preventDefault(): void }) => event.preventDefault();
 
 function boxOf(element: Element): Box {
@@ -894,9 +897,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         type="button"
         data-inkbrick-part="table-grip"
         aria-label={t('table.handle')}
-        aria-haspopup="menu"
-        aria-expanded={menu?.kind === 'table'}
-        style={{ left: cornerLeft, top: table.top - 22 }}
+        style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
         // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
         onClick={() => {
           setMenu(null);
@@ -964,7 +965,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-expanded={menu?.kind === 'column'}
         style={{
           left: cell.left + 6,
-          top: table.top - 22,
+          top: edgeTop(table.top - 22),
           // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
           width: Math.max(14, Math.min(cell.width - 12, cornerLeft - 6 - (cell.left + 6))),
         }}
@@ -980,7 +981,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.column.insertLeft')}
         title={t('table.column.insertLeft')}
         disabled={!canAddColumn}
-        style={{ left: cell.left - 5, top: table.top - 20 }}
+        style={{ left: cell.left - 5, top: edgeTop(table.top - 20) }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
       />
       <button
@@ -991,7 +992,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         aria-label={t('table.column.insertRight')}
         title={t('table.column.insertRight')}
         disabled={!canAddColumn}
-        style={{ left: cell.left + cell.width - 5, top: table.top - 20 }}
+        style={{ left: cell.left + cell.width - 5, top: edgeTop(table.top - 20) }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
       />
       {edges.map((edge, column) => (
@@ -1043,11 +1044,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           }
           panels={
             menu.kind === 'table'
-              ? tableDesignPanels(editor, block, t, view.cells.get(), (action) =>
-                  perform(() => {
+              ? // Панели оформления остаются открытыми: толщину и цвет линий видно сразу, без повторного открытия меню.
+                tableDesignPanels(editor, block, t, view.cells.get(), (action) => {
+                  editor.sealHistory();
+                  flushSync(() => {
                     action();
-                  }),
-                )
+                  });
+                })
               : undefined
           }
           turnInto={[]}

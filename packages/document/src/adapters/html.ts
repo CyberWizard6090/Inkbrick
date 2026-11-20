@@ -214,9 +214,24 @@ function renderBlock(block: BaseBlock): string {
 }
 
 function renderTable(node: ExportNode): string {
-  const { header, headerColumn, striped, borders, rows, widths, merges } = exportTable(node);
+  const {
+    header,
+    headerColumn,
+    striped,
+    borders,
+    rows,
+    widths,
+    merges: wholeMerges,
+  } = exportTable(node);
 
   if (rows.length === 0) return '';
+
+  // `rowspan` не может пересечь границу `thead` и `tbody`: объединение из строки заголовка обрезается по ней.
+  const merges = header
+    ? wholeMerges.map((merge) =>
+        merge.row < 1 && merge.row + merge.rows > 1 ? { ...merge, rows: 1 } : merge,
+      )
+    : wholeMerges;
 
   const cellHtml = (
     cell: BaseBlock | undefined,
