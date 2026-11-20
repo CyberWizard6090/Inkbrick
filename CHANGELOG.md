@@ -173,6 +173,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   `useCollapse`), so no wrapper elements are added; the code block collapse uses the same token. Only the fold and unfold are animated: the first
   nested block of a toggle, and blocks drawn for the first time, appear at once.
 
+- Tables on a phone (`docs/tables.md`, «На телефоне»): a long press (0.45 s) on a cell selects it with a short vibration and holds the page still, dragging the finger extends the selection to a rectangle, and releasing opens the cell menu (formatting, cut/copy/paste, rows, columns, width, borders, background). The corner handle taps select all cells and open the table menu (there is no right button). The column menu has «Column width…», a bar at the bottom of the window with a slider that resizes the column live (one undo step when the finger is lifted), −/+ buttons for one pixel and «Fit content». The browser's own long-press menu and the synthetic mouse events that follow are suppressed while a cell is held.
+
 ### Fixed
 
 - Table selection: Tab and Shift+Tab from a selected range keep the caret on its anchor cell, and the arrows up and down move one row from the selection, not two (the table keymap no longer handles a key the selection already took).

@@ -16,6 +16,10 @@ import { useEditorView } from '../hooks/useEditorView';
 import { cellShortcut } from './cellFormatting';
 import { cellOfRange, clearTableCells, selectTableCells, visibleCell } from './cellSelection';
 
+/** Сколько палец держится на ячейке, чтобы начать выделение, и на сколько можно сдвинуться, не отменив его (прокрутка). */
+const LONG_PRESS_MS = 450;
+const LONG_PRESS_SLOP = 10;
+
 const ARROWS: Record<string, readonly [number, number]> = {
   ArrowUp: [-1, 0],
   ArrowDown: [1, 0],
@@ -64,12 +68,103 @@ export function useCellSelection(
       return position?.tableId === tableId ? { row: position.row, column: position.column } : null;
     };
 
+    /**
+     * Палец: долгое нажатие выделяет ячейку, протяжка пальцем расширяет выделение, а после отпускания открывается меню
+     * ячеек (форматирование, фон, границы, вставка и удаление строк). Быстрое касание и прокрутка остаются обычными.
+     */
+    const touchStart = (event: PointerEvent, anchor: TableCellRef) => {
+      const { pointerId, clientX: startX, clientY: startY } = event;
+      let timer = 0;
+      let selecting = false;
+
+      view.cells.clear();
+
+      const stopScroll = (touch: TouchEvent) => {
+        if (selecting && touch.cancelable) touch.preventDefault();
+      };
+      // Долгое нажатие браузер заканчивает меню или выделением текста: пока мы выделяем ячейки, их не показываем.
+      const noNativeMenu = (menu: Event) => {
+        if (selecting || timer) menu.preventDefault();
+      };
+
+      const finish = (ended: PointerEvent | null) => {
+        clearTimeout(timer);
+        timer = 0;
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        document.removeEventListener('pointercancel', cancel);
+        document.removeEventListener('touchmove', stopScroll);
+        // Контекстное меню браузера приходит уже после отпускания: ещё мгновение его гасим.
+        setTimeout(() => document.removeEventListener('contextmenu', noNativeMenu, true), 600);
+        delete element.dataset.cellSelecting;
+
+        if (!selecting) return;
+
+        // После отпускания браузер досылает «мышиные» mousedown и click: редактор поставил бы по ним каретку и снял
+        // выделение. Гасим их на короткое время.
+        const eat = (mouse: Event) => {
+          mouse.preventDefault();
+          mouse.stopPropagation();
+        };
+        const kinds = ['mousedown', 'mouseup', 'click'] as const;
+
+        for (const kind of kinds) document.addEventListener(kind, eat, true);
+        setTimeout(() => {
+          for (const kind of kinds) document.removeEventListener(kind, eat, true);
+        }, 500);
+
+        if (ended && view.cells.get()?.tableId === tableId)
+          view.contextMenu.open(Math.round(ended.clientX), Math.round(ended.clientY));
+      };
+      const move = (moved: PointerEvent) => {
+        if (moved.pointerId !== pointerId) return;
+
+        if (!selecting) {
+          if (Math.hypot(moved.clientX - startX, moved.clientY - startY) > LONG_PRESS_SLOP)
+            finish(null);
+
+          return;
+        }
+
+        const head = cellAt(document.elementFromPoint(moved.clientX, moved.clientY));
+
+        if (head) selectTableCells(editor, view, tableId, anchor, head);
+      };
+      const up = (ended: PointerEvent) => {
+        if (ended.pointerId === pointerId) finish(ended);
+      };
+      const cancel = (ended: PointerEvent) => {
+        if (ended.pointerId === pointerId) finish(null);
+      };
+
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+      document.addEventListener('pointercancel', cancel);
+      document.addEventListener('contextmenu', noNativeMenu, true);
+      document.addEventListener('touchmove', stopScroll, { passive: false });
+
+      timer = window.setTimeout(() => {
+        timer = 0;
+        selecting = true;
+        element.dataset.cellSelecting = '';
+        selectTableCells(editor, view, tableId, anchor, anchor);
+        globalThis.getSelection()?.removeAllRanges();
+        // Короткий отклик пальцу: ячейка «взята».
+        navigator.vibrate?.(12);
+      }, LONG_PRESS_MS);
+    };
+
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0 || event.pointerType === 'touch') return;
+      if (event.button !== 0) return;
 
       const anchor = cellAt(event.target);
 
       if (!anchor) return;
+
+      if (event.pointerType === 'touch') {
+        if (!editor.readOnly) touchStart(event, anchor);
+        return;
+      }
 
       const current = view.cells.get();
 

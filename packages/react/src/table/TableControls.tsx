@@ -28,6 +28,7 @@ import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { selectTableCells, selectTableLine } from './cellSelection';
+import { ColumnWidthBar } from './ColumnWidthBar';
 import { fitWidths } from './fitWidths';
 import { tableDesignPanels } from './TableDesignPanels';
 import { cellsBackgroundMenu, tableFormatActions } from './tableFormatActions';
@@ -250,6 +251,13 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const decimal: ',' | '.' = locale.startsWith('ru') ? ',' : '.';
   const [hover, setHover] = useState<Position | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  // Панель ширины столбца (телефон): ползунок вместо тонкой границы под палец.
+  const [sizing, setSizing] = useState<{
+    column: number;
+    position: Position;
+    value: number;
+  } | null>(null);
+  const sizingBase = useRef<number[]>([]);
   const [layout, setLayout] = useState<Layout | null>(null);
   const [, refresh] = useState(0);
   const frozen = useRef(false);
@@ -277,11 +285,12 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     () => hoveredTable !== null && hoveredTable !== block.id,
     () => false,
   );
-  const position = menu?.position ?? hover ?? (otherHovered ? null : caretPosition);
+  const position =
+    menu?.position ?? sizing?.position ?? hover ?? (otherHovered ? null : caretPosition);
   const active =
     position && position.row < size.rows && position.column < size.columns ? position : null;
 
-  frozen.current = menu !== null;
+  frozen.current = menu !== null || sizing !== null;
 
   // Положение элементов берётся из раскладки после каждой отрисовки; размер таблицы и прокрутка вызывают её заново.
   useLayoutEffect(() => {
@@ -566,6 +575,17 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     });
 
   const columnActions = ({ column }: Position): BlockMenuAction[] => [
+    // На телефоне границу столбца под палец не поймать: ширину задаёт ползунок.
+    ...(coarsePointer()
+      ? [
+          {
+            id: 'column-width-slider',
+            title: t('table.width.open'),
+            icon: <Icon name="arrow-right" />,
+            run: () => startSizing(column),
+          } satisfies BlockMenuAction,
+        ]
+      : []),
     {
       id: 'column-select',
       title: t('table.column.select'),
@@ -899,6 +919,82 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     });
   };
 
+  /** Пределы ползунка: как далеко можно сдвинуть правую границу столбца, пока соседи не уже минимума. */
+  const widthRange = (start: readonly number[], column: number) => {
+    const neighbour = column + 1 < start.length ? column + 1 : -1;
+
+    if (neighbour >= 0)
+      return { min: MIN_WIDTH, max: start[column] + start[neighbour] - MIN_WIDTH };
+
+    const others = start.reduce((sum, width, index) => (index === column ? sum : sum + width), 0);
+
+    return {
+      min: MIN_WIDTH,
+      max: Math.max(
+        start[column],
+        Math.min(MAX_WIDTH, Math.floor(availableWidth()) - Math.ceil(others)),
+      ),
+    };
+  };
+
+  const startSizing = (column: number) => {
+    const base = widthsNow();
+
+    sizingBase.current = base;
+    setMenu(null);
+    setSizing({ column, position: active, value: base[column] ?? MIN_WIDTH });
+  };
+
+  const stopSizing = () => {
+    onPreview(null);
+    setSizing(null);
+  };
+
+  /** Ползунок ведёт столбец вживую (предпросмотр, документ не меняется). */
+  const slideWidth = (width: number) => {
+    if (!sizing) return;
+
+    const base = sizingBase.current;
+    const next = resized(base, sizing.column, width - base[sizing.column]);
+
+    onPreview(next);
+    setSizing({ ...sizing, value: next[sizing.column] });
+  };
+
+  /** Палец отпущен или нажата кнопка «−» / «+»: ширина записывается одним шагом отмены. */
+  const commitWidth = (width: number) => {
+    if (!sizing) return;
+
+    const base = sizingBase.current;
+    const next = resized(base, sizing.column, width - base[sizing.column]);
+    const indexes = columnsToWrite(base, next);
+
+    flushSync(() => {
+      if (indexes.length > 0) {
+        editor.sealHistory();
+        writeWidths(next, indexes);
+      }
+
+      onPreview(null);
+    });
+
+    // Записанные ширины (целые): следующая подвижка считается от них, а не от раскладки, которая ещё не обновилась.
+    sizingBase.current = roundWidths(next);
+    setSizing({ ...sizing, value: sizingBase.current[sizing.column] ?? width });
+  };
+
+  const fitWidth = () => {
+    if (!sizing) return;
+
+    editor.sealHistory();
+    flushSync(() => {
+      run('setTableColumnWidth', { index: sizing.column, width: null });
+      onPreview(null);
+    });
+    sizingBase.current = widthsNow();
+    setSizing({ ...sizing, value: sizingBase.current[sizing.column] ?? sizing.value });
+  };
+
   const { table, row, cell, edges } = layout;
   // Угловая ручка стоит справа от таблицы, но не правее окна.
   const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
@@ -925,7 +1021,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
         data-open={menu?.kind === 'table' || undefined}
         style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
-        // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
+        // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры). У пальца правой
+        // кнопки нет: там то же нажатие выделяет ячейки и сразу открывает меню таблицы.
         onClick={() => {
           setMenu(null);
           selectTableCells(
@@ -935,7 +1032,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             { row: 0, column: 0 },
             { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
           );
-          rootFocus();
+
+          if (coarsePointer()) open('table', table.left + table.width - 8, table.top + 4);
+          else rootFocus();
         }}
         onContextMenu={(event) => {
           event.preventDefault();
@@ -1103,7 +1202,24 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           }}
         />
       )}
+      {sizing && (
+        <ColumnWidthBar
+          column={sizing.column + 1}
+          min={widthRange(sizingBase.current, sizing.column).min}
+          max={widthRange(sizingBase.current, sizing.column).max}
+          value={sizing.value}
+          auto={!props.widths?.[sizing.column]}
+          onInput={slideWidth}
+          onCommit={commitWidth}
+          onAuto={fitWidth}
+          onClose={stopSizing}
+        />
+      )}
     </>,
     document.body,
   );
 }
+
+/** Основной указатель — палец (нет наведения и правой кнопки). */
+const coarsePointer = () =>
+  typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
