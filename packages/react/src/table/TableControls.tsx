@@ -45,7 +45,10 @@ interface Box {
 }
 
 interface Layout {
+  /** Видимая часть сетки: при прокрутке внутри блока таблицы (широкая, закреплённая строка) она меньше сетки. */
   readonly table: Box;
+  /** Вся сетка, в том числе прокрученная за край блока. */
+  readonly grid: Box;
   readonly row: Box;
   readonly cell: Box;
   /** Правые края столбцов (по ячейкам первой строки). */
@@ -87,6 +90,21 @@ function boxOf(element: Element): Box {
   const { left, top, width, height } = element.getBoundingClientRect();
 
   return { left, top, width, height };
+}
+
+/**
+ * Сетка, обрезанная рамкой блока таблицы, который прокручивается сам: ручки строки, столбца и угла стоят у видимого
+ * края, а не у края сетки, уехавшего за рамку.
+ */
+function visibleBox(grid: Element): Box {
+  const own = grid.getBoundingClientRect();
+  const frame = grid.closest('[data-inkbrick-block="table"]')?.getBoundingClientRect() ?? own;
+  const left = Math.max(own.left, frame.left);
+  const top = Math.max(own.top, frame.top);
+  const right = Math.min(own.right, frame.right);
+  const bottom = Math.min(own.bottom, frame.bottom);
+
+  return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
 }
 
 interface Edge {
@@ -150,7 +168,8 @@ function measure(table: HTMLTableElement, position: Position): Layout | null {
   if (!row || !cell || !first) return null;
 
   return {
-    table: boxOf(table),
+    table: visibleBox(table),
+    grid: boxOf(table),
     row: boxOf(row),
     cell: boxOf(cell),
     edges: columnEdges(table),
@@ -897,6 +916,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         type="button"
         data-inkbrick-part="table-grip"
         aria-label={t('table.handle')}
+        // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
+        data-open={menu?.kind === 'table' || undefined}
         style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
         // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
         onClick={() => {
@@ -1002,7 +1023,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           role="separator"
           aria-orientation="vertical"
           // Фокусируемому разделителю нужно текущее значение: ширина столбца по раскладке.
-          aria-valuenow={Math.round(edge.x - (column === 0 ? table.left : edges[column - 1].x))}
+          aria-valuenow={Math.round(
+            edge.x - (column === 0 ? layout.grid.left : edges[column - 1].x),
+          )}
           aria-valuemin={MIN_WIDTH}
           aria-valuemax={MAX_WIDTH}
           aria-label={t('table.resize', { column: column + 1 })}

@@ -430,7 +430,7 @@
       [data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']:is(
           :hover,
           :focus-visible
-        ):not([aria-expanded='true'])
+        ):not([data-open])
         > [data-inkbrick-part='tip']
     ) {
       position: absolute;

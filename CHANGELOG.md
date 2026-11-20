@@ -190,6 +190,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - The table design panels in the grip menu stay open after a change, so line weight and colour can be tried one after another.
 - The table corner handle does not claim to open a menu (`aria-haspopup` removed): a click selects the table's cells, the menu is opened by the right button or the menu key.
 - Table handles stay inside the top of the window when the table is close to the top edge.
+- Table handles follow the visible frame of a table that scrolls inside its block (a wide table scrolled sideways, a frozen header row scrolled down): the row handle no longer leaves the table to the left, the column and corner handles no longer jump to the top of the window.
+- A submenu of the context menu that has no room beside the menu (phone width) lies over the menu instead of going off the screen, opens on click there, and scrolls when it is taller than the window.
+- The hint over the table corner handle is hidden while the table menu is open.
 
 ### Changed
 

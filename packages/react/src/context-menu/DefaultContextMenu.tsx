@@ -172,10 +172,11 @@ function Row({
       data-disabled={item.disabled || undefined}
       data-checked={item.checked || undefined}
       className="inkbrick-context-menu__item"
-      // Наведение открывает вложенную панель этого пункта и закрывает панель соседнего.
-      onPointerEnter={() => {
+      // Наведение открывает вложенную панель этого пункта и закрывает панель соседнего. В узком окне панель ляжет поверх
+      // меню, прямо под указатель, и наведение открыло бы следующую — там она открывается только кликом.
+      onPointerEnter={(event) => {
         setByKeyboard(false);
-        setOpen(nested);
+        setOpen(nested && hasSideRoom(event.currentTarget));
       }}
       onClick={() => {
         // Клик по пункту с подменю открывает его (наведение уже открыло): переключение закрывало бы его сразу.
@@ -241,7 +242,23 @@ function Row({
 /** Что в меню получает фокус: пункты и кнопки панелей (палитра, галерея), кроме отключённых. */
 const FOCUSABLE = '[role^="menuitem"]:not([aria-disabled="true"]), button:not(:disabled)';
 
-/** Вложенная панель справа от пункта (слева, если справа не хватает места); целиком остаётся в окне. */
+/** Уже этого панель рядом с меню не кладётся: она ложится поверх него. */
+const MIN_FLYOUT_WIDTH = 180;
+
+/** Помещается ли панель пункта сбоку от меню (иначе она ляжет поверх него). */
+function hasSideRoom(row: Element): boolean {
+  const rect = row.getBoundingClientRect();
+
+  return (
+    Math.max(window.innerWidth - MARGIN - (rect.right + 4), rect.left - 4 - MARGIN) >=
+    MIN_FLYOUT_WIDTH
+  );
+}
+
+/**
+ * Вложенная панель справа от пункта (слева, если справа не хватает места); целиком остаётся в окне.
+ * В узком окне, где места нет ни с одной стороны, — поверх меню.
+ */
 function Flyout({
   anchor,
   item,
@@ -257,7 +274,12 @@ function Flyout({
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  const [place, setPlace] = useState<{ left: number; top: number; maxWidth?: number } | null>(null);
+  const [place, setPlace] = useState<{
+    left: number;
+    top: number;
+    maxWidth?: number;
+    maxHeight?: number;
+  } | null>(null);
 
   useLayoutEffect(() => {
     const panel = ref.current;
@@ -273,13 +295,26 @@ function Flyout({
     const roomLeft = row.left - 4 - MARGIN;
     const onRight = roomRight >= roomLeft;
     const room = Math.max(roomRight, roomLeft);
-    const fitted = Math.min(width, room);
-    const left = onRight ? row.right + 4 : row.left - 4 - fitted;
+    // Узкое окно (телефон): родительское меню занимает почти всю ширину, и ни с одной стороны панели не поместиться.
+    // Тогда она ложится поверх меню у правого края, во всю доступную ширину.
+    const overlay = room < Math.min(width, MIN_FLYOUT_WIDTH);
+    const fitted = overlay
+      ? Math.min(width, window.innerWidth - 2 * MARGIN)
+      : Math.min(width, room);
+    const left = overlay
+      ? window.innerWidth - fitted - MARGIN
+      : onRight
+        ? row.right + 4
+        : row.left - 4 - fitted;
+    // Выше окна панель не бывает: длинная прокручивается внутри.
+    const maxHeight = window.innerHeight - 2 * MARGIN;
+    const shown = Math.min(height, maxHeight);
 
     setPlace({
       left: Math.max(MARGIN, Math.min(left, window.innerWidth - fitted - MARGIN)),
-      top: Math.max(MARGIN, Math.min(row.top - 4, window.innerHeight - height - MARGIN)),
+      top: Math.max(MARGIN, Math.min(row.top - 4, window.innerHeight - shown - MARGIN)),
       maxWidth: fitted < width ? fitted : undefined,
+      maxHeight: height > maxHeight ? maxHeight : undefined,
     });
   }, [anchor]);
 
@@ -328,6 +363,10 @@ function Flyout({
         left: place?.left ?? 0,
         top: place?.top ?? 0,
         maxWidth: place?.maxWidth,
+        // `min-width` из стилей меню не должен перебивать сужение под окно.
+        minWidth: place?.maxWidth !== undefined ? 0 : undefined,
+        maxHeight: place?.maxHeight,
+        overflowY: place?.maxHeight !== undefined ? 'auto' : undefined,
         visibility: place ? undefined : 'hidden',
       }}
       onMouseDown={(event) => {
