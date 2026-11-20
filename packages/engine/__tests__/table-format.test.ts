@@ -427,7 +427,10 @@ describe('table borders', () => {
 
     run('setTableCellsBorders', { range: ALL, mode: 'bottom', width: 'thin', color: 'red' });
 
-    expect(sides(editor, cell(2, 0))).toMatchObject({ borderBottom: 'thin', borderColor: 'red' });
+    expect(sides(editor, cell(2, 0)).borderBottom).toBe('thin');
+    expect(editor.document.getBlock(cell(2, 0))!.props.borderBottomColor).toBe('red');
+    // Цвет только у нарисованной стороны: остальные стороны ячейки прежние.
+    expect(editor.document.getBlock(cell(2, 0))!.props.borderTopColor).toBeUndefined();
     expect(sides(editor, cell(0, 0)).borderBottom).toBeUndefined();
 
     run('setTableCellsBorders', { range: ALL, mode: 'none' });
@@ -478,12 +481,14 @@ describe('table borders', () => {
 
     run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', style: 'dashed', color: 'red' });
     expect(editor.document.getBlock(cell(1, 1))!.props).toMatchObject({
-      borderStyle: 'dashed',
-      borderColor: 'red',
+      borderTopStyle: 'dashed',
+      borderLeftStyle: 'dashed',
+      borderTopColor: 'red',
+      borderRightColor: 'red',
     });
     // Сплошная — обычное начертание: свойство снимается.
     run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', style: 'solid' });
-    expect(editor.document.getBlock(cell(1, 1))!.props.borderStyle).toBeUndefined();
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderTopStyle).toBeUndefined();
 
     // Убранные линии не возвращаются: меняется только оформление тех, что есть.
     run('setTableCellsBorders', { range: MIDDLE, mode: 'none' });
@@ -513,7 +518,42 @@ describe('table borders', () => {
 
     expect(sides(editor, cell(1, 1)).borderTop).toBe('thick');
     expect(sides(editor, cell(0, 1)).borderBottom).toBeUndefined();
-    expect(sides(editor, cell(0, 1)).borderColor).toBe('red');
+    expect(editor.document.getBlock(cell(0, 1))!.props.borderBottomColor).toBe('red');
+    // Общая линия красится и у соседа, но только она: его другие стороны прежние.
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderTopColor).toBe('red');
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderBottomColor).toBeUndefined();
+  });
+
+  it('a colour on one cell paints only the shared lines of its neighbours, not their far edges', () => {
+    const { run, cell, editor } = setup();
+
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'keep', color: 'red' });
+
+    const above = editor.document.getBlock(cell(0, 1))!.props;
+
+    expect(above.borderBottomColor).toBe('red');
+    expect(above.borderTopColor).toBeUndefined();
+    expect(above.borderLeftColor).toBeUndefined();
+    expect(above.borderColor).toBeUndefined();
+  });
+
+  it('a cell-wide colour of an older document is spread over its sides before one side changes', () => {
+    const { run, cell, editor } = setup();
+
+    editor.dispatch({
+      type: 'setBlockProps',
+      payload: { blockId: cell(1, 1), props: { borderColor: 'blue', borderStyle: 'dashed' } },
+    });
+    run('setTableCellsBorders', { range: MIDDLE, mode: 'top', width: 'thick', color: 'red' });
+
+    expect(editor.document.getBlock(cell(1, 1))!.props).toMatchObject({
+      borderTopColor: 'red',
+      borderRightColor: 'blue',
+      borderBottomColor: 'blue',
+      borderLeftColor: 'blue',
+      borderTopStyle: 'dashed',
+    });
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderColor).toBeUndefined();
   });
 
   it('the style travels with a copied range', () => {
@@ -552,7 +592,7 @@ describe('table borders', () => {
     const copied = JSON.stringify(fragment);
 
     expect(copied).toContain('"borderTop":"thick"');
-    expect(copied).toContain('"borderColor":"blue"');
+    expect(copied).toContain('"borderTopColor":"blue"');
     expect(cell(1, 1)).toBeTruthy();
   });
 });
@@ -669,7 +709,7 @@ describe('the HTML export of the line style', () => {
 
     const html = toHtml(editor.document);
 
-    expect(editor.document.getBlock(cell(1, 1))!.props.borderStyle).toBe('dashed');
+    expect(editor.document.getBlock(cell(1, 1))!.props.borderTopStyle).toBe('dashed');
     expect(html).toContain('border-top:1px dashed');
 
     run('setTableCellsBorders', { range: MIDDLE_CELL, mode: 'keep', style: 'dotted' });

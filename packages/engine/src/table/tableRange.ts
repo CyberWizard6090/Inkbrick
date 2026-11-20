@@ -1,13 +1,4 @@
-import {
-  isAlignment,
-  isBlockBackground,
-  isHexColor,
-  isColorName,
-  TABLE_BORDER_STYLES,
-  TABLE_BORDER_WIDTHS,
-  type BaseBlock,
-  type BlockId,
-} from '@inkbrick/document';
+import { tableCellPropsSchema, type BaseBlock, type BlockId } from '@inkbrick/document';
 
 import type { Fragment } from '../clipboard/types';
 import { tableCellAt, tableSize } from './tableGrid';
@@ -15,8 +6,6 @@ import { tableFragment } from './tableFragment';
 import { mergesWithin, normalizeMerges } from './tableMerge';
 
 type GetBlock = (id: BlockId) => BaseBlock | undefined;
-
-const BORDER_KEYS = ['borderTop', 'borderRight', 'borderBottom', 'borderLeft'] as const;
 
 /** Прямоугольник ячеек: номера строк и столбцов с нуля, границы включительно. */
 export interface TableRange {
@@ -95,23 +84,12 @@ export function tableRangeFragment(
   const clamped = clampTableRange(getBlock, tableId, range)!;
   const own = cells.map((row) =>
     row.map((id) => {
-      const props = getBlock(id)?.props ?? {};
-      const { align, background } = props;
-      const borders = Object.fromEntries(
-        BORDER_KEYS.filter((key) => TABLE_BORDER_WIDTHS.includes(props[key] as never)).map(
-          (key) => [key, props[key]],
-        ),
-      );
+      // Оформление ячейки — то, что знает схема ячейки (фон, выравнивание, границы, их цвет и начертание); «влево» —
+      // обычное выравнивание, его не переносим.
+      const { align, ...rest } =
+        tableCellPropsSchema.safeParse(getBlock(id)?.props ?? {}).data ?? {};
 
-      return {
-        ...(isAlignment(align) && align !== 'left' ? { align } : {}),
-        ...(isBlockBackground(background) || isHexColor(background) ? { background } : {}),
-        ...borders,
-        ...(isColorName(props.borderColor) ? { borderColor: props.borderColor } : {}),
-        ...(TABLE_BORDER_STYLES.includes(props.borderStyle as never)
-          ? { borderStyle: props.borderStyle }
-          : {}),
-      };
+      return align && align !== 'left' ? { ...rest, align } : rest;
     }),
   );
 

@@ -54,34 +54,39 @@ const BORDER_PX = { thin: '1px', medium: '2px', thick: '3px' } as const;
 const DEFAULT_CELL_LINE = '#e9e9e7';
 
 function borderStyle(cell: BaseBlock, defaults = false): string[] {
-  const color = exportColor(cell.props.borderColor, 'text') ?? '#bdbdbd';
-  // Начертание линий ячейки одно на все стороны: сплошная, прерывистая или точками (как в редакторе).
-  const line =
-    cell.props.borderStyle === 'dashed' || cell.props.borderStyle === 'dotted'
-      ? cell.props.borderStyle
-      : 'solid';
-
-  // Все четыре стороны без своих линий: одна запись вместо четырёх.
   const sides = ['top', 'right', 'bottom', 'left'] as const;
-  const unset = sides.every(
-    (side) =>
-      !['none', 'thin', 'medium', 'thick'].includes(
-        String(cell.props[`border${side[0].toUpperCase()}${side.slice(1)}`]),
-      ),
-  );
+  const key = (side: (typeof sides)[number]) => `border${side[0].toUpperCase()}${side.slice(1)}`;
+  // Цвет и начертание стороны: свои у стороны, иначе общие на ячейку (сплошная, прерывистая или точками — как в редакторе).
+  const look = (side: (typeof sides)[number]) => {
+    const style = cell.props[`${key(side)}Style`] ?? cell.props.borderStyle;
+    const color = cell.props[`${key(side)}Color`] ?? cell.props.borderColor;
 
-  if (defaults && unset) return [`border:1px solid ${DEFAULT_CELL_LINE}`];
+    return {
+      line: style === 'dashed' || style === 'dotted' ? style : 'solid',
+      color: exportColor(color, 'text') ?? undefined,
+    };
+  };
+  const plain = (side: (typeof sides)[number]) =>
+    !['none', 'thin', 'medium', 'thick'].includes(String(cell.props[key(side)])) &&
+    look(side).color === undefined &&
+    look(side).line === 'solid';
+
+  // Все четыре стороны без своих линий и оформления: одна запись вместо четырёх.
+  if (defaults && sides.every(plain)) return [`border:1px solid ${DEFAULT_CELL_LINE}`];
 
   return sides.flatMap((side) => {
-    const width = cell.props[`border${side[0].toUpperCase()}${side.slice(1)}`];
+    const width = cell.props[key(side)];
+    const { line, color } = look(side);
 
     if (width === 'none') return [`border-${side}:none`];
 
     if (width === 'thin' || width === 'medium' || width === 'thick')
-      return [`border-${side}:${BORDER_PX[width]} ${line} ${color}`];
+      return [`border-${side}:${BORDER_PX[width]} ${line} ${color ?? '#bdbdbd'}`];
 
-    // Сторона без своей линии: в редакторе она рисуется линией таблицы по умолчанию, и в HTML — так же.
-    return defaults ? [`border-${side}:1px solid ${DEFAULT_CELL_LINE}`] : [];
+    // Сторона без своей толщины: в редакторе она рисуется линией таблицы по умолчанию (своего цвета, если он задан).
+    if (!defaults) return [];
+
+    return [`border-${side}:1px ${line} ${color ?? DEFAULT_CELL_LINE}`];
   });
 }
 

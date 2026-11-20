@@ -116,6 +116,7 @@ test.describe('Table style gallery and borders', () => {
           backgroundColor: style.backgroundColor,
           borderTopColor: style.borderTopColor,
           borderTopWidth: style.borderTopWidth,
+          borderTopStyle: style.borderTopStyle,
         };
       });
 
@@ -146,10 +147,12 @@ test.describe('Table style gallery and borders', () => {
     expect((await cellStyle(page, 4)).borderTopWidth).toBe('3px');
 
     await page.locator('[data-action="table-border-style-dashed"]').click();
-    expect(await page.locator(cells).nth(4).getAttribute('data-border-style')).toBe('dashed');
+    expect((await cellStyle(page, 4)).borderTopStyle).toBe('dashed');
 
     await page.locator('[data-action="table-border-color-red"]').click();
-    expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
+    expect(await page.locator(cells).nth(4).getAttribute('style')).toContain(
+      'var(--inkbrick-color-red)',
+    );
 
     // Кнопка расположения линий применяется один раз и закрывает меню.
     await page.locator('[data-action="table-border-none"]').click();
@@ -382,10 +385,12 @@ test.describe('Table style gallery and borders', () => {
     expect(await cellBorder(page, 4, 'top')).toBe('thick');
 
     await pick('table-border-styleMenu', 'table-border-style-dotted');
-    expect(await page.locator(cells).nth(4).getAttribute('data-border-style')).toBe('dotted');
+    expect((await cellStyle(page, 4)).borderTopStyle).toBe('dotted');
 
     await pick('table-border-colorMenu', 'color-red');
-    expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
+    expect(await page.locator(cells).nth(4).getAttribute('style')).toContain(
+      'var(--inkbrick-color-red)',
+    );
   });
 
   test('the menu with the gallery and the borders passes the accessibility check', async ({

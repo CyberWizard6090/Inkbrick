@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
 } from 'react';
 
 import {
@@ -204,6 +205,34 @@ function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | u
     : undefined;
 }
 
+const SIDES = ['Top', 'Right', 'Bottom', 'Left'] as const;
+
+/**
+ * Свой цвет и начертание сторон ячейки (`borderTopColor`, `borderTopStyle`…) — встроенным стилем: общая линия двух ячеек
+ * красится у обеих, а остальные стороны соседа остаются прежними. Сторона «без линии» остаётся прозрачной. В `style`
+ * попадают только имена из палитры и начертания из схемы.
+ */
+function sideLook(block: BlockProps['block']): CSSProperties {
+  const style: Record<string, string> = {};
+
+  for (const side of SIDES) {
+    if (block.props[`border${side}`] === 'none') continue;
+
+    // Своё у стороны, иначе общее на ячейку (`borderColor`, `borderStyle` старых документов).
+    const color = block.props[`border${side}Color`] ?? block.props.borderColor;
+    const line = block.props[`border${side}Style`] ?? block.props.borderStyle;
+
+    if (isColorName(color))
+      style[`border${side}Color`] =
+        color === 'black' || color === 'white'
+          ? `var(--inkbrick-cell-line-${color})`
+          : `var(--inkbrick-color-${color})`;
+    if (line === 'dashed' || line === 'dotted') style[`border${side}Style`] = line;
+  }
+
+  return style;
+}
+
 export function TableCellBlock({ block, selected }: BlockProps) {
   const view = useEditorView();
   const editor = useEditor();
@@ -221,23 +250,20 @@ export function TableCellBlock({ block, selected }: BlockProps) {
     return <td hidden data-inkbrick-block="table-cell" data-block-id={block.id} data-covered="" />;
   }
 
+  const attrs = backgroundAttrs(block);
+
   return (
     <td
       data-inkbrick-block="table-cell"
       data-block-id={block.id}
       data-align={getBlockAlign(block) ?? 'left'}
-      {...backgroundAttrs(block)}
+      {...attrs}
+      style={{ ...attrs.style, ...sideLook(block) }}
       role={headerCell ? 'columnheader' : undefined}
       data-border-top={borderOf(block, 'borderTop')}
       data-border-right={borderOf(block, 'borderRight')}
       data-border-bottom={borderOf(block, 'borderBottom')}
       data-border-left={borderOf(block, 'borderLeft')}
-      data-border-color={isColorName(block.props.borderColor) ? block.props.borderColor : undefined}
-      data-border-style={
-        block.props.borderStyle === 'dashed' || block.props.borderStyle === 'dotted'
-          ? block.props.borderStyle
-          : undefined
-      }
       data-selected={selected || undefined}
       data-cell-selected={picked || undefined}
       colSpan={merge && merge.colSpan > 1 ? merge.colSpan : undefined}

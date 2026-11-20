@@ -502,28 +502,19 @@
 
   /* Границы ячейки по сторонам: «без линии» остаётся в раскладке прозрачной, поэтому ширина ячеек не меняется. */
   :where([data-inkbrick-block='table-cell'][data-border-top]) {
-    border-top-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-top-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-right]) {
-    border-right-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-right-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-bottom]) {
-    border-bottom-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-bottom-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-left]) {
-    border-left-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
-  }
-
-  /* Начертание линий ячейки (одно на все стороны): сплошная — по умолчанию. */
-  :where([data-inkbrick-block='table-cell'][data-border-style='dashed']) {
-    border-style: dashed;
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-style='dotted']) {
-    border-style: dotted;
+    border-left-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-top='none']) {
@@ -594,90 +585,21 @@
    * Чёрная и белая линии должны быть видны на фоне своей темы: чёрная на светлом фоне, белая на тёмном. В противоположной
    * теме их заменяет серая линия того же имени по смыслу (светлая для «чёрной», тёмная для «белой»), иначе линия пропадала бы.
    */
-  :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
-    --inkbrick-cell-border: var(--inkbrick-color-black);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
-    --inkbrick-cell-border: #8b8b8b;
+  :where([data-inkbrick-block='table-cell']) {
+    --inkbrick-cell-line-black: var(--inkbrick-color-black);
+    --inkbrick-cell-line-white: #8b8b8b;
   }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-inkbrick-theme='light'])
-      :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
-      --inkbrick-cell-border: var(--inkbrick-color-white);
-    }
-
-    :root:not([data-inkbrick-theme='light'])
-      :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
-      --inkbrick-cell-border: #8b8b8b;
+    :root:not([data-inkbrick-theme='light']) :where([data-inkbrick-block='table-cell']) {
+      --inkbrick-cell-line-black: #8b8b8b;
+      --inkbrick-cell-line-white: var(--inkbrick-color-white);
     }
   }
 
-  :root[data-inkbrick-theme='dark']
-    :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
-    --inkbrick-cell-border: var(--inkbrick-color-white);
-  }
-
-  :root[data-inkbrick-theme='dark']
-    :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
-    --inkbrick-cell-border: #8b8b8b;
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='gray']) {
-    --inkbrick-cell-border: var(--inkbrick-color-gray);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='brown']) {
-    --inkbrick-cell-border: var(--inkbrick-color-brown);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='orange']) {
-    --inkbrick-cell-border: var(--inkbrick-color-orange);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='yellow']) {
-    --inkbrick-cell-border: var(--inkbrick-color-yellow);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='green']) {
-    --inkbrick-cell-border: var(--inkbrick-color-green);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='blue']) {
-    --inkbrick-cell-border: var(--inkbrick-color-blue);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='purple']) {
-    --inkbrick-cell-border: var(--inkbrick-color-purple);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='pink']) {
-    --inkbrick-cell-border: var(--inkbrick-color-pink);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='lime']) {
-    --inkbrick-cell-border: var(--inkbrick-color-lime);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='teal']) {
-    --inkbrick-cell-border: var(--inkbrick-color-teal);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='cyan']) {
-    --inkbrick-cell-border: var(--inkbrick-color-cyan);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='indigo']) {
-    --inkbrick-cell-border: var(--inkbrick-color-indigo);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='magenta']) {
-    --inkbrick-cell-border: var(--inkbrick-color-magenta);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='red']) {
-    --inkbrick-cell-border: var(--inkbrick-color-red);
+  :root[data-inkbrick-theme='dark'] :where([data-inkbrick-block='table-cell']) {
+    --inkbrick-cell-line-black: #8b8b8b;
+    --inkbrick-cell-line-white: var(--inkbrick-color-white);
   }
 
   :where([data-inkbrick-block='quote']) {

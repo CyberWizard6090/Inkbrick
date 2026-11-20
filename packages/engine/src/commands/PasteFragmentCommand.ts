@@ -199,11 +199,10 @@ function fillTable(
   // Оформление ячеек из буфера (его можно подделать) проверяется схемой ячейки: лишние свойства отбрасываются, а с
   // недопустимым значением оформление этой ячейки не переносится вовсе.
   const cellProps = read.cellProps.map((row) =>
-    row.map((props) => {
-      const result = engine.schema.validateProps(TABLE_CELL, props);
-
-      return result.success ? (result.data as Record<string, unknown>) : {};
-    }),
+    row.map(
+      (props) =>
+        (engine.schema.validateProps(TABLE_CELL, props).data ?? {}) as Record<string, unknown>,
+    ),
   );
   const columns = rows[0]?.length ?? 0;
   const needRows = position.row + rows.length;
@@ -238,7 +237,7 @@ function fillTable(
   let last: CaretResult | undefined;
   // Фон, границы и выравнивание ячеек переносятся вместе с текстом (как при копировании внутри таблицы). Фрагмент без
   // всякого оформления — простой текст (TSV из Excel, строки текста): оформление ячеек получателя он не стирает.
-  const styled = cellProps.some((row) => row.some((props) => Object.keys(props).length > 0));
+  const styled = cellProps.flat().some((props) => Object.keys(props).length);
 
   rows.forEach((row, r) =>
     row.forEach((content, c) => {
@@ -247,7 +246,8 @@ function fillTable(
       engine.block.updateContent(tx, id, structuredClone(content));
 
       if (styled) {
-        const props = structuredClone(cellProps[r]?.[c] ?? {});
+        // Свой объект у каждой ячейки: проверка схемой уже вернула копию.
+        const props = cellProps[r]?.[c] ?? {};
 
         engine.block.update(tx, id, (cell) => ({ ...cell, props }));
       }
