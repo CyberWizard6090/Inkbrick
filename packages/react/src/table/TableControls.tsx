@@ -336,8 +336,16 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     () => hoveredTable !== null && hoveredTable !== block.id,
     () => false,
   );
+  // Выделенные ячейки без каретки (долгое нажатие): рамка и точка стоят у головы выделения.
+  const pickedPosition: Position | null = picked
+    ? { row: picked.head.row, column: picked.head.column }
+    : null;
   const position =
-    menu?.position ?? sizing?.position ?? hover ?? (otherHovered ? null : caretPosition);
+    menu?.position ??
+    sizing?.position ??
+    hover ??
+    pickedPosition ??
+    (otherHovered ? null : caretPosition);
   const active =
     position && position.row < size.rows && position.column < size.columns ? position : null;
 
@@ -1051,7 +1059,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
 
   /**
    * Телефон: точка на углу рамки. Её тянут пальцем — выделение расширяется до ячейки под пальцем (начало — ячейка с
-   * кареткой или якорь выделения), а после отпускания открывается меню ячеек.
+   * кареткой или якорь выделения). Меню ячеек не открывается: палец отпускают, чтобы подправить рамку, а меню открывает
+   * долгое удержание на выделенной ячейке.
    */
   const dragKnob = (event: ReactPointerEvent<HTMLElement>) => {
     event.preventDefault();
@@ -1083,9 +1092,6 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       document.removeEventListener('pointerup', finish);
       document.removeEventListener('pointercancel', finish);
       frozen.current = false;
-
-      if (ended.type === 'pointerup' && view.cells.get()?.tableId === block.id)
-        view.contextMenu.open(Math.round(ended.clientX), Math.round(ended.clientY));
     };
 
     document.addEventListener('pointermove', move);

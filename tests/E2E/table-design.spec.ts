@@ -572,7 +572,7 @@ test.describe('Table design on a phone', () => {
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     });
 
-    test('a long press selects a cell, a drag extends it and the cell menu opens on release', async ({
+    test('a long press selects a cell and a drag extends it, releasing does not open the menu', async ({
       page,
     }) => {
       const touch = await finger(page);
@@ -590,7 +590,44 @@ test.describe('Table design on a phone', () => {
       expect(await page.evaluate(() => window.scrollY)).toBe(0);
 
       await touch.up();
+      await page.waitForTimeout(400);
+      // Палец отпущен, чтобы подправить выделение: меню не открывается, рамка с точкой остаётся.
+      expect(await picked(page)).toBe(4);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+      await expect(page.locator('[data-inkbrick-part="cell-knob"]')).toBeVisible();
+    });
+
+    test('a long hold on a selected cell opens the menu, a quick tap on it drops the selection', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      expect(await picked(page)).toBe(1);
+
+      // Короткое удержание меню не открывает, долгое — открывает (и остаётся после отпускания).
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(250);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+      await page.waitForTimeout(450);
       await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+      await touch.up();
+      await page.waitForTimeout(400);
+      await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+      expect(await picked(page)).toBe(1);
+
+      await page.keyboard.press('Escape');
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+
+      // Короткое касание выделенной ячейки снимает выделение.
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(80);
+      await touch.up();
+      await expect.poll(() => picked(page)).toBe(0);
     });
 
     test('a quick tap and a finger that scrolls select nothing', async ({ page }) => {
@@ -629,7 +666,10 @@ test.describe('Table design on a phone', () => {
       await touch.move(last.x + last.width - 4, last.y + last.height - 4);
       await expect.poll(() => picked(page)).toBe(4);
       await touch.up();
-      await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+      await page.waitForTimeout(400);
+      // Палец отпущен: выделение осталось, меню не открылось (его открывает долгое удержание).
+      expect(await picked(page)).toBe(4);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
     });
 
     test('there is no corner table button on a phone: the table menu is in the cell menu', async ({
@@ -646,6 +686,11 @@ test.describe('Table design on a phone', () => {
       const touch = await finger(page);
       const at = await centre(page, 4);
 
+      // Первое удержание выделяет ячейку, второе, на выделенной, открывает меню.
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
       await touch.down(at.x, at.y);
       await page.waitForTimeout(700);
       await touch.up();

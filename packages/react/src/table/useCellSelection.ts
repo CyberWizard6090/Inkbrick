@@ -74,10 +74,20 @@ export function useCellSelection(
      */
     const touchStart = (event: PointerEvent, anchor: TableCellRef) => {
       const { pointerId, clientX: startX, clientY: startY } = event;
+      const picked = view.cells.get();
+      const id =
+        event.target instanceof Element
+          ? event.target.closest('td[data-block-id]')?.getAttribute('data-block-id')
+          : null;
+      // Долгое удержание на уже выделенной ячейке открывает меню, а на невыделенной выделяет её: меню не открывается
+      // при отпускании пальца, чтобы выделение можно было подправить (точкой или протяжкой) и продолжить.
+      const onSelection = !!picked && picked.tableId === tableId && !!id && picked.ids.has(id);
+      const origin = onSelection ? picked.anchor : anchor;
       let timer = 0;
       let selecting = false;
+      let held = false;
 
-      view.cells.clear();
+      if (!onSelection) view.cells.clear();
 
       const stopScroll = (touch: TouchEvent) => {
         if (selecting && touch.cancelable) touch.preventDefault();
@@ -98,6 +108,10 @@ export function useCellSelection(
         setTimeout(() => document.removeEventListener('contextmenu', noNativeMenu, true), 600);
         delete element.dataset.cellSelecting;
 
+        // Короткое касание выделенной ячейки снимает выделение (каретка встаёт в неё, как обычно); сдвиг пальца — это
+        // прокрутка, выделение остаётся.
+        if (!selecting && onSelection && ended) view.cells.clear();
+
         if (!selecting) return;
 
         // После отпускания браузер досылает «мышиные» mousedown и click: редактор поставил бы по ним каретку и снял
@@ -112,9 +126,6 @@ export function useCellSelection(
         setTimeout(() => {
           for (const kind of kinds) document.removeEventListener(kind, eat, true);
         }, 250);
-
-        if (ended && view.cells.get()?.tableId === tableId)
-          view.contextMenu.open(Math.round(ended.clientX), Math.round(ended.clientY));
       };
       const move = (moved: PointerEvent) => {
         if (moved.pointerId !== pointerId) return;
@@ -126,9 +137,12 @@ export function useCellSelection(
           return;
         }
 
+        // Меню уже открыто под пальцем: движение до отпускания выделение не трогает.
+        if (held) return;
+
         const head = cellAt(document.elementFromPoint(moved.clientX, moved.clientY));
 
-        if (head) selectTableCells(editor, view, tableId, anchor, head);
+        if (head) selectTableCells(editor, view, tableId, origin, head);
       };
       const up = (ended: PointerEvent) => {
         if (ended.pointerId === pointerId) finish(ended);
@@ -147,10 +161,14 @@ export function useCellSelection(
         timer = 0;
         selecting = true;
         element.dataset.cellSelecting = '';
-        selectTableCells(editor, view, tableId, anchor, anchor);
         globalThis.getSelection()?.removeAllRanges();
-        // Короткий отклик пальцу: ячейка «взята».
+        // Короткий отклик пальцу: ячейка «взята» или открывается меню.
         navigator.vibrate?.(12);
+
+        if (onSelection) {
+          held = true;
+          view.contextMenu.open(Math.round(startX), Math.round(startY));
+        } else selectTableCells(editor, view, tableId, anchor, anchor);
       }, LONG_PRESS_MS);
     };
 
@@ -340,6 +358,13 @@ export function useCellSelection(
 
       if (target instanceof Element && target.closest('[data-inkbrick-ui]')) return;
       if (event.shiftKey && target instanceof Element && target.closest('td[data-block-id]'))
+        return;
+      // Палец на выделенной ячейке: быстрое касание снимет выделение, долгое удержание откроет меню (см. `touchStart`).
+      if (
+        event.pointerType === 'touch' &&
+        target instanceof Element &&
+        target.closest('td[data-cell-selected]')
+      )
         return;
 
       view.cells.clear();
