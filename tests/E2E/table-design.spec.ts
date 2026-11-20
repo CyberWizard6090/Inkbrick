@@ -725,6 +725,10 @@ test.describe('Table design on a phone', () => {
       await page.touchscreen.tap(size.width / 2, 40);
       await expect(menu).toHaveCount(0);
       expect(await picked(page)).toBe(1);
+      // Отмена ничего не фокусирует: документ не получает каретку, экранная клавиатура не поднимается.
+      expect(
+        await page.evaluate(() => document.activeElement?.getAttribute('contenteditable') ?? null),
+      ).toBeNull();
     });
 
     test('the cell menu with the table sections fits the screen and has big enough buttons', async ({

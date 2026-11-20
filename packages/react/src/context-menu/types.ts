@@ -46,4 +46,10 @@ export interface ContextMenuProps {
   /** Вырезать, копировать, вставить, выделить всё. */
   readonly items: readonly ContextMenuItem[];
   readonly onClose: () => void;
+  /**
+   * Отмена без выбора (касание затемнения за листом на телефоне): закрыть меню, не трогая фокус и каретку. `onClose` после
+   * выбора возвращает фокус в документ, а при отмене это поднимало бы клавиатуру и сдвигало каретку. Своё меню
+   * (`slots.ContextMenu`) может его не вызывать.
+   */
+  readonly onDismiss?: () => void;
 }

@@ -17,6 +17,7 @@ export function DefaultBlockMenu({
   background,
   panels,
   onClose,
+  onDismiss,
 }: BlockMenuProps) {
   const t = useT();
   const { sheet, inset } = useSheet();
@@ -101,7 +102,7 @@ export function DefaultBlockMenu({
 
   return (
     <>
-      {sheet && <SheetBackdrop onClose={onClose} />}
+      {sheet && <SheetBackdrop onClose={onDismiss ?? onClose} />}
       <div
         ref={ref}
         className="inkbrick-block-menu"

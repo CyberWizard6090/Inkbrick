@@ -15,7 +15,13 @@ import type { ContextMenuItem, ContextMenuProps } from './types';
 
 const MARGIN = 8;
 
-export function DefaultContextMenu({ position, formatting, items, onClose }: ContextMenuProps) {
+export function DefaultContextMenu({
+  position,
+  formatting,
+  items,
+  onClose,
+  onDismiss,
+}: ContextMenuProps) {
   const t = useT();
   const { sheet, inset } = useSheet();
   const ref = useRef<HTMLDivElement>(null);
@@ -69,7 +75,7 @@ export function DefaultContextMenu({ position, formatting, items, onClose }: Con
 
   return (
     <>
-      {sheet && <SheetBackdrop onClose={onClose} />}
+      {sheet && <SheetBackdrop onClose={onDismiss ?? onClose} />}
       <div
         ref={ref}
         className="inkbrick-context-menu"

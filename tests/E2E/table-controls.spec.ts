@@ -310,6 +310,47 @@ test.describe('Table controls', () => {
     expect(onFirstBorder[1].top).toBeGreaterThan(onFirstBorder[0].top + onFirstBorder[0].height);
   });
 
+  test('a press on the empty lower part of a tall merged cell puts the caret into that cell', async ({
+    page,
+  }) => {
+    await page.evaluate(() => {
+      const { editor } = (window as never as { __inkbrick: { main: { editor: never } } }).__inkbrick
+        .main as never as {
+        editor: {
+          document: { rootId: string; getBlock: (id: string) => never };
+          dispatch: (intent: unknown) => unknown;
+        };
+      };
+      let found = '';
+      const walk = (block: { flavour: string; id: string; children: string[] } | undefined) => {
+        if (!block || found) return;
+        if (block.flavour === 'block:table') found = block.id;
+        block.children.forEach((id) => walk(editor.document.getBlock(id)));
+      };
+
+      walk(editor.document.getBlock(editor.document.rootId));
+      for (let i = 0; i < 3; i++)
+        editor.dispatch({ type: 'insertTableRow', payload: { blockId: found, index: 3 } });
+      editor.dispatch({
+        type: 'mergeTableCells',
+        payload: { blockId: found, range: { top: 1, bottom: 5, left: 1, right: 2 } },
+      });
+    });
+
+    const merged = (await page.locator(`${table} td[rowspan]`).first().boundingBox())!;
+
+    // Ниже текста ячейки пусто: браузер ставил каретку в соседнюю ячейку той же строки, теперь — в саму объединённую.
+    await page.mouse.click(merged.x + merged.width / 2, merged.y + merged.height * 0.92);
+    await page.keyboard.type('Z');
+
+    expect(await page.locator(`${table} td[rowspan]`).first().textContent()).toContain('Z');
+    expect(
+      await page
+        .locator(`${table} td:not([rowspan])`)
+        .evaluateAll((nodes) => nodes.filter((node) => node.textContent?.includes('Z')).length),
+    ).toBe(0);
+  });
+
   test('the handles do not lag behind the table while the page scrolls', async ({ page }) => {
     // Страница с запасом высоты: ручки стоят по `position: fixed` и должны ехать вместе с таблицей без отставания.
     await page.locator('.playground-content').evaluate((node) => {

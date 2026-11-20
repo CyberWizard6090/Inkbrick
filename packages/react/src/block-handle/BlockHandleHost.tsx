@@ -130,6 +130,7 @@ export function BlockHandleHost() {
               view.blocks.closeMenu();
               view.getRoot()?.focus({ preventScroll: true });
             }}
+            onDismiss={() => view.blocks.closeMenu()}
           />
         )}
       />

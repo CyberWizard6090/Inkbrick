@@ -85,4 +85,6 @@ export interface BlockMenuProps {
   /** Дополнительные секции под пунктами; свои меню (`slots.BlockMenu`) могут их не показывать. */
   readonly panels?: readonly BlockMenuPanel[];
   readonly onClose: () => void;
+  /** Отмена без выбора (касание затемнения за листом): закрыть меню, не возвращая фокус в документ. */
+  readonly onDismiss?: () => void;
 }

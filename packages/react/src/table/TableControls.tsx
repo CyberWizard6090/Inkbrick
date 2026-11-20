@@ -162,18 +162,24 @@ function columnEdges(table: HTMLTableElement): {
       else runs.push({ ...segment });
     }
 
-    // Ручка на каждом участке границы: объединение внизу не должно оставлять без ручки верхние строки.
-    for (const run of runs)
-      if (run.bottom - run.top >= MIN_SEGMENT)
-        all.push({ column, x: run.x, top: run.top, height: run.bottom - run.top });
-
     const best = [...runs].sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
 
     previous = best?.x ?? previous;
 
-    return best
+    const edge = best
       ? { x: best.x, top: best.top, height: best.bottom - best.top }
       : { x: previous, top: bounds.top, height: bounds.height };
+
+    // Ручка на каждом участке границы: объединение внизу не должно оставлять без ручки верхние строки. У столбца всегда
+    // есть хотя бы одна: основная, даже если все участки короче порога.
+    const long = runs.filter((run) => run.bottom - run.top >= MIN_SEGMENT);
+
+    if (long.length === 0) all.push({ column, ...edge });
+    else
+      for (const run of long)
+        all.push({ column, x: run.x, top: run.top, height: run.bottom - run.top });
+
+    return edge;
   });
 
   return { edges, segments: all };
@@ -1361,6 +1367,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             setMenu(null);
             rootFocus();
           }}
+          onDismiss={() => setMenu(null)}
         />
       )}
       {sizing && (

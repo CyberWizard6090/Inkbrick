@@ -240,6 +240,16 @@ export function TableCellBlock({ block, selected }: BlockProps) {
       data-cell-selected={picked || undefined}
       colSpan={merge && merge.colSpan > 1 ? merge.colSpan : undefined}
       rowSpan={merge && merge.rowSpan > 1 ? merge.rowSpan : undefined}
+      // Нажатие на пустое место ячейки (поля, нижняя часть высокой объединённой ячейки, где текста нет): браузер ставил бы
+      // каретку на ближайшую по строке позицию, то есть в соседнюю ячейку, потому что покрытые объединением ячейки скрыты.
+      // Каретка ставится в сам текст этой ячейки; то же делает касание пальцем (браузер досылает ему mousedown).
+      onMouseDown={(event) => {
+        if (event.target !== event.currentTarget || event.button !== 0 || event.shiftKey) return;
+        if (editor.readOnly) return;
+
+        event.preventDefault();
+        view.placeCaret(block.id, editor.engine.inline.length(block.content));
+      }}
     >
       <Editable block={block} />
     </td>
