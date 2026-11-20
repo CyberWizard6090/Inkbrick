@@ -1,12 +1,10 @@
-import type { BaseBlock, BlockBackground, TableProps } from '@inkbrick/document';
-import { BLOCK_BACKGROUNDS, getBlockBackground } from '@inkbrick/document';
+import type { BaseBlock, TableProps } from '@inkbrick/document';
 import { tableRangeCells, tableSize, type Editor } from '@inkbrick/engine';
 
-import type { BlockMenuAction, BlockMenuBackground } from '../block-handle/types';
+import type { BlockMenuAction } from '../block-handle/types';
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
-import { backgroundCells } from './cellFormatting';
 
 /** Свойство таблицы, которое переключает пункт меню. */
 type Toggle = 'header' | 'headerColumn' | 'striped' | 'borders' | 'freezeRow' | 'freezeColumn';
@@ -109,32 +107,5 @@ export function backgroundTarget(
     head: { row: range.bottom, column: range.right },
     range,
     ids,
-  };
-}
-
-/** Ряд цветов фона ячеек для меню таблицы; применяется к выделенным ячейкам или ко всей таблице. */
-export function cellsBackgroundMenu(
-  editor: Editor,
-  block: BaseBlock,
-  picked: CellSelection | null,
-  run: (action: () => void) => void,
-): BlockMenuBackground | undefined {
-  const target = backgroundTarget(editor, block, picked);
-
-  if (!target) return undefined;
-
-  const backgrounds = new Set(
-    [...target.ids].map((id) => {
-      const cell = editor.store.getBlock(id);
-
-      return cell ? getBlockBackground(cell) : undefined;
-    }),
-  );
-
-  return {
-    current: backgrounds.size === 1 ? [...backgrounds][0] : undefined,
-    options: BLOCK_BACKGROUNDS,
-    onPick: (color) =>
-      run(() => void backgroundCells(editor, target, color as BlockBackground | null)),
   };
 }

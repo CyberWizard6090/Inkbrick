@@ -25,15 +25,12 @@ import type { BlockMenuAction } from '../block-handle/types';
 import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
 import { selectTableCells, selectTableLine } from './cellSelection';
 import { ColumnWidthBar } from './ColumnWidthBar';
 import { fitWidths } from './fitWidths';
-import { tableDesignPanels } from './TableDesignPanels';
-import { cellsBackgroundMenu, tableFormatActions } from './tableFormatActions';
 
 interface Position {
   readonly row: number;
@@ -63,7 +60,7 @@ interface Layout {
 }
 
 interface MenuState {
-  readonly kind: 'row' | 'column' | 'table';
+  readonly kind: 'row' | 'column';
   readonly position: Position;
   readonly x: number;
   readonly y: number;
@@ -289,24 +286,6 @@ function nearestTable(x: number, y: number): Element | null {
   return best;
 }
 
-/** Подсказка у ручки: «Нажмите, чтобы открыть меню». Видна при наведении мыши и фокусе с клавиатуры (стили в ui.css). */
-function GripTip({ t }: { t: TFunction }) {
-  return (
-    <>
-      <span data-inkbrick-part="dots" aria-hidden="true" />
-      <span data-inkbrick-part="tip" aria-hidden="true">
-        <strong>{t('table.tip.click')}</strong> {t('table.tip.select')}
-      </span>
-    </>
-  );
-}
-
-/**
- * Управление таблицей мышью: полоски у строки и столбца под курсором (меню действий), кнопки «добавить строку/столбец»
- * и ручки ширины столбцов. Рисуется поверх документа (портал в `body`, `position: fixed`), а не внутри редактируемого
- * корня: так выделение и буфер обмена не видят этих элементов. Показывается, пока над таблицей мышь или в ней каретка;
- * в режиме только чтения не показывается.
- */
 /** Дробный разделитель языка (`Intl`): «,» у русского, немецкого, французского…, «.» у английского. */
 function decimalSeparator(locale: string): ',' | '.' {
   try {
@@ -316,6 +295,12 @@ function decimalSeparator(locale: string): ',' | '.' {
   }
 }
 
+/**
+ * Управление таблицей мышью: полоски у строки и столбца под курсором (меню действий), кнопки «добавить строку/столбец»
+ * и ручки ширины столбцов. Рисуется поверх документа (портал в `body`, `position: fixed`), а не внутри редактируемого
+ * корня: так выделение и буфер обмена не видят этих элементов. Показывается, пока над таблицей мышь или в ней каретка;
+ * в режиме только чтения не показывается.
+ */
 export function TableControls({ block, tableRef, onPreview }: TableControlsProps) {
   const editor = useEditor();
   const view = useEditorView();
@@ -825,15 +810,6 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   ];
 
   /** Меню таблицы: форматирование таблицы целиком и фон выделенных ячеек (без выделения — всех). */
-  const tableActions = (): BlockMenuAction[] =>
-    tableFormatActions(editor, block, t, (action) =>
-      perform(() => {
-        action();
-
-        return cellAt(active.row, active.column);
-      }),
-    );
-
   const open = (kind: MenuState['kind'], x: number, y: number) =>
     setMenu((current) =>
       current?.kind === kind &&
@@ -1146,15 +1122,23 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   };
 
   const { table, row, cell, edges, segments } = layout;
-  // Угловая ручка стоит справа от таблицы, но не правее окна.
-  const cornerLeft = Math.min(table.left + table.width + 6, window.innerWidth - 24);
   // Палец: плашки крупнее (см. ui.css), а маркеры вставки (18 px вместо 10) остаются на одной оси с ними:
   // у строки — по горизонтали, у столбца — по вертикали. Плашка столбца отступает от маркеров по краям ячейки.
   const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   const gripInset = coarse ? 12 : 6;
   const rowInsertGap = coarse ? 15 : 19;
   const columnInsertRise = coarse ? 17 : 20;
-  const rowPill = Math.max(coarse ? 20 : 14, row.height - 2 * gripInset);
+  // Плашка строки не длиннее 32 px: у высокой строки (длинный текст в ячейке) она стоит у середины видимой части строки,
+  // а не тянется на всю высоту за край экрана и за таблицу.
+  const rowPill = Math.min(32, Math.max(coarse ? 20 : 14, row.height - 2 * gripInset));
+  const rowPillGap = Math.min(gripInset, (row.height - rowPill) / 2);
+  const rowPillTop = Math.min(
+    Math.max(
+      (Math.max(row.top, 0) + Math.min(row.top + row.height, window.innerHeight)) / 2 - rowPill / 2,
+      row.top + rowPillGap,
+    ),
+    row.top + row.height - rowPill - rowPillGap,
+  );
   // Палец, узкий столбец: крупные маркеры вставки по краям налезли бы на плашку столбца. Их нет, вставка — из меню столбца.
   const columnInserts = !coarse || cell.width >= 2 * gripInset + 40;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
@@ -1168,37 +1152,6 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     <>
       {createPortal(
         <>
-          {/* На телефоне угловой кнопки нет: меню таблицы там открывается долгим нажатием на ячейку, а выделение растёт точкой. */}
-          {!coarse && (
-            <button
-              {...control}
-              type="button"
-              data-inkbrick-part="table-grip"
-              aria-label={t('table.handle')}
-              // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
-              data-open={menu?.kind === 'table' || undefined}
-              style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
-              // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
-              onClick={() => {
-                setMenu(null);
-                selectTableCells(
-                  editor,
-                  view,
-                  block.id,
-                  { row: 0, column: 0 },
-                  { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
-                );
-
-                rootFocus();
-              }}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                open('table', table.left + table.width - 8, table.top + 4);
-              }}
-            >
-              <GripTip t={t} />
-            </button>
-          )}
           <button
             {...control}
             type="button"
@@ -1209,9 +1162,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             style={{
               // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
               left: Math.max(2, table.left - 20),
-              // По центру строки, с отступом как у плашки столбца: крупные (под палец) маркеры вставки на границах
-              // строки её не задевают.
-              top: row.top + (row.height - rowPill) / 2,
+              // Между маркерами вставки на границах строки (крупные под палец) и не касаясь их.
+              top: rowPillTop,
               height: rowPill,
             }}
             onClick={() => open('row', table.left + 8, row.top + row.height / 2 + 14)}
@@ -1254,14 +1206,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             style={{
               left: cell.left + gripInset,
               top: edgeTop(table.top - 22),
-              // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
-              width: Math.max(
-                14,
-                Math.min(
-                  cell.width - 2 * gripInset,
-                  coarse ? Infinity : cornerLeft - 6 - (cell.left + gripInset),
-                ),
-              ),
+              width: Math.max(14, cell.width - 2 * gripInset),
             }}
             onClick={() => open('column', cell.left + 6, table.top + 10)}
           >
@@ -1280,26 +1225,22 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
                 style={{ left: cell.left - 5, top: edgeTop(table.top - columnInsertRise) }}
                 onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
               />
-              {/* Узкое окно: угловая кнопка прижата к краю и стоит на правой границе столбца — маркер её не закрывает
-                  (вставка справа остаётся в меню столбца). */}
-              {(coarse || cell.left + cell.width + 6 <= cornerLeft) && (
-                <button
-                  {...control}
-                  type="button"
-                  data-inkbrick-part="column-insert"
-                  data-edge="end"
-                  aria-label={t('table.column.insertRight')}
-                  title={t('table.column.insertRight')}
-                  disabled={!canAddColumn}
-                  style={{
-                    left: cell.left + cell.width - 5,
-                    top: edgeTop(table.top - columnInsertRise),
-                  }}
-                  onClick={() =>
-                    perform(() => run('insertTableColumn', { index: active.column + 1 }))
-                  }
-                />
-              )}
+              <button
+                {...control}
+                type="button"
+                data-inkbrick-part="column-insert"
+                data-edge="end"
+                aria-label={t('table.column.insertRight')}
+                title={t('table.column.insertRight')}
+                disabled={!canAddColumn}
+                style={{
+                  left: cell.left + cell.width - 5,
+                  top: edgeTop(table.top - columnInsertRise),
+                }}
+                onClick={() =>
+                  perform(() => run('insertTableColumn', { index: active.column + 1 }))
+                }
+              />
             </>
           )}
           {segments.map(({ column, x, top, height }, order) => {
@@ -1390,42 +1331,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
               block={block}
               position={{ x: menu.x, y: menu.y }}
               actions={
-                menu.kind === 'row'
-                  ? rowActions(menu.position)
-                  : menu.kind === 'column'
-                    ? columnActions(menu.position)
-                    : tableActions()
-              }
-              background={
-                menu.kind === 'table'
-                  ? cellsBackgroundMenu(editor, block, view.cells.get(), (action) =>
-                      perform(() => {
-                        action();
-                      }),
-                    )
-                  : undefined
-              }
-              panels={
-                menu.kind === 'table'
-                  ? // Толщина, начертание, цвет линий и стиль меняются при открытом меню: результат виден сразу. Кнопка
-                    // расположения линий (все, внешние, нет…) — разовое действие: после неё меню закрывается.
-                    tableDesignPanels(
-                      editor,
-                      block,
-                      t,
-                      view.cells.get(),
-                      (action) => {
-                        editor.sealHistory();
-                        flushSync(() => {
-                          action();
-                        });
-                      },
-                      () => {
-                        setMenu(null);
-                        rootFocus();
-                      },
-                    )
-                  : undefined
+                menu.kind === 'row' ? rowActions(menu.position) : columnActions(menu.position)
               }
               turnInto={[]}
               onClose={() => {

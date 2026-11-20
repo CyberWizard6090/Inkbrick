@@ -310,8 +310,7 @@
   /* Ручки таблицы: плашки с шестью точками; круглые маркеры на их концах вставляют столбец или строку по границе. */
   :where(
     [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
-    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip'],
-    [data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']
   ) {
     display: grid;
     place-content: center;
@@ -335,12 +334,7 @@
     height: 14px;
   }
 
-  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']) {
-    width: 16px;
-    height: 16px;
-  }
-
-  /* Шесть точек: 3 × 2 у столбца, 2 × 3 у строки и ручки таблицы. */
+  /* Шесть точек: 3 × 2 у столбца, 2 × 3 у строки. */
   :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='dots']) {
     display: block;
     width: 8px;
@@ -360,8 +354,7 @@
   :where(
     [data-inkbrick-ui='table-controls']:is(
         [data-inkbrick-part='row-grip'],
-        [data-inkbrick-part='column-grip'],
-        [data-inkbrick-part='table-grip']
+        [data-inkbrick-part='column-grip']
       ):hover,
     [data-inkbrick-ui='table-controls'][aria-expanded='true']
   ) {
@@ -439,42 +432,6 @@
     cursor: grab;
   }
 
-  /* Подсказка у ручки таблицы в углу: тёмная плашка над ней, чтобы не закрывать плашки, ячейки и язычок блока. Цвета те же в обеих темах. */
-  :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='tip']) {
-    display: none;
-  }
-
-  @media (hover: hover) {
-    :where(
-      [data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']:is(
-          :hover,
-          :focus-visible
-        ):not([data-open])
-        > [data-inkbrick-part='tip']
-    ) {
-      position: absolute;
-      right: 0;
-      bottom: calc(100% + 6px);
-      z-index: 1;
-      display: block;
-      padding: 6px 10px;
-      border: 1px solid rgb(255 255 255 / 12%);
-      border-radius: 8px;
-      background: #2b2b2b;
-      box-shadow: var(--inkbrick-shadow-8);
-      color: rgb(255 255 255 / 65%);
-      font-size: var(--inkbrick-font-size-caption);
-      line-height: 16px;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-
-    :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='tip'] > strong) {
-      color: #fff;
-      font-weight: 600;
-    }
-  }
-
   :where([data-inkbrick-ui='table-controls']:is(button):focus-visible) {
     outline: 2px solid var(--inkbrick-stroke-focus-2);
     outline-offset: 1px;
@@ -519,11 +476,6 @@
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
       min-width: 32px;
       height: 20px;
-    }
-
-    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='table-grip']) {
-      width: 24px;
-      height: 24px;
     }
 
     :where(
@@ -2530,7 +2482,6 @@
     [data-inkbrick-ui='table-controls']:is(
       [data-inkbrick-part='row-grip'],
       [data-inkbrick-part='column-grip'],
-      [data-inkbrick-part='table-grip'],
       [data-inkbrick-part='row-insert'],
       [data-inkbrick-part='column-insert']
     )
@@ -2558,8 +2509,7 @@
   :where(
     [data-inkbrick-ui='table-controls']:is(
         [data-inkbrick-part='row-grip'],
-        [data-inkbrick-part='column-grip'],
-        [data-inkbrick-part='table-grip']
+        [data-inkbrick-part='column-grip']
       ):hover
   ) {
     scale: 1.06;

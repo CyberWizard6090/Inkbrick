@@ -246,7 +246,7 @@ test.describe('Table controls', () => {
     expect(tab.x + tab.width).toBeLessThanOrEqual(table.x);
     expect(tab.y + tab.height).toBeLessThanOrEqual(table.y);
 
-    for (const name of ['row-grip', 'column-grip', 'row-insert', 'column-insert', 'table-grip']) {
+    for (const name of ['row-grip', 'column-grip', 'row-insert', 'column-insert']) {
       for (const box of await page.locator(part(name)).evaluateAll((nodes) =>
         nodes.map((node) => {
           const { x, y, width, height } = node.getBoundingClientRect();

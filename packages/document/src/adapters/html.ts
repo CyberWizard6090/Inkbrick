@@ -4,6 +4,7 @@ import { exportColor, getBlockBackgroundColor, isHexColor } from '../utils/color
 import { isFootnoteNode } from '../utils/footnote';
 import { isFormulaNode } from '../utils/formula';
 import { IMAGE_ASPECTS } from '../schema/blocks/ImageSchema';
+import { TABLE_CELL } from '../schema/blocks/TableSchema';
 import { isSafeImageUrl, isSafeUrl } from '../utils/url';
 import {
   buildExportTree,
@@ -36,8 +37,13 @@ const ALIGNED = new Set(['center', 'right', 'justify']);
 function alignStyle(block: BaseBlock, extra: readonly string[] = []): string {
   const align = block.props.alignment ?? block.props.align;
   const color = getBlockBackgroundColor(block);
-  // Свой цвет — с той же прозрачностью 35%, что и в редакторе (там он разбавлен, чтобы текст оставался читаемым).
-  const background = isHexColor(color) ? `${color}59` : exportColor(color, 'background');
+  // Свой цвет блока — с той же прозрачностью 35%, что и в редакторе (там он разбавлен, чтобы текст оставался читаемым);
+  // у ячейки таблицы фон непрозрачный, как в редакторе.
+  const background = isHexColor(color)
+    ? block.flavour === TABLE_CELL
+      ? color
+      : `${color}59`
+    : exportColor(color, 'background');
   const style = [
     typeof align === 'string' && ALIGNED.has(align) && `text-align:${align}`,
     background && `background-color:${background}`,

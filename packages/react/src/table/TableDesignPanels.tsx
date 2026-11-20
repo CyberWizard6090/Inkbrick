@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 
 import {
   BLOCK_BACKGROUNDS,
@@ -16,7 +16,6 @@ import {
 } from '@inkbrick/document';
 import { TABLE_BORDER_MODES, type Editor, type TableBorderMode } from '@inkbrick/engine';
 
-import type { BlockMenuPanel } from '../block-handle/types';
 import type { ContextMenuItem } from '../context-menu/types';
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { TFunction } from '../i18n/translate';
@@ -218,8 +217,6 @@ function lookOf(editor: Editor): BorderLook {
   return look;
 }
 
-type Placement = Exclude<TableBorderMode, 'keep'>;
-
 /** Меняет границы выделенных ячеек (а без выделения — всей таблицы) и запоминает выбранное оформление. */
 function applyBorders(
   editor: Editor,
@@ -316,168 +313,6 @@ function ColorDots({
       </div>
     </div>
   );
-}
-
-function BordersPanel({
-  editor,
-  block,
-  picked,
-  run,
-  close,
-}: {
-  editor: Editor;
-  block: BaseBlock;
-  picked: CellSelection | null;
-  run: (action: () => void) => void;
-  /** Закрыть меню: после кнопки расположения линий (все, внешние, нет…) — разовое действие. */
-  close?: () => void;
-}) {
-  const t = useT();
-  const [width, setWidth] = useState<TableBorderWidth>(lookOf(editor).width);
-  const [style, setStyle] = useState<TableBorderStyle>(lookOf(editor).style);
-  const [color, setColor] = useState<ColorName | null>(lookOf(editor).color);
-  const apply = (mode: Placement) => {
-    applyBorders(editor, block, picked, run, {
-      mode,
-      ...(mode === 'none' ? {} : { width }),
-      color,
-      style,
-    });
-    close?.();
-  };
-  // Толщина, начертание и цвет сразу меняют существующие линии выделенных ячеек.
-  const change = (patch: {
-    width?: TableBorderWidth;
-    style?: TableBorderStyle;
-    color?: ColorName | null;
-  }) => {
-    Object.assign(lookOf(editor), patch);
-    applyBorders(editor, block, picked, run, { mode: 'keep', ...patch });
-  };
-
-  return (
-    <div data-inkbrick-part="borders">
-      <div data-inkbrick-part="border-modes" role="group" aria-label={t('table.border.heading')}>
-        {TABLE_BORDER_MODES.map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            role="menuitem"
-            data-inkbrick-part="border-mode"
-            data-action={`table-border-${mode}`}
-            aria-label={t(`table.border.${mode}` as MessageKey)}
-            title={t(`table.border.${mode}` as MessageKey)}
-            onClick={() => apply(mode)}
-          >
-            <BorderGlyph mode={mode} />
-          </button>
-        ))}
-      </div>
-      <div data-inkbrick-part="border-widths" role="group" aria-label={t('table.border.width')}>
-        {WIDTHS.map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="menuitemradio"
-            aria-checked={width === value}
-            data-inkbrick-part="border-width"
-            data-width={value}
-            data-action={`table-border-width-${value}`}
-            aria-label={t(`table.border.${value}` as MessageKey)}
-            title={t(`table.border.${value}` as MessageKey)}
-            onClick={() => {
-              setWidth(value);
-              change({ width: value });
-            }}
-          >
-            <span aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-      <div data-inkbrick-part="border-styles" role="group" aria-label={t('table.border.styleMenu')}>
-        {TABLE_BORDER_STYLES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="menuitemradio"
-            aria-checked={style === value}
-            data-inkbrick-part="border-style"
-            data-action={`table-border-style-${value}`}
-            aria-label={t(`table.border.${value}` as MessageKey)}
-            title={t(`table.border.${value}` as MessageKey)}
-            onClick={() => {
-              setStyle(value);
-              change({ style: value });
-            }}
-          >
-            <LineSample style={value} />
-          </button>
-        ))}
-      </div>
-      <div data-inkbrick-part="border-colors" role="group" aria-label={t('table.border.color')}>
-        <button
-          type="button"
-          role="menuitemradio"
-          aria-checked={color === null}
-          data-inkbrick-part="border-color"
-          data-color=""
-          data-action="table-border-color-default"
-          aria-label={t('table.border.colorDefault')}
-          title={t('table.border.colorDefault')}
-          onClick={() => {
-            setColor(null);
-            change({ color: null });
-          }}
-        />
-        {COLOR_NAMES.map((name) => (
-          <button
-            key={name}
-            type="button"
-            role="menuitemradio"
-            aria-checked={color === name}
-            data-inkbrick-part="border-color"
-            data-color={name}
-            data-action={`table-border-color-${name}`}
-            aria-label={t(`color.${name}` as MessageKey)}
-            title={t(`color.${name}` as MessageKey)}
-            onClick={() => {
-              setColor(name);
-              change({ color: name });
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Секции меню таблицы: галерея готовых стилей (наведение показывает стиль на самой таблице) и границы ячеек
- * (все, внешние, внутренние, по сторонам, без границ) с толщиной и цветом линии. Границы относятся к выделенным ячейкам,
- * а без выделения — ко всей таблице.
- */
-export function tableDesignPanels(
-  editor: Editor,
-  block: BaseBlock,
-  t: TFunction,
-  picked: CellSelection | null,
-  run: (action: () => void) => void,
-  close?: () => void,
-): BlockMenuPanel[] {
-  return [
-    {
-      id: 'table-style',
-      title: t('table.style.heading'),
-      content: <StyleGallery editor={editor} block={block} run={run} />,
-    },
-    {
-      id: 'table-border-lines',
-      title: t('table.border.heading'),
-      content: (
-        <BordersPanel editor={editor} block={block} picked={picked} run={run} close={close} />
-      ),
-    },
-  ];
 }
 
 /**
