@@ -591,13 +591,13 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-inkbrick-theme='light']) :where([data-inkbrick-block='table-cell']) {
+    :where(:root:not([data-inkbrick-theme='light']) [data-inkbrick-block='table-cell']) {
       --inkbrick-cell-line-black: #8b8b8b;
       --inkbrick-cell-line-white: var(--inkbrick-color-white);
     }
   }
 
-  :root[data-inkbrick-theme='dark'] :where([data-inkbrick-block='table-cell']) {
+  :where(:root[data-inkbrick-theme='dark'] [data-inkbrick-block='table-cell']) {
     --inkbrick-cell-line-black: #8b8b8b;
     --inkbrick-cell-line-white: var(--inkbrick-color-white);
   }
@@ -987,7 +987,8 @@
     user-select: none;
   }
 
-  :where([data-inkbrick-block='column'] > [data-inkbrick-part='divider']::after) {
+  /* Псевдоэлемент — снаружи `:where()`: внутри него селектор недопустим, и правило отбрасывалось целиком. */
+  :where([data-inkbrick-block='column'] > [data-inkbrick-part='divider'])::after {
     content: '';
     position: absolute;
     top: 0;
@@ -1004,16 +1005,15 @@
     [data-inkbrick-block='columns']:hover
       > [data-inkbrick-part='grid']
       > [data-inkbrick-block='column']
-      > [data-inkbrick-part='divider']::after
-  ) {
+      > [data-inkbrick-part='divider']
+  )::after {
     background: var(--inkbrick-stroke-2);
     opacity: 1;
   }
 
   :where(
-    [data-inkbrick-block='column'] > [data-inkbrick-part='divider']:hover::after,
-    [data-inkbrick-block='column'] > [data-inkbrick-part='divider']:focus-visible::after
-  ) {
+    [data-inkbrick-block='column'] > [data-inkbrick-part='divider']:is(:hover, :focus-visible)
+  )::after {
     background: var(--inkbrick-brand-bg);
     opacity: 1;
   }

@@ -1154,6 +1154,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const gripInset = coarse ? 12 : 6;
   const rowInsertGap = coarse ? 15 : 19;
   const columnInsertRise = coarse ? 17 : 20;
+  const rowPill = Math.max(coarse ? 20 : 14, row.height - 2 * gripInset);
   // Палец, узкий столбец: крупные маркеры вставки по краям налезли бы на плашку столбца. Их нет, вставка — из меню столбца.
   const columnInserts = !coarse || cell.width >= 2 * gripInset + 40;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
@@ -1208,24 +1209,30 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             style={{
               // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
               left: Math.max(2, table.left - 20),
-              top: row.top + 6,
-              height: Math.max(16, row.height - 12),
+              // По центру строки, с отступом как у плашки столбца: крупные (под палец) маркеры вставки на границах
+              // строки её не задевают.
+              top: row.top + (row.height - rowPill) / 2,
+              height: rowPill,
             }}
             onClick={() => open('row', table.left + 8, row.top + row.height / 2 + 14)}
           >
             <span data-inkbrick-part="dots" aria-hidden="true" />
           </button>
-          <button
-            {...control}
-            type="button"
-            data-inkbrick-part="row-insert"
-            data-edge="start"
-            aria-label={t('table.row.insertAbove')}
-            title={t('table.row.insertAbove')}
-            disabled={!canAddRow}
-            style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - 5 }}
-            onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
-          />
+          {/* Палец, верхний левый угол: крупный маркер «строка выше» лёг бы на маркер «столбец слева». Вставка выше
+              остаётся в меню строки. */}
+          {!(coarse && active.row === 0 && active.column === 0) && (
+            <button
+              {...control}
+              type="button"
+              data-inkbrick-part="row-insert"
+              data-edge="start"
+              aria-label={t('table.row.insertAbove')}
+              title={t('table.row.insertAbove')}
+              disabled={!canAddRow}
+              style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - 5 }}
+              onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
+            />
+          )}
           <button
             {...control}
             type="button"
@@ -1273,22 +1280,26 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
                 style={{ left: cell.left - 5, top: edgeTop(table.top - columnInsertRise) }}
                 onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
               />
-              <button
-                {...control}
-                type="button"
-                data-inkbrick-part="column-insert"
-                data-edge="end"
-                aria-label={t('table.column.insertRight')}
-                title={t('table.column.insertRight')}
-                disabled={!canAddColumn}
-                style={{
-                  left: cell.left + cell.width - 5,
-                  top: edgeTop(table.top - columnInsertRise),
-                }}
-                onClick={() =>
-                  perform(() => run('insertTableColumn', { index: active.column + 1 }))
-                }
-              />
+              {/* Узкое окно: угловая кнопка прижата к краю и стоит на правой границе столбца — маркер её не закрывает
+                  (вставка справа остаётся в меню столбца). */}
+              {(coarse || cell.left + cell.width + 6 <= cornerLeft) && (
+                <button
+                  {...control}
+                  type="button"
+                  data-inkbrick-part="column-insert"
+                  data-edge="end"
+                  aria-label={t('table.column.insertRight')}
+                  title={t('table.column.insertRight')}
+                  disabled={!canAddColumn}
+                  style={{
+                    left: cell.left + cell.width - 5,
+                    top: edgeTop(table.top - columnInsertRise),
+                  }}
+                  onClick={() =>
+                    perform(() => run('insertTableColumn', { index: active.column + 1 }))
+                  }
+                />
+              )}
             </>
           )}
           {segments.map(({ column, x, top, height }, order) => {
