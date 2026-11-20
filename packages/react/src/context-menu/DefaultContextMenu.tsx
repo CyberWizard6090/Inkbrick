@@ -114,16 +114,25 @@ export function DefaultContextMenu({
   );
 }
 
-/** Затемнение за листом: касание по нему закрывает меню и не доходит до документа под ним. */
-export function SheetBackdrop({ onClose }: { onClose: () => void }) {
+/**
+ * Затемнение за листом: касание по нему закрывает меню и не доходит до документа под ним. У вложенного листа своё
+ * затемнение поверх родительского листа: касание «мимо» закрывает только вложенную панель и не задевает пункты
+ * родителя, которые иначе оставались бы видны и нажимались.
+ */
+export function SheetBackdrop({ onClose, nested }: { onClose: () => void; nested?: boolean }) {
   return (
     <div
       data-inkbrick-ui="context-menu"
       data-inkbrick-block-ui
       data-inkbrick-part="sheet-backdrop"
+      data-nested={nested || undefined}
       aria-hidden="true"
       onMouseDown={(event) => event.preventDefault()}
-      onClick={onClose}
+      onClick={(event) => {
+        // Вложенное затемнение лежит в портале, но по дереву React это потомок пункта: его клик не должен открыть панель снова.
+        event.stopPropagation();
+        onClose();
+      }}
     />
   );
 }
@@ -384,45 +393,48 @@ function Flyout({
   };
 
   return (
-    <div
-      ref={ref}
-      className="inkbrick-context-menu"
-      data-inkbrick-ui="context-menu"
-      data-inkbrick-part="flyout"
-      data-flyout={item.id}
-      data-sheet={sheet || undefined}
-      role="menu"
-      aria-label={item.title || t('contextMenu.label')}
-      style={
-        sheet
-          ? { bottom: inset }
-          : {
-              left: place?.left ?? 0,
-              top: place?.top ?? 0,
-              maxWidth: place?.maxWidth,
-              // `min-width` из стилей меню не должен перебивать сужение под окно.
-              minWidth: place?.maxWidth !== undefined ? 0 : undefined,
-              maxHeight: place?.maxHeight,
-              overflowY: place?.maxHeight !== undefined ? 'auto' : undefined,
-              visibility: place ? undefined : 'hidden',
-            }
-      }
-      onMouseDown={(event) => {
-        if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
-      }}
-      onContextMenu={(event) => event.preventDefault()}
-      // Панель лежит в портале, но по дереву React это потомок пункта: без этого её клики переключали бы сам пункт.
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={keys}
-    >
-      {sheet && (
-        // Лист поверх листа: заголовок раздела и «Назад» к родительскому меню.
-        <button type="button" data-inkbrick-part="sheet-back" onClick={onBack}>
-          <Icon name="arrow-left" />
-          <span>{item.title || t('contextMenu.label')}</span>
-        </button>
-      )}
-      {item.submenu ? <MenuList items={item.submenu} onRun={onRun} /> : item.flyout}
-    </div>
+    <>
+      {sheet && <SheetBackdrop nested onClose={onBack} />}
+      <div
+        ref={ref}
+        className="inkbrick-context-menu"
+        data-inkbrick-ui="context-menu"
+        data-inkbrick-part="flyout"
+        data-flyout={item.id}
+        data-sheet={sheet || undefined}
+        role="menu"
+        aria-label={item.title || t('contextMenu.label')}
+        style={
+          sheet
+            ? { bottom: inset }
+            : {
+                left: place?.left ?? 0,
+                top: place?.top ?? 0,
+                maxWidth: place?.maxWidth,
+                // `min-width` из стилей меню не должен перебивать сужение под окно.
+                minWidth: place?.maxWidth !== undefined ? 0 : undefined,
+                maxHeight: place?.maxHeight,
+                overflowY: place?.maxHeight !== undefined ? 'auto' : undefined,
+                visibility: place ? undefined : 'hidden',
+              }
+        }
+        onMouseDown={(event) => {
+          if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
+        }}
+        onContextMenu={(event) => event.preventDefault()}
+        // Панель лежит в портале, но по дереву React это потомок пункта: без этого её клики переключали бы сам пункт.
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={keys}
+      >
+        {sheet && (
+          // Лист поверх листа: заголовок раздела и «Назад» к родительскому меню.
+          <button type="button" data-inkbrick-part="sheet-back" onClick={onBack}>
+            <Icon name="arrow-left" />
+            <span>{item.title || t('contextMenu.label')}</span>
+          </button>
+        )}
+        {item.submenu ? <MenuList items={item.submenu} onRun={onRun} /> : item.flyout}
+      </div>
+    </>
   );
 }

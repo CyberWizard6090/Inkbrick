@@ -731,6 +731,64 @@ test.describe('Table design on a phone', () => {
       ).toBeNull();
     });
 
+    test('a tap beside a nested sheet closes only that sheet and activates nothing in the parent', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+      const menu = page.locator('[data-testid="context-menu"]');
+      const flyout = page.locator('[data-inkbrick-part="flyout"]');
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await expect(menu).toBeVisible();
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(350);
+
+      // Короткий вложенный лист («Фон ячеек»): над ним остаётся виден родительский лист с пунктами.
+      await menu
+        .locator('[data-action="table-cell-background"]')
+        .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await menu.locator('[data-action="table-cell-background"]').tap();
+      await expect(flyout).toBeVisible();
+
+      const changes = await page.evaluate(() => {
+        const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+          .__inkbrick.main as never as {
+          editor: { dispatch: (intent: { type: string }) => unknown };
+        };
+        const dispatch = editor.dispatch.bind(editor);
+        const calls: string[] = [];
+
+        editor.dispatch = (intent) => {
+          calls.push(intent.type);
+
+          return dispatch(intent);
+        };
+        (window as never as { __calls: string[] }).__calls = calls;
+
+        return calls;
+      });
+
+      expect(changes).toEqual([]);
+
+      const parent = (await menu.boundingBox())!;
+      const nested = (await flyout.boundingBox())!;
+
+      // Тап по видимой части родительского листа: закрывается только вложенный, пункт родителя не нажимается.
+      await page.touchscreen.tap(page.viewportSize()!.width / 2, (parent.y + nested.y) / 2);
+      await expect(flyout).toHaveCount(0);
+      await expect(menu).toBeVisible();
+      expect(await page.evaluate(() => (window as never as { __calls: string[] }).__calls)).toEqual(
+        [],
+      );
+    });
+
     test('the cell menu with the table sections fits the screen and has big enough buttons', async ({
       page,
     }) => {

@@ -2615,9 +2615,9 @@
     animation: inkbrick-sheet-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
   }
 
-  /* Вложенная панель — второй лист поверх первого. */
+  /* Вложенная панель — второй лист поверх первого, со своим затемнением: родительский лист под ним не нажимается. */
   :where([data-inkbrick-part='flyout'][data-sheet]) {
-    z-index: calc(var(--inkbrick-z-menu) + 1);
+    z-index: calc(var(--inkbrick-z-menu) + 2);
     max-height: min(80dvh, 640px);
   }
 
@@ -2648,6 +2648,12 @@
     background: rgb(0 0 0 / 38%);
     box-shadow: none;
     animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* После базового правила затемнения: при равной специфичности побеждает более поздний, а это затемнение лежит выше родителя. */
+  :where([data-inkbrick-part='sheet-backdrop'][data-nested]) {
+    z-index: calc(var(--inkbrick-z-menu) + 1);
+    background: rgb(0 0 0 / 22%);
   }
 
   :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='sheet-back']) {
