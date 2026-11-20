@@ -228,7 +228,7 @@ test.describe('Table controls', () => {
     expect(Math.abs(undone.width - before.width)).toBeLessThan(2);
   });
 
-  test('the block handle is a single grip above the top left corner and overlaps no control', async ({
+  test('the block handle is the same as of other blocks, in the same column, and overlaps no control', async ({
     page,
   }) => {
     // Первая строка и первый столбец: у них маркеры вставки лежат ближе всего к углу.
@@ -237,14 +237,28 @@ test.describe('Table controls', () => {
     const handle = page.locator('[data-testid="block-handle"]');
 
     await expect(handle).toHaveCount(1);
-    // «+» у таблицы нет: ниже таблицы всегда есть место для нового блока.
-    await expect(handle.locator('[data-action="add"]')).toHaveCount(0);
+    // Как у всех блоков: «+» и хваталка.
+    await expect(handle.locator('[data-action="add"]')).toHaveCount(1);
 
-    const tab = (await handle.locator('[data-action="grip"]').boundingBox())!;
+    await page.waitForTimeout(300);
+
+    const tab = (await handle.boundingBox())!;
     const table = (await page.locator('[data-inkbrick-block="table"]').boundingBox())!;
 
-    expect(tab.x + tab.width).toBeLessThanOrEqual(table.x);
-    expect(tab.y + tab.height).toBeLessThanOrEqual(table.y);
+    // Ручка левее таблицы, с зазором.
+    expect(tab.x + tab.width).toBeLessThan(table.x);
+
+    // И стоит в той же колонке, что ручка абзаца над таблицей.
+    const paragraph = (await page.locator(editable).first().boundingBox())!;
+
+    await page.mouse.move(paragraph.x + 10, paragraph.y + paragraph.height / 2);
+    await expect.poll(async () => (await handle.boundingBox())?.y).toBeLessThan(tab.y);
+    // Ручка появляется с анимацией: ждём, пока она встанет на место.
+    await expect
+      .poll(async () => Math.abs((await handle.boundingBox())!.x - tab.x))
+      .toBeLessThanOrEqual(1);
+    await hover(page, 0, 0);
+    await expect.poll(async () => (await handle.boundingBox())?.y).toBe(tab.y);
 
     for (const name of ['row-grip', 'column-grip', 'row-insert', 'column-insert']) {
       for (const box of await page.locator(part(name)).evaluateAll((nodes) =>

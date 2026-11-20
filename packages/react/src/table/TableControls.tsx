@@ -1161,7 +1161,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             aria-expanded={menu?.kind === 'row'}
             style={{
               // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
-              left: Math.max(2, table.left - 20),
+              left: Math.max(2, table.left - (coarse ? 20 : 21)),
               // Между маркерами вставки на границах строки (крупные под палец) и не касаясь их.
               top: rowPillTop,
               height: rowPill,

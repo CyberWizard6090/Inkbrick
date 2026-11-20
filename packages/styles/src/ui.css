@@ -323,9 +323,9 @@
       color var(--inkbrick-duration-fast) var(--inkbrick-curve);
   }
 
-  /* Плашка строки уже плашки столбца: слева от таблицы стоит ручка блока, и широкая плашка налезала бы на неё. */
+  /* Плашки строки и столбца одинаковой толщины: 14 px поперёк, вдоль — по строке или столбцу. */
   :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
-    width: 12px;
+    width: 14px;
     height: 24px;
   }
 
@@ -2504,15 +2504,6 @@
     )
   ) {
     transition-property: background-color, color, width, height, margin, scale;
-  }
-
-  :where(
-    [data-inkbrick-ui='table-controls']:is(
-        [data-inkbrick-part='row-grip'],
-        [data-inkbrick-part='column-grip']
-      ):hover
-  ) {
-    scale: 1.06;
   }
 
   /*

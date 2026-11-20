@@ -7,15 +7,6 @@ import { blockAtPoint, blockElement, hasHandle, probePoint, rowRect } from './ge
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Meta', 'Alt']);
 
 /**
- * Ручка таблицы в углу: отступ от угла сетки влево и подъём над ней (высота ручки 28). Маркеры вставки у первой строки и
- * первого столбца лежат на самом углу (у пальца они крупнее), ручка стоит так, чтобы их не задевать.
- */
-const TABLE_CORNER_GAP = 6;
-const TABLE_CORNER_RISE = 32;
-const TABLE_CORNER_GAP_TOUCH = 10;
-const TABLE_CORNER_RISE_TOUCH = 36;
-
-/**
  * Следит за указателем: показывает ручку у блока под курсором (в том числе в полосе слева от текста),
  * на сенсорном экране — у блока, которого коснулись; закрывает меню по клику снаружи/Esc/прокрутке
  * и скрывает ручку при наборе текста. Перетаскивание запускается из ручки (см. BlockHandleHost).
@@ -45,27 +36,15 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
       const row = rowRect(view, blockId);
 
       if (wrapper && row) {
-        // Таблица: ручка одна, в левом верхнем углу над сеткой (как ручка перемещения таблицы в Word), там её не закрывает
-        // ни текст ячеек, ни плашки строки и столбца, и места хватает и на узком экране. Позиция — правый верхний угол
-        // ручки: чуть левее и выше угла сетки (маркеры вставки у первой строки и столбца остаются справа и снизу от неё).
-        if (editor.store.getBlock(blockId)?.flavour === 'block:table') {
-          const frame = wrapper.getBoundingClientRect();
-          const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-
-          view.blocks.setHover({
-            blockId,
-            x: Math.round(frame.left) - (touch ? TABLE_CORNER_GAP_TOUCH : TABLE_CORNER_GAP),
-            y: Math.round(frame.top) - (touch ? TABLE_CORNER_RISE_TOUCH : TABLE_CORNER_RISE),
-          });
-          return;
-        }
-
         view.blocks.setHover({
           blockId,
-          // Окрашенный блок выступает за колонку на отрицательный отступ: ручка стоит у края колонки, как у обычных.
+          // Ручка стоит у края колонки документа, одинаково у всех блоков: окрашенный блок выступает за колонку на
+          // отрицательный отступ, а таблица отодвинута от неё положительным (там её ручки строк и маркеры вставки).
           x: Math.round(
             wrapper.getBoundingClientRect().left -
-              Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0),
+              (editor.store.getBlock(blockId)?.flavour === 'block:table'
+                ? parseFloat(getComputedStyle(wrapper).marginLeft) || 0
+                : Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0)),
           ),
           y: Math.round(row.top),
         });
