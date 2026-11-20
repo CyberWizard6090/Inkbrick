@@ -194,6 +194,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - In a narrow window the block tab is not shown over a table (it covered the text of the first cell); the table's menu stays on its corner handle and the right button.
 - The table corner handle does not claim to open a menu (`aria-haspopup` removed): a click selects the table's cells, the menu is opened by the right button or the menu key.
 - Table handles stay inside the top of the window when the table is close to the top edge.
+- The row and column handles of a table are no longer animated in size: a 0.1 s transition on `width`/`height` made the column handle stretch and catch up with the cell on every width change. Only the insert markers (they grow into a «+» on hover) keep a size transition.
 - The handles of a table follow a column whose width changes while the table keeps its size (the neighbour column changes by the same amount): they watch the cells of the first row, not only the whole table, so the column handle and the markers no longer lag behind a resized column.
 - A tap on an item of a nested panel of the context menu that lies over the menu (phone width) no longer closes the panel before the click arrives: entering the panel was treated as entering its parent item, the panel closed, and the click fell through to the item under it (it could delete a column). The same went for the mouse in a narrow window.
 - On touch screens the items of the context menu and of the block menu are at least 44 px tall.

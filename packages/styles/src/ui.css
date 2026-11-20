@@ -2536,9 +2536,23 @@
     )
   ) {
     animation: inkbrick-pop-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
-    transition-property: background-color, color, width, height, margin, scale;
+    transition-property: background-color, color, scale;
     transition-duration: var(--inkbrick-duration-fast);
     transition-timing-function: var(--inkbrick-curve);
+  }
+
+  /*
+   * Размер и положение плашек задаёт раскладка (ширина плашки столбца и высота плашки строки меняются вместе со столбцом
+   * и строкой), поэтому они не анимируются: переход по ширине растягивал бы плашку и она догоняла бы ячейку. Анимируется
+   * только маркер вставки, который при наведении вырастает в кнопку «+».
+   */
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+      [data-inkbrick-part='row-insert'],
+      [data-inkbrick-part='column-insert']
+    )
+  ) {
+    transition-property: background-color, color, width, height, margin, scale;
   }
 
   :where(
