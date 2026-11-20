@@ -101,7 +101,7 @@ export function useCellSelection(
         if (!selecting) return;
 
         // После отпускания браузер досылает «мышиные» mousedown и click: редактор поставил бы по ним каретку и снял
-        // выделение. Гасим их на короткое время.
+        // выделение. Гасим их на короткое время: синтетические события приходят сразу за отпусканием.
         const eat = (mouse: Event) => {
           mouse.preventDefault();
           mouse.stopPropagation();
@@ -111,7 +111,7 @@ export function useCellSelection(
         for (const kind of kinds) document.addEventListener(kind, eat, true);
         setTimeout(() => {
           for (const kind of kinds) document.removeEventListener(kind, eat, true);
-        }, 500);
+        }, 250);
 
         if (ended && view.cells.get()?.tableId === tableId)
           view.contextMenu.open(Math.round(ended.clientX), Math.round(ended.clientY));

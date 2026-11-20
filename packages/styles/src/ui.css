@@ -2082,6 +2082,14 @@
 
   /* Палец не наводится и попадает хуже: кнопки стилей и границ крупнее (44 пикселя, как рекомендуют для касания). */
   @media (pointer: coarse) {
+    /* Пункты меню тоже: в панелях вложенного меню («Границы ячеек») это те же пункты, и палец должен в них попадать. */
+    :where(
+      [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item'],
+      [data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']
+    ) {
+      min-height: 44px;
+    }
+
     :where(
       :is([data-inkbrick-ui='block-menu'], [data-inkbrick-ui='context-menu'])
         :is(

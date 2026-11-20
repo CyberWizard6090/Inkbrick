@@ -516,48 +516,6 @@ test.describe('Table design on a phone', () => {
   test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
   test.skip(({ browserName }) => browserName === 'firefox', 'Firefox has no mobile emulation');
 
-  test('the table menu with the styles and borders fits the screen and has big enough buttons', async ({
-    page,
-  }) => {
-    await page.goto('/?lang=en');
-    await insertTable(page);
-
-    const cell = (await page.locator(cells).nth(4).boundingBox())!;
-
-    await page.touchscreen.tap(cell.x + 10, cell.y + 10);
-    await page.locator('[data-inkbrick-part="table-grip"]').click({ button: 'right' });
-
-    const menu = page.locator(blockMenu);
-
-    await expect(menu).toBeVisible();
-
-    const inside = await menu.evaluate((node) => {
-      const box = node.getBoundingClientRect();
-
-      return box.left >= 0 && box.right <= window.innerWidth && box.top >= 0;
-    });
-
-    expect(inside).toBe(true);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-      375,
-    );
-
-    // Секции лежат ниже пунктов: меню прокручивается, пальцу нужны кнопки не меньше 44 пикселей.
-    await menu.locator('[data-action="table-border-all"]').scrollIntoViewIfNeeded();
-
-    for (const action of ['table-border-all', 'table-border-width-thick', 'table-style-blue']) {
-      expect(
-        (await menu.locator(`[data-action="${action}"]`).boundingBox())!.height,
-      ).toBeGreaterThanOrEqual(44);
-    }
-
-    // Толщина меняет линии сразу, меню остаётся открытым.
-    await menu.locator('[data-action="table-border-width-thick"]').tap();
-    await expect(menu).toBeVisible();
-
-    expect(await cellBorder(page, 4, 'top')).toBe('thick');
-  });
-
   test('the cell stays in view when the on-screen keyboard shrinks the window', async ({
     page,
   }) => {
@@ -674,14 +632,61 @@ test.describe('Table design on a phone', () => {
       await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
     });
 
-    test('the corner handle selects every cell and opens the table menu on a tap', async ({
+    test('there is no corner table button on a phone: the table menu is in the cell menu', async ({
       page,
     }) => {
       await page.locator(cells).nth(4).tap();
-      await page.locator('[data-inkbrick-part="table-grip"]').tap();
+      await expect(page.locator('[data-inkbrick-part="column-grip"]')).toBeVisible();
+      await expect(page.locator('[data-inkbrick-part="table-grip"]')).toHaveCount(0);
+    });
 
-      expect(await picked(page)).toBe(9);
-      await expect(page.locator(blockMenu)).toBeVisible();
+    test('the cell menu with the table sections fits the screen and has big enough buttons', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+
+      const menu = page.locator('[data-testid="context-menu"]');
+
+      await expect(menu).toBeVisible();
+      // Мышиные события после отпускания гасятся на долю секунды: тап по пункту ждёт их конца. Виртуальная мышь
+      // Playwright уходит с меню: на телефоне её нет, а над меню она «наводилась» бы на соседние пункты.
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(350);
+
+      const inside = (locator: typeof menu) =>
+        locator.evaluate((node) => {
+          const box = node.getBoundingClientRect();
+
+          return box.left >= 0 && box.right <= window.innerWidth && box.top >= 0;
+        });
+
+      expect(await inside(menu)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        375,
+      );
+
+      // Границы ячеек открываются отдельной панелью: она тоже помещается в окно, кнопки не меньше 44 пикселей.
+      // Пункт ниже видимой части: меню прокручивается само (как пальцем), прокрутка страницы закрыла бы его.
+      await menu
+        .locator('[data-action="table-cell-borders"]')
+        .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await menu.locator('[data-action="table-cell-borders"]').tap();
+
+      const flyout = page.locator('[data-inkbrick-part="flyout"]');
+
+      await expect(flyout).toBeVisible();
+      expect(await inside(flyout)).toBe(true);
+      expect(
+        (await flyout.locator('[data-action="table-border-all"]').boundingBox())!.height,
+      ).toBeGreaterThanOrEqual(44);
+
+      await flyout.locator('[data-action="table-border-all"]').tap();
+      expect(await cellBorder(page, 4, 'top')).toBe('thin');
     });
 
     test('the width slider resizes the column live and writes one undo step on release', async ({

@@ -363,6 +363,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
 
     observer?.observe(table);
+    // Ширина столбца меняется, а таблица остаётся прежнего размера (сумма та же, меняются два соседних столбца): плашки
+    // и маркеры следили бы за размером таблицы и отставали. Поэтому смотрим и за ячейками первой строки.
+    for (const cell of table.rows[0]?.cells ?? []) observer?.observe(cell);
     window.addEventListener('scroll', follow, { capture: true, passive: true });
     window.addEventListener('resize', update);
 
@@ -371,7 +374,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       window.removeEventListener('scroll', follow, true);
       window.removeEventListener('resize', update);
     };
-  }, [tableRef, !!active]);
+  }, [tableRef, !!active, size.columns]);
 
   // Мышь над таблицей и в зоне вокруг неё: строка и столбец под курсором. Тач — только по каретке.
   useEffect(() => {
@@ -1099,9 +1102,6 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const gripInset = coarse ? 12 : 6;
   const rowInsertGap = coarse ? 15 : 19;
   const columnInsertRise = coarse ? 17 : 20;
-  // У последнего столбца правый маркер вставки (18 px) лежал бы поверх угловой ручки, которая жмётся к краю окна:
-  // на пальце он сдвигается внутрь таблицы.
-  const lastEndShift = coarse && active.column === size.columns - 1 ? 12 : 0;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
   const control = {
     'data-inkbrick-ui': 'table-controls',
@@ -1111,36 +1111,37 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
 
   return createPortal(
     <>
-      <button
-        {...control}
-        type="button"
-        data-inkbrick-part="table-grip"
-        aria-label={t('table.handle')}
-        // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
-        data-open={menu?.kind === 'table' || undefined}
-        style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
-        // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры). У пальца правой
-        // кнопки нет: там то же нажатие выделяет ячейки и сразу открывает меню таблицы.
-        onClick={() => {
-          setMenu(null);
-          selectTableCells(
-            editor,
-            view,
-            block.id,
-            { row: 0, column: 0 },
-            { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
-          );
+      {/* На телефоне угловой кнопки нет: меню таблицы там открывается долгим нажатием на ячейку, а выделение растёт точкой. */}
+      {!coarse && (
+        <button
+          {...control}
+          type="button"
+          data-inkbrick-part="table-grip"
+          aria-label={t('table.handle')}
+          // Меню таблицы открыто: подсказка над ручкой не показывается поверх него.
+          data-open={menu?.kind === 'table' || undefined}
+          style={{ left: cornerLeft, top: edgeTop(table.top - 22) }}
+          // Нажатие выделяет все ячейки, меню таблицы — правая кнопка (или клавиша меню с клавиатуры).
+          onClick={() => {
+            setMenu(null);
+            selectTableCells(
+              editor,
+              view,
+              block.id,
+              { row: 0, column: 0 },
+              { row: Math.max(0, size.rows - 1), column: Math.max(0, size.columns - 1) },
+            );
 
-          if (coarsePointer()) open('table', table.left + table.width - 8, table.top + 4);
-          else rootFocus();
-        }}
-        onContextMenu={(event) => {
-          event.preventDefault();
-          open('table', table.left + table.width - 8, table.top + 4);
-        }}
-      >
-        <GripTip t={t} />
-      </button>
+            rootFocus();
+          }}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            open('table', table.left + table.width - 8, table.top + 4);
+          }}
+        >
+          <GripTip t={t} />
+        </button>
+      )}
       <button
         {...control}
         type="button"
@@ -1193,7 +1194,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           // Угловая ручка может прижиматься к правому краю окна: плашка столбца не заходит на неё.
           width: Math.max(
             14,
-            Math.min(cell.width - 2 * gripInset, cornerLeft - 6 - (cell.left + gripInset)),
+            Math.min(
+              cell.width - 2 * gripInset,
+              coarse ? Infinity : cornerLeft - 6 - (cell.left + gripInset),
+            ),
           ),
         }}
         onClick={() => open('column', cell.left + 6, table.top + 10)}
@@ -1220,7 +1224,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         title={t('table.column.insertRight')}
         disabled={!canAddColumn}
         style={{
-          left: cell.left + cell.width - 5 - lastEndShift,
+          left: cell.left + cell.width - 5,
           top: edgeTop(table.top - columnInsertRise),
         }}
         onClick={() => perform(() => run('insertTableColumn', { index: active.column + 1 }))}
