@@ -2,56 +2,79 @@ import * as z from '../zod';
 import { BlockSchema } from '../BlockSchema';
 import { isSafeImageUrl } from '../../utils/url';
 
-/** Соотношение сторон кадра: `auto` — как у самой картинки, остальные — ширина:высота. */
+/**
+ * Форма обрезки: `free` — любые пропорции, `circle` — круг, остальные — ширина:высота (альбомная и книжная
+ * ориентация — отдельные значения). Совпадает с `CROP_ASPECTS` пакета `@inkbrick/image-tools`.
+ */
 export const IMAGE_ASPECTS = [
-  'auto',
+  'free',
+  'circle',
   '1:1',
+  '5:4',
+  '4:5',
   '4:3',
-  '3:2',
-  '16:9',
-  '21:9',
   '3:4',
+  '7:5',
+  '5:7',
+  '3:2',
   '2:3',
+  '5:3',
+  '3:5',
+  '16:9',
   '9:16',
 ] as const;
 
 export type ImageAspect = (typeof IMAGE_ASPECTS)[number];
 
-/** Пределы масштаба кадрирования (1 — картинка целиком в кадре). */
-export const IMAGE_ZOOM_MIN = 1;
-export const IMAGE_ZOOM_MAX = 5;
-
-/** Отношение ширины к высоте для `aspect` (`null` у `auto`). */
+/** Отношение ширины к высоте для формы (`null` у свободной). */
 export function imageAspectRatio(aspect: ImageAspect): number | null {
-  if (aspect === 'auto') return null;
+  if (aspect === 'free') return null;
+  if (aspect === 'circle') return 1;
 
   const [width, height] = aspect.split(':').map(Number);
 
   return width / height;
 }
 
-export const imagePropsSchema = z.object({
-  /** Адрес картинки; пустой — блок ещё без изображения (показывается выбор). Проверяется схемой. */
-  src: z
+const imageUrl = () =>
+  z
     .string()
     .refine(
       (value: string) => value === '' || isSafeImageUrl(value),
       'Unsafe or unsupported image URL',
     )
-    .default(''),
+    .default('');
+
+const percent = (value: number) => z.number().min(0).max(100).default(value);
+
+export const imagePropsSchema = z.object({
+  /**
+   * Показываемая картинка; пустой — блок ещё без изображения (показывается выбор). После обрезки — файл обрезки, а
+   * оригинал лежит в `originalSrc`. Проверяется схемой.
+   */
+  src: imageUrl(),
+  /**
+   * Оригинал, из которого сделан файл обрезки (`src`); пустой — `src` и есть оригинал. Повторная обрезка всегда идёт от
+   * оригинала.
+   */
+  originalSrc: imageUrl(),
   alt: z.string().max(1000).default(''),
+  /** Подпись; блок показывает её, когда она не пустая или включена кнопкой (`showCaption`). */
   caption: z.string().max(2000).default(''),
+  showCaption: z.boolean().default(false),
   /** Ширина в процентах от ширины документа. */
   width: z.number().min(10).max(100).default(100),
   align: z.enum(['left', 'center', 'right']).default('center'),
+  /** Форма обрезки. */
+  aspect: z.enum(IMAGE_ASPECTS).default('free'),
   /**
-   * Кадрирование без изменения самой картинки (оригинал остаётся целым, поэтому его можно кадрировать заново):
-   * соотношение сторон кадра, масштаб и положение (в процентах, 50 — по центру) показанной части.
+   * Рамка обрезки в процентах оригинала: левый верхний угол и размер. Если файл обрезки сделать не удалось (картинка с
+   * чужого сервера без CORS), блок обрезает оригинал стилем по этим числам.
    */
-  aspect: z.enum(IMAGE_ASPECTS).default('auto'),
-  zoom: z.number().min(IMAGE_ZOOM_MIN).max(IMAGE_ZOOM_MAX).default(1),
-  cropX: z.number().min(0).max(100).default(50),
-  cropY: z.number().min(0).max(100).default(50),
+  cropX: percent(0),
+  cropY: percent(0),
+  cropWidth: percent(100),
+  cropHeight: percent(100),
 });
 
 export type ImageProps = z.infer<typeof imagePropsSchema>;

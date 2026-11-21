@@ -136,10 +136,13 @@ describe('rendering', () => {
     expect(html).toContain('No image');
   });
 
-  it('read-only images have no tools or inputs, only a static caption', () => {
+  it('read-only images only offer viewing and downloading, and a static caption', () => {
     const html = render(editorWith('block:image', { src: PNG, caption: 'Static' }, true));
 
-    expect(html).not.toContain('image-tools');
+    expect(html).toContain('data-tool="view"');
+    expect(html).toContain('data-tool="download"');
+    expect(html).not.toContain('data-tool="crop"');
+    expect(html).not.toContain('data-inkbrick-part="resize"');
     expect(html).not.toContain('<input');
     expect(html).toContain('<figcaption');
     expect(html).toContain('Static');
