@@ -118,8 +118,13 @@ describe('columns: saved and loaded after drags', () => {
 });
 
 describe('columns: random drags keep the document sound', () => {
-  const SEEDS = [1, 2, 3, 7, 42, 2024, 31337, 99991];
-  const STEPS = 150;
+  // INKBRICK_FUZZ=<число> добавляет столько случайных зёрен и удваивает шаги: долгий прогон вручную.
+  const EXTRA = Number(process.env.INKBRICK_FUZZ ?? 0);
+  const SEEDS = [
+    ...[1, 2, 3, 7, 42, 2024, 31337, 99991],
+    ...Array.from({ length: EXTRA }, (_, i) => 100_000 + i),
+  ];
+  const STEPS = EXTRA > 0 ? 300 : 150;
 
   for (const seed of SEEDS) {
     it(`seed ${seed}: ${STEPS} drags, undos and redos`, () => {

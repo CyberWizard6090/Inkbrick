@@ -54,8 +54,9 @@ export const PasteFragmentCommand: Command<PasteFragmentPayload, CaretResult> = 
     );
   },
 
-  execute(context, { at, fragment: pasted }) {
+  execute(context, payload) {
     const { engine, transaction: tx } = context;
+    const { at, fragment: pasted } = { ...payload, at: visibleAt(context, payload.at) };
     const fragment = supported(engine.schema.hasBlock(TABLE), pasted);
     const target = tx.getBlock(at.blockId)!;
     const parent = tx.getBlock(target.parentId!)!;
@@ -183,6 +184,33 @@ function supported(hasTables: boolean, fragment: Fragment): Fragment {
  * переносятся; если прямоугольник накрывает скрытые ячейки объединения, таблица не вставляется.
  * `undefined` — это не таблица или она не поместится в пределы размера: тогда фрагмент идёт текстом.
  */
+/**
+ * Ячейка, скрытая объединением, не видна: вставка в неё потеряла бы текст. Такая вставка идёт в главную (видимую)
+ * ячейку объединения, в конец её текста.
+ */
+function visibleAt(
+  { engine, transaction: tx }: CommandContext,
+  at: PasteFragmentPayload['at'],
+): PasteFragmentPayload['at'] {
+  const getBlock = (id: string) => tx.getBlock(id);
+  const position = locateTableCell(getBlock, at.blockId);
+
+  if (!position) return at;
+
+  const size = tableSize(getBlock, position.tableId)!;
+  const found = mergeAt(
+    normalizeMerges(getBlock(position.tableId)?.props.merges, size.rows, size.columns),
+    position.row,
+    position.column,
+  );
+
+  if (!found || found.origin) return at;
+
+  const origin = tableCellAt(getBlock, position.tableId, found.merge.row, found.merge.column)!;
+
+  return { blockId: origin, offset: engine.inline.length(getBlock(origin)!.content) };
+}
+
 function fillTable(
   context: CommandContext,
   cell: BaseBlock,
