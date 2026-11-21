@@ -659,6 +659,33 @@
     line-height: 16px;
   }
 
+  /*
+   * Всплывающая подсказка кнопок редактора (вместо системной `title`): одна на странице, в цветах темы. Появляется плавно,
+   * указатель её не задевает.
+   */
+  :where([data-inkbrick-ui='tooltip']) {
+    position: fixed;
+    z-index: calc(var(--inkbrick-z-popup) + 1);
+    box-sizing: border-box;
+    max-width: min(280px, calc(100vw - 16px));
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-tooltip-bg);
+    box-shadow: var(--inkbrick-shadow-8);
+    color: var(--inkbrick-tooltip-fg);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+    white-space: pre-line;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='tooltip'][data-state='open']) {
+    opacity: 1;
+  }
+
   :where([data-inkbrick-ui='context-menu']) {
     position: fixed;
     z-index: var(--inkbrick-z-menu);
