@@ -60,7 +60,7 @@ test.describe('Block background', () => {
     await expect(page.locator(handle)).not.toHaveAttribute('data-compact', /.*/);
   });
 
-  test('the block menu paints a block, keeps its text in place and removes the background', async ({
+  test('the block menu paints a block flush with the other blocks and removes the background', async ({
     page,
   }) => {
     const before = (await page.locator(editable).nth(1).boundingBox())!;
@@ -76,10 +76,14 @@ test.describe('Block background', () => {
 
     expect(color).not.toBe('rgba(0, 0, 0, 0)');
 
-    // Поля вынесены наружу: текст остаётся там же, где был.
+    // Плашка вровень с другими блоками (как код и выноска), текст внутри неё — с отступом 8 px.
     const after = (await page.locator(editable).nth(1).boundingBox())!;
+    const plate = (await block(page, 1).boundingBox())!;
+    const plain = (await block(page, 0).boundingBox())!;
 
-    expect(Math.round(after.x)).toBe(Math.round(before.x));
+    expect(Math.round(plate.x)).toBe(Math.round(plain.x));
+    expect(Math.round(plate.width)).toBe(Math.round(plain.width));
+    expect(Math.round(after.x)).toBe(Math.round(before.x) + 8);
 
     await openMenu(page, 1);
     await page.locator(`${menu} [data-action="background-none"]`).click();

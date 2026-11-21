@@ -1,5 +1,6 @@
 import type { Transaction } from '@inkbrick/store';
 
+import { collapseEmptyColumns } from '../columns/columnsCommands';
 import type { Engine } from '../editor/Engine';
 import type { Command } from '../commands/Command';
 import type { CaretResult, EditorIntent } from './Intents';
@@ -243,6 +244,7 @@ export class Dispatcher {
 
     const result = command.execute({ engine: this.engine, transaction }, payload);
 
+    collapseEmptyColumns(this.engine, transaction);
     this.assertPinned(transaction);
 
     return result;

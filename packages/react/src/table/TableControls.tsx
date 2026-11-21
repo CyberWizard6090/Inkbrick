@@ -1130,11 +1130,22 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   // у строки — по горизонтали, у столбца — по вертикали. Плашка столбца отступает от маркеров по краям ячейки.
   const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   const gripInset = coarse ? 12 : 6;
-  const rowInsertGap = coarse ? 15 : 19;
-  const columnInsertRise = coarse ? 17 : 20;
+  // Таблица стоит вровень с текстом, как остальные блоки. Плашки и маркеры лежат на её левой и верхней границе: их ось —
+  // в 1 px снаружи от линии, внутрь они заходят на 4 px (в поле ячейки, не на текст), а слева остаётся место ручке блока.
+  const pillHalf = coarse ? 8 : 5;
+  const markerHalf = coarse ? 9 : 5;
+  const rowAxis = 1;
+  const rowInsertGap = rowAxis + markerHalf;
+  const columnInsertRise = rowAxis + markerHalf;
   // Плашка строки — по высоте строки, как плашка столбца по ширине: отступы по краям оставляют место маркерам вставки.
-  const rowPill = Math.max(coarse ? 20 : 14, row.height - 2 * gripInset);
-  const rowPillTop = row.top + (row.height - rowPill) / 2;
+  // Верхний левый угол: кружок «строка выше» у первой строки и «столбец слева» у первого столбца легли бы друг на друга
+  // и выглядели бы общими. Они разведены: первый — на левой границе чуть ниже угла, второй — на верхней чуть правее.
+  const cornerShift = coarse ? 22 : 14;
+  const rowStart = row.top + (active.row === 0 ? cornerShift : 0);
+  const columnStart = cell.left + (active.column === 0 ? cornerShift : 0);
+  const rowPill = Math.max(10, row.top + row.height - gripInset - (rowStart + gripInset));
+  const rowPillTop = rowStart + gripInset;
+  const columnPill = Math.max(10, cell.left + cell.width - gripInset - (columnStart + gripInset));
   // Палец, узкий столбец: крупные маркеры вставки по краям налезли бы на плашку столбца. Их нет, вставка — из меню столбца.
   const columnInserts = !coarse || cell.width >= 2 * gripInset + 40;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
@@ -1157,7 +1168,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             aria-expanded={menu?.kind === 'row'}
             style={{
               // Прокрутка таблицы в сторону уводит её левый край за экран: плашка строки остаётся у края окна.
-              left: Math.max(2, table.left - (coarse ? 20 : 21)),
+              left: Math.max(2, table.left - rowAxis - pillHalf),
               // Между маркерами вставки на границах строки (крупные под палец) и не касаясь их.
               top: rowPillTop,
               height: rowPill,
@@ -1166,21 +1177,17 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           >
             <span data-inkbrick-part="dots" aria-hidden="true" />
           </button>
-          {/* Палец, верхний левый угол: крупный маркер «строка выше» лёг бы на маркер «столбец слева». Вставка выше
-              остаётся в меню строки. */}
-          {!(coarse && active.row === 0 && active.column === 0) && (
-            <button
-              {...control}
-              type="button"
-              data-inkbrick-part="row-insert"
-              data-edge="start"
-              aria-label={t('table.row.insertAbove')}
-              title={t('table.row.insertAbove')}
-              disabled={!canAddRow}
-              style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - 5 }}
-              onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
-            />
-          )}
+          <button
+            {...control}
+            type="button"
+            data-inkbrick-part="row-insert"
+            data-edge="start"
+            aria-label={t('table.row.insertAbove')}
+            title={t('table.row.insertAbove')}
+            disabled={!canAddRow}
+            style={{ left: Math.max(2, table.left - rowInsertGap), top: rowStart - markerHalf }}
+            onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
+          />
           <button
             {...control}
             type="button"
@@ -1189,7 +1196,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             aria-label={t('table.row.insertBelow')}
             title={t('table.row.insertBelow')}
             disabled={!canAddRow}
-            style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top + row.height - 5 }}
+            style={{
+              left: Math.max(2, table.left - rowInsertGap),
+              top: row.top + row.height - markerHalf,
+            }}
             onClick={() => perform(() => run('insertTableRow', { index: active.row + 1 }))}
           />
           <button
@@ -1200,9 +1210,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             aria-haspopup="menu"
             aria-expanded={menu?.kind === 'column'}
             style={{
-              left: cell.left + gripInset,
-              top: edgeTop(table.top - 22),
-              width: Math.max(14, cell.width - 2 * gripInset),
+              left: columnStart + gripInset,
+              top: edgeTop(table.top - rowAxis - pillHalf),
+              width: columnPill,
             }}
             onClick={() => open('column', cell.left + 6, table.top + 10)}
           >
@@ -1218,7 +1228,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
                 aria-label={t('table.column.insertLeft')}
                 title={t('table.column.insertLeft')}
                 disabled={!canAddColumn}
-                style={{ left: cell.left - 5, top: edgeTop(table.top - columnInsertRise) }}
+                style={{
+                  left: columnStart - markerHalf,
+                  top: edgeTop(table.top - columnInsertRise),
+                }}
                 onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
               />
               <button
@@ -1230,7 +1243,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
                 title={t('table.column.insertRight')}
                 disabled={!canAddColumn}
                 style={{
-                  left: cell.left + cell.width - 5,
+                  left: cell.left + cell.width - markerHalf,
                   top: edgeTop(table.top - columnInsertRise),
                 }}
                 onClick={() =>

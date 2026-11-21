@@ -44,7 +44,7 @@ export function startGripGesture(
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onUp);
     document.removeEventListener('pointercancel', onCancel);
-    document.removeEventListener('keydown', onKey);
+    window.removeEventListener('keydown', onKey, true);
   };
 
   const onMove = (move: PointerEvent) => {
@@ -87,7 +87,12 @@ export function startGripGesture(
   };
 
   const onKey = (key: KeyboardEvent) => {
-    if (key.key === 'Escape') abort();
+    if (key.key !== 'Escape') return;
+
+    // Escape здесь отменяет жест и только: до редактора (там он выбирает блок) клавиша не доходит.
+    key.preventDefault();
+    key.stopPropagation();
+    abort();
   };
 
   const abort = () => {
@@ -102,7 +107,7 @@ export function startGripGesture(
   document.addEventListener('pointermove', onMove, { passive: false });
   document.addEventListener('pointerup', onUp);
   document.addEventListener('pointercancel', onCancel);
-  document.addEventListener('keydown', onKey);
+  window.addEventListener('keydown', onKey, true);
 
   return abort;
 }

@@ -149,9 +149,10 @@
    * Поля оставляют место ручкам таблицы: сверху — плашке столбца, слева — плашке строки (она не налезает на язычок блока,
    * который стоит у края блока) — и разводят соседние таблицы. Таблица не шире страницы.
    */
+  /* Вровень с текстом и другими блоками: ручки строк и столбцов лежат на границах таблицы, а не слева и не над ней. */
   :where([data-inkbrick-block='table']) {
-    max-width: calc(100% - 28px);
-    margin: 20px 0 20px 28px;
+    max-width: 100%;
+    margin: 4px 0;
     overflow-x: auto;
   }
 
@@ -198,6 +199,14 @@
 
   :where([data-inkbrick-block='table-cell'][data-cell-selected]) {
     box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--inkbrick-brand-bg) 18%, transparent);
+  }
+
+  /*
+   * Пока в таблице выделены ячейки, видно только их выделение: обычная подсветка текста браузера шла бы по порядку
+   * чтения и задевала ячейки вне прямоугольника.
+   */
+  :where([data-inkbrick-block='table']:has([data-cell-selected]) *)::selection {
+    background: transparent;
   }
 
   :where([data-inkbrick-part='grid'][data-cell-selecting]) {
@@ -967,7 +976,7 @@
   :where([data-inkbrick-block='columns'] > [data-inkbrick-part='grid']) {
     display: grid;
     grid-template-columns: var(--inkbrick-columns, repeat(2, minmax(0, 1fr)));
-    gap: var(--inkbrick-columns-gap, 32px);
+    gap: var(--inkbrick-columns-gap, 72px);
     align-items: start;
   }
 
@@ -980,7 +989,11 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    inset-inline-end: calc(var(--inkbrick-columns-gap, 32px) / -2 - 4px);
+    /*
+     * У левой колонки, в 2–10 px от неё: правее, между разделителем и следующей колонкой, целиком помещается ручка блока
+     * («+» и «⠿», 52 px и зазор 8 px), и они не перекрываются.
+     */
+    inset-inline-end: -10px;
     width: 8px;
     cursor: col-resize;
     touch-action: none;
@@ -1161,6 +1174,7 @@
     margin: 4px 0;
     padding: 8px 12px;
     border: 1px solid var(--callout-border);
+    border-radius: var(--inkbrick-radius-surface);
     background: var(--callout-bg);
   }
 
@@ -1222,7 +1236,7 @@
 
   :where([data-inkbrick-block='image']) {
     display: block;
-    margin: 6px 0;
+    margin: 4px 0;
   }
 
   :where([data-inkbrick-part='figure']) {
@@ -2106,10 +2120,10 @@
 
   /* Фон блока (prop `background`): оттенок подсветки темы, разбавленный, чтобы текст оставался читаемым в обеих темах. Поля
      вынесены наружу, поэтому текст стоит там же, где у блоков без фона. */
+  /* Окрашенный блок — вровень с остальными (код, таблица, выноска): плашка по краям колонки, текст внутри с отступом. */
   :where([data-background]) {
-    margin-inline: -8px;
     padding-inline: 8px;
-    border-radius: var(--inkbrick-radius-control);
+    border-radius: var(--inkbrick-radius-surface);
   }
 
   :where([data-background='gray']) {
@@ -2146,6 +2160,26 @@
 
   :where([data-background='red']) {
     background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, transparent);
+  }
+
+  :where([data-background='lime']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-lime) 35%, transparent);
+  }
+
+  :where([data-background='teal']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-teal) 35%, transparent);
+  }
+
+  :where([data-background='cyan']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-cyan) 35%, transparent);
+  }
+
+  :where([data-background='indigo']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-indigo) 35%, transparent);
+  }
+
+  :where([data-background='magenta']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-magenta) 35%, transparent);
   }
 
   /* Фон ячейки таблицы: насыщенный цвет (как кружок в меню) и текст по контрасту, без полей наружу и непрозрачный. */
@@ -2217,32 +2251,12 @@
 
   :where([data-inkbrick-block='table-cell'][data-background='indigo']) {
     background-color: var(--inkbrick-cell-indigo);
-    color: var(--inkbrick-cell-text-dark);
+    color: var(--inkbrick-cell-text-light);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='magenta']) {
     background-color: var(--inkbrick-cell-magenta);
     color: var(--inkbrick-cell-text-dark);
-  }
-
-  :where([data-background='lime']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-lime) 35%, transparent);
-  }
-
-  :where([data-background='teal']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-teal) 35%, transparent);
-  }
-
-  :where([data-background='cyan']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-cyan) 35%, transparent);
-  }
-
-  :where([data-background='indigo']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-indigo) 35%, transparent);
-  }
-
-  :where([data-background='magenta']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-magenta) 35%, transparent);
   }
 
   /* Свой цвет фона (`#rrggbb` из выбора «Свой цвет…»): разбавлен так же, как оттенок из палитры. */

@@ -85,11 +85,17 @@ export class BlockEngine {
     const block = this.require(tx, id);
     const updated = updater(block);
 
+    // Блок не изменился — изменения нет: иначе в истории остался бы пустой шаг, и Ctrl+Z «ничего не делал».
+    if (sameValue(updated, block)) return;
+
     tx.apply(new SetBlockChange(updated));
   }
 
   updateContent(tx: Transaction, id: BlockId, content: BaseBlock['content']): void {
-    this.require(tx, id);
+    const block = this.require(tx, id);
+
+    if (sameValue(content, block.content)) return;
+
     tx.apply(new UpdateBlockChange(id, { content }));
   }
 
@@ -135,9 +141,11 @@ export class BlockEngine {
       });
     }
 
-    tx.apply(
-      new UpdateBlockChange(id, { flavour, props: this.schema.createProps(flavour, props) }),
-    );
+    const next = this.schema.createProps(flavour, props);
+
+    if (flavour === block.flavour && sameValue(next, block.props)) return;
+
+    tx.apply(new UpdateBlockChange(id, { flavour, props: next }));
   }
 
   remove(tx: Transaction, id: BlockId): void {
@@ -248,4 +256,29 @@ export class BlockEngine {
 
     return block;
   }
+}
+
+/** Равенство JSON-значений блока (props, содержимое) без учёта порядка ключей; `undefined` в объекте — как отсутствие ключа. */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+
+  if (Array.isArray(a)) {
+    const list = b as unknown[];
+
+    return a.length === list.length && a.every((item, index) => sameValue(item, list[index]));
+  }
+
+  const keys = (value: object) =>
+    Object.keys(value).filter((key) => (value as Record<string, unknown>)[key] !== undefined);
+  const left = keys(a);
+  const right = keys(b);
+
+  return (
+    left.length === right.length &&
+    left.every((key) =>
+      sameValue((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
+    )
+  );
 }

@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
+import { readDocSelection } from '../editing/selection';
 import type { DragState, DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
 import { targetsOf } from '../pick/actions';
 import { blockAtPoint, blockElement, probePoint, rowRect } from './geometry';
@@ -98,6 +99,25 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
 
   const canMoveToSide = (blockId: string, targetId: string, side: DropSide) =>
     blockId !== targetId && editor.can('moveBlockToSide', { blockId, targetId, side });
+
+  /**
+   * Перенос перерисовывает блоки, и выделение браузера оказывается в соседнем блоке: набор шёл бы не туда. Курсор
+   * (или выделение) запоминается в координатах документа и ставится обратно — в тот же блок на его новом месте.
+   */
+  const keepingSelection = (run: () => void) => {
+    const root = view.getRoot();
+    const kept = root && document.activeElement === root ? readDocSelection(root) : null;
+
+    flushSync(run);
+
+    if (
+      kept &&
+      editor.store.getBlock(kept.from.blockId) &&
+      editor.store.getBlock(kept.to.blockId)
+    ) {
+      view.placeSelection(kept.from, kept.to);
+    }
+  };
 
   const blockRects = (blockId: string): BlockRects | null => {
     const wrapper = blockElement(view, blockId);
@@ -226,7 +246,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     moveToSide(blockId, targetId, side) {
       if (!canMoveToSide(blockId, targetId, side)) return false;
 
-      flushSync(() => {
+      keepingSelection(() => {
         editor.dispatch({ type: 'moveBlockToSide', payload: { blockId, targetId, side } });
       });
 
@@ -243,7 +263,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
       const order = position === 'before' ? group : [...group].reverse();
 
       // Синхронно обновляем DOM: сразу после переноса можно мерить блоки на новых местах. Один шаг undo.
-      flushSync(() => {
+      keepingSelection(() => {
         editor.batch(() => {
           for (const id of order) {
             editor.dispatch({ type: 'moveBlock', payload: { blockId: id, targetId, position } });

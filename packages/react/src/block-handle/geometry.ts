@@ -1,3 +1,4 @@
+import { COLUMNS } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
@@ -33,9 +34,28 @@ export function blockAtPoint(
   if (!root || !hit || !root.contains(hit)) return null;
 
   let node: Element | null = hit.closest('[data-block-id]');
+  let redirected = false;
 
   while (node && root.contains(node)) {
     const id = node.getAttribute('data-block-id')!;
+
+    if (!redirected && editor.store.getBlock(id)?.flavour === COLUMNS) {
+      // Промежуток между колонками (и разделитель в нём) — полоса ручки следующей колонки, а не блока колонок.
+      // Переход один: если в колонке под точкой нет блока с ручкой, остаётся ручка самого блока колонок.
+      redirected = true;
+
+      const next = columnAfter(node, x);
+      const rect = next?.getBoundingClientRect();
+      const inner = rect
+        ? document.elementFromPoint(Math.min(Math.max(x, rect.left + 4), rect.right - 4), y)
+        : null;
+      const found = next && inner && next.contains(inner) ? inner.closest('[data-block-id]') : null;
+
+      if (found && found !== node) {
+        node = found;
+        continue;
+      }
+    }
 
     if (hasHandle(editor, id)) return id;
 
@@ -43,6 +63,15 @@ export function blockAtPoint(
   }
 
   return null;
+}
+
+/** Колонка блока колонок, чья левая полоса (с промежутком перед ней) содержит точку: первая, правее края которой нет `x`. */
+function columnAfter(columns: Element, x: number): Element | null {
+  const items = columns.querySelectorAll(
+    ':scope > [data-inkbrick-part="grid"] > [data-inkbrick-block="column"]',
+  );
+
+  return [...items].find((item) => item.getBoundingClientRect().right > x) ?? null;
 }
 
 /** Точка в колонке редактора: прижимает x к тексту, чтобы блок находился и при наведении в полосу слева. */

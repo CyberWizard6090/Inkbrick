@@ -282,7 +282,7 @@ test.describe('Table style gallery and borders', () => {
     await expect(page.locator(cells).nth(0)).toHaveCSS('background-color', expected);
     // Насыщенный цвет палитры одинаков в обеих темах, текст на синем — тёмный (он контрастнее).
     await expect(page.locator(cells).nth(0)).toHaveCSS('background-color', 'rgb(59, 130, 246)');
-    await expect(page.locator(cells).nth(0)).toHaveCSS('color', 'rgb(26, 26, 26)');
+    await expect(page.locator(cells).nth(0)).toHaveCSS('color', 'rgb(17, 17, 17)');
   });
 
   test('with several cells selected the context menu inserts and deletes all their rows and columns', async ({

@@ -578,3 +578,26 @@ describe('pasting a table into a table', () => {
     expect(text(at(0, 1))).toBe('one\ntwor0c1');
   });
 });
+
+describe('pasting into a cell hidden by a merge', () => {
+  it('goes to the visible cell of the merge: text at its end, a table over it', () => {
+    const { editor, addTable, paste, tableGrid, valid } = setup();
+    const { tableId, at } = addTable(2, 3);
+
+    editor.dispatch({
+      type: 'mergeTableCells',
+      payload: { blockId: tableId, range: { top: 0, bottom: 1, left: 0, right: 1 } },
+    } as never);
+
+    // Текст дописывается в конец видимой ячейки.
+    paste({ blocks: [paragraph('!')] }, at(1, 1));
+    expect(tableGrid(tableId)[0][0]).toBe('r0c0\nr0c1\nr1c0\nr1c1!');
+
+    // Таблица, как и при вставке в видимую ячейку, заменяет её содержимое.
+    paste(tableFragment([['?']]), at(0, 1));
+    expect(tableGrid(tableId)[0][0]).toBe('?');
+    expect(tableGrid(tableId)[0][1]).toBe('');
+    expect(tableGrid(tableId)[1][1]).toBe('');
+    expect(valid()).toEqual([]);
+  });
+});

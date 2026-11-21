@@ -323,15 +323,15 @@
       color var(--inkbrick-duration-fast) var(--inkbrick-curve);
   }
 
-  /* Плашки строки и столбца одинаковой толщины: 14 px поперёк, вдоль — по строке или столбцу. */
+  /* Плашки строки и столбца одинаковой толщины: 10 px поперёк (лежат на границе таблицы), вдоль — по строке или столбцу. */
   :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
-    width: 14px;
+    width: 10px;
     height: 24px;
   }
 
   :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
     width: 24px;
-    height: 14px;
+    height: 10px;
   }
 
   /* Шесть точек: 3 × 2 у столбца, 2 × 3 у строки. */
@@ -468,14 +468,14 @@
   /* Палец не наводится: ручки и маркеры крупнее, чтобы в них попадать. */
   @media (pointer: coarse) {
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
-      width: 20px;
+      width: 16px;
       /* Не выше, чем помещается между маркерами вставки строки (они на той же оси, на границах строки). */
       min-height: 20px;
     }
 
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
       min-width: 32px;
-      height: 20px;
+      height: 16px;
     }
 
     :where(

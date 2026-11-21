@@ -1,11 +1,9 @@
 import { COLUMN, COLUMNS, MAX_COLUMNS } from '@inkbrick/document';
-import type { Transaction } from '@inkbrick/store';
 
 import type { Command, CommandContext } from '../commands/Command';
 import type { CaretResult, MoveBlockToSidePayload } from '../dispatcher/Intents';
-import type { Engine } from '../editor/Engine';
 import { isIsolating } from '../utils';
-import { unwrapColumns } from './columnsCommands';
+import { reshape } from './columnsCommands';
 
 /** Где встанут колонки: рядом с колонкой целевого блока (`columnsId`) или на месте целевого блока в `parentId`. */
 function plan(
@@ -53,18 +51,6 @@ function plan(
     : undefined;
 }
 
-/** Доли ширины колонок: правит `ratios`, если они заданы. */
-function reshape(engine: Engine, tx: Transaction, id: string, edit: (ratios: number[]) => void) {
-  const ratios = tx.getBlock(id)!.props.ratios;
-
-  if (!Array.isArray(ratios)) return;
-
-  const next = [...ratios];
-
-  edit(next);
-  engine.block.update(tx, id, (item) => ({ ...item, props: { ...item.props, ratios: next } }));
-}
-
 /**
  * Перетаскивание блока к левому или правому краю другого блока: они встают рядом, в колонки. Если целевой блок уже
  * в колонке, рядом с ней добавляется новая колонка (до шести); иначе на его месте появляется блок колонок из двух.
@@ -104,18 +90,7 @@ export const MoveBlockToSideCommand: Command<MoveBlockToSidePayload, CaretResult
       engine.block.move(tx, left ? targetId : blockId, second, 0);
     }
 
-    // Опустевшая колонка (из неё унесли последний блок) пропадает; останется одна — колонки разворачиваются.
-    const source = tx.getBlock(sourceId);
-
-    if (source?.flavour === COLUMN && source.children.length === 0) {
-      const owner = source.parentId!;
-      const at = tx.getBlock(owner)!.children.indexOf(sourceId);
-
-      engine.block.remove(tx, sourceId);
-
-      if (tx.getBlock(owner)!.children.length === 1) unwrapColumns(engine, tx, tx.getBlock(owner)!);
-      else reshape(engine, tx, owner, (ratios) => ratios.splice(at, 1));
-    }
+    // Опустевшая колонка (из неё унесли последний блок) пропадает сама: см. `collapseEmptyColumns` в диспетчере.
 
     return { blockId, offset: 0 };
   },

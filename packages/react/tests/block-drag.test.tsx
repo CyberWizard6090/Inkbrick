@@ -222,6 +222,29 @@ describe('useBlockDrag: a custom drag and drop', () => {
     expect(t.order()).toEqual(['one', 'two', 'three', 'four']);
   });
 
+  it('the caret stays in its block when that block is moved', () => {
+    const t = mount(['one', 'two', 'three']);
+    cleanupLayout = t.restore;
+
+    act(() => t.view.placeCaret(t.ids[0], 2));
+    expect(document.activeElement).toBe(t.view.getRoot());
+
+    act(() => {
+      t.drag.start(t.ids[0]);
+      t.drag.update(LEFT + 10, half(2, 'bottom'));
+      t.drag.drop();
+    });
+
+    expect(t.order()).toEqual(['two', 'three', 'one']);
+
+    const selection = getSelection()!;
+
+    expect(
+      selection.anchorNode && t.view.getElement(t.ids[0])?.contains(selection.anchorNode),
+    ).toBe(true);
+    expect(selection.anchorOffset).toBe(2);
+  });
+
   it('cancel and a drop without a target change nothing', () => {
     const t = mount(['one', 'two', 'three']);
     cleanupLayout = t.restore;
@@ -427,6 +450,43 @@ describe('built-in grip gesture', () => {
     expect(t.drag.getState()).toBeNull();
     expect(menu()).toBeNull();
     expect(t.order()).toEqual(['one', 'two', 'three']);
+  });
+
+  it('mouse: Escape cancels the drag and does not reach the editor', () => {
+    const t = mount(['one', 'two', 'three']);
+    cleanupLayout = t.restore;
+    showHandle(t, 0);
+
+    const reached = vi.fn();
+
+    document.addEventListener('keydown', reached);
+    fireEvent.pointerDown(grip(), pointer('mouse', 80, half(0, 'top')));
+    act(() => {
+      fireEvent.pointerMove(document, pointer('mouse', LEFT + 10, half(2, 'bottom')));
+    });
+    expect(indicator()).not.toBeNull();
+
+    let notPrevented = true;
+    act(() => {
+      notPrevented = fireEvent.keyDown(t.view.getRoot()!, { key: 'Escape', bubbles: true });
+    });
+    act(() => {
+      fireEvent.pointerUp(document, pointer('mouse', LEFT + 10, half(2, 'bottom')));
+    });
+    document.removeEventListener('keydown', reached);
+
+    expect(notPrevented).toBe(false);
+    expect(reached).not.toHaveBeenCalled();
+    expect(indicator()).toBeNull();
+    expect(t.order()).toEqual(['one', 'two', 'three']);
+
+    // После жеста Escape снова обычный: доходит до документа.
+    const later = vi.fn();
+
+    document.addEventListener('keydown', later);
+    fireEvent.keyDown(t.view.getRoot()!, { key: 'Escape', bubbles: true });
+    document.removeEventListener('keydown', later);
+    expect(later).toHaveBeenCalledTimes(1);
   });
 
   it('touch: pointercancel during a drag cancels it', () => {

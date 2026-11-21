@@ -7,6 +7,7 @@ import type { ExportOptions } from './tree';
 export { toPlainText } from './plainText';
 export { toMarkdown } from './markdown';
 export { toHtml } from './html';
+export { tableCellStyle, TABLE_CELL_COLORS } from './cellStyle';
 export type { ExportOptions } from './tree';
 
 export type ExportFormat = 'text' | 'markdown' | 'html';

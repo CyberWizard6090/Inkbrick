@@ -12,7 +12,7 @@ import {
   tableRangeFragment,
   tableValue,
 } from '../src';
-import { toHtml } from '@inkbrick/document';
+import { toHtml, toMarkdown } from '@inkbrick/document';
 
 const m = (row: number, column: number, rows: number, columns: number) => ({
   row,
@@ -268,5 +268,153 @@ describe('merged cells in export and the clipboard', () => {
     );
 
     expect(fragment.blocks[0].props.merges).toEqual([m(0, 1, 1, 2), m(1, 0, 2, 1)]);
+  });
+});
+
+describe('merges at the edges', () => {
+  const make = () => {
+    const editor = createTableEditor({
+      rows: [
+        ['a', 'b', 'c'],
+        ['d', 'e', 'f'],
+        ['g', 'h', 'i'],
+      ],
+    });
+    const tableId = tableIdOf(editor)!;
+    const run = (type: string, payload: Record<string, unknown>) =>
+      editor.dispatch({ type, payload: { blockId: tableId, ...payload } } as never);
+    const rows = () => tableValue(editor).rows;
+    const merges = () => editor.document.getBlock(tableId)!.props.merges;
+    const cell = (row: number, column: number) =>
+      editor.document.getBlock(editor.document.getBlock(tableId)!.children[row])!.children[column];
+
+    return { editor, tableId, run, rows, merges, cell };
+  };
+  const range = (top: number, left: number, bottom: number, right: number) => ({
+    top,
+    left,
+    bottom,
+    right,
+  });
+
+  it('deleting the first row of a merge keeps its text and look in the next row', () => {
+    const { editor, run, rows, merges, cell } = make();
+
+    run('mergeTableCells', { range: range(0, 0, 1, 1) });
+    run('setTableCellsBackground', { range: range(0, 0, 0, 0), background: 'blue' });
+    editor.sealHistory();
+    run('deleteTableRow', { index: 0 });
+
+    expect(rows()).toEqual([
+      ['a\nb\nd\ne', '', 'f'],
+      ['g', 'h', 'i'],
+    ]);
+    expect(merges()).toEqual([m(0, 0, 1, 2)]);
+    expect(editor.document.getBlock(cell(0, 0))!.props.background).toBe('blue');
+
+    editor.undo();
+    expect(rows()).toEqual([
+      ['a\nb\nd\ne', '', 'c'],
+      ['', '', 'f'],
+      ['g', 'h', 'i'],
+    ]);
+    expect(merges()).toEqual([m(0, 0, 2, 2)]);
+  });
+
+  it('deleting the first column of a merge keeps its text in the next column', () => {
+    const { run, rows, merges } = make();
+
+    run('mergeTableCells', { range: range(0, 0, 2, 1) });
+    run('deleteTableColumn', { index: 0 });
+
+    expect(rows()).toEqual([
+      ['a\nb\nd\ne\ng\nh', 'c'],
+      ['', 'f'],
+      ['', 'i'],
+    ]);
+    expect(merges()).toEqual([m(0, 0, 3, 1)]);
+  });
+
+  it('deleting a middle row of a merge only shortens it', () => {
+    const { run, rows, merges } = make();
+
+    run('mergeTableCells', { range: range(0, 1, 2, 1) });
+    run('deleteTableRow', { index: 1 });
+
+    expect(rows()).toEqual([
+      ['a', 'b\ne\nh', 'c'],
+      ['g', '', 'i'],
+    ]);
+    expect(merges()).toEqual([m(0, 1, 2, 1)]);
+  });
+
+  it('deleting the last row a merge has left removes the merge and the text with the row', () => {
+    const { run, rows, merges } = make();
+
+    run('mergeTableCells', { range: range(0, 0, 0, 1) });
+    run('deleteTableRow', { index: 0 });
+
+    expect(rows()).toEqual([
+      ['d', 'e', 'f'],
+      ['g', 'h', 'i'],
+    ]);
+    expect(merges()).toBeUndefined();
+  });
+
+  it('a range copied across half a merge pastes as plain cells and keeps the target sound', () => {
+    const { editor, tableId, run, rows, merges, cell } = make();
+    const getBlock = (id: string) => editor.document.getBlock(id);
+
+    run('mergeTableCells', { range: range(0, 0, 0, 1) });
+
+    // Вторая половина объединения и соседний столбец.
+    const half = tableRangeFragment(getBlock, tableId, range(0, 1, 1, 2));
+
+    expect(half.blocks[0].props.merges).toBeUndefined();
+
+    editor.dispatch({
+      type: 'pasteFragment',
+      payload: { at: { blockId: cell(1, 0), offset: 0 }, fragment: half },
+    });
+
+    expect(merges()).toEqual([m(0, 0, 1, 2)]);
+    // Скрытая половина приходит пустой ячейкой, текст объединения не задваивается.
+    expect(rows()).toEqual([
+      ['a\nb', '', 'c'],
+      ['', 'c', 'f'],
+      ['e', 'f', 'i'],
+    ]);
+  });
+});
+
+describe('merged cells in Markdown', () => {
+  it('a merge flattens into a plain grid: its text in the first cell, the rest empty, rows of one width', () => {
+    const editor = createTableEditor({
+      rows: [
+        ['H1', 'H2', 'H3'],
+        ['a|b', 'x\ny', 'z'],
+        ['g', 'h', 'i'],
+      ],
+    });
+
+    editor.dispatch({
+      type: 'mergeTableCells',
+      payload: { blockId: tableIdOf(editor), range: { top: 1, left: 1, bottom: 2, right: 2 } },
+    } as never);
+
+    const lines = toMarkdown(editor.document, { schema: editor.schema })
+      .split('\n')
+      .filter((line) => line.startsWith('|'));
+    // Ячейки строки: разделители `|`, кроме экранированных `\|`.
+    const cells = (line: string) =>
+      line
+        .split(/(?<!\\)\|/)
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+
+    expect(lines).toHaveLength(4);
+    expect(lines.map((line) => cells(line).length)).toEqual([3, 3, 3, 3]);
+    expect(cells(lines[2])).toEqual(['a\\|b', 'x<br>y<br>z<br>h<br>i', '']);
+    expect(cells(lines[3])).toEqual(['g', '', '']);
   });
 });

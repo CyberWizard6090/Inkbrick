@@ -66,4 +66,4 @@ editor.dispatch({ type: 'moveBlockToSide', payload: { blockId, targetId, side: '
 ## Разметка
 
 `<div data-inkbrick-block="columns">` с частями `grid` (сетка, ширины в `--inkbrick-columns`), `toolbar`; колонка —
-`data-inkbrick-block="column"` с `divider` справа. Расстояние между колонками — `--inkbrick-columns-gap` (32px).
+`data-inkbrick-block="column"` с `divider` справа. Расстояние между колонками — `--inkbrick-columns-gap` (72px: разделитель у левой колонки, правее него помещается ручка блока следующей колонки).

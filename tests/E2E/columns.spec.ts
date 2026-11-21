@@ -55,7 +55,7 @@ test.describe('Columns', () => {
       .first()
       .evaluate((item) => item.getBoundingClientRect().width);
 
-    await page.locator(columns).hover();
+    await page.locator(columns).hover({ position: { x: 20, y: 10 } });
 
     const handle = (await page.locator('[data-inkbrick-part="divider"]').boundingBox())!;
     const x = handle.x + handle.width / 2;
@@ -102,11 +102,11 @@ test.describe('Columns', () => {
     await insertColumns(page);
     await page.keyboard.type('keep me');
 
-    await page.locator(columns).hover();
+    await page.locator(columns).hover({ position: { x: 20, y: 10 } });
     await page.getByRole('button', { name: 'Add a column' }).click();
     await expect(page.locator(`${columns} ${column}`)).toHaveCount(3);
 
-    await page.locator(columns).hover();
+    await page.locator(columns).hover({ position: { x: 20, y: 10 } });
     await page.getByRole('button', { name: 'Turn the columns into plain blocks' }).click();
 
     await expect(page.locator(columns)).toHaveCount(0);

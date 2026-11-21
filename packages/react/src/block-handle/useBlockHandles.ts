@@ -6,6 +6,9 @@ import { blockAtPoint, blockElement, hasHandle, probePoint, rowRect } from './ge
 
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Meta', 'Alt']);
 
+/** Полоса слева от блока, где стоит его ручка (ширина ручки, промежуток и запас): по пути к ручке она не уходит. */
+const HANDLE_REACH = 72;
+
 /**
  * Следит за указателем: показывает ручку у блока под курсором (в том числе в полосе слева от текста),
  * на сенсорном экране — у блока, которого коснулись; закрывает меню по клику снаружи/Esc/прокрутке
@@ -20,7 +23,29 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
 
     if (!root || !enabled) return;
 
+    /**
+     * Указатель идёт от блока к его ручке: между ними может оказаться соседний блок (таблица в соседней колонке), промежуток
+     * колонок или поле. Пока указатель на высоте блока и между его левым краем и ручкой, ручка остаётся у этого блока.
+     */
+    const towardHandle = (event: PointerEvent) => {
+      const { hover } = view.blocks.getState();
+      const wrapper = hover ? blockElement(view, hover.blockId) : null;
+
+      if (!hover || !wrapper) return false;
+
+      const box = wrapper.getBoundingClientRect();
+
+      return (
+        event.clientY >= box.top &&
+        event.clientY <= box.bottom &&
+        event.clientX >= hover.x - HANDLE_REACH &&
+        event.clientX <= box.left
+      );
+    };
+
     const showAt = (event: PointerEvent) => {
+      if (towardHandle(event)) return;
+
       const probe = probePoint(view, event.clientX, event.clientY);
 
       if (!probe) {
@@ -38,14 +63,8 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
       if (wrapper && row) {
         view.blocks.setHover({
           blockId,
-          // Ручка стоит у края колонки документа, одинаково у всех блоков: окрашенный блок выступает за колонку на
-          // отрицательный отступ, а таблица отодвинута от неё положительным (там её ручки строк и маркеры вставки).
-          x: Math.round(
-            wrapper.getBoundingClientRect().left -
-              (editor.store.getBlock(blockId)?.flavour === 'block:table'
-                ? parseFloat(getComputedStyle(wrapper).marginLeft) || 0
-                : Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0)),
-          ),
+          // Ручка стоит у левого края блока, одинаково у всех (и у таблицы: её ручки строк лежат на её границе).
+          x: Math.round(wrapper.getBoundingClientRect().left),
           y: Math.round(row.top),
         });
       }
@@ -53,6 +72,10 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
 
     const onUiTarget = (event: Event) =>
       event.target instanceof Element && !!event.target.closest('[data-inkbrick-block-ui]');
+
+    // Разделитель колонок лежит в промежутке, где стоит ручка следующей колонки: над ним ручка не должна пропадать.
+    const onDivider = (event: Event) =>
+      event.target instanceof Element && !!event.target.closest('[data-inkbrick-part="divider"]');
 
     const onMove = (event: PointerEvent) => {
       const { menu, drag } = view.blocks.getState();
@@ -62,7 +85,7 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
 
       if (drag || menu || view.pointerDown) return;
 
-      if (onUiTarget(event)) return;
+      if (onUiTarget(event) && !onDivider(event)) return;
 
       showAt(event);
     };

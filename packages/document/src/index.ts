@@ -2,7 +2,14 @@ export * from './model';
 export { Document } from './document';
 export * from './schema';
 export { createDocument } from './createDocument';
-export { toPlainText, toMarkdown, toHtml, exportDocument } from './adapters';
+export {
+  toPlainText,
+  toMarkdown,
+  toHtml,
+  exportDocument,
+  tableCellStyle,
+  TABLE_CELL_COLORS,
+} from './adapters';
 export type { ExportOptions, ExportFormat } from './adapters';
 export type { CreateDocumentOptions } from './createDocument';
 export * from './utils/InlineNodeUtils';

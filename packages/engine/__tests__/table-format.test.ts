@@ -344,7 +344,7 @@ describe('copying and export', () => {
 
     expect(html).toContain('<table data-borders="none" data-striped>');
     // Фон ячейки — насыщенный цвет, текст на нём по контрасту (как в редакторе).
-    expect(html).toContain('<th style="background-color:#facc15;color:#1a1a1a">a</th>');
+    expect(html).toContain('<th style="background-color:#facc15;color:#111111">a</th>');
     expect(html).toContain('<th style="text-align:center">b</th>');
     expect(html).toContain('<th scope="row">d</th>');
     // Вторая строка тела — полоса.

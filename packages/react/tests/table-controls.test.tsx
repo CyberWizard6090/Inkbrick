@@ -221,7 +221,8 @@ describe('table controls: markers on the boundaries', () => {
           payload: { blockId: tableId, index: c },
         } as never);
     });
-    focus(0, 0);
+    // Вторая строка: у первой ячейки кружка «строка выше» нет (он лёг бы на кружок «столбец слева»).
+    focus(1, 0);
 
     expect(($$('column-insert')[1] as HTMLButtonElement).disabled).toBe(true);
     expect(($$('row-insert')[1] as HTMLButtonElement).disabled).toBe(false);
