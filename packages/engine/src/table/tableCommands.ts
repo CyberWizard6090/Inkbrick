@@ -40,6 +40,34 @@ const mergesOf = (context: Context) =>
 /** Таблица с объединёнными ячейками: строки и столбцы нельзя переносить и сортировать — объединения разошлись бы. */
 const hasMerges = (context: Context) => mergesOf(context).length > 0;
 
+/**
+ * Удаляется строка или столбец с главной ячейкой объединения, а объединение продолжается дальше: текст и оформление
+ * главной ячейки переходят в следующую по оси ячейку, которая становится главной. Иначе текст объединения пропал бы.
+ */
+function keepMergedText(context: Context, axis: TableAxis, index: number): void {
+  const { engine, transaction, block } = context;
+  const cellId = (row: number, column: number) =>
+    transaction.getBlock(block.children[row])!.children[column];
+
+  for (const merge of mergesOf(context)) {
+    const along = axis === 'row' ? merge.row : merge.column;
+    const span = axis === 'row' ? merge.rows : merge.columns;
+
+    if (along !== index || span < 2) continue;
+
+    const from = cellId(merge.row, merge.column);
+    const to =
+      axis === 'row' ? cellId(merge.row + 1, merge.column) : cellId(merge.row, merge.column + 1);
+    const source = transaction.getBlock(from)!;
+
+    engine.block.update(transaction, to, (cell) => ({
+      ...cell,
+      content: structuredClone(source.content),
+      props: structuredClone(source.props),
+    }));
+  }
+}
+
 /** После удаления строки или столбца объединения сжимаются; список без объединений не появляется. */
 function shrinkMerges(context: Context, axis: TableAxis, index: number): void {
   const merges = mergesOf(context);
@@ -79,6 +107,7 @@ export const DeleteTableRowCommand = defineBlockCommand<TableProps, { index: num
   execute(context, { index }): CaretResult {
     const { engine, transaction, block } = context;
 
+    keepMergedText(context, 'row', index);
     shrinkMerges(context, 'row', index);
     engine.block.remove(transaction, block.children[index]);
 
@@ -132,6 +161,7 @@ export const DeleteTableColumnCommand = defineBlockCommand<TableProps, { index: 
   execute(context, { index }): CaretResult {
     const { engine, transaction, block } = context;
 
+    keepMergedText(context, 'column', index);
     shrinkMerges(context, 'column', index);
     updateWidths(context, (widths) => widths.splice(index, 1));
 
