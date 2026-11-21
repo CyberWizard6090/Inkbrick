@@ -78,56 +78,81 @@ describe('image block', () => {
       caption: '',
       width: 100,
       align: 'center',
-      aspect: 'auto',
-      zoom: 1,
-      cropX: 50,
-      cropY: 50,
+      originalSrc: '',
+      showCaption: false,
+      aspect: 'free',
+      cropX: 0,
+      cropY: 0,
+      cropWidth: 100,
+      cropHeight: 100,
     });
     expect(editor.schema.getBlockSchema('block:image')!.inline).toBe(false);
   });
 
-  it('the crop (ratio, zoom, position) is validated by the schema and is exported to HTML', () => {
+  it('the crop (shape, frame, original) is validated by the schema and is exported to HTML', () => {
     const { editor } = setup();
 
     for (const bad of [
       { aspect: 'diagonal' },
-      { zoom: 0.5 },
-      { zoom: 6 },
+      { aspect: 'auto' },
       { cropX: -1 },
       { cropY: 101 },
+      { cropWidth: 120 },
+      { originalSrc: 'javascript:alert(1)' },
+      { showCaption: 'yes' },
     ]) {
       expect(() => editor.schema.createProps('block:image', bad)).toThrow();
     }
 
     const props = editor.schema.createProps('block:image', {
       src: 'https://a.b/c.png',
-      aspect: '16:9',
-      zoom: 2,
+      aspect: '9:16',
       cropX: 30,
-      cropY: 70,
+      cropY: 0,
+      cropWidth: 40,
+      cropHeight: 100,
     });
 
-    expect(props).toMatchObject({ aspect: '16:9', zoom: 2, cropX: 30, cropY: 70 });
+    expect(props).toMatchObject({ aspect: '9:16', cropX: 30, cropWidth: 40, originalSrc: '' });
 
     const { firstId, children } = setupImage(editor);
 
     expect(firstId).toBeTruthy();
 
     const imageId = children()[0];
+    const set = (next: Record<string, unknown>) =>
+      editor.dispatch({
+        type: 'setBlockProps',
+        payload: { blockId: imageId, props: next as never },
+      });
 
-    editor.dispatch({
-      type: 'setBlockProps',
-      payload: {
-        blockId: imageId,
-        props: { src: 'https://a.b/c.png', aspect: '16:9', cropX: 30, cropY: 70 },
-      },
+    // Файла обрезки нет (обрезка стилем): форма и положение уходят в style.
+    set({
+      src: 'https://a.b/c.png',
+      aspect: '16:9',
+      cropX: 30,
+      cropY: 0,
+      cropWidth: 40,
+      cropHeight: 100,
     });
 
-    const html = toHtml(editor.document);
+    let html = toHtml(editor.document);
 
     expect(html).toContain('aspect-ratio:16/9');
     expect(html).toContain('object-fit:cover');
-    expect(html).toContain('object-position:30% 70%');
+    expect(html).toContain('object-position:50% 50%');
+
+    // Файл обрезки есть: картинка уходит как есть, круг — скруглением.
+    set({ src: 'https://a.b/crop.png', originalSrc: 'https://a.b/c.png', aspect: 'circle' });
+    html = toHtml(editor.document);
+
+    expect(html).toContain('src="https://a.b/crop.png"');
+    expect(html).not.toContain('object-fit');
+    expect(html).toContain('style="border-radius:50%"');
+
+    // Свободная рамка без файла: стиля нет, картинка целиком.
+    set({ src: 'https://a.b/c.png', originalSrc: '', aspect: 'free' });
+    expect(toHtml(editor.document)).not.toContain('style=');
   });
 
   it('props are validated by the schema: unsafe src, width and align are rejected', () => {

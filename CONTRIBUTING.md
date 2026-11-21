@@ -35,7 +35,8 @@ packages/document  model, schemas, serialization, export   — no React, no DOM
 packages/store     transactions, history, subscriptions       — no React
 packages/locales   UI dictionaries: English and on-demand languages — no React, no dependencies
 packages/engine    Editor, commands, controllers               — no React
-packages/react     EditorProvider, DocumentView, UI            — the only package with React
+packages/image-tools  image crop dialog and viewer (React)      — no editor, usable on its own
+packages/react     EditorProvider, DocumentView, UI            — React, uses image-tools lazily
 packages/styles    CSS: tokens, layers, data-attribute contract
 ```
 

@@ -1,0 +1,550 @@
+/*
+ * Окна @inkbrick/image-tools: обрезка картинки (data-inkbrick-ui="image-cropper") и просмотр во весь экран
+ * (data-inkbrick-ui="image-viewer"). Файл можно подключить и без редактора — вместе с tokens.css:
+ *   import '@inkbrick/styles/tokens.css';
+ *   import '@inkbrick/styles/image-tools.css';
+ * Окна всегда тёмные (картинку лучше видно на тёмном), панели и кнопки берут шрифт и акцент из токенов.
+ */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='image-cropper'], [data-inkbrick-ui='image-viewer']) {
+    --inkbrick-tools-surface: #262626;
+    --inkbrick-tools-raised: #333333;
+    --inkbrick-tools-hover: rgba(255, 255, 255, 0.1);
+    --inkbrick-tools-pressed: rgba(255, 255, 255, 0.16);
+    --inkbrick-tools-fg: rgba(255, 255, 255, 0.92);
+    --inkbrick-tools-fg-muted: rgba(255, 255, 255, 0.64);
+    --inkbrick-tools-stroke: rgba(255, 255, 255, 0.12);
+
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--inkbrick-z-popup, 9999) + 2);
+    box-sizing: border-box;
+    color: var(--inkbrick-tools-fg);
+    font-family: var(--inkbrick-font-family, system-ui, sans-serif);
+    font-size: var(--inkbrick-font-size-ui, 14px);
+    animation: inkbrick-tools-in var(--inkbrick-duration-normal, 160ms)
+      var(--inkbrick-curve, ease-out);
+  }
+
+  @keyframes inkbrick-tools-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  :where([data-inkbrick-ui='image-cropper'] *, [data-inkbrick-ui='image-viewer'] *) {
+    box-sizing: border-box;
+  }
+
+  :where([data-inkbrick-ui='image-cropper'] svg, [data-inkbrick-ui='image-viewer'] svg) {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  :where([data-inkbrick-ui='image-cropper'] button, [data-inkbrick-ui='image-viewer'] button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control, 4px);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='image-cropper'] button:hover:not(:disabled),
+    [data-inkbrick-ui='image-viewer'] button:hover:not(:disabled)
+  ) {
+    background: var(--inkbrick-tools-hover);
+  }
+
+  :where(
+    [data-inkbrick-ui='image-cropper'] button:active:not(:disabled),
+    [data-inkbrick-ui='image-viewer'] button:active:not(:disabled)
+  ) {
+    background: var(--inkbrick-tools-pressed);
+  }
+
+  :where(
+    [data-inkbrick-ui='image-cropper'] button:disabled,
+    [data-inkbrick-ui='image-viewer'] button:disabled
+  ) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :where(
+    [data-inkbrick-ui='image-cropper'] :focus-visible,
+    [data-inkbrick-ui='image-viewer'] :focus-visible
+  ) {
+    outline: 2px solid var(--inkbrick-brand-bg, #0f6cbd);
+    outline-offset: 1px;
+  }
+
+  /* ---------- Обрезка ---------- */
+
+  :where([data-inkbrick-ui='image-cropper']) {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  :where([data-inkbrick-part='cropper-panel']) {
+    display: flex;
+    flex-direction: column;
+    width: min(960px, 100%);
+    height: min(820px, 100%);
+    overflow: hidden;
+    border: 1px solid var(--inkbrick-tools-stroke);
+    border-radius: 12px;
+    background: var(--inkbrick-tools-surface);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  }
+
+  :where([data-inkbrick-part='cropper-bar']) {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--inkbrick-tools-stroke);
+  }
+
+  :where([data-inkbrick-part='cropper-title']) {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-part='cropper-actions']) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  :where([data-inkbrick-part='cropper-cancel']) {
+    color: var(--inkbrick-tools-fg-muted);
+  }
+
+  /* Тёмный оттенок акцента: белый текст на нём читается (контраст не ниже 4,5:1). */
+  :where([data-inkbrick-part='cropper-save']) {
+    padding: 0 16px;
+    background: var(--inkbrick-brand-bg-pressed, #0b6ec5);
+    color: var(--inkbrick-fg-on-brand, #ffffff);
+    font-weight: 600;
+  }
+
+  :where([data-inkbrick-part='cropper-save']:hover:not(:disabled)) {
+    background: var(--inkbrick-brand-bg-pressed, #0b6ec5);
+    filter: brightness(1.08);
+  }
+
+  /* Само окно берёт фокус только на мгновение, пока картинка грузится: рамку вокруг него не рисуем. */
+  :where([data-inkbrick-ui='image-cropper']:focus, [data-inkbrick-ui='image-viewer']:focus) {
+    outline: none;
+  }
+
+  :where([data-inkbrick-part='cropper-save'][data-busy]) {
+    cursor: progress;
+  }
+
+  :where([data-inkbrick-part='cropper-shapes']) {
+    position: relative;
+    justify-self: start;
+  }
+
+  :where([data-inkbrick-part='cropper-shape-button']) {
+    border: 1px solid var(--inkbrick-tools-stroke);
+  }
+
+  :where([data-inkbrick-part='cropper-shape-button'] svg + svg) {
+    width: 14px;
+    height: 14px;
+    color: var(--inkbrick-tools-fg-muted);
+  }
+
+  :where([data-inkbrick-part='cropper-menu']) {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    padding: 4px;
+    border: 1px solid var(--inkbrick-tools-stroke);
+    border-radius: 8px;
+    background: var(--inkbrick-tools-raised);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  :where([data-inkbrick-part='cropper-menu'] button) {
+    justify-content: flex-start;
+    height: 30px;
+  }
+
+  :where([data-inkbrick-part='cropper-shape']) {
+    gap: 8px;
+  }
+
+  :where([data-inkbrick-part='cropper-ratio'] > [data-inkbrick-part='cropper-shape']) {
+    flex: 1;
+  }
+
+  :where([data-inkbrick-part='cropper-shape'] > span) {
+    flex: 1;
+    text-align: start;
+  }
+
+  :where([data-inkbrick-part='cropper-separator']) {
+    height: 1px;
+    margin: 4px 2px;
+    background: var(--inkbrick-tools-stroke);
+  }
+
+  :where([data-inkbrick-part='cropper-ratio']) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: var(--inkbrick-radius-control, 4px);
+  }
+
+  :where([data-inkbrick-part='cropper-ratio'][data-checked]) {
+    background: var(--inkbrick-tools-hover);
+  }
+
+  /* Иконка ориентации — по центру кнопки (пункты меню выровнены по левому краю). */
+  :where([data-inkbrick-part='cropper-menu'] [data-inkbrick-part='cropper-orientation']) {
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0;
+    color: var(--inkbrick-tools-fg-muted);
+  }
+
+  :where([data-inkbrick-part='cropper-orientation'] svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+  :where([data-inkbrick-part='cropper-orientation'][data-pressed]) {
+    background: var(--inkbrick-tools-pressed);
+    color: var(--inkbrick-tools-fg);
+  }
+
+  :where([data-inkbrick-part='cropper-stage']) {
+    position: relative;
+    display: grid;
+    flex: 1;
+    min-height: 0;
+    margin: 24px;
+    place-items: center;
+  }
+
+  :where([data-inkbrick-part='cropper-canvas']) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-part='cropper-canvas'][data-ready]) {
+    visibility: visible;
+  }
+
+  :where([data-inkbrick-part='cropper-image']) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Всё вне рамки затемнено тенью (у круга тень повторяет круг); тень обрезана краями картинки. */
+  :where([data-inkbrick-part='cropper-shade-clip']) {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  :where([data-inkbrick-part='cropper-shade']) {
+    position: absolute;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55);
+  }
+
+  :where([data-inkbrick-part='cropper-shade'][data-shape='circle']),
+  :where([data-inkbrick-part='cropper-box'][data-shape='circle']) {
+    border-radius: 50%;
+  }
+
+  :where([data-inkbrick-part='cropper-box']) {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    cursor: move;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-part='cropper-box']:focus-visible) {
+    outline-offset: 2px;
+  }
+
+  :where([data-inkbrick-part='cropper-handle']) {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 0 solid #ffffff;
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.7));
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='nw']) {
+    top: -3px;
+    left: -3px;
+    border-top-width: 3px;
+    border-left-width: 3px;
+    cursor: nwse-resize;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='ne']) {
+    top: -3px;
+    right: -3px;
+    border-top-width: 3px;
+    border-right-width: 3px;
+    cursor: nesw-resize;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='se']) {
+    right: -3px;
+    bottom: -3px;
+    border-right-width: 3px;
+    border-bottom-width: 3px;
+    cursor: nwse-resize;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='sw']) {
+    bottom: -3px;
+    left: -3px;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+    cursor: nesw-resize;
+  }
+
+  :where(
+    [data-inkbrick-part='cropper-handle'][data-handle='n'],
+    [data-inkbrick-part='cropper-handle'][data-handle='s']
+  ) {
+    left: 50%;
+    width: 28px;
+    height: 5px;
+    margin-left: -14px;
+    border-radius: 3px;
+    background: #ffffff;
+    cursor: ns-resize;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='n']) {
+    top: -3px;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='s']) {
+    bottom: -3px;
+  }
+
+  :where(
+    [data-inkbrick-part='cropper-handle'][data-handle='e'],
+    [data-inkbrick-part='cropper-handle'][data-handle='w']
+  ) {
+    top: 50%;
+    width: 5px;
+    height: 28px;
+    margin-top: -14px;
+    border-radius: 3px;
+    background: #ffffff;
+    cursor: ew-resize;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='e']) {
+    right: -3px;
+  }
+
+  :where([data-inkbrick-part='cropper-handle'][data-handle='w']) {
+    left: -3px;
+  }
+
+  /* У круга угловые ручки не нужны: рамка тянется за стороны. */
+  :where(
+    [data-inkbrick-part='cropper-box'][data-shape='circle']
+      > [data-inkbrick-part='cropper-handle']:is(
+        [data-handle='nw'],
+        [data-handle='ne'],
+        [data-handle='se'],
+        [data-handle='sw']
+      )
+  ) {
+    display: none;
+  }
+
+  @media (pointer: coarse) {
+    /* Пальцу нужны ручки побольше: углы — крупнее, стороны — длиннее и толще. */
+    :where(
+      [data-inkbrick-part='cropper-handle'][data-handle='nw'],
+      [data-inkbrick-part='cropper-handle'][data-handle='ne'],
+      [data-inkbrick-part='cropper-handle'][data-handle='se'],
+      [data-inkbrick-part='cropper-handle'][data-handle='sw']
+    ) {
+      width: 26px;
+      height: 26px;
+    }
+
+    :where(
+      [data-inkbrick-part='cropper-handle'][data-handle='n'],
+      [data-inkbrick-part='cropper-handle'][data-handle='s']
+    ) {
+      width: 40px;
+      height: 7px;
+      margin-left: -20px;
+    }
+
+    :where(
+      [data-inkbrick-part='cropper-handle'][data-handle='e'],
+      [data-inkbrick-part='cropper-handle'][data-handle='w']
+    ) {
+      width: 7px;
+      height: 40px;
+      margin-top: -20px;
+    }
+
+    :where(
+      [data-inkbrick-part='cropper-bar'] button,
+      [data-inkbrick-part='cropper-menu'] button,
+      [data-inkbrick-part='viewer-bar'] button
+    ) {
+      min-width: 44px;
+      height: 44px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    :where([data-inkbrick-ui='image-cropper']) {
+      padding: 0;
+    }
+
+    :where([data-inkbrick-part='cropper-panel']) {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 0;
+    }
+
+    :where([data-inkbrick-part='cropper-stage']) {
+      margin: 16px;
+    }
+
+    /* Узкий экран: заголовок занимает остаток строки и не налезает на кнопки. */
+    :where([data-inkbrick-part='cropper-bar']) {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    :where([data-inkbrick-part='cropper-title']) {
+      overflow: hidden;
+      font-size: 14px;
+      text-overflow: ellipsis;
+    }
+  }
+
+  /* ---------- Просмотр ---------- */
+
+  :where([data-inkbrick-ui='image-viewer']) {
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.82);
+  }
+
+  :where([data-inkbrick-part='viewer-stage']) {
+    position: relative;
+    display: grid;
+    flex: 1;
+    min-height: 0;
+    margin: 48px 48px 0;
+    place-items: center;
+    overflow: visible;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-part='viewer-stage'][data-zoomed]) {
+    cursor: grab;
+  }
+
+  :where([data-inkbrick-part='viewer-stage'][data-zoomed]:active) {
+    cursor: grabbing;
+  }
+
+  :where([data-inkbrick-part='viewer-image']) {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.5));
+    transition: transform var(--inkbrick-duration-fast, 100ms) var(--inkbrick-curve, ease-out);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-part='viewer-stage']:active > [data-inkbrick-part='viewer-image']) {
+    transition: none;
+  }
+
+  :where([data-inkbrick-part='viewer-bar']) {
+    display: flex;
+    flex-wrap: wrap;
+    align-self: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px;
+  }
+
+  :where([data-inkbrick-part='viewer-group']) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--inkbrick-tools-stroke);
+    border-radius: 8px;
+    background: var(--inkbrick-tools-surface);
+  }
+
+  :where([data-inkbrick-part='viewer-zoom']) {
+    min-width: 56px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 600px) {
+    :where([data-inkbrick-part='viewer-stage']) {
+      margin: 12px 0 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where([data-inkbrick-ui='image-cropper'], [data-inkbrick-ui='image-viewer']) {
+      animation: none;
+    }
+
+    :where([data-inkbrick-part='viewer-image']) {
+      transition: none;
+    }
+  }
+}
