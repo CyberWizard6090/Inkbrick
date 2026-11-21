@@ -55,6 +55,10 @@ export interface BlockMenuAction {
   readonly icon?: ReactNode;
   readonly disabled?: boolean;
   readonly danger?: boolean;
+  /** Пункт-переключатель (заголовок, закрепление): справа рисуется выключатель в положении `toggle`, `aria-checked`. */
+  readonly toggle?: boolean;
+  /** Группа пункта (готовая подпись): над первым пунктом группы рисуется её название, как в меню выбора блоков. */
+  readonly group?: string;
   readonly run: () => void;
 }
 

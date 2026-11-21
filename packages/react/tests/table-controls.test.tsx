@@ -300,12 +300,14 @@ describe('table controls: row menu', () => {
     const first = mountTable();
 
     open(first, 0);
-    expect(first.action('row-header').textContent).toContain('regular row');
+    // Переключатель: название постоянное, состояние — в aria-checked.
+    expect(first.action('row-header').textContent).toBe('Header row');
+    expect(first.action('row-header').getAttribute('aria-checked')).toBe('true');
     first.click(first.action('row-header'));
     expect(first.tableProps().header).toBe(false);
 
     open(first, 0);
-    expect(first.action('row-header').textContent).toContain('header');
+    expect(first.action('row-header').getAttribute('aria-checked')).toBe('false');
     first.click(first.action('row-header'));
     expect(first.tableProps().header).toBe(true);
   });
@@ -334,13 +336,14 @@ describe('table controls: row menu', () => {
       document.querySelector('[data-inkbrick-block="table"]')!.hasAttribute(name);
 
     open(t, 0);
-    expect(t.action('row-freeze').textContent).toBe('Keep first row in view');
+    expect(t.action('row-freeze').textContent).toBe('Freeze first row');
+    expect(t.action('row-freeze').getAttribute('aria-checked')).toBe('false');
     t.click(t.action('row-freeze'));
     expect(t.tableProps().freezeRow).toBe(true);
     expect(frozen('data-freeze-row')).toBe(true);
 
     open(t, 0);
-    expect(t.action('row-freeze').textContent).toBe('Stop keeping first row in view');
+    expect(t.action('row-freeze').getAttribute('aria-checked')).toBe('true');
     t.click(t.action('row-freeze'));
     expect(frozen('data-freeze-row')).toBe(false);
 

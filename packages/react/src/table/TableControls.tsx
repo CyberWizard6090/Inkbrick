@@ -26,6 +26,7 @@ import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { Icon } from '../icons/Icon';
+import type { TFunction } from '../i18n/translate';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
 import { selectTableCells, selectTableLine } from './cellSelection';
@@ -611,8 +612,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (row === 0) {
       actions.push({
         id: 'row-header',
-        title: t(props.header === false ? 'table.row.headerOn' : 'table.row.headerOff'),
+        title: t('table.toggle.header'),
         icon: <Icon name="heading-1" />,
+        toggle: props.header !== false,
         run: () =>
           perform(() => {
             editor.dispatch({
@@ -628,8 +630,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (row === 0) {
       actions.push({
         id: 'row-freeze',
-        title: t(props.freezeRow ? 'table.row.freezeOff' : 'table.row.freezeOn'),
+        title: t('table.toggle.freezeRow'),
         icon: <Icon name="pin" />,
+        toggle: props.freezeRow === true,
         run: () =>
           perform(() => {
             editor.dispatch({
@@ -728,19 +731,19 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     },
     {
       id: 'column-align-left',
-      title: t('table.column.alignLeft'),
+      title: t('toolbar.align.left.label'),
       icon: <Icon name="align-left" />,
       run: () => alignColumn(column, 'left'),
     },
     {
       id: 'column-align-center',
-      title: t('table.column.alignCenter'),
+      title: t('toolbar.align.center.label'),
       icon: <Icon name="align-center" />,
       run: () => alignColumn(column, 'center'),
     },
     {
       id: 'column-align-right',
-      title: t('table.column.alignRight'),
+      title: t('toolbar.align.right.label'),
       icon: <Icon name="align-right" />,
       run: () => alignColumn(column, 'right'),
     },
@@ -785,8 +788,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       ? [
           {
             id: 'column-freeze',
-            title: t(props.freezeColumn ? 'table.column.freezeOff' : 'table.column.freezeOn'),
+            title: t('table.toggle.freezeColumn'),
             icon: <Icon name="pin" />,
+            toggle: props.freezeColumn === true,
             run: () =>
               perform(() => {
                 editor.dispatch({
@@ -1323,7 +1327,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
               block={block}
               position={{ x: menu.x, y: menu.y }}
               actions={
-                menu.kind === 'row' ? rowActions(menu.position) : columnActions(menu.position)
+                menu.kind === 'row'
+                  ? rowActions(menu.position)
+                  : groupColumnActions(columnActions(menu.position), t)
               }
               turnInto={[]}
               onClose={() => {
@@ -1342,3 +1348,27 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
 /** Основной указатель — палец (нет наведения и правой кнопки). */
 const coarsePointer = () =>
   typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+/**
+ * Меню столбца по группам, как меню выбора блоков: сам столбец (ширина, выделение, вставка, перенос, закрепление,
+ * удаление), затем выравнивание, тип и сортировка.
+ */
+function groupColumnActions(actions: BlockMenuAction[], t: TFunction): BlockMenuAction[] {
+  const groupOf = (id: string) =>
+    id.startsWith('column-align-')
+      ? 'align'
+      : id.startsWith('column-type-')
+        ? 'type'
+        : id.startsWith('column-sort-')
+          ? 'sort'
+          : 'columns';
+  const order = ['columns', 'align', 'type', 'sort'];
+
+  return actions
+    .map((action, index) => ({ action, index, group: groupOf(action.id) }))
+    .sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.index - b.index)
+    .map(({ action, group }) => ({
+      ...action,
+      group: t(`table.group.${group}` as 'table.group.align'),
+    }));
+}

@@ -144,7 +144,11 @@ test.describe('Table controls', () => {
 
     await hover(page, 0, 0);
     await page.locator(part('row-grip')).click();
-    await page.getByRole('menuitem', { name: 'Make first row a regular row' }).click();
+    // Заголовок — переключатель: название постоянное, положение — в aria-checked.
+    const header = page.getByRole('menuitemcheckbox', { name: 'Header row' });
+
+    await expect(header).toHaveAttribute('aria-checked', 'true');
+    await header.click();
     await expect(page.locator(table)).not.toHaveAttribute('data-header', /.*/);
 
     await hover(page, 1, 0);
@@ -161,7 +165,7 @@ test.describe('Table controls', () => {
 
     await hover(page, 1, 0);
     await page.locator(part('column-grip')).click();
-    await page.getByRole('menuitem', { name: 'Align column center' }).click();
+    await page.getByRole('menuitem', { name: 'Align center', exact: true }).click();
     await expect(page.locator(cells).nth(0)).toHaveAttribute('data-align', 'center');
     await expect(page.locator(cells).nth(8)).toHaveAttribute('data-align', 'center');
     await expect(page.locator(cells).nth(1)).toHaveAttribute('data-align', 'left');

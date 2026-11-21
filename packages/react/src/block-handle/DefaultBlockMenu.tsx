@@ -2,7 +2,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { isHexColor } from '@inkbrick/document';
 
-import { SheetBackdrop } from '../context-menu/DefaultContextMenu';
+import { MenuSwitch, SheetBackdrop } from '../context-menu/DefaultContextMenu';
 import { hideKeyboard, useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
@@ -34,7 +34,7 @@ export function DefaultBlockMenu({
 
   useEffect(() => {
     ref.current
-      ?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])')
+      ?.querySelector<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')
       ?.focus();
   }, []);
 
@@ -69,7 +69,7 @@ export function DefaultBlockMenu({
   const move = (delta: number) => {
     const items = [
       ...(ref.current?.querySelectorAll<HTMLElement>(
-        '[role="menuitem"]:not([aria-disabled="true"])',
+        '[role^="menuitem"]:not([aria-disabled="true"])',
       ) ?? []),
     ];
     const index = items.indexOf(document.activeElement as HTMLElement);
@@ -80,7 +80,8 @@ export function DefaultBlockMenu({
   const renderItem = (action: BlockMenuAction) => (
     <div
       key={action.id}
-      role="menuitem"
+      role={action.toggle === undefined ? 'menuitem' : 'menuitemcheckbox'}
+      aria-checked={action.toggle}
       tabIndex={action.disabled ? -1 : 0}
       aria-disabled={action.disabled || undefined}
       data-action={action.id}
@@ -102,6 +103,7 @@ export function DefaultBlockMenu({
         </span>
       )}
       {action.title}
+      {action.toggle !== undefined && <MenuSwitch on={action.toggle} />}
     </div>
   );
 
@@ -145,7 +147,16 @@ export function DefaultBlockMenu({
           }
         }}
       >
-        {actions.map(renderItem)}
+        {actions.map((action, index) => (
+          <Fragment key={action.id}>
+            {action.group && action.group !== actions[index - 1]?.group && (
+              <div data-inkbrick-part="label" role="separator">
+                {action.group}
+              </div>
+            )}
+            {renderItem(action)}
+          </Fragment>
+        ))}
 
         {turnInto.length > 0 && (
           <>

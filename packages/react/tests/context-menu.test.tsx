@@ -440,8 +440,13 @@ describe('table items', () => {
       'table-cell-borders',
       'table-style',
     ]);
-    // Разделители: перед пунктами таблицы, перед её форматированием и перед вложенными меню оформления.
-    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(3);
+    // Черта отделяет пункты таблицы от общих, а внутри они разбиты на группы с подписями, как в меню выбора блоков.
+    expect($menu()!.querySelectorAll('[role="separator"]')).toHaveLength(1);
+    expect(
+      [...$menu()!.querySelectorAll('[data-inkbrick-part="label"]')].map(
+        (node) => node.textContent,
+      ),
+    ).toEqual(['Rows', 'Columns', 'Table', 'Design']);
 
     fireEvent.click(item('table-row-below'));
     expect([rows(), columns(), $menu()]).toEqual([4, 3, null]);

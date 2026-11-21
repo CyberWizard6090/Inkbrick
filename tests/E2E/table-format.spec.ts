@@ -214,7 +214,18 @@ test.describe('Table formatting menu', () => {
   test('the same items are in the context menu of a cell and in the palette', async ({ page }) => {
     await page.locator(cells).nth(4).locator(editable).click({ button: 'right' });
     await expect(page.locator(menu)).toBeVisible();
-    await page.getByRole('menuitem', { name: 'Shade alternate rows' }).click();
+    // Пункты таблицы сгруппированы, свойства — переключатели с постоянным названием.
+    await expect(page.locator(`${menu} [data-inkbrick-part="label"]`)).toHaveText([
+      'Rows',
+      'Columns',
+      'Table',
+      'Design',
+    ]);
+
+    const striped = page.getByRole('menuitemcheckbox', { name: 'Striped rows' });
+
+    await expect(striped).toHaveAttribute('aria-checked', 'false');
+    await striped.click();
     await expect(page.locator(table)).toHaveAttribute('data-striped', 'true');
 
     await page.locator(cells).nth(4).locator(editable).click();

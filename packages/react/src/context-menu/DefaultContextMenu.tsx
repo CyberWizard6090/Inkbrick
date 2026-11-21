@@ -59,14 +59,14 @@ export function DefaultContextMenu({
     if (formatting) return;
 
     ref.current
-      ?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])')
+      ?.querySelector<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])')
       ?.focus({ preventScroll: true });
   }, []);
 
   const move = (delta: number) => {
     const entries = [
       ...(ref.current?.querySelectorAll<HTMLElement>(
-        '[role="menuitem"]:not([aria-disabled="true"])',
+        '[role^="menuitem"]:not([aria-disabled="true"])',
       ) ?? []),
     ];
     const index = entries.indexOf(document.activeElement as HTMLElement);
@@ -159,6 +159,11 @@ function MenuList({
           {item.separatorBefore && index > 0 && (
             <div data-inkbrick-part="separator" role="separator" />
           )}
+          {item.group && item.group !== items[index - 1]?.group && (
+            <div data-inkbrick-part="label" role="presentation">
+              {item.group}
+            </div>
+          )}
           {item.content !== undefined ? (
             <>
               <div data-inkbrick-part="label" role="presentation">
@@ -198,12 +203,13 @@ function Row({
   const [byKeyboard, setByKeyboard] = useState(false);
   const nested = (item.submenu !== undefined || item.flyout !== undefined) && !item.disabled;
   const checkable = item.checked !== undefined;
+  const switchable = item.toggle !== undefined;
 
   return (
     <div
       ref={ref}
-      role={checkable ? 'menuitemradio' : 'menuitem'}
-      aria-checked={checkable ? item.checked : undefined}
+      role={switchable ? 'menuitemcheckbox' : checkable ? 'menuitemradio' : 'menuitem'}
+      aria-checked={switchable ? item.toggle : checkable ? item.checked : undefined}
       aria-haspopup={nested ? 'menu' : undefined}
       aria-expanded={nested ? open : undefined}
       tabIndex={item.disabled ? -1 : 0}
@@ -255,6 +261,7 @@ function Row({
           {item.shortcut}
         </span>
       )}
+      {switchable && <MenuSwitch on={item.toggle!} />}
       {item.checked && (
         <span data-inkbrick-part="check" aria-hidden="true">
           <Icon name="check" />
@@ -444,4 +451,9 @@ function Flyout({
       </div>
     </>
   );
+}
+
+/** Выключатель справа у пункта-переключателя (как в Notion): положение показывает, включено ли свойство. */
+export function MenuSwitch({ on }: { on: boolean }) {
+  return <span data-inkbrick-part="switch" data-on={on || undefined} aria-hidden="true" />;
 }

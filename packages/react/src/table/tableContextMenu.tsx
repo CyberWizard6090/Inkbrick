@@ -13,6 +13,7 @@ import {
 import type { BlockContextMenuContext } from '../blocks/defineBlock';
 import type { ContextMenuItem } from '../context-menu/types';
 import type { CellSelection } from '../editing/CellSelectionController';
+import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
 import type { MessageKey } from '../i18n/en';
 import { visibleCell } from './cellSelection';
@@ -158,7 +159,7 @@ export function tableContextMenu({
       })
     : [];
 
-  return [
+  return grouped(t, [
     ...items,
     {
       id: 'table-row-above',
@@ -237,7 +238,7 @@ export function tableContextMenu({
     ...widthItems(column),
     ...format,
     ...design,
-  ];
+  ]);
 
   /** Шире и уже на шаг от текущей ширины столбца под курсором (или выделением). */
   function widthItems(index: number): ContextMenuItem[] {
@@ -295,4 +296,33 @@ function columnWidth(td: HTMLTableCellElement, index: number): number {
   }
 
   return td.getBoundingClientRect().width / Math.max(1, td.colSpan);
+}
+
+/**
+ * Группа пункта меню ячейки по его действию: строки, столбцы, свойства таблицы, оформление. Объединение и разделение ячеек
+ * (есть только при выделении) идут первыми, сразу после черты, без своей подписи.
+ */
+function groupOf(id: string): 'cells' | 'rows' | 'columns' | 'table' | 'design' {
+  if (id === 'table-merge' || id === 'table-split') return 'cells';
+  if (id.startsWith('table-row-')) return 'rows';
+  if (id.startsWith('table-column-')) return 'columns';
+  if (id === 'table-cell-background' || id === 'table-cell-borders' || id === 'table-style')
+    return 'design';
+  return 'table';
+}
+
+/** Пункты таблицы с подписями групп, как в меню выбора блоков (первая группа отделена от общих пунктов чертой). */
+function grouped(t: TFunction, items: ContextMenuItem[]): ContextMenuItem[] {
+  return items.map((item, index) => {
+    const group = groupOf(item.id);
+
+    return {
+      ...item,
+      separatorBefore: index === 0 ? item.separatorBefore : undefined,
+      group:
+        group === 'cells'
+          ? undefined
+          : t(group === 'table' ? 'table.name' : `table.group.${group}`),
+    };
+  });
 }

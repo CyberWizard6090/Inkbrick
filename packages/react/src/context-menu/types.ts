@@ -16,6 +16,10 @@ export interface ContextMenuItem {
   /** Подсказка с клавишами, например `Ctrl+C`. */
   readonly shortcut?: string;
   readonly disabled?: boolean;
+  /** Пункт-переключатель: справа рисуется выключатель в положении `toggle`, у пункта `menuitemcheckbox` и `aria-checked`. */
+  readonly toggle?: boolean;
+  /** Группа пункта (готовая подпись): над первым пунктом группы рисуется её название, как в меню выбора блоков. */
+  readonly group?: string;
   /** Разделитель перед пунктом: отделяет группу пунктов блока от стандартных. */
   readonly separatorBefore?: boolean;
   /**
