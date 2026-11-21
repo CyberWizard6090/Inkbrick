@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import base from '../src/base.css?raw';
 import blocks from '../src/blocks.css?raw';
+import imageTools from '../src/image-tools.css?raw';
 import index from '../src/index.css?raw';
 import tokens from '../src/tokens.css?raw';
 import ui from '../src/ui.css?raw';
@@ -12,6 +13,7 @@ const SOURCES: Record<string, string> = {
   'base.css': base,
   'blocks.css': blocks,
   'ui.css': ui,
+  'image-tools.css': imageTools,
 };
 
 const read = (file: string) => SOURCES[file].replace(/\/\*[\s\S]*?\*\//g, '');
@@ -86,12 +88,13 @@ function isWrappedInWhere(selector: string): boolean {
   return false;
 }
 
-const FILES = ['tokens.css', 'base.css', 'blocks.css', 'ui.css'];
+const FILES = ['tokens.css', 'base.css', 'blocks.css', 'ui.css', 'image-tools.css'];
 const LAYERS: Record<string, string> = {
   'tokens.css': 'inkbrick.tokens',
   'base.css': 'inkbrick.base',
   'blocks.css': 'inkbrick.blocks',
   'ui.css': 'inkbrick.ui',
+  'image-tools.css': 'inkbrick.ui',
 };
 
 describe('@inkbrick/styles: стили не конкурируют со стилями приложения', () => {

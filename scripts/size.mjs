@@ -12,6 +12,7 @@ const alias = {
   '@inkbrick/engine': pkg('engine'),
   // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
   '@inkbrick/locales': fileURLToPath(new URL('../packages/locales/src', import.meta.url)),
+  '@inkbrick/image-tools': pkg('image-tools'),
   '@inkbrick/react': pkg('react'),
 };
 const external = ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'temml', 'zod'];
@@ -33,6 +34,12 @@ const cases = [
     budget: 93,
     bundled: ['zod'],
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
+  },
+  {
+    // Пакет отдельно от редактора: окно обрезки, просмотр и геометрия (редактор грузит его лениво).
+    name: 'image-tools: cropper + viewer',
+    budget: 8,
+    code: "import { ImageCropper, ImageViewer, cropImage } from '@inkbrick/image-tools'; console.log(ImageCropper, ImageViewer, cropImage);",
   },
   {
     name: 'react: EditorProvider + DocumentView',
