@@ -1295,7 +1295,7 @@
     visibility: hidden;
   }
 
-  :where([data-inkbrick-part='resize']) {
+  :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize']) {
     position: absolute;
     top: 50%;
     z-index: 1;
@@ -1314,28 +1314,36 @@
     transition: opacity var(--inkbrick-duration-fast) var(--inkbrick-curve);
   }
 
-  :where([data-inkbrick-part='resize'][data-side='start']) {
+  :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize'][data-side='start']) {
     left: 8px;
   }
 
-  :where([data-inkbrick-part='resize'][data-side='end']) {
+  :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize'][data-side='end']) {
     right: 8px;
   }
 
-  :where([data-inkbrick-part='figure']:hover [data-inkbrick-part='resize']),
-  :where([data-inkbrick-part='figure'][data-resizing] [data-inkbrick-part='resize']),
-  :where([data-inkbrick-part='resize']:focus-visible) {
+  :where(
+    [data-inkbrick-part='figure']:hover
+      [data-inkbrick-part='picture']
+      > [data-inkbrick-part='resize']
+  ),
+  :where(
+    [data-inkbrick-part='figure'][data-resizing]
+      [data-inkbrick-part='picture']
+      > [data-inkbrick-part='resize']
+  ),
+  :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize']:focus-visible) {
     opacity: 1;
   }
 
-  :where([data-inkbrick-part='resize']:focus-visible) {
+  :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize']:focus-visible) {
     outline: 2px solid var(--inkbrick-stroke-focus-2);
     outline-offset: 2px;
   }
 
   @media (pointer: coarse) {
     /* На телефоне картинка невысокая: ручки ширины — у нижнего края, под панелью инструментов. */
-    :where([data-inkbrick-part='resize']) {
+    :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize']) {
       top: auto;
       bottom: 10px;
       width: 10px;
@@ -1343,7 +1351,11 @@
       transform: none;
     }
 
-    :where([data-inkbrick-part='figure']:focus-within [data-inkbrick-part='resize']) {
+    :where(
+      [data-inkbrick-part='figure']:focus-within
+        [data-inkbrick-part='picture']
+        > [data-inkbrick-part='resize']
+    ) {
       opacity: 1;
     }
   }

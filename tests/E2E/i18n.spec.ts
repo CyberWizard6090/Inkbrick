@@ -103,6 +103,12 @@ test.describe('Localization', () => {
     await page.keyboard.type('/изображ');
     await page.keyboard.press('Enter');
 
+    await expect(page.getByRole('tab', { name: 'Загрузка' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByTestId('image-picker')).toContainText('Загрузить файл');
+    await page.getByRole('tab', { name: 'Ссылка' }).click();
     await expect(page.getByTestId('image-picker')).toContainText('Вставить');
     await expect(page.getByPlaceholder('Вставьте ссылку на изображение…')).toBeVisible();
 
