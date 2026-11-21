@@ -182,3 +182,139 @@ test.describe('Columns by dragging a block to the edge of another', () => {
     await expect(page.locator(handle)).toBeVisible();
   });
 });
+
+test.describe('Picked blocks and columns', () => {
+  /** Документ: колонки [a1, a2, a3 | b1], потом абзац c. */
+  async function layout(page: Page) {
+    await page.goto('/?lang=en');
+    await page.evaluate(() => {
+      const { editor } = window.__inkbrick!.main;
+      const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+      const first = editor.document.getBlock(note)!.children[0];
+      const ids = [first];
+
+      for (let i = 0; i < 4; i++) {
+        ids.push(
+          (
+            editor.dispatch({
+              type: 'insertBlock',
+              payload: { flavour: 'block:paragraph', afterId: ids.at(-1)! },
+            }) as { blockId: string }
+          ).blockId,
+        );
+      }
+
+      ['a1', 'a2', 'a3', 'b1', 'c'].forEach((text, i) =>
+        editor.dispatch({
+          type: 'replaceText',
+          payload: { blockId: ids[i], from: 0, to: 0, text },
+        }),
+      );
+      editor.dispatch({
+        type: 'moveBlockToSide',
+        payload: { blockId: ids[3], targetId: ids[0], side: 'right' },
+      });
+      editor.dispatch({
+        type: 'moveBlock',
+        payload: { blockId: ids[1], targetId: ids[0], position: 'after' },
+      });
+      editor.dispatch({
+        type: 'moveBlock',
+        payload: { blockId: ids[2], targetId: ids[1], position: 'after' },
+      });
+      editor.clearHistory();
+    });
+  }
+
+  /** Дерево заметки строкой: `columns[column[a1,a2],column[b1]],c`. */
+  const tree = (page: Page) =>
+    page.evaluate(() => {
+      const { editor } = window.__inkbrick!.main;
+      const walk = (id: string): string => {
+        const block = editor.document.getBlock(id)!;
+        const text = block.content.map((node) => node.insert).join('');
+        const kind = block.flavour.replace('block:', '');
+
+        return block.children.length > 0
+          ? `${kind}[${block.children.map(walk).join(',')}]`
+          : text || kind;
+      };
+      const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+
+      return editor.document.getBlock(note)!.children.map(walk).join(',');
+    });
+
+  const line = (page: Page, text: string) =>
+    page.locator(editable).filter({ hasText: new RegExp(`^${text}$`) });
+
+  /** Рамка от поля слева до правого края `to` по высоте блоков `from`…`to`. */
+  async function frame(page: Page, from: string, to: string) {
+    const top = (await line(page, from).boundingBox())!;
+    const bottom = (await line(page, to).boundingBox())!;
+
+    await page.mouse.move(top.x - 80, top.y + 3);
+    await page.mouse.down();
+    await page.mouse.move(top.x + 20, bottom.y + bottom.height - 3, { steps: 8 });
+    await page.mouse.up();
+  }
+
+  async function dragGrip(page: Page, from: string, x: number, y: number) {
+    await line(page, from).hover();
+    await expect(page.locator(handle)).toBeVisible();
+
+    const grip = (await page.locator(`${handle} [data-action="grip"]`).boundingBox())!;
+
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + 40, grip.y + 14, { steps: 3 });
+    await page.mouse.move(x, y, { steps: 8 });
+  }
+
+  test.beforeEach(async ({ page }) => layout(page));
+
+  test('a frame inside one column picks its blocks, not the whole columns block', async ({
+    page,
+  }) => {
+    expect(await tree(page)).toBe('columns[column[a1,a2,a3],column[b1]],c');
+    await frame(page, 'a1', 'a3');
+
+    await expect(page.locator('[data-picked]')).toHaveCount(3);
+    await expect(page.locator(`${columns}[data-picked]`)).toHaveCount(0);
+  });
+
+  test('dragging any picked block of a column moves all of them, in one undo step', async ({
+    page,
+  }) => {
+    await frame(page, 'a1', 'a3');
+
+    const c = (await line(page, 'c').boundingBox())!;
+
+    // За ручку среднего блока — едут все три.
+    await dragGrip(page, 'a2', c.x + 40, c.y + c.height - 3);
+    await page.mouse.up();
+
+    expect(await tree(page)).toBe('b1,c,a1,a2,a3');
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await tree(page)).toBe('columns[column[a1,a2,a3],column[b1]],c');
+  });
+
+  test('picked blocks dropped at the edge of a block go into a column together', async ({
+    page,
+  }) => {
+    await frame(page, 'a1', 'a2');
+
+    const c = (await line(page, 'c').boundingBox())!;
+
+    await dragGrip(page, 'a1', c.x + c.width - 6, c.y + c.height / 2);
+    await expect(page.locator(indicator)).toHaveAttribute('data-side', 'right');
+    await page.mouse.up();
+
+    expect(await tree(page)).toBe(
+      'columns[column[a3],column[b1]],columns[column[c],column[a1,a2]]',
+    );
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await tree(page)).toBe('columns[column[a1,a2,a3],column[b1]],c');
+  });
+});

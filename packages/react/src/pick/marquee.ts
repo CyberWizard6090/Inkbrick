@@ -1,3 +1,4 @@
+import { COLUMNS } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
@@ -20,6 +21,16 @@ interface Spot {
   readonly id: string;
   readonly side: -1 | 0 | 1;
 }
+
+interface Box {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+const crosses = (a: Box, b: Box) =>
+  a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
 
 function scrollParent(element: HTMLElement | null): HTMLElement | null {
   for (let node = element?.parentElement; node; node = node.parentElement) {
@@ -132,8 +143,60 @@ export function startMarquee(
     }
 
     const down = to >= from;
+    const picked = touched(ids, {
+      left: Math.min(origin.x, x),
+      right: Math.max(origin.x, x),
+      top,
+      bottom,
+    });
 
-    view.picked.set(ids, down ? ids[0] : ids.at(-1), down ? ids.at(-1) : ids[0]);
+    view.picked.set(picked, down ? picked[0] : picked.at(-1), down ? picked.at(-1) : picked[0]);
+  };
+
+  /**
+   * Из блоков, которые рамка проходит по высоте, оставляет те, которые она задевает и по ширине: рамка, которую тянут
+   * по полю страницы, ничего не выбирает, пока не дошла до текста. Рамка внутри одной колонки выбирает блоки этой
+   * колонки (их и переносят, и удаляют вместе); рамка через несколько колонок — весь блок колонок.
+   */
+  const touched = (ids: readonly string[], box: Box): readonly string[] => {
+    const result: string[] = [];
+    const inner = new Map<string, string[]>();
+
+    for (const id of ids) {
+      const element = root.querySelector<HTMLElement>(`[data-block-id="${CSS.escape(id)}"]`);
+
+      // Блок вне экрана (виртуальный рендер, автопрокрутка): он целиком между краями рамки по высоте.
+      if (!element) {
+        result.push(id);
+        continue;
+      }
+
+      const rect = element.getBoundingClientRect();
+
+      if (box.right < rect.left || box.left > rect.right) continue;
+
+      if (editor.store.getBlock(id)?.flavour !== COLUMNS) {
+        result.push(id);
+        continue;
+      }
+
+      for (const column of editor.store.getBlock(id)!.children) {
+        const blocks = (editor.store.getBlock(column)?.children ?? []).filter((child) => {
+          const node = root.querySelector(`[data-block-id="${CSS.escape(child)}"]`);
+
+          return !!node && crosses(box, node.getBoundingClientRect());
+        });
+
+        if (blocks.length > 0) inner.set(`${id}/${column}`, blocks);
+      }
+
+      if ([...inner.keys()].some((key) => key.startsWith(`${id}/`))) result.push(id);
+    }
+
+    // Задеты блоки одной колонки и больше ничего — выбираем их, а не блок колонок.
+    if (result.length === 1 && inner.size === 1) return [...inner.values()][0];
+
+    return result;
   };
 
   const schedule = () => {
