@@ -63,14 +63,8 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
       if (wrapper && row) {
         view.blocks.setHover({
           blockId,
-          // Ручка стоит у края колонки документа, одинаково у всех блоков: окрашенный блок выступает за колонку на
-          // отрицательный отступ, а таблица отодвинута от неё положительным (там её ручки строк и маркеры вставки).
-          x: Math.round(
-            wrapper.getBoundingClientRect().left -
-              (editor.store.getBlock(blockId)?.flavour === 'block:table'
-                ? parseFloat(getComputedStyle(wrapper).marginLeft) || 0
-                : Math.min(0, parseFloat(getComputedStyle(wrapper).marginLeft) || 0)),
-          ),
+          // Ручка стоит у левого края блока, одинаково у всех (и у таблицы: её ручки строк лежат на её границе).
+          x: Math.round(wrapper.getBoundingClientRect().left),
           y: Math.round(row.top),
         });
       }

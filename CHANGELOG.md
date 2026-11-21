@@ -180,7 +180,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 ### Fixed
 
 - A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
-- In the second and later columns the block handle is only the grip, inside the gap between the columns: the full handle («+» and the grip) lay over the content of the column to the left (a code block, a table). Stacked columns on a narrow screen keep the full handle.
+- Blocks look the same: a table, a code block, a callout, an image and a coloured block share the left and right edges of the text column, the vertical margin (4 px) and the card radius. A table is no longer indented by 28 px: its row and column handles (now 10 px thick, 16 px under a finger) lie on its left and top border, and its block handle stands where every block's does. A coloured block no longer sticks out of the column; its text is inset by 8 px instead.
+- Columns are 72 px apart (was 32): the divider sits next to the left column, and the full block handle («+» and the grip) of the next column fits between the divider and the column, covering neither.
 - The block handle stays with its block while the pointer travels to it, also across a neighbouring table, the gap of columns or the margin: a table inside columns could not be grabbed because its handle jumped away on the way.
 - Folding a heading with a long section animates again: only the blocks near the screen move, the rest go at once; whole sections fold without an animation only above 200 blocks (was 40).
 - Table cells coloured lime, teal, cyan, indigo or magenta showed the pale block background instead of the saturated cell colour: five block rules came after the cell rules and won.

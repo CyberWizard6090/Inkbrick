@@ -293,7 +293,7 @@ test.describe('Dragging blocks into columns and back', () => {
 });
 
 test.describe('The handle of a block in a later column', () => {
-  test('is only the grip and stays in the gap, off the left column, and still drags', async ({
+  test('is the full handle and fits the gap between the columns, off the left column, and still drags', async ({
     page,
   }) => {
     await page.goto('/?lang=en');
@@ -311,14 +311,16 @@ test.describe('The handle of a block in a later column', () => {
     const leftBox = (await left.boundingBox())!;
     const rightBox = (await right.boundingBox())!;
 
-    // Только «⠿»: «+» на соседнюю колонку не ложится.
-    await expect(page.locator(`${handle} [data-action="add"]`)).toHaveCount(0);
+    // Полная ручка («+» и «⠿») помещается в промежуток между колонками.
+    await expect(page.locator(`${handle} [data-action="add"]`)).toHaveCount(1);
     expect(box.x).toBeGreaterThanOrEqual(leftBox.x + leftBox.width);
     expect(box.x + box.width).toBeLessThanOrEqual(rightBox.x);
 
-    // В первой колонке ручка полная.
-    await block(page, 'one').hover();
-    await expect(page.locator(`${handle} [data-action="add"]`)).toHaveCount(1);
+    // Разделитель колонок — левее ручки, они не перекрываются: его можно тянуть на любой высоте.
+    const divider = (await page.locator('[data-inkbrick-part="divider"]').boundingBox())!;
+
+    expect(divider.x + divider.width).toBeLessThanOrEqual(box.x);
+    expect(divider.x).toBeGreaterThanOrEqual(leftBox.x + leftBox.width);
 
     // «⠿» правой колонки по-прежнему переносит блок.
     await below(page, 'two', 'three');
