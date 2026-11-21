@@ -173,7 +173,74 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   `useCollapse`), so no wrapper elements are added; the code block collapse uses the same token. Only the fold and unfold are animated: the first
   nested block of a toggle, and blocks drawn for the first time, appear at once.
 
+- Tables on a phone (`docs/tables.md`, «На телефоне»): a long press (0.45 s) on a cell selects it with a short vibration and holds the page still, dragging the finger extends the selection to a rectangle, and releasing keeps the selection so it can be adjusted; a second long hold on a selected cell opens the cell menu (formatting, cut/copy/paste, rows, columns, width, borders, background), while a quick tap on it drops the selection. The table items are in the cell menu opened by the long press. The column menu has «Column width…», a bar at the bottom of the window with a slider that resizes the column live (one undo step when the finger is lifted), −/+ buttons for one pixel and «Fit content». The browser's own long-press menu and the synthetic mouse events that follow are suppressed while a cell is held.
+- Menus as bottom sheets on a phone (a coarse pointer and a window up to 720 px wide): the context menu (cell menu) and the block menu (row, column, block) open as a sheet at the bottom of the window — full width, rounded top, a grab bar, a dim backdrop whose tap closes the menu without reaching the document — instead of a small window over the table. A nested panel («Cell borders») is a second sheet with a header and a back arrow. The sheet stands above the on-screen keyboard (`visualViewport`). The attribute `data-sheet` and the hook `useSheet` are the switch; on a larger window or with a mouse the menus are the same as before.
+- Tables on a phone, selection frame: a tap in a cell shows a blue frame around it (or around the selected cells) with a knob on its bottom right corner, as in Notion. Dragging the knob extends the selection to the cell under the finger (the page does not scroll); releasing it keeps the selection, the menu comes from a long hold on a selected cell. It adds to the long press, which stays.
+
+### Fixed
+
+- Table selection: Tab and Shift+Tab from a selected range keep the caret on its anchor cell, and the arrows up and down move one row from the selection, not two (the table keymap no longer handles a key the selection already took).
+- Arrow up and down inside a multi-line cell leave the cell only from its first or last line, not from the second one.
+- Pasting tab-separated text into a paragraph is no longer turned into a table larger than the limits (`MAX_TABLE_CELLS`, `MAX_TABLE_COLUMNS`); it stays text.
+- Pasting a table into a cell of another table never writes into the hidden cells of a merge (such a paste goes in as text), and the merges of the pasted table move to the place of the paste.
+- The cell context menu has «Column wider» and «Column narrower» (10 px steps), so a column width can be changed from the keyboard.
+- HTML export: a merge that starts in the header row is cut at the header, so `rowspan` no longer crosses `thead` and `tbody`.
+- Sorting a date column: a bare number («10») is not a date; the `Date.parse` fallback needs a four-digit year.
+- Table styles: «Horizontal lines» and «Hide cell borders» are no longer overridden by the general line colour; a striped table keeps the header column colour.
+- Pasting a single unformatted cell keeps the background and alignment of the cell it lands in.
+- Typing over a cell selection is one undo step: one Ctrl+Z restores the text of the anchor cell.
+- The submenu of the context menu opens on click and stays open (it no longer toggles shut right after hover).
+- The style gallery clears its live preview when it closes with Escape or a click outside.
+- Table handles stay inside the top of the window when the table is close to the top edge.
+- A press on the empty part of a table cell (the lower part of a tall merged cell, the padding) puts the caret into that cell: the browser used to put it at the nearest position on the same line, which is the neighbouring cell because the cells covered by a merge are hidden, so typing went to the wrong cell or nowhere.
+- A nested bottom sheet («Cell background», «Cell borders») has its own backdrop over the parent sheet: a tap beside it closes only the nested panel, and the items of the parent sheet that stayed visible above it are no longer tapped by mistake (the tap used to activate one of them and close the whole menu).
+- A tap on the backdrop of a bottom sheet only closes the menu: it no longer focuses the editor, which put the caret at the start of the document and raised the on-screen keyboard (`onDismiss` of the menu props; `onClose` after a choice still returns the focus).
+- The table corner button (`data-inkbrick-part="table-grip"`, top right of a table) is removed on every device, with its hint and its own «Table» menu: all its items — header row and column, stripes, borders, freeze, reset widths, style gallery, cell borders and background — are in the context menu of a cell (and the command palette). The translation keys `table.handle`, `table.tip.click` and `table.tip.select` are gone. A cell background from the cell menu goes to the selected cells, or to the cell under the menu (the table menu used to paint the whole table).
+- Table properties in the menus are switches, as in Notion: «Header row», «Header column», «Striped rows», «Cell borders», «Freeze first row», «Freeze first column» keep their name, and a switch on the right shows the state (`menuitemcheckbox`, `aria-checked`) instead of a «Make …» / «Remove …» title that changed. `toggle` on `ContextMenuItem` and `BlockMenuAction`; translation keys `table.toggle.*` (the unused `table.row.freezeOn/Off` and `table.column.freezeOn/Off` are gone; the palette keeps its action titles).
+- The cell menu and the column menu are grouped with headings, like the block picker: «Rows», «Columns», «Table», «Design» in the cell menu, «Columns», «Alignment», «Type», «Sort» in the column menu (`group` on `ContextMenuItem` and `BlockMenuAction`, keys `table.group.*`).
+- The size budget of `@inkbrick/react` (EditorProvider + DocumentView) is raised from 65 to 66 KB gzip: the table menus of this release (switches, group headings, bottom sheets) add English strings and code to the initial load.
+- The block handle of a table is the same as of every other block again («+» and the grip) and stands in the same column; on a narrow screen its compact form goes above the table, over the column pills, instead of onto the first row pill. The handle of every block keeps an 8 px gap from the block (it touched it, and lay on the frames and controls of blocks), and may use up to 32 px of the page margin left of the editor root.
+- The row and column pills of a table have the same thickness (14 px; 20 px for a finger) and both follow the size of their row or column, and they no longer grow on hover.
+- Table cell backgrounds use a saturated palette, like spreadsheet editors, the same in the light and dark themes (tokens `--inkbrick-cell-gray` … `--inkbrick-cell-magenta`); the text on a cell background is black or white, whichever contrasts more (`--inkbrick-cell-text-dark|light`), for a custom colour too. The colour dots of the cell background menu show these colours, and the dots of the border colour menu show the real line colours (they showed the pale highlight shades). The HTML export writes the same background and text colour. Block backgrounds outside tables are unchanged.
+- Custom cell colour: the context menu no longer closes when the system colour picker takes the focus from the page, so the chosen colour is applied (it used to be lost). Table cell backgrounds are opaque: a palette colour is exactly the colour of its dot in the menu, a custom colour exactly the one chosen (both used to be diluted to 35 %); the HTML export writes a custom cell colour without transparency too.
+- Styles: five rules had a pseudo-element inside `:where()` (`:where(x::after)`), which browsers drop entirely: the hover line of the column resize handle, the divider lines between the columns of a «Columns» block and the grab bar of a bottom sheet never showed. The pseudo-element now follows `:where()`, and the styles contract test forbids the old form.
+- The backdrop of a bottom sheet covers the whole width of the screen (it inherited the 16 px narrower maximum width of the context menu).
+- Touch: the row pill is centred between the larger insert markers of its row and no longer touches them; at the top left cell the «insert row above» marker is hidden, as it covered «insert column left» (both stay in the menus).
+- The docked formatting toolbar fits in two rows on a 360 px phone.
+- Cell border colour and style are per side (`borderTopColor`…`borderLeftColor`, `borderTopStyle`…`borderLeftStyle`): a line shared with a neighbour outside the selection is painted in both cells, but the neighbour's other sides stay as they were (the neighbour used to get the colour on all four sides). The cell-wide `borderColor` and `borderStyle` of older documents still render and are spread over the sides on the first change. The editor draws the side colours and styles as an inline style; the attributes `data-border-color` and `data-border-style` are gone (the black and white lines use `--inkbrick-cell-line-black|white`). HTML export and copied ranges carry the sides.
+- Pasting plain text from a spreadsheet (TSV) over several cells keeps their background, borders and alignment; only a fragment that carries cell formatting replaces it.
+- The cell formatting of a pasted table fragment is checked against the cell schema: unknown properties are dropped, and a cell with an invalid value (a forged clipboard) brings no formatting.
+- Changing only the colour or the style of the lines no longer resets the width of a neighbour's shared line to thin.
+- Sorting reads numbers by their own separators («1.234,56», «$1,234.50») in any interface language; the language (via `Intl`) decides only the ambiguous «1.234» / «0,125».
+- The column header role of the cells follows the header switch and the row order right away (screen readers).
+- Arrow up and down reach a cell merged across columns from a column it covers, instead of skipping its row.
+- «Wider» and «Narrower» in the cell menu step from the width of one column, not of a whole merged cell.
+- The remembered border width, style and colour are kept per editor, not shared by all editors on the page.
+- The width slider commits the shown width when the browser takes over the gesture (`pointercancel`).
+- On a phone (a coarse pointer and a window up to 720 px wide) the floating formatting toolbar is docked at the bottom of the screen, full width, above the on-screen keyboard, instead of jumping after the selection (`data-placement="docked"`, `data-sheet`). It still shows only while text or cells are selected; it slides in and out like a bottom sheet, and the colour panels and «Turn into» open above it. The «Turn into» button keeps its chevron on one line.
+- A bottom sheet hides the on-screen keyboard when it opens (the focus leaves the text; a context menu with the text formatting buttons keeps it and stands above it): the keyboard no longer covers half of the menu. Closing, the sheet slides down and its backdrop fades out (token `--inkbrick-sheet-duration`, 220 ms; the opening uses it too) instead of vanishing at once; the table row and column menus and the nested panels now leave with an animation as well. A tap on the backdrop of the row or column menu no longer lets the browser's follow-up mouse press through to the document under it.
+- In a narrow column on a phone the round «insert column» markers are hidden: being larger for a finger, they covered the column pill. Inserting to the left or right stays in the column menu.
+- Column border handles next to merged cells: a border that exists in several stretches of rows (above and below a merge) had a handle only on the longest stretch, so the column could not be resized from the other rows; each stretch has its own handle now.
+- The row and column handles of a table are no longer animated in size: a 0.1 s transition on `width`/`height` made the column handle stretch and catch up with the cell on every width change. Only the insert markers (they grow into a «+» on hover) keep a size transition.
+- The handles of a table follow a column whose width changes while the table keeps its size (the neighbour column changes by the same amount): they watch the cells of the first row, not only the whole table, so the column handle and the markers no longer lag behind a resized column.
+- A tap on an item of a nested panel of the context menu that lies over the menu (phone width) no longer closes the panel before the click arrives: entering the panel was treated as entering its parent item, the panel closed, and the click fell through to the item under it (it could delete a column). The same went for the mouse in a narrow window.
+- On touch screens the items of the context menu and of the block menu are at least 44 px tall.
+- Table handles follow the visible frame of a table that scrolls inside its block (a wide table scrolled sideways, a frozen header row scrolled down): the row handle no longer leaves the table to the left, the column handle no longer jumps to the top of the window.
+- A submenu of the context menu that has no room beside the menu (phone width) lies over the menu instead of going off the screen, opens on click there, and scrolls when it is taller than the window.
+- The block menu (row, column and table menus) keeps its width and position while it scrolls: its width depended on its own `left`, and `left` on its width, so on a phone it grew and shifted on every redraw and its labels wrapped.
+- On a touch screen the larger insert markers sit on the same axis as the row and column handles (they were 4 px and 3 px off centre), the column handle keeps clear of the column markers at the cell edges, and the row handle is at least 24 px tall instead of 32 so it overlaps the markers by 3 px at most (it is drawn above them).
+- Undo after a row was added with Tab puts the caret back in the cell it started from instead of dropping it out of the table (`caretBefore` in a command payload reports where the caret was); after other table commands (insert markers, menu items) it lands in the first cell of the table when the recorded caret points at the table itself.
+
 ### Changed
+
+- The cell context menu has nested menus, as in office editors: «Cell background» (colour dots and a custom colour), «Cell borders» (with line width, style and colour) and «Table style». Context menu items can carry `submenu`, `flyout` and `checked`.
+- Line width, style and colour change the existing lines of the selected cells at once (mode `keep` of `setTableCellsBorders`); they used to be only remembered until a border placement was chosen.
+- New: the line style of cell borders (`borderStyle`: solid, dashed, dotted) and a custom cell background `#rrggbb`.
+- Table handles: a column pill above the columns and a row pill left of the table next to its row (the table is moved 28 px right, so the block handle at the edge of the column does not meet them); the handles appear smoothly, keep up with the table while it scrolls, only the nearest of two tables shows them, the active row does not switch while the pointer is over a pill or a boundary marker, and a table has 20 px above and below.
+- The old «+» buttons on the right and at the bottom of a table are removed: rows and columns are inserted with the round markers on the boundaries (also after the last row and column).
+- A table cannot be stretched wider than the page: the last column grows only while the sum of the widths fits the visible area.
+
+- Table handles: row and column pills with six dots; the round markers at their ends insert a row or a column at that boundary.
 
 - The parser of pasted HTML (Google Docs, Word, browsers; `htmlToFragment`) is a separate chunk loaded right after the editor mounts, so the core of `@inkbrick/react` is about 3.0 KB gzip lighter (63.4 → 60.4 KB) and the chunk is 4.3 KB. A paste of foreign HTML stays synchronous once the chunk is in (it normally is by the first paste); in the first moments after mount it waits for the chunk and lands at the same place. Pasting the editor's own format and plain text never waits. `htmlToFragment` and `embeddedFragment` are still exported for your own code.
 
@@ -264,6 +331,15 @@ All notable changes to the `@inkbrick/*` packages. The format follows
   (`useBlockDrag`, `DefaultBlockHandle`, `DefaultBlockMenu`, `DefaultDropIndicator`) and the `slots` keep working.
 
 ### Fixed
+
+- Cell context menu with several cells selected: «Insert rows above / below», «Insert columns left / right», «Delete rows» and «Delete columns» apply to all the rows and columns of the selection (the item shows the number), in one undo step; only one used to be inserted or deleted.
+- A table always fits the page: set column widths that together are wider than the page are shown scaled down (the model keeps them), and added columns no longer go past the right edge.
+
+- Cell context menu: without a selected range, background and borders apply to the one cell under the caret, not to the whole table.
+
+- Resizing columns could leave a horizontal scrollbar on a table: widths were rounded to the nearest integer, and with several columns the sum came out a couple of pixels wider than the block. They are rounded down now.
+
+- The block menu does not go past the bottom of the window: when it fits neither below nor above the handle, it moves up and scrolls inside the window.
 
 - Рамка выбора блоков, отпущенная сразу после движения мыши, теряла последние задетые блоки: выбор пересчитывается по последнему положению указателя.
 

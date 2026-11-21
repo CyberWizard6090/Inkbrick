@@ -136,3 +136,41 @@ describe('table column types and sorting', () => {
     );
   });
 });
+
+describe('parseNumber with the decimal separator of the language', () => {
+  it('a comma is the decimal separator when the language uses it', () => {
+    expect(parseNumber('0,125', ',')).toBe(0.125);
+    expect(parseNumber('2,500', ',')).toBe(2.5);
+    expect(parseNumber('1 000,5', ',')).toBe(1000.5);
+    expect(parseNumber('-3,25', ',')).toBe(-3.25);
+  });
+
+  it('a dot is the decimal separator and a comma groups thousands otherwise', () => {
+    expect(parseNumber('1,234', '.')).toBe(1234);
+    expect(parseNumber('1,234.5', '.')).toBe(1234.5);
+  });
+
+  it('a number written in the other convention is read by its own separators', () => {
+    // Оба разделителя: дробная часть — после последнего, независимо от языка.
+    expect(parseNumber('1.234,56', '.')).toBe(1234.56);
+    expect(parseNumber('$1,234.50', ',')).toBe(1234.5);
+    // Повтор разделителя — тысячи; одна-две цифры после разделителя — дробь.
+    expect(parseNumber('1.234.567', ',')).toBe(1234567);
+    expect(parseNumber('3.5', ',')).toBe(3.5);
+    // Неоднозначная запись решается языком.
+    expect(parseNumber('1.234', ',')).toBe(1234);
+    expect(parseNumber('1.234', '.')).toBe(1.234);
+  });
+
+  it('without a language the old reading stays', () => {
+    expect(parseNumber('1,234')).toBe(1234);
+    expect(parseNumber('1,5')).toBe(1.5);
+  });
+});
+
+describe('parseDate and bare numbers', () => {
+  it('a bare number is not a date: it does not sort among real dates', () => {
+    expect(parseDate('10')).toBeUndefined();
+    expect(parseDate('2')).toBeUndefined();
+  });
+});

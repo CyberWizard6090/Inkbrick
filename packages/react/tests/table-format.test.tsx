@@ -223,34 +223,38 @@ describe('keyboard shortcuts with selected cells', () => {
   });
 });
 
-describe('table menu', () => {
-  it('has a table grip whose menu toggles header column, stripes and borders', async () => {
+/** Каретка в ячейке (1, 1) и контекстное меню на ней: так пункты таблицы есть в меню. */
+function openCellMenu(t: ReturnType<typeof mount>) {
+  const id = t.cellBlock(1, 1).id;
+  const text = t.root.querySelector<HTMLElement>(`.editable[data-id="${id}"]`)!;
+  const node = document.createTreeWalker(text, NodeFilter.SHOW_TEXT).nextNode() ?? text;
+
+  act(() => {
+    globalThis.getSelection()!.setBaseAndExtent(node, 0, node, 0);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  t.openMenu(t.td(1, 1));
+}
+
+describe('table menu (in the context menu of a cell)', () => {
+  it('toggles header column, stripes and borders', async () => {
     const t = mount();
-    const grip = await showGrip(t);
+    const item = (id: string) => t.menu()!.querySelector<HTMLElement>(`[data-action="${id}"]`)!;
+    const run = (id: string) => {
+      openCellMenu(t);
+      act(() => void fireEvent.click(item(id)));
+    };
 
-    expect(grip.getAttribute('aria-haspopup')).toBe('menu');
-
-    const item = (id: string) =>
-      document.querySelector<HTMLElement>(`[data-testid="block-menu"] [data-action="${id}"]`);
-
-    act(() => void fireEvent.click(grip));
-    expect(item('table-headerColumn')).not.toBeNull();
-
-    act(() => void fireEvent.click(item('table-headerColumn')!));
+    run('table-headerColumn');
     expect(t.block().props.headerColumn).toBe(true);
     expect(
       t.root.querySelector('[data-inkbrick-block="table"]')!.hasAttribute('data-header-column'),
     ).toBe(true);
 
-    await clickGrip(t);
-    act(() => void fireEvent.click(item('table-striped')!));
+    run('table-striped');
     expect(t.block().props.striped).toBe(true);
-    expect(
-      t.root.querySelector('[data-inkbrick-block="table"]')!.hasAttribute('data-striped'),
-    ).toBe(true);
 
-    await clickGrip(t);
-    act(() => void fireEvent.click(item('table-borders')!));
+    run('table-borders');
     expect(t.block().props.borders).toBe(false);
     expect(
       t.root.querySelector('[data-inkbrick-block="table"]')!.getAttribute('data-borders'),
@@ -260,28 +264,7 @@ describe('table menu', () => {
     expect(t.block().props.borders).not.toBe(false);
   });
 
-  it('paints the selected cells with a background, or the whole table when none are selected', async () => {
-    const t = mount();
-
-    t.drag([0, 0], [0, 1]);
-    await clickGrip(t);
-    act(
-      () =>
-        void fireEvent.click(
-          document.querySelector('[data-testid="block-menu"] [data-action="background-yellow"]')!,
-        ),
-    );
-
-    expect(t.td(0, 0).getAttribute('data-background')).toBe('yellow');
-    expect(t.td(0, 1).getAttribute('data-background')).toBe('yellow');
-    expect(t.td(0, 2).hasAttribute('data-background')).toBe(false);
-    expect(t.td(1, 0).hasAttribute('data-background')).toBe(false);
-
-    act(() => void t.editor.undo());
-    expect(t.td(0, 0).hasAttribute('data-background')).toBe(false);
-  });
-
-  it('resets column widths from the menu', async () => {
+  it('resets column widths', () => {
     const t = mount();
 
     t.editor.dispatch({
@@ -290,44 +273,18 @@ describe('table menu', () => {
     } as never);
     expect(t.block().props.widths).toBeDefined();
 
-    await clickGrip(t);
-    act(
-      () =>
-        void fireEvent.click(
-          document.querySelector('[data-testid="block-menu"] [data-action="table-reset-widths"]')!,
-        ),
-    );
+    openCellMenu(t);
+    act(() => void fireEvent.click(t.menu()!.querySelector('[data-action="table-reset-widths"]')!));
 
     expect(t.block().props.widths).toBeUndefined();
   });
+
+  it('the table has no corner button: its items live in the cell menu', () => {
+    mount();
+
+    expect(document.querySelector('[data-inkbrick-part="table-grip"]')).toBeNull();
+  });
 });
-
-async function clickGrip(t: ReturnType<typeof mount>) {
-  const grip = await showGrip(t);
-
-  act(() => void fireEvent.click(grip));
-}
-
-/** Ручка таблицы: она рисуется, когда в таблице стоит каретка. */
-async function showGrip(t: ReturnType<typeof mount>): Promise<HTMLElement> {
-  const id = t.cellBlock(1, 1).id;
-  const text = t.root.querySelector<HTMLElement>(`.editable[data-id="${id}"]`)!;
-  const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
-  const node = walker.nextNode() ?? text;
-
-  act(() => {
-    globalThis.getSelection()!.setBaseAndExtent(node, 0, node, 0);
-    document.dispatchEvent(new Event('selectionchange'));
-  });
-
-  return await vi.waitFor(() => {
-    const grip = document.querySelector<HTMLElement>('[data-inkbrick-part="table-grip"]');
-
-    if (!grip) throw new Error('no table grip');
-
-    return grip;
-  });
-}
 
 const ALL = { top: 0, left: 0, bottom: 2, right: 2 };
 

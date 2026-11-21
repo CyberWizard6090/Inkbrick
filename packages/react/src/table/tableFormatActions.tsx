@@ -1,27 +1,16 @@
-import type { BaseBlock, BlockBackground, TableProps } from '@inkbrick/document';
-import { BLOCK_BACKGROUNDS, getBlockBackground } from '@inkbrick/document';
+import type { BaseBlock, TableProps } from '@inkbrick/document';
 import { tableRangeCells, tableSize, type Editor } from '@inkbrick/engine';
 
-import type { BlockMenuAction, BlockMenuBackground } from '../block-handle/types';
+import type { BlockMenuAction } from '../block-handle/types';
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { TFunction } from '../i18n/translate';
 import { Icon } from '../icons/Icon';
-import { backgroundCells } from './cellFormatting';
 
 /** Свойство таблицы, которое переключает пункт меню. */
 type Toggle = 'header' | 'headerColumn' | 'striped' | 'borders' | 'freezeRow' | 'freezeColumn';
 
 const isOn = (props: TableProps, key: Toggle): boolean =>
   key === 'header' || key === 'borders' ? props[key] !== false : props[key] === true;
-
-const TITLES: Readonly<Record<Toggle, readonly [on: string, off: string]>> = {
-  header: ['table.row.headerOn', 'table.row.headerOff'],
-  headerColumn: ['table.format.headerColumnOn', 'table.format.headerColumnOff'],
-  striped: ['table.format.stripedOn', 'table.format.stripedOff'],
-  borders: ['table.format.bordersOn', 'table.format.bordersOff'],
-  freezeRow: ['table.row.freezeOn', 'table.row.freezeOff'],
-  freezeColumn: ['table.column.freezeOn', 'table.column.freezeOff'],
-};
 
 const ICONS: Readonly<Record<Toggle, 'heading-1' | 'columns' | 'table' | 'pin'>> = {
   header: 'heading-1',
@@ -44,7 +33,7 @@ const ORDER: readonly Toggle[] = [
 /**
  * Пункты форматирования таблицы: заголовочные строка и столбец, чередование строк, границы, закрепление, сброс ширин.
  * Общие для меню ручки таблицы и контекстного меню ячейки. `run` выполняет действие (один шаг undo, закрытие меню).
- * Название пункта говорит, что произойдёт: «включить» или «выключить».
+ * Пункты — переключатели (как в Notion): название — свойство («Строка заголовка»), выключатель справа — его состояние.
  */
 export function tableFormatActions(
   editor: Editor,
@@ -58,8 +47,10 @@ export function tableFormatActions(
 
     return {
       id: `table-${key}`,
-      title: t(TITLES[key][on ? 1 : 0] as 'table.row.headerOn'),
+      // «Границы ячеек» — та же подпись, что у вложенного меню границ.
+      title: t(key === 'borders' ? 'table.border.cells' : `table.toggle.${key}`),
       icon: <Icon name={ICONS[key]} />,
+      toggle: on,
       run: () =>
         run(() =>
           editor.dispatch({
@@ -109,32 +100,5 @@ export function backgroundTarget(
     head: { row: range.bottom, column: range.right },
     range,
     ids,
-  };
-}
-
-/** Ряд цветов фона ячеек для меню таблицы; применяется к выделенным ячейкам или ко всей таблице. */
-export function cellsBackgroundMenu(
-  editor: Editor,
-  block: BaseBlock,
-  picked: CellSelection | null,
-  run: (action: () => void) => void,
-): BlockMenuBackground | undefined {
-  const target = backgroundTarget(editor, block, picked);
-
-  if (!target) return undefined;
-
-  const backgrounds = new Set(
-    [...target.ids].map((id) => {
-      const cell = editor.store.getBlock(id);
-
-      return cell ? getBlockBackground(cell) : undefined;
-    }),
-  );
-
-  return {
-    current: backgrounds.size === 1 ? [...backgrounds][0] : undefined,
-    options: BLOCK_BACKGROUNDS,
-    onPick: (color) =>
-      run(() => void backgroundCells(editor, target, color as BlockBackground | null)),
   };
 }

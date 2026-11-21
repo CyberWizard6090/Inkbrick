@@ -211,3 +211,77 @@ describe('table cell selection', () => {
     expect(t.picked()).toEqual([]);
   });
 });
+
+describe('table cell selection with a finger', () => {
+  const touch = (type: string, init: Record<string, unknown> = {}) =>
+    new (globalThis.PointerEvent ?? MouseEvent)(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 1,
+      pointerType: 'touch',
+      ...init,
+    } as PointerEventInit);
+
+  beforeEach(() => void vi.useFakeTimers());
+  afterEach(() => void vi.useRealTimers());
+
+  it('a long press selects the cell under the finger', () => {
+    const t = mountTable();
+
+    act(() => void t.td(1, 1).dispatchEvent(touch('pointerdown', { button: 0 })));
+    expect(t.picked()).toEqual([]);
+
+    act(() => void vi.advanceTimersByTime(500));
+    expect(t.picked()).toEqual([t.cell(1, 1)]);
+
+    act(() => void document.dispatchEvent(touch('pointerup')));
+  });
+
+  it('dragging after the long press extends the selection to the cell under the finger', () => {
+    const t = mountTable();
+
+    act(() => void t.td(0, 0).dispatchEvent(touch('pointerdown', { button: 0 })));
+    act(() => void vi.advanceTimersByTime(500));
+
+    document.elementFromPoint = () => t.td(1, 1);
+    act(() => void document.dispatchEvent(touch('pointermove', { clientX: 30, clientY: 30 })));
+
+    expect(t.picked()).toEqual([t.cell(0, 0), t.cell(0, 1), t.cell(1, 0), t.cell(1, 1)]);
+
+    act(() => void document.dispatchEvent(touch('pointerup', { clientX: 30, clientY: 30 })));
+  });
+
+  it('a quick tap or a finger that moves (scrolling) selects nothing', () => {
+    const t = mountTable();
+
+    act(() => void t.td(1, 1).dispatchEvent(touch('pointerdown', { button: 0 })));
+    act(() => void vi.advanceTimersByTime(100));
+    act(() => void document.dispatchEvent(touch('pointerup')));
+    act(() => void vi.advanceTimersByTime(600));
+    expect(t.picked()).toEqual([]);
+
+    act(
+      () =>
+        void t.td(1, 1).dispatchEvent(touch('pointerdown', { button: 0, clientX: 5, clientY: 5 })),
+    );
+    act(() => void document.dispatchEvent(touch('pointermove', { clientX: 5, clientY: 60 })));
+    act(() => void vi.advanceTimersByTime(600));
+    expect(t.picked()).toEqual([]);
+
+    act(() => void document.dispatchEvent(touch('pointerup')));
+  });
+
+  it('the browser menu of a long press is suppressed while the cell is held', () => {
+    const t = mountTable();
+
+    act(() => void t.td(1, 1).dispatchEvent(touch('pointerdown', { button: 0 })));
+    act(() => void vi.advanceTimersByTime(500));
+
+    const menu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+
+    act(() => void t.td(1, 1).dispatchEvent(menu));
+    expect(menu.defaultPrevented).toBe(true);
+
+    act(() => void document.dispatchEvent(touch('pointerup')));
+  });
+});

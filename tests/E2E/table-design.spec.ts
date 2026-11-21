@@ -1,10 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
 
+const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 const editable = '.editable';
 const table = '.block-table';
 const cells = `${table} td`;
-const blockMenu = '[data-testid="block-menu"]';
+const contextMenu = '[data-testid="context-menu"]';
 
 /** Абзац и под ним таблица 3×3 из slash-меню, заполненная «r<строка>c<столбец>». */
 async function insertTable(page: Page) {
@@ -22,10 +23,26 @@ async function insertTable(page: Page) {
   }
 }
 
-async function openTableMenu(page: Page) {
-  await page.locator(table).hover();
-  await page.locator('[data-inkbrick-part="table-grip"]').click();
-  await expect(page.locator(blockMenu)).toBeVisible();
+/** Пункты таблицы — в контекстном меню ячейки (правая кнопка): отдельной угловой кнопки у таблицы нет. */
+async function openTableMenu(page: Page, index = 4) {
+  // Прошлое меню могло ещё уходить (анимация закрытия): ждём, пока его не станет.
+  await expect(page.locator(contextMenu)).toHaveCount(0);
+
+  const box = (await page.locator(cells).nth(index).boundingBox())!;
+
+  await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+  await expect(page.locator(contextMenu)).toBeVisible();
+}
+
+/** Вложенное меню пункта контекстного меню (стиль таблицы, границы, фон). */
+async function openFlyout(page: Page, action: string) {
+  await page.locator(`${contextMenu} [data-action="${action}"]`).hover();
+
+  const flyout = page.locator(`[data-flyout="${action}"]`);
+
+  await expect(flyout).toBeVisible();
+
+  return flyout;
 }
 
 async function dragCells(page: Page, from: number, to: number) {
@@ -70,12 +87,18 @@ test.describe('Table style gallery and borders', () => {
   test('the menu shows the gallery with miniatures and the border buttons', async ({ page }) => {
     await openTableMenu(page);
 
-    await expect(page.locator('[data-inkbrick-part="style-option"]')).toHaveCount(8);
-    await expect(page.locator('[data-inkbrick-part="border-mode"]')).toHaveCount(10);
-    await expect(page.locator('[data-action="table-style-plain"]')).toHaveAttribute(
+    const styles = await openFlyout(page, 'table-style');
+
+    await expect(styles.locator('[data-inkbrick-part="style-option"]')).toHaveCount(8);
+    await expect(styles.locator('[data-action="table-style-plain"]')).toHaveAttribute(
       'aria-checked',
       'true',
     );
+
+    const borders = await openFlyout(page, 'table-cell-borders');
+
+    for (const mode of ['all', 'outside', 'inside', 'top', 'bottom', 'left', 'right', 'none'])
+      await expect(borders.locator(`[data-action="table-border-${mode}"]`)).toHaveCount(1);
   });
 
   test('hovering a style previews it on the table, leaving restores it, a click applies it', async ({
@@ -83,19 +106,19 @@ test.describe('Table style gallery and borders', () => {
   }) => {
     await openTableMenu(page);
 
-    await page.locator('[data-action="table-style-blue"]').hover();
+    const styles = await openFlyout(page, 'table-style');
+
+    await styles.locator('[data-action="table-style-blue"]').hover();
     await expect.poll(() => tableStyle(page)).toBe('blue');
     // Предпросмотр не пишет в документ.
     expect(await modelStyle(page)).toBeNull();
 
-    await page.mouse.move(5, 5);
-    await expect.poll(() => tableStyle(page)).toBeNull();
-
-    await page.locator('[data-action="table-style-green"]').click();
+    await styles.locator('[data-action="table-style-green"]').click();
     await expect.poll(() => tableStyle(page)).toBe('green');
     expect(await modelStyle(page)).toBe('green');
 
-    // Один шаг undo.
+    // Выбор закрывает меню; undo — один шаг.
+    await expect(page.locator(contextMenu)).toHaveCount(0);
     await page.keyboard.press('Control+z');
     await expect.poll(() => modelStyle(page)).toBeNull();
   });
@@ -112,12 +135,17 @@ test.describe('Table style gallery and borders', () => {
           backgroundColor: style.backgroundColor,
           borderTopColor: style.borderTopColor,
           borderTopWidth: style.borderTopWidth,
+          borderTopStyle: style.borderTopStyle,
         };
       });
 
   test('a style paints the header and the lines with its colors', async ({ page }) => {
     await openTableMenu(page);
-    await page.locator('[data-action="table-style-blue"]').click();
+    await (
+      await openFlyout(page, 'table-style')
+    )
+      .locator('[data-action="table-style-blue"]')
+      .click();
 
     const header = await cellStyle(page, 0);
     const plain = await cellStyle(page, 4);
@@ -126,34 +154,16 @@ test.describe('Table style gallery and borders', () => {
     expect(header.borderTopColor).not.toBe('rgb(0, 0, 0)');
   });
 
-  test('all borders of the whole table: width and color, then no borders', async ({ page }) => {
-    await openTableMenu(page);
-    await page.locator('[data-action="table-border-width-thick"]').click();
-    await page.locator('[data-action="table-border-color-red"]').click();
-    await page.locator('[data-action="table-border-all"]').click();
-
-    for (const index of [0, 4, 8]) {
-      for (const side of ['top', 'right', 'bottom', 'left']) {
-        expect(await cellBorder(page, index, side)).toBe('thick');
-      }
-    }
-
-    expect((await cellStyle(page, 4)).borderTopWidth).toBe('3px');
-    expect(await page.locator(cells).nth(4).getAttribute('data-border-color')).toBe('red');
-
-    await openTableMenu(page);
-    await page.locator('[data-action="table-border-none"]').click();
-
-    expect(await cellBorder(page, 4, 'top')).toBe('none');
-    expect(await cellBorder(page, 0, 'left')).toBe('none');
-  });
-
   test('outside borders of the selected cells only touch the edge of the selection', async ({
     page,
   }) => {
     await dragCells(page, 0, 4);
     await openTableMenu(page);
-    await page.locator('[data-action="table-border-outside"]').click();
+    await (
+      await openFlyout(page, 'table-cell-borders')
+    )
+      .locator('[data-action="table-border-outside"]')
+      .click();
 
     // Выделены ячейки 0, 1, 3, 4: внешняя рамка вокруг них, а внутри линий нет.
     expect(await cellBorder(page, 0, 'top')).toBe('thin');
@@ -168,46 +178,291 @@ test.describe('Table style gallery and borders', () => {
     expect(await cellBorder(page, 8, 'top')).toBeNull();
   });
 
-  test('the cell context menu has the same sections: a style and borders apply and close it', async ({
+  test('the cell context menu has nested menus: a style, borders and a background apply and close it', async ({
     page,
   }) => {
     const box = (await page.locator(cells).nth(4).boundingBox())!;
-
-    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
-
     const context = page.locator('[data-testid="context-menu"]');
+    const flyout = (name: string) => page.locator(`[data-flyout="${name}"]`);
+    const openContext = async () => {
+      await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+      await expect(context).toBeVisible();
+    };
 
-    await expect(context).toBeVisible();
-    await expect(context.locator('[data-inkbrick-part="style-option"]')).toHaveCount(8);
-    await expect(context.locator('[data-inkbrick-part="border-mode"]')).toHaveCount(10);
+    await openContext();
+    await context.locator('[data-action="table-style"]').hover();
+    await expect(flyout('table-style').locator('[data-inkbrick-part="style-option"]')).toHaveCount(
+      8,
+    );
 
-    // Предпросмотр и в этом меню: наведение красит таблицу, документ не меняется.
-    await context.locator('[data-action="table-style-orange"]').hover();
+    // Предпросмотр и здесь: наведение красит таблицу, документ не меняется.
+    await flyout('table-style').locator('[data-action="table-style-orange"]').hover();
     await expect.poll(() => tableStyle(page)).toBe('orange');
     expect(await modelStyle(page)).toBeNull();
 
-    await context.locator('[data-action="table-style-orange"]').click();
+    await flyout('table-style').locator('[data-action="table-style-orange"]').click();
     await expect(context).toBeHidden();
     expect(await modelStyle(page)).toBe('orange');
 
+    await openContext();
+    await context.locator('[data-action="table-cell-borders"]').hover();
+    await expect(
+      flyout('table-cell-borders').locator('[data-action^="table-border-"]'),
+    ).not.toHaveCount(0);
+    await flyout('table-cell-borders').locator('[data-action="table-border-outside"]').click();
+    await expect(context).toBeHidden();
+    // Без выделения границы получает одна ячейка под кареткой (четвёртая), а не вся таблица.
+    expect(await cellBorder(page, 4, 'top')).toBe('thin');
+    expect(await cellBorder(page, 4, 'left')).toBe('thin');
+    expect(await cellBorder(page, 0, 'top')).toBeNull();
+    expect(await cellBorder(page, 8, 'bottom')).toBeNull();
+
+    // Фон ячейки: цвет из круглых образцов, затем «Убрать цвет».
+    await openContext();
+    await context.locator('[data-action="table-cell-background"]').hover();
+    await flyout('table-cell-background').locator('[data-action="color-green"]').click();
+    await expect(context).toBeHidden();
+    expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBe('green');
+    // Остальные ячейки не окрашены: фон относится к ячейке, а не ко всей таблице.
+    expect(await page.locator(cells).nth(0).getAttribute('data-background')).toBeNull();
+    expect(await page.locator(cells).nth(8).getAttribute('data-background')).toBeNull();
+
+    await openContext();
+    await context.locator('[data-action="table-cell-background"]').hover();
+    await flyout('table-cell-background').locator('[data-action="color-remove"]').click();
+    expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBeNull();
+  });
+
+  test('a custom cell colour: the menu waits for the system picker, the colour is applied without transparency', async ({
+    page,
+  }) => {
+    await openTableMenu(page);
+
+    const flyout = await openFlyout(page, 'table-cell-background');
+
+    // «Свой цвет…» открывает системное окно: оно забирает фокус у страницы, а меню с полем цвета не закрывается.
+    await flyout.locator('[data-inkbrick-part="swatch"][data-color="custom"]').click();
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    // Закрытое меню ещё видно, пока идёт анимация ухода: ждём её конца.
+    await page.waitForTimeout(400);
+    await expect(page.locator(contextMenu)).toBeVisible();
+
+    await flyout.locator('input[type="color"]').evaluate((node: HTMLInputElement) => {
+      node.value = '#3366ff';
+      node.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    await expect(page.locator(cells).nth(4)).toHaveCSS('background-color', 'rgb(51, 102, 255)');
+    // Текст на тёмном своём цвете — белый (по контрасту).
+    await expect(page.locator(cells).nth(4)).toHaveCSS('color', 'rgb(255, 255, 255)');
+
+    // Цвет палитры у ячейки — тот же, что у кружка в меню, без разбавления.
+    await openTableMenu(page, 0);
+
+    const dots = await openFlyout(page, 'table-cell-background');
+    const dot = await dots
+      .locator('[data-action="color-blue"]')
+      .evaluate((node) => getComputedStyle(node).getPropertyValue('--inkbrick-dot').trim());
+
+    await dots.locator('[data-action="color-blue"]').click();
+
+    const expected = await page.evaluate((value) => {
+      const probe = document.createElement('div');
+
+      probe.style.backgroundColor = value;
+      document.querySelector('[data-inkbrick-block="table-cell"]')!.append(probe);
+
+      const color = getComputedStyle(probe).backgroundColor;
+
+      probe.remove();
+
+      return color;
+    }, dot);
+
+    await expect(page.locator(cells).nth(0)).toHaveCSS('background-color', expected);
+    // Насыщенный цвет палитры одинаков в обеих темах, текст на синем — тёмный (он контрастнее).
+    await expect(page.locator(cells).nth(0)).toHaveCSS('background-color', 'rgb(59, 130, 246)');
+    await expect(page.locator(cells).nth(0)).toHaveCSS('color', 'rgb(26, 26, 26)');
+  });
+
+  test('with several cells selected the context menu inserts and deletes all their rows and columns', async ({
+    page,
+  }) => {
+    const context = page.locator('[data-testid="context-menu"]');
+    const columnsNow = () => page.locator(`${table} tr`).first().locator('td').count();
+    const rowsNow = () => page.locator(`${table} tr`).count();
+    const openOn = async () => {
+      await dragCells(page, 0, 4);
+
+      const box = (await page.locator(cells).nth(4).boundingBox())!;
+
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+      await expect(context).toBeVisible();
+    };
+
+    // Выделены ячейки 0, 1, 3, 4: два столбца и две строки.
+    await openOn();
+    await expect(context.locator('[data-action="table-column-delete"]')).toHaveText(
+      'Delete columns (2)',
+    );
+    await context.locator('[data-action="table-column-delete"]').click();
+    expect(await columnsNow()).toBe(1);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await columnsNow()).toBe(3);
+
+    await openOn();
+    await context.locator('[data-action="table-row-delete"]').click();
+    expect(await rowsNow()).toBe(1);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await rowsNow()).toBe(3);
+
+    await openOn();
+    await context.locator('[data-action="table-column-right"]').click();
+    expect(await columnsNow()).toBe(5);
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await columnsNow()).toBe(3);
+  });
+
+  test('a white line is visible on the light page and a black one on the dark page', async ({
+    page,
+  }) => {
+    const pick = async (color: string) => {
+      // Цвет запоминается для следующих линий; «Все границы» рисует ими рамку ячейки.
+      await openTableMenu(page);
+      await openFlyout(page, 'table-cell-borders');
+      await page
+        .locator('[data-flyout="table-cell-borders"] [data-action="table-border-colorMenu"]')
+        .hover();
+      await page
+        .locator(`[data-flyout="table-border-colorMenu"] [data-action="color-${color}"]`)
+        .click();
+      await openTableMenu(page);
+      await (
+        await openFlyout(page, 'table-cell-borders')
+      )
+        .locator('[data-action="table-border-all"]')
+        .click();
+    };
+
+    await pick('white');
+    // На светлой странице белая линия заменяется серой: иначе её не видно.
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(139, 139, 139)');
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(255, 255, 255)');
+
+    await pick('black');
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(139, 139, 139)');
+
+    await page.evaluate(() =>
+      document.documentElement.setAttribute('data-inkbrick-theme', 'light'),
+    );
+    expect((await cellStyle(page, 4)).borderTopColor).toBe('rgb(0, 0, 0)');
+  });
+
+  test('in a narrow window the style panel does not cover the menu it opens from', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 520, height: 420 });
+    await page.goto('/?lang=en');
+    await insertTable(page);
+
+    const box = (await page.locator(cells).nth(8).boundingBox())!;
+    const context = page.locator('[data-testid="context-menu"]');
+
     await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
     await expect(context).toBeVisible();
-    await context.locator('[data-action="table-border-outside"]').click();
-    await expect(context).toBeHidden();
-    expect(await cellBorder(page, 0, 'top')).toBe('thin');
-    expect(await cellBorder(page, 4, 'top')).toBeNull();
+    await context.locator('[data-action="table-style"]').hover();
+
+    const flyout = (await page.locator('[data-flyout="table-style"]').boundingBox())!;
+    const menu = (await context.boundingBox())!;
+    const overlap = Math.max(
+      0,
+      Math.min(flyout.x + flyout.width, menu.x + menu.width) - Math.max(flyout.x, menu.x),
+    );
+
+    // Допуск на пиксель границ: без исправления перекрытие было около 47 пикселей.
+    expect(overlap).toBeLessThanOrEqual(2);
+  });
+
+  test('the keyboard opens a nested panel, moves focus into it and walks its items', async ({
+    page,
+  }) => {
+    const box = (await page.locator(cells).nth(4).boundingBox())!;
+    const context = page.locator('[data-testid="context-menu"]');
+
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+    await expect(context).toBeVisible();
+
+    const inFlyout = () =>
+      page.evaluate(() => !!document.activeElement?.closest('[data-inkbrick-part="flyout"]'));
+
+    await context.locator('[data-action="table-cell-background"]').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(inFlyout).toBe(true);
+
+    const first = await page.evaluate(() => document.activeElement?.getAttribute('data-action'));
+
+    await page.keyboard.press('ArrowDown');
+    expect(await inFlyout()).toBe(true);
+    expect(await page.evaluate(() => document.activeElement?.getAttribute('data-action'))).not.toBe(
+      first,
+    );
+
+    // Стрелка влево возвращает в родительский пункт, а не закрывает меню.
+    await page.keyboard.press('ArrowLeft');
+    expect(await inFlyout()).toBe(false);
+    await expect(context).toBeVisible();
+
+    // Escape во вложенной панели закрывает только её, родительское меню остаётся.
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(inFlyout).toBe(true);
+    await page.keyboard.press('Escape');
+    expect(await inFlyout()).toBe(false);
+    // Выход анимируется: даём ей закончиться, родительское меню должно остаться.
+    await page.waitForTimeout(400);
+    await expect(context).toBeVisible();
+  });
+
+  test('a width, a style and a colour from the nested menus change the existing lines', async ({
+    page,
+  }) => {
+    const box = (await page.locator(cells).nth(4).boundingBox())!;
+    const context = page.locator('[data-testid="context-menu"]');
+    const pick = async (menu: string, action: string) => {
+      await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2, { button: 'right' });
+      await context.locator('[data-action="table-cell-borders"]').hover();
+      await page.locator('[data-flyout="table-cell-borders"] [data-action="' + menu + '"]').hover();
+      await page.locator(`[data-flyout="${menu}"] [data-action="${action}"]`).click();
+      await expect(context).toBeHidden();
+    };
+
+    await pick('table-border-widthMenu', 'table-border-width-thick');
+    expect(await cellBorder(page, 4, 'top')).toBe('thick');
+
+    await pick('table-border-styleMenu', 'table-border-style-dotted');
+    expect((await cellStyle(page, 4)).borderTopStyle).toBe('dotted');
+
+    await pick('table-border-colorMenu', 'color-red');
+    expect(await page.locator(cells).nth(4).getAttribute('style')).toContain(
+      'var(--inkbrick-color-red)',
+    );
   });
 
   test('the menu with the gallery and the borders passes the accessibility check', async ({
     page,
   }) => {
     await openTableMenu(page);
+    await openFlyout(page, 'table-cell-borders');
     await page.evaluate(() =>
       Promise.all(document.getAnimations().map((animation) => animation.finished.catch(() => 0))),
     );
 
     const result = await new AxeBuilder({ page })
-      .include('[data-inkbrick-ui="block-menu"]')
+      .include('[data-inkbrick-ui="context-menu"]')
       .analyze();
 
     expect(
@@ -218,50 +473,77 @@ test.describe('Table style gallery and borders', () => {
   });
 });
 
+test.describe('Table handles', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/?lang=en');
+    await insertTable(page);
+  });
+
+  test('the markers sit on the axis of their pill and on the boundaries', async ({ page }) => {
+    await page.locator(cells).nth(4).hover();
+
+    const centre = async (part: string, nth = 0) => {
+      const box = (await page.locator(`[data-inkbrick-part="${part}"]`).nth(nth).boundingBox())!;
+
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const [row, above, below, column, left, right] = await Promise.all([
+      centre('row-grip'),
+      centre('row-insert', 0),
+      centre('row-insert', 1),
+      centre('column-grip'),
+      centre('column-insert', 0),
+      centre('column-insert', 1),
+    ]);
+
+    // Маркеры строки лежат на оси плашки строки, маркеры столбца — на оси плашки столбца.
+    expect(Math.abs(above.x - row.x)).toBeLessThan(1);
+    expect(Math.abs(below.x - row.x)).toBeLessThan(1);
+    expect(Math.abs(left.y - column.y)).toBeLessThan(1);
+    expect(Math.abs(right.y - column.y)).toBeLessThan(1);
+    // Выше и ниже плашки строки, левее и правее плашки столбца.
+    expect(above.y).toBeLessThan(row.y);
+    expect(below.y).toBeGreaterThan(row.y);
+    expect(left.x).toBeLessThan(column.x);
+    expect(right.x).toBeGreaterThan(column.x);
+  });
+
+  test('a marker on a boundary inserts a column or a row there', async ({ page }) => {
+    await page.locator(cells).nth(4).hover();
+    await page.locator('[data-inkbrick-part="column-insert"]').nth(1).click();
+    await expect(page.locator(`${table} tr`).first().locator('td')).toHaveCount(4);
+
+    await page.locator(cells).nth(5).hover();
+    await page.locator('[data-inkbrick-part="row-insert"]').nth(0).click();
+    await expect(page.locator(`${table} tr`)).toHaveCount(4);
+  });
+
+  test('the handles stay on the row while the pointer moves over its boundary marker', async ({
+    page,
+  }) => {
+    const cell = (await page.locator(cells).nth(4).boundingBox())!;
+
+    await page.mouse.move(cell.x + 40, cell.y + cell.height / 2);
+
+    const marker = page.locator('[data-inkbrick-part="row-insert"]').first();
+    const box = (await marker.boundingBox())!;
+    const grip = page.locator('[data-inkbrick-part="row-grip"]');
+    const before = (await grip.boundingBox())!;
+
+    // Верхний маркер лежит на границе строки: шаг по нему вверх заходит в предыдущую строку, но ручки остаются на месте.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
+    await page.mouse.move(box.x + box.width / 2, box.y + 1, { steps: 4 });
+    await page.waitForTimeout(150);
+
+    const after = (await grip.boundingBox())!;
+
+    expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+  });
+});
+
 test.describe('Table design on a phone', () => {
   test.use({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
   test.skip(({ browserName }) => browserName === 'firefox', 'Firefox has no mobile emulation');
-
-  test('the table menu with the styles and borders fits the screen and has big enough buttons', async ({
-    page,
-  }) => {
-    await page.goto('/?lang=en');
-    await insertTable(page);
-
-    const cell = (await page.locator(cells).nth(4).boundingBox())!;
-
-    await page.touchscreen.tap(cell.x + 10, cell.y + 10);
-    await page.locator('[data-inkbrick-part="table-grip"]').tap();
-
-    const menu = page.locator(blockMenu);
-
-    await expect(menu).toBeVisible();
-
-    const inside = await menu.evaluate((node) => {
-      const box = node.getBoundingClientRect();
-
-      return box.left >= 0 && box.right <= window.innerWidth && box.top >= 0;
-    });
-
-    expect(inside).toBe(true);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-      375,
-    );
-
-    // Секции лежат ниже пунктов: меню прокручивается, пальцу нужны кнопки не меньше 44 пикселей.
-    await menu.locator('[data-action="table-border-all"]').scrollIntoViewIfNeeded();
-
-    for (const action of ['table-border-all', 'table-border-width-thick', 'table-style-blue']) {
-      expect(
-        (await menu.locator(`[data-action="${action}"]`).boundingBox())!.height,
-      ).toBeGreaterThanOrEqual(44);
-    }
-
-    await menu.locator('[data-action="table-border-width-thick"]').tap();
-    await menu.locator('[data-action="table-border-all"]').tap();
-
-    expect(await cellBorder(page, 4, 'top')).toBe('thick');
-  });
 
   test('the cell stays in view when the on-screen keyboard shrinks the window', async ({
     page,
@@ -285,5 +567,437 @@ test.describe('Table design on a phone', () => {
         }),
       )
       .toBe(true);
+  });
+
+  // Касания с настоящей задержкой и протяжкой: только Chromium (CDP).
+  test.describe('with a finger', () => {
+    test.skip(({ browserName }) => browserName !== 'chromium', 'CDP touch events');
+
+    const finger = async (page: Page) => {
+      const cdp = await page.context().newCDPSession(page);
+      const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 0 }],
+        });
+
+      return {
+        down: (x: number, y: number) => send('touchStart', x, y),
+        move: (x: number, y: number) => send('touchMove', x, y),
+        up: () => send('touchEnd'),
+      };
+    };
+    const centre = async (page: Page, index: number) => {
+      const box = (await page.locator(cells).nth(index).boundingBox())!;
+
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const picked = (page: Page) => page.locator(`${cells}[data-cell-selected]`).count();
+
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/?lang=en');
+      await insertTable(page);
+      // Каретка в таблице не нужна: начинаем с пустого выделения.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    });
+
+    test('a long press selects a cell and a drag extends it, releasing does not open the menu', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const from = await centre(page, 0);
+      const to = await centre(page, 4);
+
+      await touch.down(from.x, from.y);
+      await page.waitForTimeout(700);
+      expect(await picked(page)).toBe(1);
+
+      await touch.move((from.x + to.x) / 2, (from.y + to.y) / 2);
+      await touch.move(to.x, to.y);
+      await expect.poll(() => picked(page)).toBe(4);
+      // Страница при протяжке не прокручивается.
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+      await touch.up();
+      await page.waitForTimeout(400);
+      // Палец отпущен, чтобы подправить выделение: меню не открывается, рамка с точкой остаётся.
+      expect(await picked(page)).toBe(4);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+      await expect(page.locator('[data-inkbrick-part="cell-knob"]')).toBeVisible();
+    });
+
+    test('a long hold on a selected cell opens the menu, a quick tap on it drops the selection', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      expect(await picked(page)).toBe(1);
+
+      // Короткое удержание меню не открывает, долгое — открывает (и остаётся после отпускания).
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(250);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+      await page.waitForTimeout(450);
+      await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+      await touch.up();
+      await page.waitForTimeout(400);
+      await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+      expect(await picked(page)).toBe(1);
+
+      await page.keyboard.press('Escape');
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+
+      // Короткое касание выделенной ячейки снимает выделение.
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(80);
+      await touch.up();
+      await expect.poll(() => picked(page)).toBe(0);
+    });
+
+    test('a quick tap and a finger that scrolls select nothing', async ({ page }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(100);
+      await touch.up();
+      await page.waitForTimeout(600);
+      expect(await picked(page)).toBe(0);
+
+      await touch.down(at.x, at.y);
+      await touch.move(at.x, at.y + 40);
+      await page.waitForTimeout(700);
+      await touch.up();
+      expect(await picked(page)).toBe(0);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+    });
+
+    test('a tap shows a frame with a knob; dragging the knob selects a rectangle', async ({
+      page,
+    }) => {
+      await page.locator(cells).nth(4).tap();
+
+      const knob = page.locator('[data-inkbrick-part="cell-knob"]');
+
+      await expect(page.locator('[data-inkbrick-part="cell-frame"]')).toBeVisible();
+      await expect(knob).toBeVisible();
+
+      const handle = (await knob.boundingBox())!;
+      const last = (await page.locator(cells).nth(8).boundingBox())!;
+      const touch = await finger(page);
+
+      await touch.down(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await touch.move(last.x + last.width - 4, last.y + last.height - 4);
+      await expect.poll(() => picked(page)).toBe(4);
+      await touch.up();
+      await page.waitForTimeout(400);
+      // Палец отпущен: выделение осталось, меню не открылось (его открывает долгое удержание).
+      expect(await picked(page)).toBe(4);
+      await expect(page.locator('[data-testid="context-menu"]')).toHaveCount(0);
+    });
+
+    test('there is no corner table button on a phone: the table menu is in the cell menu', async ({
+      page,
+    }) => {
+      await page.locator(cells).nth(4).tap();
+      await expect(page.locator('[data-inkbrick-part="column-grip"]')).toBeVisible();
+      await expect(page.locator('[data-inkbrick-part="table-grip"]')).toHaveCount(0);
+    });
+
+    test('on a phone the menus are bottom sheets: a backdrop closes them, a nested panel stacks with Back', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+      const menu = page.locator('[data-testid="context-menu"]');
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await expect(menu).toBeVisible();
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(350);
+
+      // Лист: во всю ширину, прижат к низу окна, за ним затемнение.
+      expect(await menu.getAttribute('data-sheet')).not.toBeNull();
+      const box = (await menu.boundingBox())!;
+      const size = page.viewportSize()!;
+
+      expect(box.x).toBe(0);
+      expect(Math.round(box.width)).toBe(size.width);
+      expect(Math.round(box.y + box.height)).toBe(size.height);
+      await expect(page.locator('[data-inkbrick-part="sheet-backdrop"]')).toBeVisible();
+
+      // Вложенная панель — второй лист с кнопкой «Назад».
+      await menu
+        .locator('[data-action="table-cell-borders"]')
+        .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await menu.locator('[data-action="table-cell-borders"]').tap();
+
+      const flyout = page.locator('[data-inkbrick-part="flyout"]');
+
+      await expect(flyout).toBeVisible();
+      await flyout.locator('[data-inkbrick-part="sheet-back"]').tap();
+      await expect(flyout).toHaveCount(0);
+      await expect(menu).toBeVisible();
+
+      // Касание затемнения закрывает меню и не доходит до документа: выделение остаётся.
+      await page.touchscreen.tap(size.width / 2, 40);
+      await expect(menu).toHaveCount(0);
+      expect(await picked(page)).toBe(1);
+      // Отмена ничего не фокусирует: документ не получает каретку, экранная клавиатура не поднимается.
+      expect(
+        await page.evaluate(() => document.activeElement?.getAttribute('contenteditable') ?? null),
+      ).toBeNull();
+    });
+
+    test('a tap beside a nested sheet closes only that sheet and activates nothing in the parent', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+      const menu = page.locator('[data-testid="context-menu"]');
+      const flyout = page.locator('[data-inkbrick-part="flyout"]');
+
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await expect(menu).toBeVisible();
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(350);
+
+      // Короткий вложенный лист («Фон ячеек»): над ним остаётся виден родительский лист с пунктами.
+      await menu
+        .locator('[data-action="table-cell-background"]')
+        .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await menu.locator('[data-action="table-cell-background"]').tap();
+      await expect(flyout).toBeVisible();
+
+      const changes = await page.evaluate(() => {
+        const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+          .__inkbrick.main as never as {
+          editor: { dispatch: (intent: { type: string }) => unknown };
+        };
+        const dispatch = editor.dispatch.bind(editor);
+        const calls: string[] = [];
+
+        editor.dispatch = (intent) => {
+          calls.push(intent.type);
+
+          return dispatch(intent);
+        };
+        (window as never as { __calls: string[] }).__calls = calls;
+
+        return calls;
+      });
+
+      expect(changes).toEqual([]);
+
+      const parent = (await menu.boundingBox())!;
+      const nested = (await flyout.boundingBox())!;
+
+      // Тап по видимой части родительского листа: закрывается только вложенный, пункт родителя не нажимается.
+      await page.touchscreen.tap(page.viewportSize()!.width / 2, (parent.y + nested.y) / 2);
+      await expect(flyout).toHaveCount(0);
+      await expect(menu).toBeVisible();
+      expect(await page.evaluate(() => (window as never as { __calls: string[] }).__calls)).toEqual(
+        [],
+      );
+    });
+
+    test('the cell menu with the table sections fits the screen and has big enough buttons', async ({
+      page,
+    }) => {
+      const touch = await finger(page);
+      const at = await centre(page, 4);
+
+      // Первое удержание выделяет ячейку, второе, на выделенной, открывает меню.
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+      await page.waitForTimeout(400);
+      await touch.down(at.x, at.y);
+      await page.waitForTimeout(700);
+      await touch.up();
+
+      const menu = page.locator('[data-testid="context-menu"]');
+
+      await expect(menu).toBeVisible();
+      // Мышиные события после отпускания гасятся на долю секунды: тап по пункту ждёт их конца. Виртуальная мышь
+      // Playwright уходит с меню: на телефоне её нет, а над меню она «наводилась» бы на соседние пункты.
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(350);
+
+      const inside = (locator: typeof menu) =>
+        locator.evaluate((node) => {
+          const box = node.getBoundingClientRect();
+
+          return box.left >= 0 && box.right <= window.innerWidth && box.top >= 0;
+        });
+
+      expect(await inside(menu)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        375,
+      );
+
+      // Границы ячеек открываются отдельной панелью: она тоже помещается в окно, кнопки не меньше 44 пикселей.
+      // Пункт ниже видимой части: меню прокручивается само (как пальцем), прокрутка страницы закрыла бы его.
+      await menu
+        .locator('[data-action="table-cell-borders"]')
+        .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await menu.locator('[data-action="table-cell-borders"]').tap();
+
+      const flyout = page.locator('[data-inkbrick-part="flyout"]');
+
+      await expect(flyout).toBeVisible();
+      expect(await inside(flyout)).toBe(true);
+      expect(
+        (await flyout.locator('[data-action="table-border-all"]').boundingBox())!.height,
+      ).toBeGreaterThanOrEqual(44);
+
+      await flyout.locator('[data-action="table-border-all"]').tap();
+      expect(await cellBorder(page, 4, 'top')).toBe('thin');
+    });
+
+    test('a sheet hides the on-screen keyboard and slides down when it closes', async ({
+      page,
+    }) => {
+      const column = page.locator('[data-testid="block-menu"]');
+      const editing = () =>
+        page.evaluate(
+          () => (document.activeElement as HTMLElement | null)?.isContentEditable ?? false,
+        );
+
+      // Каретка в ячейке (клавиатура поднята), потом меню столбца: фокус уходит из текста, клавиатура прячется.
+      await page.locator(cells).nth(4).tap();
+      expect(await editing()).toBe(true);
+      await page.locator('[data-inkbrick-part="column-grip"]').first().tap();
+      await expect(column).toBeVisible();
+      expect(await editing()).toBe(false);
+      await page.waitForTimeout(350);
+
+      // Касание затемнения: лист не пропадает сразу, а уезжает вниз, и документ фокус не получает.
+      await page.touchscreen.tap(page.viewportSize()!.width / 2, 40);
+      await expect
+        .poll(() =>
+          column.evaluate((node) => ({
+            state: node.closest('[data-inkbrick-presence]')?.getAttribute('data-state'),
+            animation: getComputedStyle(node).animationName,
+          })),
+        )
+        .toEqual({ state: 'closed', animation: 'inkbrick-sheet-out' });
+      await expect(column).toHaveCount(0);
+      expect(await editing()).toBe(false);
+    });
+
+    test('a narrow column has no insert markers that would cover its pill', async ({ page }) => {
+      await page.evaluate(() => {
+        const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+          .__inkbrick.main as never as {
+          editor: {
+            document: { rootId: string; getBlock: (id: string) => never };
+            dispatch: (intent: unknown) => unknown;
+          };
+        };
+        let found: string | undefined;
+        const walk = (block: { id: string; flavour: string; children: string[] } | undefined) => {
+          if (!block || found) return;
+          if (block.flavour === 'block:table') found = block.id;
+          block.children.forEach((id) => walk(editor.document.getBlock(id)));
+        };
+
+        walk(editor.document.getBlock(editor.document.rootId));
+        editor.dispatch({
+          type: 'setTableColumnWidth',
+          payload: { blockId: found, index: 1, width: 48 },
+        });
+      });
+
+      const markers = page.locator('[data-inkbrick-part="column-insert"]');
+
+      await page.locator(cells).nth(4).tap();
+      await expect(page.locator('[data-inkbrick-part="column-grip"]')).toBeVisible();
+      await expect(markers).toHaveCount(0);
+
+      // В широком столбце маркеры на месте.
+      await page.locator(cells).nth(3).tap();
+      await expect(markers).toHaveCount(2);
+    });
+
+    test('the width slider resizes the column live and writes one undo step on release', async ({
+      page,
+    }) => {
+      const width = (index: number) =>
+        page
+          .locator(cells)
+          .nth(index)
+          .evaluate((node) => Math.round(node.getBoundingClientRect().width));
+      const model = () =>
+        page.evaluate(() => {
+          const { editor } = (window as never as { __inkbrick: { main: { editor: never } } })
+            .__inkbrick.main as never as {
+            editor: { document: { rootId: string; getBlock: (id: string) => never } };
+          };
+          let found: { props: { widths?: number[] } } | undefined;
+          const walk = (
+            block: { flavour: string; children: string[]; props: never } | undefined,
+          ) => {
+            if (!block || found) return;
+            if (block.flavour === 'block:table') found = block as never;
+            block.children.forEach((id) => walk(editor.document.getBlock(id)));
+          };
+
+          walk(editor.document.getBlock(editor.document.rootId));
+
+          return found?.props.widths ?? null;
+        });
+
+      await page.locator(cells).nth(1).tap();
+      await page.locator('[data-inkbrick-part="column-grip"]').first().tap();
+      await page.locator('[data-action="column-width-slider"]').tap();
+
+      const bar = page.locator('[data-inkbrick-ui="column-width-bar"]');
+      const slider = bar.locator('input[type="range"]');
+
+      await expect(bar).toBeVisible();
+
+      const before = await width(1);
+      const box = (await slider.boundingBox())!;
+      const touch = await finger(page);
+      const y = box.y + box.height / 2;
+      const min = Number(await slider.getAttribute('min'));
+      const max = Number(await slider.getAttribute('max'));
+      const start = box.x + box.width * ((Number(await slider.inputValue()) - min) / (max - min));
+
+      await touch.down(start, y);
+      await touch.move(start + 30, y);
+      await touch.move(start + 60, y);
+
+      // Живой предпросмотр: столбец уже шире, а документ ещё не записан.
+      await expect.poll(() => width(1)).toBeGreaterThan(before + 10);
+      expect(await model()).toBeNull();
+
+      await touch.up();
+      await expect.poll(model).not.toBeNull();
+
+      // «Готово» закрывает панель, одна отмена возвращает ширины.
+      await bar.locator('[data-action="column-width-done"]').tap();
+      await expect(bar).toHaveCount(0);
+      await page.getByRole('button', { name: /Undo/ }).tap();
+      await expect.poll(model).toBeNull();
+    });
   });
 });

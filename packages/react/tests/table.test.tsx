@@ -34,6 +34,32 @@ function mountTable() {
 }
 
 describe('table rendering', () => {
+  it('the column header role follows the header switch and the first row', () => {
+    const { editor, root, tableId, cell } = mountTable();
+    const role = (id: string) =>
+      root.querySelector(`td[data-block-id="${id}"]`)!.getAttribute('role');
+
+    expect(role(cell(0, 0))).toBe('columnheader');
+
+    act(() => {
+      editor.dispatch({
+        type: 'moveTableRow',
+        payload: { blockId: tableId, from: 1, to: 0 },
+      } as never);
+    });
+    // Первой стала другая строка: заголовок — её ячейки, а не прежние.
+    expect(role(cell(0, 0))).toBe('columnheader');
+    expect(role(cell(1, 0))).toBeNull();
+
+    act(() => {
+      editor.dispatch({
+        type: 'setBlockProps',
+        payload: { blockId: tableId, props: { header: false } },
+      });
+    });
+    expect(role(cell(0, 0))).toBeNull();
+  });
+
   it('renders a real table with a cell per block and marks the header row', () => {
     const { root, tableId, cell } = mountTable();
     const table = root.querySelector<HTMLElement>('[data-inkbrick-block="table"]')!;

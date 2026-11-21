@@ -171,7 +171,15 @@ export function ContextMenuPanel() {
 
     const Menu = slots.ContextMenu ?? DefaultContextMenu;
 
-    return <Menu position={menu.position!} formatting={formatting} items={items} onClose={close} />;
+    return (
+      <Menu
+        position={menu.position!}
+        formatting={formatting}
+        items={items}
+        onClose={close}
+        onDismiss={() => close(false)}
+      />
+    );
   };
 
   // Меню остаётся смонтированным и уходит плавно: условие показа — `open`, а то, что рисуется, — в `render`.

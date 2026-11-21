@@ -145,9 +145,13 @@
     text-decoration: line-through;
   }
 
+  /*
+   * Поля оставляют место ручкам таблицы: сверху — плашке столбца, слева — плашке строки (она не налезает на язычок блока,
+   * который стоит у края блока) — и разводят соседние таблицы. Таблица не шире страницы.
+   */
   :where([data-inkbrick-block='table']) {
-    max-width: 100%;
-    margin: 4px 0;
+    max-width: calc(100% - 28px);
+    margin: 20px 0 20px 28px;
     overflow-x: auto;
   }
 
@@ -325,16 +329,6 @@
     font-weight: var(--inkbrick-font-weight-semibold);
   }
 
-  /* Заголовочный столбец: первая ячейка каждой строки выделена так же, как заголовочная строка. */
-  :where(
-    [data-inkbrick-block='table'][data-header-column]
-      [data-inkbrick-block='table-row']
-      > [data-inkbrick-block='table-cell']:first-child
-  ) {
-    background: var(--inkbrick-bg-3);
-    font-weight: var(--inkbrick-font-weight-semibold);
-  }
-
   /* Чередующиеся строки: каждая вторая строка тела (с заголовком — третья, пятая…, без него — вторая, четвёртая…). */
   :where(
     [data-inkbrick-block='table'][data-striped][data-header]
@@ -347,9 +341,14 @@
     background: color-mix(in srgb, var(--inkbrick-bg-3) 50%, var(--inkbrick-bg-1));
   }
 
-  /* Без границ: линии остаются в раскладке прозрачными, поэтому ширина ячеек не меняется. */
-  :where([data-inkbrick-block='table'][data-borders='none'] [data-inkbrick-block='table-cell']) {
-    border-color: transparent;
+  /* Заголовочный столбец: первая ячейка каждой строки выделена так же, как заголовочная строка. */
+  :where(
+    [data-inkbrick-block='table'][data-header-column]
+      [data-inkbrick-block='table-row']
+      > [data-inkbrick-block='table-cell']:first-child
+  ) {
+    background: var(--inkbrick-bg-3);
+    font-weight: var(--inkbrick-font-weight-semibold);
   }
 
   /*
@@ -376,12 +375,6 @@
     --inkbrick-table-line: var(--inkbrick-stroke-1);
     --inkbrick-table-head-bg: transparent;
     --inkbrick-table-band-bg: transparent;
-  }
-
-  :where(
-    [data-inkbrick-block='table'][data-table-style='lines'] [data-inkbrick-block='table-cell']
-  ) {
-    border-inline-color: transparent;
   }
 
   :where(
@@ -472,16 +465,16 @@
     border-color: var(--inkbrick-table-line);
   }
 
+  /* Эти два правила идут после общего цвета линий: при одинаковой специфичности побеждает последнее. */
   :where(
-    [data-inkbrick-block='table'][data-table-style][data-header]
-      [data-inkbrick-block='table-row']:first-child
-      > [data-inkbrick-block='table-cell'],
-    [data-inkbrick-block='table'][data-table-style][data-header-column]
-      [data-inkbrick-block='table-row']
-      > [data-inkbrick-block='table-cell']:first-child
+    [data-inkbrick-block='table'][data-table-style='lines'] [data-inkbrick-block='table-cell']
   ) {
-    background: var(--inkbrick-table-head-bg);
-    color: var(--inkbrick-table-head-fg, inherit);
+    border-inline-color: transparent;
+  }
+
+  /* Без границ: линии остаются в раскладке прозрачными, поэтому ширина ячеек не меняется. */
+  :where([data-inkbrick-block='table'][data-borders='none'] [data-inkbrick-block='table-cell']) {
+    border-color: transparent;
   }
 
   :where(
@@ -495,21 +488,33 @@
     background: var(--inkbrick-table-band-bg);
   }
 
+  :where(
+    [data-inkbrick-block='table'][data-table-style][data-header]
+      [data-inkbrick-block='table-row']:first-child
+      > [data-inkbrick-block='table-cell'],
+    [data-inkbrick-block='table'][data-table-style][data-header-column]
+      [data-inkbrick-block='table-row']
+      > [data-inkbrick-block='table-cell']:first-child
+  ) {
+    background: var(--inkbrick-table-head-bg);
+    color: var(--inkbrick-table-head-fg, inherit);
+  }
+
   /* Границы ячейки по сторонам: «без линии» остаётся в раскладке прозрачной, поэтому ширина ячеек не меняется. */
   :where([data-inkbrick-block='table-cell'][data-border-top]) {
-    border-top-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-top-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-right]) {
-    border-right-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-right-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-bottom]) {
-    border-bottom-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-bottom-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-left]) {
-    border-left-color: var(--inkbrick-cell-border, var(--inkbrick-stroke-accessible));
+    border-left-color: var(--inkbrick-stroke-accessible);
   }
 
   :where([data-inkbrick-block='table-cell'][data-border-top='none']) {
@@ -576,68 +581,25 @@
     border-left-width: 3px;
   }
 
-  :where([data-inkbrick-block='table-cell'][data-border-color='black']) {
-    --inkbrick-cell-border: var(--inkbrick-color-black);
+  /*
+   * Чёрная и белая линии должны быть видны на фоне своей темы: чёрная на светлом фоне, белая на тёмном. В противоположной
+   * теме их заменяет серая линия того же имени по смыслу (светлая для «чёрной», тёмная для «белой»), иначе линия пропадала бы.
+   */
+  :where([data-inkbrick-block='table-cell']) {
+    --inkbrick-cell-line-black: var(--inkbrick-color-black);
+    --inkbrick-cell-line-white: #8b8b8b;
   }
 
-  :where([data-inkbrick-block='table-cell'][data-border-color='white']) {
-    --inkbrick-cell-border: var(--inkbrick-color-white);
+  @media (prefers-color-scheme: dark) {
+    :where(:root:not([data-inkbrick-theme='light']) [data-inkbrick-block='table-cell']) {
+      --inkbrick-cell-line-black: #8b8b8b;
+      --inkbrick-cell-line-white: var(--inkbrick-color-white);
+    }
   }
 
-  :where([data-inkbrick-block='table-cell'][data-border-color='gray']) {
-    --inkbrick-cell-border: var(--inkbrick-color-gray);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='brown']) {
-    --inkbrick-cell-border: var(--inkbrick-color-brown);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='orange']) {
-    --inkbrick-cell-border: var(--inkbrick-color-orange);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='yellow']) {
-    --inkbrick-cell-border: var(--inkbrick-color-yellow);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='green']) {
-    --inkbrick-cell-border: var(--inkbrick-color-green);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='blue']) {
-    --inkbrick-cell-border: var(--inkbrick-color-blue);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='purple']) {
-    --inkbrick-cell-border: var(--inkbrick-color-purple);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='pink']) {
-    --inkbrick-cell-border: var(--inkbrick-color-pink);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='lime']) {
-    --inkbrick-cell-border: var(--inkbrick-color-lime);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='teal']) {
-    --inkbrick-cell-border: var(--inkbrick-color-teal);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='cyan']) {
-    --inkbrick-cell-border: var(--inkbrick-color-cyan);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='indigo']) {
-    --inkbrick-cell-border: var(--inkbrick-color-indigo);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='magenta']) {
-    --inkbrick-cell-border: var(--inkbrick-color-magenta);
-  }
-
-  :where([data-inkbrick-block='table-cell'][data-border-color='red']) {
-    --inkbrick-cell-border: var(--inkbrick-color-red);
+  :where(:root[data-inkbrick-theme='dark'] [data-inkbrick-block='table-cell']) {
+    --inkbrick-cell-line-black: #8b8b8b;
+    --inkbrick-cell-line-white: var(--inkbrick-color-white);
   }
 
   :where([data-inkbrick-block='quote']) {
@@ -1025,7 +987,8 @@
     user-select: none;
   }
 
-  :where([data-inkbrick-block='column'] > [data-inkbrick-part='divider']::after) {
+  /* Псевдоэлемент — снаружи `:where()`: внутри него селектор недопустим, и правило отбрасывалось целиком. */
+  :where([data-inkbrick-block='column'] > [data-inkbrick-part='divider'])::after {
     content: '';
     position: absolute;
     top: 0;
@@ -1042,16 +1005,15 @@
     [data-inkbrick-block='columns']:hover
       > [data-inkbrick-part='grid']
       > [data-inkbrick-block='column']
-      > [data-inkbrick-part='divider']::after
-  ) {
+      > [data-inkbrick-part='divider']
+  )::after {
     background: var(--inkbrick-stroke-2);
     opacity: 1;
   }
 
   :where(
-    [data-inkbrick-block='column'] > [data-inkbrick-part='divider']:hover::after,
-    [data-inkbrick-block='column'] > [data-inkbrick-part='divider']:focus-visible::after
-  ) {
+    [data-inkbrick-block='column'] > [data-inkbrick-part='divider']:is(:hover, :focus-visible)
+  )::after {
     background: var(--inkbrick-brand-bg);
     opacity: 1;
   }
@@ -2186,7 +2148,7 @@
     background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, transparent);
   }
 
-  /* Фон ячейки таблицы: те же цвета, но без полей наружу и непрозрачный (закреплённые ячейки не просвечивают). */
+  /* Фон ячейки таблицы: насыщенный цвет (как кружок в меню) и текст по контрасту, без полей наружу и непрозрачный. */
   :where([data-inkbrick-block='table-cell'][data-background]) {
     margin-inline: 0;
     padding-inline: 8px;
@@ -2194,79 +2156,73 @@
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='gray']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-gray) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-gray);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='brown']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-brown) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-brown);
+    color: var(--inkbrick-cell-text-light);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='orange']) {
-    background-color: color-mix(
-      in srgb,
-      var(--inkbrick-highlight-orange) 35%,
-      var(--inkbrick-bg-1)
-    );
+    background-color: var(--inkbrick-cell-orange);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='yellow']) {
-    background-color: color-mix(
-      in srgb,
-      var(--inkbrick-highlight-yellow) 35%,
-      var(--inkbrick-bg-1)
-    );
+    background-color: var(--inkbrick-cell-yellow);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='green']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-green) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-green);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='blue']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-blue) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-blue);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='purple']) {
-    background-color: color-mix(
-      in srgb,
-      var(--inkbrick-highlight-purple) 35%,
-      var(--inkbrick-bg-1)
-    );
+    background-color: var(--inkbrick-cell-purple);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='pink']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-pink) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-pink);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='red']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-red);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='lime']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-lime) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-lime);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='teal']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-teal) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-teal);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='cyan']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-cyan) 35%, var(--inkbrick-bg-1));
+    background-color: var(--inkbrick-cell-cyan);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='indigo']) {
-    background-color: color-mix(
-      in srgb,
-      var(--inkbrick-highlight-indigo) 35%,
-      var(--inkbrick-bg-1)
-    );
+    background-color: var(--inkbrick-cell-indigo);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='magenta']) {
-    background-color: color-mix(
-      in srgb,
-      var(--inkbrick-highlight-magenta) 35%,
-      var(--inkbrick-bg-1)
-    );
+    background-color: var(--inkbrick-cell-magenta);
+    color: var(--inkbrick-cell-text-dark);
   }
 
   :where([data-background='lime']) {
@@ -2292,6 +2248,12 @@
   /* Свой цвет фона (`#rrggbb` из выбора «Свой цвет…»): разбавлен так же, как оттенок из палитры. */
   :where([data-background='custom']) {
     background-color: color-mix(in srgb, var(--inkbrick-block-background) 35%, transparent);
+  }
+
+  /* Свой цвет ячейки таблицы — ровно тот, что выбран, без прозрачности; цвет текста по контрасту ставит сама ячейка. */
+  :where([data-inkbrick-block='table-cell'][data-background='custom']) {
+    background-color: var(--inkbrick-block-background);
+    color: var(--inkbrick-cell-text, inherit);
   }
 
   /*

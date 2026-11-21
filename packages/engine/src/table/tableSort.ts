@@ -6,7 +6,7 @@ export type SortKey = number | string | undefined;
 const NUMBER = /[-+−]?\d[\d\s  .,]*/;
 
 /** Первое число в тексте: «1 234,5 ₽», «$1,234.50», «−3%» → 1234.5, 1234.5, −3. */
-export function parseNumber(text: string): number | undefined {
+export function parseNumber(text: string, decimal?: ',' | '.'): number | undefined {
   const found = NUMBER.exec(text)?.[0];
 
   if (!found) return undefined;
@@ -25,7 +25,10 @@ export function parseNumber(text: string): number | undefined {
     const fraction = digits.slice(decimalAt + 1);
     const mixed = lastDot >= 0 && lastComma >= 0;
     const repeated = digits.split(separator).length > 2;
-    const thousands = !mixed && (repeated || (separator === ',' && fraction.length === 3));
+    // Один разделитель и ровно три цифры после него («1.234», «0,125») — запись неоднозначна: её решает язык
+    // (`decimal`), а без него запятая считается разделителем тысяч. Остальные случаи видны по самой записи.
+    const thousands =
+      !mixed && (repeated || (fraction.length === 3 && separator !== (decimal ?? '.')));
 
     digits = thousands
       ? digits.replace(/[.,]/g, '')
@@ -49,17 +52,20 @@ export function parseDate(text: string): number | undefined {
     return Number.isFinite(time) ? time : undefined;
   }
 
+  // Остальное разбирает `Date.parse`, но только текст с годом: голое число («10») браузер принимает за месяц и год.
+  if (!/\b\d{4}\b/.test(value)) return undefined;
+
   const time = Date.parse(value);
 
   return Number.isFinite(time) ? time : undefined;
 }
 
 /** Ключ сортировки по типу столбца. */
-export function sortKey(text: string, type: TableColumnType): SortKey {
+export function sortKey(text: string, type: TableColumnType, decimal?: ',' | '.'): SortKey {
   const value = text.trim();
 
   if (value === '') return undefined;
-  if (type === 'number') return parseNumber(value);
+  if (type === 'number') return parseNumber(value, decimal);
   if (type === 'date') return parseDate(value);
 
   return value;

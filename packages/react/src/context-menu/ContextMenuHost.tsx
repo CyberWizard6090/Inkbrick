@@ -78,10 +78,25 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
     };
 
     const close = () => view.contextMenu.close();
+    // Окно браузера потеряло фокус. Системное окно «Свой цвет…» тоже забирает его: меню с полем цвета остаётся открытым,
+    // иначе поле исчезло бы раньше, чем браузер сообщит выбранный цвет, и цвет не применился бы.
+    const onBlur = () => {
+      if (
+        document.querySelector(
+          '[data-inkbrick-ui="context-menu"] input[type="color"][data-picking]',
+        )
+      )
+        return;
+
+      close();
+    };
 
     // Esc закрывает меню и тогда, когда фокус остался в документе (кнопки меню его не забирают).
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || !view.contextMenu.getState().position) return;
+      // Во вложенной панели Escape закрывает только её: это делает сама панель.
+      if (event.target instanceof Element && event.target.closest('[data-inkbrick-part="flyout"]'))
+        return;
       if (event.target instanceof HTMLInputElement && onUi(event)) return;
 
       event.preventDefault();
@@ -94,7 +109,7 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
     document.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
-    window.addEventListener('blur', close);
+    window.addEventListener('blur', onBlur);
     document.addEventListener('keydown', onKeyDown, true);
 
     return () => {
@@ -103,7 +118,7 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
       document.removeEventListener('pointerdown', onPointerDown, true);
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
-      window.removeEventListener('blur', close);
+      window.removeEventListener('blur', onBlur);
       view.contextMenu.close();
     };
   }, [editor, view, ref, enabled]);
