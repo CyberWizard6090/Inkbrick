@@ -291,3 +291,64 @@ test.describe('Dragging blocks into columns and back', () => {
     await expect(page.locator(editable)).toHaveText(['one', 'two', 'three!?']);
   });
 });
+
+test.describe('The handle of a block in a later column', () => {
+  test('is only the grip and stays in the gap, off the left column, and still drags', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['one', 'two', 'three']);
+    await toRight(page, 'two', 'one');
+
+    const left = page.locator(`${column}:nth-child(1)`);
+    const right = page.locator(`${column}:nth-child(2)`);
+
+    await block(page, 'two').hover();
+    await expect(page.locator(handle)).toBeVisible();
+    await page.waitForTimeout(300);
+
+    const box = (await page.locator(handle).boundingBox())!;
+    const leftBox = (await left.boundingBox())!;
+    const rightBox = (await right.boundingBox())!;
+
+    // Только «⠿»: «+» на соседнюю колонку не ложится.
+    await expect(page.locator(`${handle} [data-action="add"]`)).toHaveCount(0);
+    expect(box.x).toBeGreaterThanOrEqual(leftBox.x + leftBox.width);
+    expect(box.x + box.width).toBeLessThanOrEqual(rightBox.x);
+
+    // В первой колонке ручка полная.
+    await block(page, 'one').hover();
+    await expect(page.locator(`${handle} [data-action="add"]`)).toHaveCount(1);
+
+    // «⠿» правой колонки по-прежнему переносит блок.
+    await below(page, 'two', 'three');
+    await expect(page.locator(columns)).toHaveCount(0);
+    await expect(page.locator(editable)).toHaveText(['one', 'three', 'two']);
+  });
+
+  test('a code block in the left column is not covered by the handle of the right one', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['one', 'two']);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('/code');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('const value = "a long line of code that fills the column";');
+
+    const code = page.locator('[data-inkbrick-block="code"]');
+
+    await drag(page, code, block(page, 'one'), (b) => [b.x + 6, b.y + b.height / 2]);
+    await expect(page.locator(`${column}:nth-child(1) [data-inkbrick-block="code"]`)).toHaveCount(
+      1,
+    );
+
+    await block(page, 'one').hover();
+    await page.waitForTimeout(300);
+
+    const handleBox = (await page.locator(handle).boundingBox())!;
+    const codeBox = (await code.boundingBox())!;
+
+    expect(handleBox.x).toBeGreaterThanOrEqual(codeBox.x + codeBox.width);
+  });
+});

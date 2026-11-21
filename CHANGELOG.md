@@ -180,6 +180,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 ### Fixed
 
 - A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
+- In the second and later columns the block handle is only the grip, inside the gap between the columns: the full handle («+» and the grip) lay over the content of the column to the left (a code block, a table). Stacked columns on a narrow screen keep the full handle.
 - The block handle stays with its block while the pointer travels to it, also across a neighbouring table, the gap of columns or the margin: a table inside columns could not be grabbed because its handle jumped away on the way.
 - Folding a heading with a long section animates again: only the blocks near the screen move, the rest go at once; whole sections fold without an animation only above 200 blocks (was 40).
 - Table cells coloured lime, teal, cyan, indigo or magenta showed the pale block background instead of the saturated cell colour: five block rules came after the cell rules and won.
