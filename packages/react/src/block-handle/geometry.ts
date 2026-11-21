@@ -34,25 +34,26 @@ export function blockAtPoint(
   if (!root || !hit || !root.contains(hit)) return null;
 
   let node: Element | null = hit.closest('[data-block-id]');
+  let redirected = false;
 
   while (node && root.contains(node)) {
     const id = node.getAttribute('data-block-id')!;
 
-    if (editor.store.getBlock(id)?.flavour === COLUMNS) {
+    if (!redirected && editor.store.getBlock(id)?.flavour === COLUMNS) {
       // Промежуток между колонками (и разделитель в нём) — полоса ручки следующей колонки, а не блока колонок.
+      // Переход один: если в колонке под точкой нет блока с ручкой, остаётся ручка самого блока колонок.
+      redirected = true;
+
       const next = columnAfter(node, x);
+      const rect = next?.getBoundingClientRect();
+      const inner = rect
+        ? document.elementFromPoint(Math.min(Math.max(x, rect.left + 4), rect.right - 4), y)
+        : null;
+      const found = next && inner && next.contains(inner) ? inner.closest('[data-block-id]') : null;
 
-      if (next) {
-        const rect = next.getBoundingClientRect();
-        const inner = document.elementFromPoint(
-          Math.min(Math.max(x, rect.left + 4), rect.right - 4),
-          y,
-        );
-
-        if (inner && next.contains(inner)) {
-          node = inner.closest('[data-block-id]');
-          continue;
-        }
+      if (found && found !== node) {
+        node = found;
+        continue;
       }
     }
 

@@ -160,4 +160,25 @@ test.describe('Columns by dragging a block to the edge of another', () => {
     await expect(page.locator(columns)).toHaveCount(0);
     await expect(page.locator(editable)).toHaveText(['one', 'two', 'three']);
   });
+
+  test('tables in columns: the handle shows over a table and over the gap, the page stays responsive', async ({
+    page,
+  }) => {
+    await dragToEdge(page, 2, 0, 'right');
+    await page.locator(`${column}:nth-child(2) ${editable}`).click();
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('/table');
+    await page.keyboard.press('Enter');
+
+    const table = page.locator(`${column}:nth-child(2) [data-inkbrick-block="table"]`);
+    const box = (await table.boundingBox())!;
+
+    await page.mouse.move(box.x + 20, box.y + 10, { steps: 4 });
+    await expect(page.locator(handle)).toBeVisible();
+
+    // Выше таблицы, в пустом месте колонок, и в промежутке: проверка не должна зацикливаться.
+    await page.mouse.move(box.x - 16, box.y - 20, { steps: 4 });
+    await page.mouse.move(box.x - 16, box.y + 20, { steps: 4 });
+    await expect(page.locator(handle)).toBeVisible();
+  });
 });
