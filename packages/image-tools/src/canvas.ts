@@ -42,7 +42,10 @@ export function mimeOf(src: string): string | null {
 }
 
 export interface CropImageOptions {
-  /** `circle` — всё вне вписанного эллипса прозрачно (файл всегда PNG). */
+  /**
+   * `circle` — всё вне вписанного эллипса прозрачно. Файл — WebP с прозрачностью (у фотографии он в разы меньше PNG);
+   * браузер, который не пишет WebP, отдаёт PNG.
+   */
   readonly shape?: 'rect' | 'circle';
   /** Формат результата; по умолчанию — формат исходной картинки, если холст его пишет, иначе PNG. */
   readonly type?: string;
@@ -50,9 +53,12 @@ export interface CropImageOptions {
   readonly quality?: number;
 }
 
-/** Формат файла обрезки: круг — всегда PNG (нужна прозрачность), иначе исходный формат, если холст его пишет. */
+/**
+ * Формат файла обрезки: круг — WebP (нужна прозрачность, а PNG фотографии слишком тяжёл), иначе исходный формат, если
+ * холст его пишет. Браузер без WebP вместо него отдаёт PNG — тип готового файла смотрите в `blob.type`.
+ */
 export function outputType(src: string, options: CropImageOptions = {}): string {
-  if (options.shape === 'circle') return 'image/png';
+  if (options.shape === 'circle') return 'image/webp';
 
   const wanted = options.type ?? mimeOf(src) ?? 'image/png';
 

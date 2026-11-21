@@ -19,10 +19,10 @@ describe('types and names', () => {
     expect(mimeOf('https://a.test/b/c.tiff')).toBeNull();
   });
 
-  it('the crop keeps a format the canvas writes; a circle is always PNG', () => {
+  it('the crop keeps a format the canvas writes; a circle is WebP (transparent, small)', () => {
     expect(outputType('a.jpg')).toBe('image/jpeg');
     expect(outputType('a.gif')).toBe('image/png');
-    expect(outputType('a.jpg', { shape: 'circle' })).toBe('image/png');
+    expect(outputType('a.jpg', { shape: 'circle' })).toBe('image/webp');
     expect(outputType('a.png', { type: 'image/webp' })).toBe('image/webp');
   });
 
@@ -93,7 +93,7 @@ describe('canvas', () => {
       },
     );
 
-    expect(round.type).toBe('image/png');
+    expect(round.type).toBe('image/webp');
     expect(context.ellipse).toHaveBeenCalledWith(100, 100, 100, 100, 0, 0, Math.PI * 2);
     expect(context.clip).toHaveBeenCalled();
   });

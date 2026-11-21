@@ -1264,11 +1264,6 @@
     position: relative;
   }
 
-  :where([data-inkbrick-part='figure'][data-shape='circle'] [data-inkbrick-part='image']),
-  :where([data-inkbrick-part='figure'][data-shape='circle'] [data-inkbrick-part='frame']) {
-    border-radius: 50%;
-  }
-
   /*
    * Обрезка стилем (файла обрезки нет: картинка с чужого сервера без CORS): кадр с пропорциями рамки (`aspect-ratio` в
    * разметке), картинка внутри сдвинута и увеличена так, что видна только рамка.
@@ -1293,6 +1288,16 @@
 
   :where([data-inkbrick-part='frame']:not([data-ready]) > [data-inkbrick-part='image']) {
     visibility: hidden;
+  }
+
+  /* Круг — после общих правил картинки и кадра: скругление кадра иначе перебило бы его. */
+  :where(
+    [data-inkbrick-part='figure'][data-shape='circle']
+      [data-inkbrick-part='picture']
+      > [data-inkbrick-part='image']
+  ),
+  :where([data-inkbrick-part='figure'][data-shape='circle'] [data-inkbrick-part='frame']) {
+    border-radius: 50%;
   }
 
   :where([data-inkbrick-part='picture'] > [data-inkbrick-part='resize']) {

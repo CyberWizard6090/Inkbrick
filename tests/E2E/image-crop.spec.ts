@@ -163,7 +163,7 @@ test.describe('Image crop', () => {
     expect(await imageProps(page)).toMatchObject({ originalSrc: '', cropWidth: 100 });
   });
 
-  test('the shape menu: a circle makes a round PNG; a ratio in portrait or landscape keeps its proportions', async ({
+  test('the shape menu: a circle makes a round file; a ratio in portrait or landscape keeps its proportions', async ({
     page,
   }) => {
     await addImage(page);
@@ -179,6 +179,8 @@ test.describe('Image crop', () => {
     await expect(page.locator(cropper)).toHaveCount(0);
 
     expect(await imageProps(page)).toMatchObject({ aspect: 'circle', cropWidth: 50 });
+    // Круг — WebP с прозрачностью (в браузере без WebP — PNG): у фотографии так файл в разы меньше.
+    expect(String((await imageProps(page))!.src)).toMatch(/^data:image\/(webp|png);base64,/);
     await expect(page.locator('[data-inkbrick-part="figure"]')).toHaveAttribute(
       'data-shape',
       'circle',
@@ -225,6 +227,45 @@ test.describe('Image crop', () => {
 
     expect(Math.abs(width / height - 0.75)).toBeLessThan(0.02);
     expect(height).toBe(200);
+  });
+
+  test('a circle without a crop file (a server without CORS) is still drawn round', async ({
+    page,
+  }) => {
+    await addImage(page);
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Как после неудачной загрузки файла обрезки: оригинал и рамка, обрезка — стилем.
+    await page.evaluate(() => {
+      const { editor } = window.__inkbrick!.main;
+      const stack = [editor.document.rootId];
+
+      while (stack.length > 0) {
+        const block = editor.document.getBlock(stack.pop()!)!;
+
+        if (block.flavour === 'block:image') {
+          editor.dispatch({
+            type: 'setBlockProps',
+            payload: {
+              blockId: block.id,
+              props: { aspect: 'circle', cropX: 25, cropY: 0, cropWidth: 50, cropHeight: 100 },
+            },
+          });
+        }
+
+        stack.push(...block.children);
+      }
+    });
+
+    const frame = page.locator(
+      '[data-inkbrick-part="figure"] [data-inkbrick-part="frame"][data-ready]',
+    );
+
+    await expect(frame).toBeVisible();
+    expect(await frame.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('50%');
+
+    const box = (await frame.boundingBox())!;
+
+    expect(Math.abs(box.width - box.height)).toBeLessThan(2);
   });
 
   test('the keyboard moves and resizes the frame; Escape cancels, Enter saves', async ({

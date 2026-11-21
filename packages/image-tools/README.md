@@ -25,7 +25,7 @@ function Crop({ src, onDone }: { src: string; onDone(file: Blob): void }) {
   const [open, setOpen] = useState(true);
 
   const save = async ({ rect, aspect }: CropResult) => {
-    // The frame is in fractions of the picture; the file is made on a canvas (a circle is a PNG with clear corners).
+    // The frame is in fractions of the picture; the file is made on a canvas (a circle is a WebP with clear corners, PNG where the browser cannot write WebP).
     onDone(await cropImage(src, rect, { shape: aspect === 'circle' ? 'circle' : 'rect' }));
     setOpen(false);
   };
