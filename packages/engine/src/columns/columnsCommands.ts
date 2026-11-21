@@ -1,4 +1,10 @@
-import { COLUMN, MAX_COLUMNS, type BaseBlock, type ColumnsProps } from '@inkbrick/document';
+import {
+  COLUMN,
+  COLUMNS,
+  MAX_COLUMNS,
+  type BaseBlock,
+  type ColumnsProps,
+} from '@inkbrick/document';
 import type { Transaction } from '@inkbrick/store';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
@@ -64,6 +70,49 @@ export function unwrapColumns(
   engine.block.remove(transaction, block.id);
 
   return moved;
+}
+
+/** Доли ширины колонок: правит `ratios`, если они заданы. */
+export function reshape(
+  engine: Engine,
+  tx: Transaction,
+  id: string,
+  edit: (ratios: number[]) => void,
+) {
+  const ratios = tx.getBlock(id)!.props.ratios;
+
+  if (!Array.isArray(ratios)) return;
+
+  const next = [...ratios];
+
+  edit(next);
+  engine.block.update(tx, id, (item) => ({ ...item, props: { ...item.props, ratios: next } }));
+}
+
+/**
+ * Колонки, опустевшие в транзакции (из них унесли или удалили последний блок), пропадают: остальные колонки занимают их
+ * место; когда колонка остаётся одна, колонки разворачиваются в обычные блоки. Смотрит только изменённые блоки.
+ */
+export function collapseEmptyColumns(engine: Engine, tx: Transaction): void {
+  if (!engine.schema.hasBlock(COLUMNS)) return;
+
+  for (const id of tx.getChangedBlocks()) {
+    const column = tx.getBlock(id);
+
+    if (column?.flavour !== COLUMN || column.children.length > 0 || !column.parentId) continue;
+
+    const owner = tx.getBlock(column.parentId);
+
+    if (owner?.flavour !== COLUMNS) continue;
+
+    const at = owner.children.indexOf(id);
+
+    engine.block.remove(tx, id);
+
+    if (tx.getBlock(owner.id)!.children.length === 1)
+      unwrapColumns(engine, tx, tx.getBlock(owner.id)!);
+    else reshape(engine, tx, owner.id, (ratios) => ratios.splice(at, 1));
+  }
 }
 
 /** Колонки превращаются в обычные блоки: блоки всех колонок по порядку встают на место блока колонок. */

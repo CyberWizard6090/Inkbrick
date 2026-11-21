@@ -110,4 +110,54 @@ test.describe('Columns by dragging a block to the edge of another', () => {
     await expect(page.locator(`${columns} ${column}`)).toHaveCount(2);
     await expect(page.locator(`${columns} ${editable}`)).toHaveText(['two', 'three']);
   });
+
+  test('the handle of the second column stays reachable across the gap and the divider', async ({
+    page,
+  }) => {
+    await dragToEdge(page, 2, 0, 'right');
+
+    const text = (await page.locator(`${column}:nth-child(2) ${editable}`).boundingBox())!;
+
+    await page.locator(`${column}:nth-child(2) ${editable}`).hover();
+    await expect(page.locator(handle)).toBeVisible();
+
+    const grip = (await page.locator(`${handle} [data-action="grip"]`).boundingBox())!;
+    const y = grip.y + grip.height / 2;
+
+    // Указатель идёт от текста к ручке через промежуток с разделителем: ручка остаётся у второй колонки.
+    for (let x = text.x; x >= grip.x + grip.width / 2; x -= 4) await page.mouse.move(x, y);
+
+    expect((await page.locator(handle).boundingBox())!.x).toBeGreaterThan(
+      (await page.locator(`${column}:nth-child(1) ${editable}`).boundingBox())!.x +
+        (await page.locator(`${column}:nth-child(1) ${editable}`).boundingBox())!.width -
+        40,
+    );
+
+    await page.mouse.down();
+    await page.mouse.move(grip.x + 30, y + 80, { steps: 4 });
+    await page.mouse.up();
+
+    // Ручка схватилась: перенос начался, а не потянулся разделитель колонок.
+    await expect(page.locator(columns)).toHaveCount(1);
+  });
+
+  test('a block moved out of a column by an ordinary drop does not leave an empty column', async ({
+    page,
+  }) => {
+    await dragToEdge(page, 2, 0, 'right');
+    await page.locator(`${column}:nth-child(2) ${editable}`).hover();
+
+    const grip = (await page.locator(`${handle} [data-action="grip"]`).boundingBox())!;
+    const target = (await page.locator(editable).nth(2)).first();
+    const box = (await target.boundingBox())!;
+
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + 20, grip.y + 40, { steps: 3 });
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height - 3, { steps: 6 });
+    await page.mouse.up();
+
+    await expect(page.locator(columns)).toHaveCount(0);
+    await expect(page.locator(editable)).toHaveText(['one', 'two', 'three']);
+  });
 });

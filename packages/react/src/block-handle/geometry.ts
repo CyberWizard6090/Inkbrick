@@ -1,3 +1,4 @@
+import { COLUMNS } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
@@ -37,12 +38,39 @@ export function blockAtPoint(
   while (node && root.contains(node)) {
     const id = node.getAttribute('data-block-id')!;
 
+    if (editor.store.getBlock(id)?.flavour === COLUMNS) {
+      // Промежуток между колонками (и разделитель в нём) — полоса ручки следующей колонки, а не блока колонок.
+      const next = columnAfter(node, x);
+
+      if (next) {
+        const rect = next.getBoundingClientRect();
+        const inner = document.elementFromPoint(
+          Math.min(Math.max(x, rect.left + 4), rect.right - 4),
+          y,
+        );
+
+        if (inner && next.contains(inner)) {
+          node = inner.closest('[data-block-id]');
+          continue;
+        }
+      }
+    }
+
     if (hasHandle(editor, id)) return id;
 
     node = node.parentElement?.closest('[data-block-id]') ?? null;
   }
 
   return null;
+}
+
+/** Колонка блока колонок, чья левая полоса (с промежутком перед ней) содержит точку: первая, правее края которой нет `x`. */
+function columnAfter(columns: Element, x: number): Element | null {
+  const items = columns.querySelectorAll(
+    ':scope > [data-inkbrick-part="grid"] > [data-inkbrick-block="column"]',
+  );
+
+  return [...items].find((item) => item.getBoundingClientRect().right > x) ?? null;
 }
 
 /** Точка в колонке редактора: прижимает x к тексту, чтобы блок находился и при наведении в полосу слева. */

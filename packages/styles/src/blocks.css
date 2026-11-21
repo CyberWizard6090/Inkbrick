@@ -980,7 +980,8 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    inset-inline-end: calc(var(--inkbrick-columns-gap, 32px) / -2 - 4px);
+    /* Вплотную к следующей колонке: левее, в промежутке, стоит ручка блока этой колонки, и разделитель её не перекрывает. */
+    inset-inline-end: calc(var(--inkbrick-columns-gap, 32px) * -1);
     width: 8px;
     cursor: col-resize;
     touch-action: none;

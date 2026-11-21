@@ -179,6 +179,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Columns: the handle of the second and later columns could not be grabbed (it vanished on the way to it, and the divider of the columns lay under it): the gap between columns now belongs to the next column, and the divider sits right against it. A block moved out of a column by any move (not only by dragging to a side) no longer leaves an empty column: the columns close up, and with one left they turn into plain blocks.
 - Table selection: Tab and Shift+Tab from a selected range keep the caret on its anchor cell, and the arrows up and down move one row from the selection, not two (the table keymap no longer handles a key the selection already took).
 - Arrow up and down inside a multi-line cell leave the cell only from its first or last line, not from the second one.
 - Pasting tab-separated text into a paragraph is no longer turned into a table larger than the limits (`MAX_TABLE_CELLS`, `MAX_TABLE_COLUMNS`); it stays text.

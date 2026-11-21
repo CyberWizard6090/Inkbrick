@@ -117,6 +117,42 @@ describe('moveBlockToSide', () => {
     ).toBe(false);
   });
 
+  it('moving the last block out of a column removes the column, with its share', () => {
+    const { editor, ids, side, shape, get, noteId, valid } = setup(['a', 'b', 'c', 'd']);
+
+    side(ids[1], ids[0], 'right');
+    side(ids[2], ids[0], 'right');
+    editor.dispatch({
+      type: 'setColumnRatios',
+      payload: { blockId: get(noteId).children[0], ratios: [2, 1, 1] },
+    } as never);
+
+    editor.dispatch({
+      type: 'moveBlock',
+      payload: { blockId: ids[1], targetId: ids[3], position: 'after' },
+    });
+
+    expect(shape()).toEqual([[['a'], ['c']], 'd', 'b']);
+    expect(get(get(noteId).children[0]).props.ratios).toEqual([0.5, 0.25]);
+    expect(valid()).toEqual([]);
+
+    editor.store.undo();
+    expect(shape()).toEqual([[['a'], ['c'], ['b']], 'd']);
+  });
+
+  it('moving a block out of a two-column layout unwraps the columns', () => {
+    const { editor, ids, side, shape, valid } = setup(['a', 'b', 'c']);
+
+    side(ids[1], ids[0], 'right');
+    editor.dispatch({
+      type: 'moveBlock',
+      payload: { blockId: ids[1], targetId: ids[2], position: 'after' },
+    });
+
+    expect(shape()).toEqual(['a', 'c', 'b']);
+    expect(valid()).toEqual([]);
+  });
+
   it('is unavailable without the columns blocks', () => {
     const editor = new Editor();
     const note = editor.document.getBlock(editor.document.rootId)!.children[0];

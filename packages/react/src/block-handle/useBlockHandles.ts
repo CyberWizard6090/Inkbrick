@@ -54,6 +54,10 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
     const onUiTarget = (event: Event) =>
       event.target instanceof Element && !!event.target.closest('[data-inkbrick-block-ui]');
 
+    // Разделитель колонок лежит в промежутке, где стоит ручка следующей колонки: над ним ручка не должна пропадать.
+    const onDivider = (event: Event) =>
+      event.target instanceof Element && !!event.target.closest('[data-inkbrick-part="divider"]');
+
     const onMove = (event: PointerEvent) => {
       const { menu, drag } = view.blocks.getState();
 
@@ -62,7 +66,7 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
 
       if (drag || menu || view.pointerDown) return;
 
-      if (onUiTarget(event)) return;
+      if (onUiTarget(event) && !onDivider(event)) return;
 
       showAt(event);
     };
