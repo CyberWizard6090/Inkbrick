@@ -81,3 +81,49 @@ describe('a table through HTML and back', () => {
     expect(read.cellProps[0][3].background).toBeUndefined();
   });
 });
+
+describe('tables pasted from spreadsheets keep merges, fills and widths', () => {
+  it('Google Sheets: merged header, filled cells, bold text and column widths', () => {
+    const fragment = htmlToFragment(
+      '<meta charset="utf-8"><google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}--></style>' +
+        '<table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" style="table-layout:fixed;font-size:10pt;font-family:Arial;width:0px;border-collapse:collapse;border:none" data-sheets-root="1">' +
+        '<colgroup><col width="120"><col width="80"><col width="80"></colgroup><tbody>' +
+        '<tr style="height:21px;"><td colspan="3" rowspan="1" style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;background-color:#ffff00;font-weight:bold;text-align:center;">Report</td></tr>' +
+        '<tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;">Apples</td>' +
+        '<td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-align:right;background-color:#22c55e;">3</td>' +
+        '<td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-align:right;background-color:#ffffff;">4</td></tr>' +
+        '</tbody></table></google-sheets-html-origin>',
+    )!;
+    const table = fragment.blocks[0];
+    const read = readTable(table);
+
+    expect(table.props.merges).toEqual([{ row: 0, column: 0, rows: 1, columns: 3 }]);
+    expect(read.widths).toEqual([120, 80, 80]);
+    expect(read.cellProps[0][0]).toEqual({ align: 'center', background: '#ffff00' });
+    expect(read.rows[0][0]).toEqual([{ insert: 'Report', attributes: { bold: true } }]);
+    // Зелёный палитры ячеек — по имени; белый лист таблицы не переносится.
+    expect(read.cellProps[1][1]).toEqual({ align: 'right', background: 'green' });
+    expect(read.cellProps[1][2]).toEqual({ align: 'right' });
+  });
+
+  it('Excel: <col> without <colgroup>, a colspan and an mso fill', () => {
+    const table = htmlToFragment(
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office"><body><!--StartFragment-->' +
+        '<table border=0 cellpadding=0 cellspacing=0 width=192 style="border-collapse:collapse;width:144pt">' +
+        '<col width=64 span=3 style="width:48pt">' +
+        '<tr height=20 style="height:15.0pt"><td colspan=2 height=20 class=xl67 width=128 style="height:15.0pt;width:96pt;background:#FFC000;mso-pattern:black none">Fruit</td>' +
+        '<td class=xl65 width=64 style="width:48pt">Qty</td></tr>' +
+        '<tr height=20><td height=20>Apple</td><td>red</td><td align=right x:num>3</td></tr>' +
+        '<!--EndFragment--></table></body></html>',
+    )!.blocks[0];
+    const read = readTable(table);
+
+    expect(table.props.merges).toEqual([{ row: 0, column: 0, rows: 1, columns: 2 }]);
+    expect(read.widths).toEqual([64, 64, 64]);
+    expect(read.cellProps[0][0].background).toBe('#ffc000');
+    expect(read.rows.map((row) => row.map((cell) => cell.map((n) => n.insert).join('')))).toEqual([
+      ['Fruit', '', 'Qty'],
+      ['Apple', 'red', '3'],
+    ]);
+  });
+});

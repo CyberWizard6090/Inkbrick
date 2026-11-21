@@ -182,7 +182,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 - A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
 - Table cells coloured lime, teal, cyan, indigo or magenta showed the pale block background instead of the saturated cell colour: five block rules came after the cell rules and won.
 - Every cell colour now keeps AA contrast with its text: the dark text of coloured cells is `#111111` (was `#1a1a1a`, 4.4:1 on purple), and indigo is a little darker (`#5e61ef`) with white text.
-- A table copied to Google Docs, Word or mail keeps its merged cells (`colspan`/`rowspan`, hidden cells left out), cell backgrounds and borders; a table pasted from HTML keeps its cell backgrounds (palette colours by name, white skipped) and column widths.
+- A table copied to Google Docs, Word or mail keeps its merged cells (`colspan`/`rowspan`, hidden cells left out), cell backgrounds and borders; a table pasted from HTML keeps its cell backgrounds (palette colours by name, white skipped) and column widths (Excel writes them in points).
 - While cells of a table are selected, the browser's text highlight is hidden in that table: it followed the reading order and also painted cells outside the selected rectangle.
 - Deleting the row or column that holds the main cell of a merge lost the merged text while the merge itself stayed: the text and look of the cell now move to the next cell of the merge.
 - Pasting into a table cell hidden by a merge wrote the text into that hidden cell, where it could not be seen; it now goes to the visible cell of the merge.

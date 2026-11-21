@@ -68,18 +68,30 @@ function backgroundOf(cell: HTMLElement): string | undefined {
   return CELL_NAMES.get(hex) ?? hex;
 }
 
-/** Ширины столбцов из `<colgroup>`: `style="width:120px"` или `width="120"`; прочее — по содержимому. */
+/** Ширина в пикселях из `120`, `120px` или `90pt` (Excel пишет пункты: 1pt = 4/3px); иное — `null`. */
+function pixels(raw: string | null | undefined): number | null {
+  const match = /^(\d+(?:\.\d+)?)(px|pt)?$/i.exec((raw ?? '').trim());
+
+  if (!match) return null;
+
+  const value = Number(match[1]) * (match[2]?.toLowerCase() === 'pt' ? 4 / 3 : 1);
+
+  return value > 0 ? Math.round(value) : null;
+}
+
+/**
+ * Ширины столбцов из `<col>` (Google Sheets — в `<colgroup>`, у Excel `<col>` прямо в таблице, парсер сам оборачивает его):
+ * стиль `width`, иначе атрибут `width`; `span` повторяет ширину. Без единой ширины — `undefined` (по содержимому).
+ */
 function widthsOf(table: HTMLTableElement, count: number): (number | null)[] | undefined {
   const cols = Array.from(table.querySelectorAll(':scope > colgroup > col'));
   const widths: (number | null)[] = [];
 
   for (const col of cols) {
-    const raw = (col as HTMLElement).style?.width || col.getAttribute('width') || '';
-    const px = /^(\d+(?:\.\d+)?)(px)?$/.exec(raw.trim());
-    const value = px ? Math.round(Number(px[1])) : null;
+    const value = pixels((col as HTMLElement).style?.width) ?? pixels(col.getAttribute('width'));
     const span = Math.max(1, Math.trunc(Number(col.getAttribute('span'))) || 1);
 
-    for (let i = 0; i < span; i++) widths.push(value && value > 0 ? value : null);
+    for (let i = 0; i < span; i++) widths.push(value);
   }
 
   const result = Array.from({ length: count }, (_, i) => widths[i] ?? null);
