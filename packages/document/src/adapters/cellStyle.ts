@@ -23,7 +23,7 @@ const CELL_HEX: Readonly<Record<string, string>> = {
   lime: '#84cc16',
   teal: '#14b8a6',
   cyan: '#06b6d4',
-  indigo: '#6366f1',
+  indigo: '#5e61ef',
   magenta: '#d946ef',
 };
 
@@ -35,7 +35,7 @@ function textOn(hex: string): string {
     return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   });
 
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.179 ? '#ffffff' : '#1a1a1a';
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.179 ? '#ffffff' : '#111111';
 }
 
 /** `style` блока: выравнивание и фон (оттенок светлой темы: в экспорте переменных темы нет). */

@@ -2157,6 +2157,26 @@
     background-color: color-mix(in srgb, var(--inkbrick-highlight-red) 35%, transparent);
   }
 
+  :where([data-background='lime']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-lime) 35%, transparent);
+  }
+
+  :where([data-background='teal']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-teal) 35%, transparent);
+  }
+
+  :where([data-background='cyan']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-cyan) 35%, transparent);
+  }
+
+  :where([data-background='indigo']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-indigo) 35%, transparent);
+  }
+
+  :where([data-background='magenta']) {
+    background-color: color-mix(in srgb, var(--inkbrick-highlight-magenta) 35%, transparent);
+  }
+
   /* Фон ячейки таблицы: насыщенный цвет (как кружок в меню) и текст по контрасту, без полей наружу и непрозрачный. */
   :where([data-inkbrick-block='table-cell'][data-background]) {
     margin-inline: 0;
@@ -2226,32 +2246,12 @@
 
   :where([data-inkbrick-block='table-cell'][data-background='indigo']) {
     background-color: var(--inkbrick-cell-indigo);
-    color: var(--inkbrick-cell-text-dark);
+    color: var(--inkbrick-cell-text-light);
   }
 
   :where([data-inkbrick-block='table-cell'][data-background='magenta']) {
     background-color: var(--inkbrick-cell-magenta);
     color: var(--inkbrick-cell-text-dark);
-  }
-
-  :where([data-background='lime']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-lime) 35%, transparent);
-  }
-
-  :where([data-background='teal']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-teal) 35%, transparent);
-  }
-
-  :where([data-background='cyan']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-cyan) 35%, transparent);
-  }
-
-  :where([data-background='indigo']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-indigo) 35%, transparent);
-  }
-
-  :where([data-background='magenta']) {
-    background-color: color-mix(in srgb, var(--inkbrick-highlight-magenta) 35%, transparent);
   }
 
   /* Свой цвет фона (`#rrggbb` из выбора «Свой цвет…»): разбавлен так же, как оттенок из палитры. */
