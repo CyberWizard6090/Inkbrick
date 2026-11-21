@@ -481,3 +481,45 @@ test.describe('Tables on a phone', () => {
       .toBeGreaterThan(before + 20);
   });
 });
+
+test.describe('The insert markers at the top left corner', () => {
+  test('«row above» and «column left» are two separate markers, each on its own border', async ({
+    page,
+  }) => {
+    await build(page, { rows: 3, columns: 3 });
+    await page.mouse.move(2, 2);
+    await hoverCell(page, 0, 0);
+
+    const frame = (await page.locator(table).boundingBox())!;
+    const row = page.locator(`${part('row-insert')}[data-edge="start"]`);
+    const column = page.locator(`${part('column-insert')}[data-edge="start"]`);
+
+    await expect(row).toHaveAttribute('aria-label', 'Insert row above');
+    await expect(column).toHaveAttribute('aria-label', 'Insert column left');
+
+    const a = (await row.boundingBox())!;
+    const b = (await column.boundingBox())!;
+    const centre = (box: { x: number; y: number; width: number; height: number }) => ({
+      x: box.x + box.width / 2,
+      y: box.y + box.height / 2,
+    });
+
+    // «Строка выше» — на левой границе ниже угла, «столбец слева» — на верхней правее угла; они не касаются.
+    expect(Math.abs(centre(a).x - frame.x)).toBeLessThan(4);
+    expect(centre(a).y).toBeGreaterThan(frame.y + 6);
+    expect(Math.abs(centre(b).y - frame.y)).toBeLessThan(4);
+    expect(centre(b).x).toBeGreaterThan(frame.x + 6);
+    expect(a.x + a.width <= b.x || a.y >= b.y + b.height).toBe(true);
+
+    // Каждый делает своё.
+    await row.click();
+    await expect(page.locator(`${table} tr`)).toHaveCount(4);
+    await expect(page.locator(`${table} tr`).first().locator('td')).toHaveCount(3);
+
+    await page.mouse.move(2, 2);
+    await hoverCell(page, 0, 0);
+    await column.click();
+    await expect(page.locator(`${table} tr`).first().locator('td')).toHaveCount(4);
+    await expect(page.locator(`${table} tr`)).toHaveCount(4);
+  });
+});

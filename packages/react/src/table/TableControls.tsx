@@ -1138,8 +1138,14 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const rowInsertGap = rowAxis + markerHalf;
   const columnInsertRise = rowAxis + markerHalf;
   // Плашка строки — по высоте строки, как плашка столбца по ширине: отступы по краям оставляют место маркерам вставки.
-  const rowPill = Math.max(coarse ? 20 : 14, row.height - 2 * gripInset);
-  const rowPillTop = row.top + (row.height - rowPill) / 2;
+  // Верхний левый угол: кружок «строка выше» у первой строки и «столбец слева» у первого столбца легли бы друг на друга
+  // и выглядели бы общими. Они разведены: первый — на левой границе чуть ниже угла, второй — на верхней чуть правее.
+  const cornerShift = coarse ? 22 : 14;
+  const rowStart = row.top + (active.row === 0 ? cornerShift : 0);
+  const columnStart = cell.left + (active.column === 0 ? cornerShift : 0);
+  const rowPill = Math.max(10, row.top + row.height - gripInset - (rowStart + gripInset));
+  const rowPillTop = rowStart + gripInset;
+  const columnPill = Math.max(10, cell.left + cell.width - gripInset - (columnStart + gripInset));
   // Палец, узкий столбец: крупные маркеры вставки по краям налезли бы на плашку столбца. Их нет, вставка — из меню столбца.
   const columnInserts = !coarse || cell.width >= 2 * gripInset + 40;
   const Menu = slots.BlockMenu ?? DefaultBlockMenu;
@@ -1171,21 +1177,17 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           >
             <span data-inkbrick-part="dots" aria-hidden="true" />
           </button>
-          {/* Верхний левый угол: маркер «строка выше» лёг бы на маркер «столбец слева» (оба на углу таблицы). Вставка
-              выше остаётся в меню строки. */}
-          {!(active.row === 0 && active.column === 0) && (
-            <button
-              {...control}
-              type="button"
-              data-inkbrick-part="row-insert"
-              data-edge="start"
-              aria-label={t('table.row.insertAbove')}
-              title={t('table.row.insertAbove')}
-              disabled={!canAddRow}
-              style={{ left: Math.max(2, table.left - rowInsertGap), top: row.top - markerHalf }}
-              onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
-            />
-          )}
+          <button
+            {...control}
+            type="button"
+            data-inkbrick-part="row-insert"
+            data-edge="start"
+            aria-label={t('table.row.insertAbove')}
+            title={t('table.row.insertAbove')}
+            disabled={!canAddRow}
+            style={{ left: Math.max(2, table.left - rowInsertGap), top: rowStart - markerHalf }}
+            onClick={() => perform(() => run('insertTableRow', { index: active.row }))}
+          />
           <button
             {...control}
             type="button"
@@ -1208,9 +1210,9 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
             aria-haspopup="menu"
             aria-expanded={menu?.kind === 'column'}
             style={{
-              left: cell.left + gripInset,
+              left: columnStart + gripInset,
               top: edgeTop(table.top - rowAxis - pillHalf),
-              width: Math.max(14, cell.width - 2 * gripInset),
+              width: columnPill,
             }}
             onClick={() => open('column', cell.left + 6, table.top + 10)}
           >
@@ -1226,7 +1228,10 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
                 aria-label={t('table.column.insertLeft')}
                 title={t('table.column.insertLeft')}
                 disabled={!canAddColumn}
-                style={{ left: cell.left - markerHalf, top: edgeTop(table.top - columnInsertRise) }}
+                style={{
+                  left: columnStart - markerHalf,
+                  top: edgeTop(table.top - columnInsertRise),
+                }}
                 onClick={() => perform(() => run('insertTableColumn', { index: active.column }))}
               />
               <button
