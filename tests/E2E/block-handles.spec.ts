@@ -100,7 +100,7 @@ test.describe('Block handle', () => {
     await expect(page.locator(handle)).toHaveAttribute('data-block', /.+/);
   });
 
-  test('stays inside the document, also next to a nested list item', async ({ page }) => {
+  test('stays next to the document, also next to a nested list item', async ({ page }) => {
     await typeBlocks(page, ['- one', 'two']);
     await page.keyboard.press('Tab');
 
@@ -110,7 +110,8 @@ test.describe('Block handle', () => {
       await hoverBlock(page, index);
       const box = (await page.locator(handle).boundingBox())!;
 
-      expect(box.x).toBeGreaterThanOrEqual(root.x);
+      // Ручка отступает от блока и может лечь на поле страницы, но не дальше 32 px за левый край корня.
+      expect(box.x).toBeGreaterThanOrEqual(root.x - 32);
       await expect(page.locator(handle)).not.toHaveAttribute('data-compact', /.*/);
     }
   });

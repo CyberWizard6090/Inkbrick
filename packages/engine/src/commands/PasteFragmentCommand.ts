@@ -1,8 +1,15 @@
-import { TABLE, type BaseBlock, type InlineNode } from '@inkbrick/document';
+import {
+  TABLE,
+  TABLE_CELL,
+  type BaseBlock,
+  type InlineNode,
+  type TableMerge,
+} from '@inkbrick/document';
 
 import type { Fragment, FragmentBlock } from '../clipboard/types';
 import { addTableColumn, addTableRow } from '../table/tableOps';
 import { locateTableCell, tableCellAt, tableSize } from '../table/tableGrid';
+import { mergeAt, normalizeMerges } from '../table/tableMerge';
 import {
   MAX_TABLE_CELLS,
   MAX_TABLE_COLUMNS,
@@ -172,6 +179,8 @@ function supported(hasTables: boolean, fragment: Fragment): Fragment {
 
 /**
  * Таблица, вставленная в ячейку: ячейки заполняются от каретки, недостающие строки и столбцы добавляются.
+ * Как в Excel, содержимое занятых ячеек заменяется (текст ячейки с курсором тоже). Объединения вставленной таблицы
+ * переносятся; если прямоугольник накрывает скрытые ячейки объединения, таблица не вставляется.
  * `undefined` — это не таблица или она не поместится в пределы размера: тогда фрагмент идёт текстом.
  */
 function fillTable(
@@ -185,7 +194,16 @@ function fillTable(
 
   if (!position) return undefined;
 
-  const { rows } = readTable(source);
+  const read = readTable(source);
+  const { rows } = read;
+  // Оформление ячеек из буфера (его можно подделать) проверяется схемой ячейки: лишние свойства отбрасываются, а с
+  // недопустимым значением оформление этой ячейки не переносится вовсе.
+  const cellProps = read.cellProps.map((row) =>
+    row.map(
+      (props) =>
+        (engine.schema.validateProps(TABLE_CELL, props).data ?? {}) as Record<string, unknown>,
+    ),
+  );
   const columns = rows[0]?.length ?? 0;
   const needRows = position.row + rows.length;
   const needColumns = position.column + columns;
@@ -193,7 +211,22 @@ function fillTable(
   if (columns === 0 || needColumns > MAX_TABLE_COLUMNS || needRows * needColumns > MAX_TABLE_CELLS)
     return undefined;
 
-  let size = tableSize(getBlock, position.tableId)!;
+  const before = tableSize(getBlock, position.tableId)!;
+  const existing = normalizeMerges(
+    getBlock(position.tableId)?.props.merges,
+    before.rows,
+    before.columns,
+  );
+
+  // Скрытые ячейки объединения не видны: писать в них значит потерять текст. Такая таблица идёт текстом.
+  for (let r = position.row; r < Math.min(needRows, before.rows); r++)
+    for (let c = position.column; c < Math.min(needColumns, before.columns); c++) {
+      const found = mergeAt(existing, r, c);
+
+      if (found && !found.origin) return undefined;
+    }
+
+  let size = before;
 
   for (; size.rows < needRows; size = tableSize(getBlock, position.tableId)!)
     addTableRow(engine, tx, position.tableId, size.rows);
@@ -202,18 +235,50 @@ function fillTable(
     addTableColumn(engine, tx, position.tableId, size.columns);
 
   let last: CaretResult | undefined;
+  // Фон, границы и выравнивание ячеек переносятся вместе с текстом (как при копировании внутри таблицы). Фрагмент без
+  // всякого оформления — простой текст (TSV из Excel, строки текста): оформление ячеек получателя он не стирает.
+  const styled = cellProps.flat().some((props) => Object.keys(props).length);
 
   rows.forEach((row, r) =>
     row.forEach((content, c) => {
       const id = tableCellAt(getBlock, position.tableId, position.row + r, position.column + c)!;
 
       engine.block.updateContent(tx, id, structuredClone(content));
+
+      if (styled) {
+        // Свой объект у каждой ячейки: проверка схемой уже вернула копию.
+        const props = cellProps[r]?.[c] ?? {};
+
+        engine.block.update(tx, id, (cell) => ({ ...cell, props }));
+      }
       last = { blockId: id, offset: engine.inline.length(content) };
     }),
   );
 
+  // Объединения вставленной таблицы переезжают на место вставки. Пересекающиеся с существующими пропускаются.
+  const moved = normalizeMerges(source.props.merges, rows.length, columns)
+    .map((merge) => ({
+      ...merge,
+      row: merge.row + position.row,
+      column: merge.column + position.column,
+    }))
+    .filter((merge) => !existing.some((other) => overlaps(merge, other)));
+
+  if (moved.length > 0) {
+    engine.block.update(tx, position.tableId, (table) => ({
+      ...table,
+      props: { ...table.props, merges: [...existing, ...moved] },
+    }));
+  }
+
   return last;
 }
+
+const overlaps = (a: TableMerge, b: TableMerge) =>
+  a.row < b.row + b.rows &&
+  b.row < a.row + a.rows &&
+  a.column < b.column + b.columns &&
+  b.column < a.column + a.columns;
 
 function adoptType(
   context: CommandContext,

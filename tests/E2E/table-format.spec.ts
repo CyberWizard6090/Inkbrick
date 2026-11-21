@@ -5,7 +5,6 @@ const editable = '.editable';
 const table = '[data-inkbrick-block="table"]';
 const cells = `${table} td`;
 const menu = '[data-testid="context-menu"]';
-const blockMenu = '[data-testid="block-menu"]';
 const palette = '[data-testid="command-palette"]';
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 
@@ -64,17 +63,10 @@ const aligns = (page: Page) =>
     ),
   );
 
-/** Ручка таблицы показывается, пока над таблицей мышь. */
-async function openTableMenu(page: Page) {
-  const box = (await page.locator(cells).nth(4).boundingBox())!;
-
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-
-  const grip = page.locator('[data-inkbrick-ui="table-controls"][data-inkbrick-part="table-grip"]');
-
-  await expect(grip).toBeVisible();
-  await grip.click();
-  await expect(page.locator(blockMenu)).toBeVisible();
+/** Пункты таблицы — в контекстном меню ячейки (правая кнопка): отдельной угловой кнопки у таблицы нет. */
+async function openTableMenu(page: Page, index = 4) {
+  await page.locator(cells).nth(index).locator(editable).click({ button: 'right' });
+  await expect(page.locator(menu)).toBeVisible();
 }
 
 test.describe('Formatting of selected table cells', () => {
@@ -177,12 +169,12 @@ test.describe('Table formatting menu', () => {
       ['table-striped', 'data-striped'],
     ] as const) {
       await openTableMenu(page);
-      await page.locator(`${blockMenu} [data-action="${action}"]`).click();
+      await page.locator(`${menu} [data-action="${action}"]`).click();
       await expect(page.locator(table)).toHaveAttribute(attribute, 'true');
     }
 
     await openTableMenu(page);
-    await page.locator(`${blockMenu} [data-action="table-borders"]`).click();
+    await page.locator(`${menu} [data-action="table-borders"]`).click();
     await expect(page.locator(table)).toHaveAttribute('data-borders', 'none');
 
     // Первая ячейка каждой строки тела выделена заголовочным столбцом.
@@ -197,25 +189,43 @@ test.describe('Table formatting menu', () => {
     await expect(page.locator(table)).not.toHaveAttribute('data-borders', 'none');
   });
 
-  test('the background goes to the selected cells, otherwise to the whole table', async ({
+  test('the background goes to the selected cells, otherwise to the cell under the menu', async ({
     page,
   }) => {
+    const background = async (color: string) => {
+      await page.locator(`${menu} [data-action="table-cell-background"]`).hover();
+      await page
+        .locator(`[data-flyout="table-cell-background"] [data-action="color-${color}"]`)
+        .click();
+    };
+
     await dragCells(page, 0, 1);
-    await openTableMenu(page);
-    await page.locator(`${blockMenu} [data-action="background-yellow"]`).click();
+    await openTableMenu(page, 1);
+    await background('yellow');
     await expect(page.locator(`${cells}[data-background="yellow"]`)).toHaveCount(2);
 
     await page.keyboard.press('Escape');
     await page.locator(cells).nth(8).locator(editable).click();
-    await openTableMenu(page);
-    await page.locator(`${blockMenu} [data-action="background-green"]`).click();
-    await expect(page.locator(`${cells}[data-background="green"]`)).toHaveCount(9);
+    await openTableMenu(page, 8);
+    await background('green');
+    await expect(page.locator(`${cells}[data-background="green"]`)).toHaveCount(1);
   });
 
   test('the same items are in the context menu of a cell and in the palette', async ({ page }) => {
     await page.locator(cells).nth(4).locator(editable).click({ button: 'right' });
     await expect(page.locator(menu)).toBeVisible();
-    await page.getByRole('menuitem', { name: 'Shade alternate rows' }).click();
+    // Пункты таблицы сгруппированы, свойства — переключатели с постоянным названием.
+    await expect(page.locator(`${menu} [data-inkbrick-part="label"]`)).toHaveText([
+      'Rows',
+      'Columns',
+      'Table',
+      'Design',
+    ]);
+
+    const striped = page.getByRole('menuitemcheckbox', { name: 'Striped rows' });
+
+    await expect(striped).toHaveAttribute('aria-checked', 'false');
+    await striped.click();
     await expect(page.locator(table)).toHaveAttribute('data-striped', 'true');
 
     await page.locator(cells).nth(4).locator(editable).click();

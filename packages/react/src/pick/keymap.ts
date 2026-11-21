@@ -1,4 +1,13 @@
+import { locateTableCell } from '@inkbrick/engine';
+
 import type { KeyBinding, KeymapContext } from '../keymap/types';
+
+/** Каретка или выделение внутри ячейки таблицы. */
+const inTableCell = (context: KeymapContext) => {
+  const id = context.selection()?.from.blockId;
+
+  return !!id && !!locateTableCell((block) => context.editor.store.getBlock(block), id);
+};
 import {
   deleteBlocks,
   duplicateBlocks,
@@ -188,6 +197,9 @@ export const pickKeymap: readonly KeyBinding[] = [
       !context.view.contextMenu.getState().position &&
       !context.view.blocks.getState().menu &&
       !context.view.cells.get() &&
+      // В ячейке таблицы Esc ничего не выделяет (как в MS Office): иначе таблица целиком становится выбранным блоком,
+      // и вставка создаёт новую таблицу рядом, а не заполняет ячейки.
+      !inTableCell(context) &&
       blocksAtSelection(context).length > 0,
     run: (context) => {
       const ids = blocksAtSelection(context);

@@ -36,9 +36,33 @@ export function createInputActions(
       caret = action();
     });
 
-    if (caret) view.placeCaret(caret.blockId, caret.offset);
+    if (caret) {
+      const target = editable(caret);
+
+      view.placeCaret(target.blockId, target.offset);
+    }
 
     syncSlash();
+  };
+
+  /**
+   * Каретка, которую вернула история, может указывать на блок без текста (таблицу после отмены вставки строки): в нём
+   * её не поставить, и браузер уводил её из таблицы. Тогда — первый текстовый блок внутри него (ячейка).
+   */
+  const editable = (caret: CaretResult): CaretResult => {
+    if (view.getElement(caret.blockId)) return caret;
+
+    const stack = [...(editor.store.getBlock(caret.blockId)?.children ?? [])].reverse();
+
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+
+      if (view.getElement(id)) return { blockId: id, offset: 0 };
+
+      stack.push(...[...(editor.store.getBlock(id)?.children ?? [])].reverse());
+    }
+
+    return caret;
   };
 
   const syncSlash = () => syncSlashMenu(editor, view, slashItems);

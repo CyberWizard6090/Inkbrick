@@ -119,6 +119,15 @@ describe('@inkbrick/styles: стили не конкурируют со стил
     expect(offenders).toEqual([]);
   });
 
+  it.each(FILES)('%s: псевдоэлемент стоит после :where(), а не внутри', (file) => {
+    // Внутри :where() псевдоэлемент недопустим: браузер отбрасывает такое правило целиком.
+    const offenders = selectorsOf(read(file)).filter((selector) =>
+      /:where\((?:[^()]|\([^()]*\))*::/.test(selector),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
   it.each(FILES)('%s не использует !important и классы разметки', (file) => {
     const css = read(file);
 

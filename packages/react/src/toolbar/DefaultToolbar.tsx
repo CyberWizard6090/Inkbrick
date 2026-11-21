@@ -8,6 +8,7 @@ import {
   type Alignment,
 } from '@inkbrick/document';
 
+import { useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import { Icon, type IconName } from '../icons/Icon';
 import { CustomColorSwatch } from '../ui/CustomColorSwatch';
@@ -59,6 +60,7 @@ export function DefaultToolbar({
   const [below, setBelow] = useState(false);
   const [width, setWidth] = useState(0);
   const [turnOpen, setTurnOpen] = useState(false);
+  const { sheet, inset } = useSheet();
 
   useEffect(() => {
     if (!linkOpen) return;
@@ -81,6 +83,8 @@ export function DefaultToolbar({
   }, [position.x, position.y, linkOpen, panel]);
 
   const inline = placement === 'inline';
+  // Телефон: полоса стоит внизу экрана во всю ширину, над экранной клавиатурой, а не прыгает за выделением.
+  const docked = !inline && sheet;
   const left = Math.max(8, Math.min(position.x - width / 2, window.innerWidth - width - 8));
 
   const submit = (event: FormEvent) => {
@@ -104,16 +108,19 @@ export function DefaultToolbar({
       role="toolbar"
       aria-label={t('toolbar.label')}
       data-inkbrick-ui="toolbar"
-      data-placement={inline ? 'inline' : below ? 'below' : 'above'}
+      data-placement={inline ? 'inline' : docked ? 'docked' : below ? 'below' : 'above'}
+      data-sheet={docked || undefined}
       data-testid="toolbar"
       style={
         inline
           ? undefined
-          : {
-              left,
-              top: position.y,
-              transform: below ? 'translateY(28px)' : 'translateY(calc(-100% - 8px))',
-            }
+          : docked
+            ? { bottom: inset }
+            : {
+                left,
+                top: position.y,
+                transform: below ? 'translateY(28px)' : 'translateY(calc(-100% - 8px))',
+              }
       }
       onMouseDown={(event) => {
         if (event.target !== input.current) event.preventDefault();

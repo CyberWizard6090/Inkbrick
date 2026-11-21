@@ -3,13 +3,17 @@ import {
   isAlignment,
   isBlockBackground,
   isColorName,
+  isHexColor,
   safeCssColor,
+  TABLE_BORDER_SIDES,
+  TABLE_BORDER_STYLES,
   TABLE_BORDER_WIDTHS,
   type Alignment,
   type BlockBackground,
   type BlockId,
   type ColorName,
   type TableBorderSide,
+  type TableBorderStyle,
   type TableBorderWidth,
   type TableProps,
   type TextAttributes,
@@ -166,15 +170,16 @@ export const AlignTableCellsCommand = defineBlockCommand<
   },
 });
 
-/** Фон ячеек прямоугольника (цвет из `BLOCK_BACKGROUNDS`); `null` снимает фон. */
+/** Фон ячеек прямоугольника (цвет из `BLOCK_BACKGROUNDS` или свой `#rrggbb`); `null` снимает фон. */
 export const SetTableCellsBackgroundCommand = defineBlockCommand<
   TableProps,
-  { range: TableRange; background: BlockBackground | null }
+  { range: TableRange; background: BlockBackground | string | null }
 >({
   type: 'setTableCellsBackground',
 
   canExecute: (context, { range, background }) =>
-    (background === null || isBlockBackground(background)) && cellsOf(context, range).length > 0,
+    (background === null || isBlockBackground(background) || isHexColor(background)) &&
+    cellsOf(context, range).length > 0,
 
   execute(context, { range, background }) {
     for (const id of cellsOf(context, range)) {
@@ -212,7 +217,11 @@ export const TABLE_BORDER_MODES = [
   'none',
 ] as const;
 
-export type TableBorderMode = (typeof TABLE_BORDER_MODES)[number];
+/**
+ * Режимы `setTableCellsBorders`: линии из `TABLE_BORDER_MODES` или `keep` — не добавлять и не убирать линии, а только
+ * сменить толщину, цвет и начертание тех, что уже есть у ячеек прямоугольника.
+ */
+export type TableBorderMode = (typeof TABLE_BORDER_MODES)[number] | 'keep';
 
 const FACING: Readonly<Record<TableBorderSide, TableBorderSide>> = {
   top: 'bottom',
@@ -232,24 +241,37 @@ const SIDE_PROP: Readonly<Record<TableBorderSide, string>> = {
  * Границы ячеек прямоугольника. `mode` выбирает линии: все, внешние, внутренние (горизонтальные и вертикальные вместе
  * или по отдельности), одну из четырёх внешних сторон или «без границ» (убирает и линии на краю прямоугольника). Линия
  * между двумя ячейками записывается в обе, поэтому соседняя ячейка вне прямоугольника не перебивает её. `width` —
- * толщина (для `none` не нужна), `color` — цвет из палитры; без цвета остаётся прежний.
+ * толщина (для `none` не нужна), `color` — цвет из палитры, `style` — начертание (одно на все стороны ячейки); что не
+ * передано, остаётся прежним. Режим `keep` меняет только оформление уже существующих линий (`width`, `color`, `style`;
+ * нужен хотя бы один из них): сторона без значения считается линией, если у таблицы включены границы.
  */
 export const SetTableCellsBordersCommand = defineBlockCommand<
   TableProps,
-  { range: TableRange; mode: TableBorderMode; width?: TableBorderWidth; color?: ColorName | null }
+  {
+    range: TableRange;
+    mode: TableBorderMode;
+    width?: TableBorderWidth;
+    color?: ColorName | null;
+    style?: TableBorderStyle;
+  }
 >({
   type: 'setTableCellsBorders',
 
-  canExecute(context, { range, mode, width, color }) {
-    if (!TABLE_BORDER_MODES.includes(mode)) return false;
-    if (mode !== 'none' && (!width || width === 'none' || !TABLE_BORDER_WIDTHS.includes(width)))
-      return false;
+  canExecute(context, { range, mode, width, color, style }) {
+    if (mode !== 'keep' && !TABLE_BORDER_MODES.includes(mode)) return false;
+    if (width !== undefined && !TABLE_BORDER_WIDTHS.includes(width)) return false;
     if (color !== undefined && color !== null && !isColorName(color)) return false;
+    if (style !== undefined && !TABLE_BORDER_STYLES.includes(style)) return false;
+
+    if (mode === 'keep') {
+      if (width === 'none' || (width === undefined && color === undefined && style === undefined))
+        return false;
+    } else if (mode !== 'none' && (!width || width === 'none')) return false;
 
     return cellsOf(context, range).length > 0;
   },
 
-  execute(context, { range, mode, width, color }) {
+  execute(context, { range, mode, width, color, style }) {
     const getBlock = (id: BlockId) => context.transaction.getBlock(id);
     const size = tableSize(getBlock, context.block.id);
     const clamped = clampTableRange(getBlock, context.block.id, range);
@@ -262,57 +284,104 @@ export const SetTableCellsBordersCommand = defineBlockCommand<
       bottom: size.rows - 1,
       right: size.columns - 1,
     });
-    const value: TableBorderWidth = mode === 'none' ? 'none' : (width ?? 'thin');
-    const touched = new Set<BlockId>();
+    const fallback: TableBorderWidth = context.block.props.borders === false ? 'none' : 'thin';
 
-    const put = (row: number, column: number, side: TableBorderSide) => {
+    /**
+     * Сторона ячейки: толщина (`undefined` — прежняя) и цвет с начертанием этой стороны (что не передано, остаётся;
+     * обычный цвет и сплошная линия снимают свойство). Общие на ячейку `borderColor` и `borderStyle` из старых документов
+     * сначала раскладываются по сторонам, чтобы смена одной стороны не меняла остальные.
+     */
+    const put = (
+      row: number,
+      column: number,
+      side: TableBorderSide,
+      value: TableBorderWidth | undefined,
+    ) => {
       const id = full[row]?.[column];
 
       if (!id) return;
 
-      touched.add(id);
-      context.engine.block.update(context.transaction, id, (cell) => ({
-        ...cell,
-        props: { ...cell.props, [SIDE_PROP[side]]: value },
-      }));
-    };
-    // Линия записывается и в ячейку, и в соседа с другой стороны (если он есть).
-    const line = (row: number, column: number, side: TableBorderSide) => {
-      put(row, column, side);
+      context.engine.block.update(context.transaction, id, (cell) => {
+        const props: Record<string, unknown> = { ...cell.props };
+        const set = (key: string, next: unknown) => {
+          if (next === undefined) delete props[key];
+          else props[key] = next;
+        };
 
-      const dRow = side === 'top' ? -1 : side === 'bottom' ? 1 : 0;
-      const dColumn = side === 'left' ? -1 : side === 'right' ? 1 : 0;
+        for (const kind of ['Color', 'Style']) {
+          const shared = props[`border${kind}`];
 
-      put(row + dRow, column + dColumn, FACING[side]);
+          if (shared === undefined) continue;
+
+          for (const each of TABLE_BORDER_SIDES) props[SIDE_PROP[each] + kind] ??= shared;
+          delete props[`border${kind}`];
+        }
+
+        const key = SIDE_PROP[side];
+
+        if (value !== undefined) props[key] = value;
+
+        if (value === 'none') {
+          set(`${key}Color`, undefined);
+          set(`${key}Style`, undefined);
+        } else {
+          if (color !== undefined) set(`${key}Color`, color ?? undefined);
+          if (style !== undefined) set(`${key}Style`, style === 'solid' ? undefined : style);
+        }
+
+        return { ...cell, props: props as typeof cell.props };
+      });
     };
+    // Ячейка по другую сторону линии.
+    const near = (row: number, column: number, side: TableBorderSide) =>
+      [
+        row + (side === 'top' ? -1 : side === 'bottom' ? 1 : 0),
+        column + (side === 'left' ? -1 : side === 'right' ? 1 : 0),
+      ] as const;
+    // Линия записывается и в ячейку, и в соседа с другой стороны (если он есть): у соседа меняется только эта сторона.
+    const line = (
+      row: number,
+      column: number,
+      side: TableBorderSide,
+      value: TableBorderWidth | undefined,
+    ) => {
+      put(row, column, side, value);
+      put(...near(row, column, side), FACING[side], value);
+    };
+    const value: TableBorderWidth = mode === 'none' ? 'none' : (width ?? 'thin');
 
     for (let row = clamped.top; row <= clamped.bottom; row++) {
       for (let column = clamped.left; column <= clamped.right; column++) {
+        if (mode === 'keep') {
+          // Только оформление существующих линий; без `width` толщины не меняются ни у ячейки, ни у соседа.
+          for (const side of TABLE_BORDER_SIDES) {
+            const current = (getBlock(full[row]?.[column] ?? '')?.props[SIDE_PROP[side]] ??
+              fallback) as TableBorderWidth;
+
+            if (current !== 'none') line(row, column, side, width);
+          }
+
+          continue;
+        }
+
         const first = row === clamped.top;
         const last = row === clamped.bottom;
         const left = column === clamped.left;
         const right = column === clamped.right;
         const all = mode === 'all' || mode === 'none';
 
-        if (all || mode === 'outside' || mode === 'top') if (all || first) line(row, column, 'top');
+        if (all || mode === 'outside' || mode === 'top')
+          if (all || first) line(row, column, 'top', value);
         if (all || mode === 'outside' || mode === 'bottom')
-          if (all || last) line(row, column, 'bottom');
+          if (all || last) line(row, column, 'bottom', value);
         if (all || mode === 'outside' || mode === 'left')
-          if (all || left) line(row, column, 'left');
+          if (all || left) line(row, column, 'left', value);
         if (all || mode === 'outside' || mode === 'right')
-          if (all || right) line(row, column, 'right');
-        if ((mode === 'inside' || mode === 'insideHorizontal') && !first) line(row, column, 'top');
-        if ((mode === 'inside' || mode === 'insideVertical') && !left) line(row, column, 'left');
-      }
-    }
-
-    if (color !== undefined) {
-      for (const id of touched) {
-        context.engine.block.update(context.transaction, id, (cell) => {
-          const { borderColor: _previous, ...rest } = cell.props;
-
-          return { ...cell, props: color === null ? rest : { ...rest, borderColor: color } };
-        });
+          if (all || right) line(row, column, 'right', value);
+        if ((mode === 'inside' || mode === 'insideHorizontal') && !first)
+          line(row, column, 'top', value);
+        if ((mode === 'inside' || mode === 'insideVertical') && !left)
+          line(row, column, 'left', value);
       }
     }
   },

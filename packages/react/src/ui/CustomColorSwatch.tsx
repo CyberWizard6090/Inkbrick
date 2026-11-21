@@ -51,6 +51,13 @@ export function CustomColorSwatch({
 
     if (!node) return;
 
+    // Пока открыто системное окно, поле помечено: меню видит, что выбирают цвет, и не закрывается, когда окно браузера
+    // теряет фокус. Метка снимается, когда фокус вернулся на страницу (системное окно закрыто).
+    node.dataset.picking = '';
+    window.addEventListener('focus', () => setTimeout(() => delete node.dataset.picking), {
+      once: true,
+    });
+
     try {
       node.showPicker();
     } catch {

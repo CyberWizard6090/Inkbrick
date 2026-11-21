@@ -49,6 +49,12 @@ function caretBefore(type: string, payload: unknown): CaretResult | undefined {
 
   const p = payload as Record<string, any>;
 
+  // Команда, которой вызывающий сам сообщил, где стояла каретка (вставка строки таблицы клавишей Tab): отмена вернёт её туда.
+  const given = p.caretBefore as Partial<CaretResult> | undefined;
+
+  if (given && typeof given.blockId === 'string' && typeof given.offset === 'number')
+    return { blockId: given.blockId, offset: given.offset };
+
   switch (type) {
     case 'insertText':
       return p.selection?.anchor;

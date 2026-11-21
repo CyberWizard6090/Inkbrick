@@ -98,15 +98,16 @@ function mountTable(props: Parameters<typeof mountEditor>[1] = {}) {
 }
 
 describe('table controls: visibility', () => {
-  it('shows the grips, the add buttons and a resize handle per column while the caret is in the table', () => {
+  it('shows the grips, the markers on the boundaries and a resize handle per column while the caret is in the table', () => {
     const { focus, $, $$ } = mountTable();
 
     focus(1, 2);
 
     expect($('row-grip')!.getAttribute('aria-label')).toBe('Row 2: click for options');
     expect($('column-grip')!.getAttribute('aria-label')).toBe('Column 3: click for options');
-    expect($('add-row')).not.toBeNull();
-    expect($('add-column')).not.toBeNull();
+    expect($$('row-insert')).toHaveLength(2);
+    expect($$('column-insert')).toHaveLength(2);
+    expect($('add-row')).toBeNull();
     expect($$('resize')).toHaveLength(3);
   });
 
@@ -115,7 +116,7 @@ describe('table controls: visibility', () => {
 
     caret(ids[0], 0);
     expect($('row-grip')).toBeNull();
-    expect($('add-row')).toBeNull();
+    expect($('row-insert')).toBeNull();
     expect($$('resize')).toHaveLength(0);
 
     cleanup();
@@ -125,7 +126,7 @@ describe('table controls: visibility', () => {
     act(() => readOnly.editor.setReadOnly(true));
     readOnly.focus(0, 0);
     expect(readOnly.$('row-grip')).toBeNull();
-    expect(readOnly.$('add-column')).toBeNull();
+    expect(readOnly.$('column-insert')).toBeNull();
   });
 
   it('the controls stay out of the editable root, so selection and copying never see them', () => {
@@ -187,23 +188,23 @@ describe('table controls: visibility', () => {
   });
 });
 
-describe('table controls: add buttons', () => {
-  it('add row appends a row and puts the caret into its first cell', () => {
-    const { focus, $, click, size, grid, editor } = mountTable();
+describe('table controls: markers on the boundaries', () => {
+  it('the lower marker of the last row appends a row', () => {
+    const { focus, $$, click, size, grid, editor } = mountTable();
 
-    focus(0, 0);
-    click($('add-row')!);
+    focus(2, 0);
+    click($$('row-insert')[1]);
 
     expect(size()).toEqual({ rows: 4, columns: 3 });
     expect(grid()[3]).toEqual(['', '', '']);
     expect(validateSnapshot(editor.serialize(), editor.schema)).toEqual([]);
   });
 
-  it('add column appends a column; both are one undo step', () => {
-    const { focus, $, click, size, editor } = mountTable();
+  it('the right marker of a column inserts a column; it is one undo step', () => {
+    const { focus, $$, click, size, editor } = mountTable();
 
     focus(1, 1);
-    click($('add-column')!);
+    click($$('column-insert')[1]);
     expect(size()).toEqual({ rows: 3, columns: 4 });
 
     editor.undo();
@@ -211,7 +212,7 @@ describe('table controls: add buttons', () => {
   });
 
   it('are disabled at the size limits', () => {
-    const { editor, tableId, focus, $ } = mountTable();
+    const { editor, tableId, focus, $$ } = mountTable();
 
     act(() => {
       for (let c = 3; c < MAX_TABLE_COLUMNS; c++)
@@ -222,8 +223,8 @@ describe('table controls: add buttons', () => {
     });
     focus(0, 0);
 
-    expect(($('add-column') as HTMLButtonElement).disabled).toBe(true);
-    expect(($('add-row') as HTMLButtonElement).disabled).toBe(false);
+    expect(($$('column-insert')[1] as HTMLButtonElement).disabled).toBe(true);
+    expect(($$('row-insert')[1] as HTMLButtonElement).disabled).toBe(false);
   });
 });
 
@@ -299,12 +300,14 @@ describe('table controls: row menu', () => {
     const first = mountTable();
 
     open(first, 0);
-    expect(first.action('row-header').textContent).toContain('regular row');
+    // Переключатель: название постоянное, состояние — в aria-checked.
+    expect(first.action('row-header').textContent).toBe('Header row');
+    expect(first.action('row-header').getAttribute('aria-checked')).toBe('true');
     first.click(first.action('row-header'));
     expect(first.tableProps().header).toBe(false);
 
     open(first, 0);
-    expect(first.action('row-header').textContent).toContain('header');
+    expect(first.action('row-header').getAttribute('aria-checked')).toBe('false');
     first.click(first.action('row-header'));
     expect(first.tableProps().header).toBe(true);
   });
@@ -333,13 +336,14 @@ describe('table controls: row menu', () => {
       document.querySelector('[data-inkbrick-block="table"]')!.hasAttribute(name);
 
     open(t, 0);
-    expect(t.action('row-freeze').textContent).toBe('Keep first row in view');
+    expect(t.action('row-freeze').textContent).toBe('Freeze first row');
+    expect(t.action('row-freeze').getAttribute('aria-checked')).toBe('false');
     t.click(t.action('row-freeze'));
     expect(t.tableProps().freezeRow).toBe(true);
     expect(frozen('data-freeze-row')).toBe(true);
 
     open(t, 0);
-    expect(t.action('row-freeze').textContent).toBe('Stop keeping first row in view');
+    expect(t.action('row-freeze').getAttribute('aria-checked')).toBe('true');
     t.click(t.action('row-freeze'));
     expect(frozen('data-freeze-row')).toBe(false);
 
@@ -662,18 +666,23 @@ describe('table controls: resizing', () => {
     const t = mountTable();
 
     t.focus(0, 0);
-    act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowRight' }));
-    expect(t.tableProps().widths).toEqual([100, 110, 90]);
+    const grip = t.$$('resize')[1] as HTMLElement;
 
-    // Ширина читается с экрана (в заглушке всегда 100), поэтому второй шаг считается от неё же.
+    grip.focus();
+    act(() => void fireEvent.keyDown(grip, { key: 'ArrowRight' }));
+    expect(t.tableProps().widths).toEqual([100, 110, 90]);
+    // Фокус не уходит с ручки: следующая стрелка продолжает менять ширину.
+    expect(document.activeElement).toBe(grip);
+
+    // Второй шаг считается от сохранённых ширин: столбец 1 вернулся к 100, а соседний столбец 2 — к 100.
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'ArrowLeft' }));
-    expect(t.tableProps().widths).toEqual([100, 90, 110]);
+    expect(t.tableProps().widths).toEqual([100, 100, 100]);
 
     act(() => void fireEvent.keyDown(t.$$('resize')[1], { key: 'a' }));
-    expect(t.tableProps().widths).toEqual([100, 90, 110]);
+    expect(t.tableProps().widths).toEqual([100, 100, 100]);
 
     act(() => void fireEvent.doubleClick(t.$$('resize')[1]));
-    expect(t.tableProps().widths).toEqual([100, null, 110]);
+    expect(t.tableProps().widths).toEqual([100, null, 100]);
 
     // Без заданной ширины двойной клик ничего не делает.
     cleanup();

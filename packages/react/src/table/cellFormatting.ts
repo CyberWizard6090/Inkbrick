@@ -62,7 +62,7 @@ export const clearCellsFormat = (editor: Editor, selection: CellSelection) =>
 export const backgroundCells = (
   editor: Editor,
   selection: CellSelection,
-  background: BlockBackground | null,
+  background: BlockBackground | string | null,
 ) => runOnCells(editor, selection, 'setTableCellsBackground', { background });
 
 const FORMAT_KEYS: Readonly<Record<string, TableTextFormat>> = {

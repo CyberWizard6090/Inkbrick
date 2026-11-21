@@ -9,3 +9,9 @@ export interface MergedCell {
 
 /** Объединённые ячейки таблицы по id ячейки; в таблице без объединений — пустая карта. */
 export const TableMergeContext = createContext<ReadonlyMap<string, MergedCell>>(new Map());
+
+/**
+ * Строка заголовка таблицы (id первой строки) или `null`, если заголовка нет. Ячейки читают её из контекста, а не из
+ * хранилища: так они перерисовываются, когда заголовок выключают или первой становится другая строка.
+ */
+export const TableHeaderRowContext = createContext<string | null>(null);

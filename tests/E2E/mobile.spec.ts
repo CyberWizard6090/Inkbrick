@@ -45,6 +45,31 @@ test.describe('Mobile layout', () => {
     expect(panel.right).toBeLessThanOrEqual(375);
   });
 
+  test('on a phone the toolbar is docked at the bottom, full width; its panel opens above it', async ({
+    page,
+  }) => {
+    await page.locator('.editable').first().click();
+    await page.keyboard.type('some text to format');
+    await page.keyboard.press('Shift+Home');
+
+    const bar = page.locator(toolbar);
+
+    await expect(bar).toHaveAttribute('data-placement', 'docked');
+    await page.waitForTimeout(350);
+
+    const rect = (await bar.boundingBox())!;
+
+    expect(rect.x).toBe(0);
+    expect(Math.round(rect.width)).toBe(375);
+    expect(Math.round(rect.y + rect.height)).toBe(740);
+
+    // Палитра цвета — над полосой, а не под ней (под ней экранная клавиатура).
+    await bar.locator('[aria-expanded]').nth(1).click();
+    const panel = (await bar.locator('> [data-inkbrick-part="panel"]').boundingBox())!;
+
+    expect(panel.y + panel.height).toBeLessThanOrEqual(rect.y);
+  });
+
   test('the slash menu fits the screen', async ({ page }) => {
     await page.locator('.editable').first().click();
     await page.keyboard.type('/');
