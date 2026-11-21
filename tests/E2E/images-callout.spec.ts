@@ -80,6 +80,15 @@ async function insertImageBlock(page: Page) {
   await expect(page.getByTestId('image-picker')).toBeVisible();
 }
 
+/** Вкладка «Ссылка» выбора картинки (по умолчанию открыта «Загрузка»). */
+const linkTab = (page: Page) => page.getByRole('tab', { name: 'Link' }).click();
+
+/** Картинка из выбора сразу открывает окно обрезки (`images.cropOnAdd`): закрываем его «Отменой». */
+async function skipCrop(page: Page) {
+  await page.getByTestId('image-cropper').getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByTestId('image-cropper')).toHaveCount(0);
+}
+
 test.describe('Callout', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -187,6 +196,7 @@ test.describe('Image: adding', () => {
 
   test('embedding by link: normalises the address, rejects unsafe ones', async ({ page }) => {
     await insertImageBlock(page);
+    await linkTab(page);
     const input = page.getByLabel('Image URL');
 
     for (const bad of ['javascript:alert(1)', 'data:image/svg+xml;base64,PHN2Zz4=', '   ']) {
@@ -209,6 +219,7 @@ test.describe('Image: adding', () => {
     await insertImageBlock(page);
     await page.route('https://images.invalid/**', (route) => route.abort());
 
+    await linkTab(page);
     await page.getByLabel('Image URL').fill('images.invalid/a.png');
     await page.getByRole('button', { name: 'Embed' }).click();
 
@@ -328,6 +339,174 @@ test.describe('Image: adding', () => {
   });
 });
 
+test.describe('Image: dragging in from outside', () => {
+  /** Перетаскивание над документом: `dragover` (или `drop`) с файлом картинки либо с картинкой с сайта. */
+  async function dragTo(
+    page: Page,
+    type: 'dragover' | 'drop' | 'dragleave',
+    x: number,
+    y: number,
+    from: 'file' | 'site',
+  ) {
+    await page.evaluate(
+      ([type, x, y, from, b64, url]) => {
+        const dt = new DataTransfer();
+
+        if (from === 'file') {
+          dt.items.add(
+            new File([Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))], 'drop.png', {
+              type: 'image/png',
+            }),
+          );
+        } else {
+          dt.setData('text/uri-list', url);
+          dt.setData(
+            'text/html',
+            `<a href="https://site.test/page"><img src="${url}" alt="site"></a>`,
+          );
+        }
+
+        (document.querySelector('.inkbrick-editor') as HTMLElement).dispatchEvent(
+          new DragEvent(type, {
+            dataTransfer: dt,
+            clientX: x as number,
+            clientY: y as number,
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: null,
+          }),
+        );
+      },
+      [type, x, y, from, PNG_BASE64, PNG_DATA_URL] as const,
+    );
+  }
+
+  async function twoLines(page: Page) {
+    await page.goto('/');
+    await page.locator(editable).first().click();
+    await page.keyboard.type('one');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('two');
+  }
+
+  test('the insertion line shows where a dragged file lands, like for a moved block', async ({
+    page,
+  }) => {
+    await twoLines(page);
+
+    const one = (await page.locator(editable).first().boundingBox())!;
+    const two = (await page.locator(editable).nth(1).boundingBox())!;
+    const line = page.getByTestId('drop-indicator');
+
+    // Верхняя половина строки — перед блоком, нижняя — после него.
+    await expect
+      .poll(async () => {
+        await dragTo(page, 'dragover', one.x + 20, one.y + 3, 'file');
+
+        return line.count();
+      })
+      .toBe(1);
+
+    const before = (await line.boundingBox())!;
+
+    expect(Math.abs(before.y - one.y)).toBeLessThan(8);
+
+    await dragTo(page, 'dragover', two.x + 20, two.y + two.height - 3, 'file');
+    await expect
+      .poll(async () => (await line.boundingBox())!.y)
+      .toBeGreaterThan(two.y + two.height - 6);
+
+    // Унесли с документа — линии нет.
+    await dragTo(page, 'dragleave', 0, 0, 'file');
+    await expect(line).toHaveCount(0);
+
+    await dragTo(page, 'dragover', one.x + 20, one.y + 3, 'file');
+    await expect(line).toHaveCount(1);
+    await dragTo(page, 'drop', one.x + 20, one.y + 3, 'file');
+
+    await expect(page.locator('.image-figure img')).toBeVisible();
+    await expect(line).toHaveCount(0);
+    expect((await doc(page)).map((r) => `${r.flavour}:${r.text}`)).toEqual([
+      'image:',
+      'paragraph:one',
+      'paragraph:two',
+    ]);
+  });
+
+  test('an image dragged from a website is inserted by its address where the line was', async ({
+    page,
+  }) => {
+    await twoLines(page);
+
+    const two = (await page.locator(editable).nth(1).boundingBox())!;
+
+    await expect
+      .poll(async () => {
+        await dragTo(page, 'dragover', two.x + 20, two.y + 3, 'site');
+
+        return page.getByTestId('drop-indicator').count();
+      })
+      .toBe(1);
+    await dragTo(page, 'drop', two.x + 20, two.y + 3, 'site');
+
+    await expect(page.locator('.image-figure img')).toHaveAttribute('src', PNG_DATA_URL);
+    expect((await doc(page)).map((r) => r.flavour)).toEqual(['paragraph', 'image', 'paragraph']);
+  });
+
+  test('the picker: Upload and Link tabs; an image dropped from a website fills the block', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await insertImageBlock(page);
+
+    const upload = page.getByRole('tab', { name: 'Upload' });
+    const link = page.getByRole('tab', { name: 'Link' });
+
+    await expect(upload).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByTestId('image-file')).toBeAttached();
+    await expect(page.getByRole('textbox', { name: 'Image URL' })).toHaveCount(0);
+
+    await upload.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(link).toHaveAttribute('aria-selected', 'true');
+    await expect(link).toBeFocused();
+    await expect(page.getByRole('textbox', { name: 'Image URL' })).toBeVisible();
+    await page.keyboard.press('ArrowLeft');
+    await expect(upload).toHaveAttribute('aria-selected', 'true');
+
+    // Картинка с сайта, брошенная на выбор, встаёт в этот же блок (линия документа над выбором не нужна).
+    const picker = (await page.getByTestId('image-picker').boundingBox())!;
+
+    await page.evaluate(
+      ([x, y, url]) => {
+        const dt = new DataTransfer();
+
+        dt.setData('text/uri-list', url as string);
+
+        const zone = document.querySelector('[data-testid="image-picker"]')!;
+
+        for (const type of ['dragover', 'drop']) {
+          zone.dispatchEvent(
+            new DragEvent(type, {
+              dataTransfer: dt,
+              clientX: x as number,
+              clientY: y as number,
+              bubbles: true,
+              cancelable: true,
+            }),
+          );
+        }
+      },
+      [picker.x + 20, picker.y + 20, PNG_DATA_URL] as const,
+    );
+
+    await skipCrop(page);
+    await expect(page.getByTestId('drop-indicator')).toHaveCount(0);
+    expect((await doc(page)).map((r) => r.flavour)).toEqual(['image', 'paragraph']);
+    expect((await doc(page))[0].props.src).toBe(PNG_DATA_URL);
+  });
+});
+
 test.describe('Image: uploads (custom uploader)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -396,8 +575,10 @@ test.describe('Image: editing', () => {
   async function withImage(page: Page) {
     await page.goto('/');
     await insertImageBlock(page);
+    await linkTab(page);
     await page.getByLabel('Image URL').fill(PNG_DATA_URL);
     await page.getByLabel('Image URL').press('Enter');
+    await skipCrop(page);
     await expect(page.locator('.image-figure img')).toBeVisible();
     await page.locator('.image-figure').hover();
   }
@@ -405,9 +586,11 @@ test.describe('Image: editing', () => {
   test('alignment and width change the props and the layout', async ({ page }) => {
     await withImage(page);
 
-    await page.getByRole('button', { name: 'Align right' }).click();
-    await page.getByLabel('Image width').click();
-    await page.getByRole('option', { name: '50%' }).click();
+    await page.getByRole('button', { name: 'Alignment' }).click();
+    await page.getByRole('menuitemradio', { name: 'Align right' }).click();
+    // Ширина — боковой ручкой: с клавиатуры по 5 %.
+    await page.getByRole('slider', { name: 'Image width' }).first().focus();
+    for (let i = 0; i < 10; i++) await page.keyboard.press('ArrowLeft');
 
     expect((await doc(page))[0].props).toMatchObject({ align: 'right', width: 50 });
     await expect(page.locator('.image-figure')).toHaveAttribute('data-align', 'right');
@@ -421,8 +604,10 @@ test.describe('Image: editing', () => {
   }) => {
     await withImage(page);
 
-    await page.getByLabel('Caption').fill('A tiny image');
-    await page.getByLabel('Caption').press('Enter');
+    await page.getByRole('button', { name: 'Add a caption' }).click();
+    await page.getByRole('textbox', { name: 'Caption' }).fill('A tiny image');
+    await page.getByRole('textbox', { name: 'Caption' }).press('Enter');
+    await page.getByRole('button', { name: 'More' }).click();
     await page.getByLabel('Alt text').fill('pixel');
     await page.getByLabel('Alt text').press('Enter');
 
@@ -431,9 +616,11 @@ test.describe('Image: editing', () => {
 
     await page.locator(editable).last().click();
     await page.keyboard.press(`${modifier}+Z`); // alt
-    await expect(page.getByLabel('Alt text')).toHaveValue('');
     await page.keyboard.press(`${modifier}+Z`); // caption
-    await expect(page.getByLabel('Caption')).toHaveValue('');
+    expect((await doc(page))[0].props).toMatchObject({ caption: '', alt: '', showCaption: true });
+    await expect(page.getByRole('textbox', { name: 'Caption' })).toHaveValue('');
+    await page.keyboard.press(`${modifier}+Shift+Z`); // caption again
+    await expect(page.getByRole('textbox', { name: 'Caption' })).toHaveValue('A tiny image');
   });
 
   test('typing in the caption does not leak into the document as text or shortcuts', async ({
@@ -441,7 +628,8 @@ test.describe('Image: editing', () => {
   }) => {
     await withImage(page);
 
-    await page.getByLabel('Caption').click();
+    await page.getByRole('button', { name: 'Add a caption' }).click();
+    await page.getByRole('textbox', { name: 'Caption' }).click();
     await page.keyboard.type('# not a heading /image');
     await page.keyboard.press('Escape'); // отмена: значение не сохраняется
 
@@ -455,11 +643,14 @@ test.describe('Image: editing', () => {
   }) => {
     await withImage(page);
 
+    await page.getByRole('button', { name: 'More' }).click();
     await page.getByRole('button', { name: 'Replace image' }).click();
     await expect(page.getByTestId('image-picker')).toBeVisible();
 
+    await linkTab(page);
     await page.getByLabel('Image URL').fill(PNG_DATA_URL);
     await page.getByLabel('Image URL').press('Enter');
+    await skipCrop(page);
     // Картинка 1×1 растягивается на всю ширину: наводим на её верх без прокрутки (прокрутка прячет ручку).
     await expect(page.locator('.image-figure img')).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -651,8 +842,12 @@ test.describe('Image: read-only', () => {
     await page.getByTestId('mode-read').click();
 
     await expect(page.locator('.image-figure img')).toBeVisible();
-    await expect(page.locator('.image-tools')).toHaveCount(0);
-    await expect(page.getByLabel('Caption')).toHaveCount(0);
+    // В режиме чтения у картинки только просмотр и скачивание.
+    await expect(page.locator('[data-tool="view"]')).toHaveCount(1);
+    await expect(page.locator('[data-tool="download"]')).toHaveCount(1);
+    await expect(page.locator('[data-tool="crop"]')).toHaveCount(0);
+    await expect(page.locator('[data-inkbrick-part="resize"]')).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Caption' })).toHaveCount(0);
     await expect(page.locator('figcaption')).toHaveText('Static caption');
     await expect(page.getByTestId('image-picker')).toHaveCount(0);
     await expect(page.getByText('No image')).toBeVisible();

@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 import { Editor } from '@inkbrick/engine';
 
@@ -397,7 +397,7 @@ describe('images', () => {
     );
   });
 
-  it('the picker embeds a safe link, rejects an unsafe one; caption, alt, width and alignment are edited in place', () => {
+  it('the picker embeds a safe link, rejects an unsafe one; caption, alt, width and alignment are edited in place', async () => {
     const { editor, ids, caret, key, type } = mountEditor(['']);
     const image = () =>
       Object.values(editor.document.dump()).find((b) => b.flavour === 'block:image')!;
@@ -405,6 +405,16 @@ describe('images', () => {
     caret(ids[0], 0);
     type('/image');
     key('Enter');
+
+    // Выбор начинается с вкладки «Загрузка»; ссылка — на соседней.
+    const tabs = [...document.querySelectorAll<HTMLElement>('[role="tab"]')];
+
+    expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual(['true', 'false']);
+    expect($('[data-testid="image-file"]')).not.toBeNull();
+    expect($('[data-inkbrick-part="picker-input"]')).toBeNull();
+    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true');
+    expect($('[data-testid="image-file"]')).toBeNull();
 
     const input = $<HTMLInputElement>('[data-inkbrick-part="picker-input"]')!;
 
@@ -417,27 +427,56 @@ describe('images', () => {
     fireEvent.click($('[data-inkbrick-part="picker-button"]')!);
     expect(image().props.src).toBe('https://example.com/cat.png');
 
+    // Картинка из выбора сразу открывает обрезку (`images.cropOnAdd`): закрываем её «Отменой».
+    await vi.dynamicImportSettled();
+    await act(async () => {});
+    fireEvent.click(await screen.findByText('Cancel'));
+    expect($('[data-testid="image-cropper"]')).toBeNull();
+
+    // Подписи нет, пока её не включили кнопкой.
+    expect($('[data-inkbrick-part="caption"]')).toBeNull();
+    fireEvent.click($('[data-tool="caption"]')!);
+    expect(image().props.showCaption).toBe(true);
+
     const caption = $<HTMLInputElement>('[data-inkbrick-part="caption"]')!;
     fireEvent.change(caption, { target: { value: 'A cat' } });
     fireEvent.keyDown(caption, { key: 'Enter' });
     expect(image().props.caption).toBe('A cat');
 
-    const alt = $<HTMLInputElement>('[data-inkbrick-part="alt"]')!;
+    // Кнопка снова — подпись убрана вместе с текстом (одним шагом).
+    fireEvent.click($('[data-tool="caption"]')!);
+    expect(image().props).toMatchObject({ showCaption: false, caption: '' });
+    expect($('[data-inkbrick-part="caption"]')).toBeNull();
+
+    fireEvent.click($('[data-tool="more"]')!);
+
+    // Escape в поле отменяет набранное и закрывает панель «ещё».
+    let alt = $<HTMLInputElement>('[data-inkbrick-part="alt"]')!;
     fireEvent.change(alt, { target: { value: 'typed' } });
     fireEvent.keyDown(alt, { key: 'Escape' });
     expect(image().props.alt).not.toBe('typed');
+    expect($('[data-popover="more"]')).toBeNull();
 
-    fireEvent.click($('[data-inkbrick-part="width"]')!);
-    fireEvent.click($('[data-inkbrick-ui="select"] [data-value="50"]')!);
-    expect(image().props.width).toBe(50);
+    fireEvent.click($('[data-tool="more"]')!);
+    alt = $<HTMLInputElement>('[data-inkbrick-part="alt"]')!;
+    fireEvent.change(alt, { target: { value: 'A grey cat' } });
+    fireEvent.keyDown(alt, { key: 'Enter' });
+    expect(image().props.alt).toBe('A grey cat');
 
-    const right = [...document.querySelectorAll<HTMLElement>('[data-inkbrick-part="tool"]')].find(
-      (b) => b.getAttribute('data-align') === 'right',
-    );
-    if (right) {
-      fireEvent.click(right);
-      expect(image().props.align).toBe('right');
-    }
+    // Ширина — боковыми ручками: стрелки по 5 %, Home и End — наименьшая и полная.
+    const handle = $<HTMLElement>('[data-inkbrick-part="resize"][data-side="end"]')!;
+    expect(handle.getAttribute('role')).toBe('slider');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(image().props.width).toBe(95);
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(image().props.width).toBe(10);
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(image().props.width).toBe(100);
+
+    fireEvent.click($('[data-tool="align"]')!);
+    fireEvent.click($('[data-inkbrick-part="tool-item"][data-align="right"]')!);
+    expect(image().props.align).toBe('right');
+    expect($('[data-popover="align"]')).toBeNull();
   });
 });
 

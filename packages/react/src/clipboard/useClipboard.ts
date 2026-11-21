@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from 'react';
 
-import { normalizeLinkUrl } from '@inkbrick/document';
+import { isSafeImageUrl, normalizeLinkUrl } from '@inkbrick/document';
 import {
   FRAGMENT_MIME,
   fragmentToHtml,
@@ -12,19 +12,22 @@ import {
   type Fragment,
 } from '@inkbrick/engine';
 
-import { blockAtPoint, probePoint } from '../block-handle/geometry';
+import { blockAtPoint, blockElement, probePoint, rowRect } from '../block-handle/geometry';
 import { createInputActions } from '../editing/inputActions';
 import { deleteBlocks, pickedFragment } from '../pick/actions';
 import { readDocSelection, type DocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { hasExternalImages, rehostExternalImages } from '../images/external';
-import { insertImageFiles } from '../images/insertImages';
+import { hasExternalImages, isExternalImageUrl, rehostExternalImages } from '../images/external';
+import { insertImageFiles, topLevelBlockId } from '../images/insertImages';
 import { isAcceptedImage } from '../images/upload';
 import { setLinkInSelection } from '../toolbar/formatting';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { lazyModule } from '../ui/lazy';
 import { tabularText } from './tabularText';
+
+/** Перетаскивание картинок снаружи: место вставки и разбор картинок с сайтов — отдельный чанк (грузится при первом переносе). */
+const externalDrop = lazyModule(() => import('../images/externalDrop'));
 
 /**
  * Разбор HTML из буфера (Google Docs, Word, браузер) — отдельный чанк: он нужен только при вставке чужой разметки. Чанк
@@ -340,31 +343,63 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       }
     };
 
-    // Перетаскивание картинок из файлового менеджера. Без обработки браузер открыл бы файл вместо редактора.
-    const hasFiles = (event: DragEvent) =>
-      !!event.dataTransfer && [...event.dataTransfer.types].includes('Files');
+    // Перетаскивание картинок снаружи: файлы из файлового менеджера и картинки с сайтов. Пока картинку несут над
+    // документом, линия вставки показывает, куда она встанет (как у переноса блока). Без обработки браузер открыл бы
+    // файл вместо редактора.
+    // Перетаскивание картинок снаружи: файлы и картинки с сайтов. Пока картинку несут над документом, линия вставки
+    // показывает, куда она встанет (как у переноса блока); вся работа — в отдельном чанке. Без обработки браузер
+    // открыл бы файл вместо редактора.
+    const dropContext = {
+      editor,
+      view,
+      root,
+      images,
+      readOnly,
+      geometry: { probePoint, blockAtPoint, rowRect, blockElement, topLevelBlockId },
+      insert: insertImageFiles,
+      isAccepted: isAcceptedImage,
+      isSafe: isSafeImageUrl,
+      isExternal: isExternalImageUrl,
+      caretBlock: () => readDocSelection(root)?.to.blockId,
+    };
 
     const onDragOver = (event: DragEvent) => {
-      if (hasFiles(event)) event.preventDefault();
+      const types = event.dataTransfer?.types ?? [];
+
+      if (!types.includes('Files') && !types.includes('text/uri-list')) return;
+
+      event.preventDefault();
+      event.dataTransfer!.dropEffect = readOnly ? 'none' : 'copy';
+
+      const drop = externalDrop.get();
+
+      if (drop) drop.over(dropContext, event.clientX, event.clientY);
+      else void externalDrop.preload();
+    };
+
+    const onDragLeave = (event: DragEvent) => {
+      if (!(event.relatedTarget instanceof Node && root.contains(event.relatedTarget))) {
+        externalDrop.get()?.leave(dropContext);
+      }
     };
 
     const onDrop = (event: DragEvent) => {
-      if (!hasFiles(event)) return;
+      const data = event.dataTransfer;
+
+      if (!data || (!data.types.includes('Files') && !data.types.includes('text/uri-list'))) return;
 
       event.preventDefault();
 
-      const files = [...(event.dataTransfer?.files ?? [])].filter((file) =>
-        isAcceptedImage(file, images),
-      );
+      // Что принесли, читается сразу: потом браузер этого не отдаёт.
+      const dropped = {
+        files: [...data.files],
+        html: data.getData('text/html'),
+        uriList: data.getData('text/uri-list'),
+        x: event.clientX,
+        y: event.clientY,
+      };
 
-      if (readOnly || files.length === 0) return;
-
-      const probe = probePoint(view, event.clientX, event.clientY);
-      const target =
-        (probe ? blockAtPoint(editor, view, probe.x, probe.y) : null) ??
-        readDocSelection(root)?.to.blockId;
-
-      if (target) insertImageFiles(editor, view, images, files, target);
+      void externalDrop.preload().then((drop) => drop.drop(dropContext, dropped));
     };
 
     const onCopy = (event: ClipboardEvent) => writeSelection(event, false);
@@ -390,6 +425,7 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
     root.addEventListener('paste', onPaste);
     root.addEventListener('keydown', onKeyDown);
     root.addEventListener('dragover', onDragOver);
+    root.addEventListener('dragleave', onDragLeave);
     root.addEventListener('drop', onDrop);
 
     return () => {
@@ -401,7 +437,9 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       root.removeEventListener('paste', onPaste);
       root.removeEventListener('keydown', onKeyDown);
       root.removeEventListener('dragover', onDragOver);
+      root.removeEventListener('dragleave', onDragLeave);
       root.removeEventListener('drop', onDrop);
+      externalDrop.get()?.leave(dropContext);
     };
   }, [editor, view, ref, readOnly, images, slashItems]);
 }

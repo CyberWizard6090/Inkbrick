@@ -175,4 +175,20 @@ export const EXTRA_ICON_SHAPES = {
     ['path', { d: 'm9 11-6 6v3h9l3-3' }],
     ['path', { d: 'm22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4' }],
   ],
+  maximize: [
+    ['path', { d: 'M15 3h6v6' }],
+    ['path', { d: 'm21 3-7 7' }],
+    ['path', { d: 'm3 21 7-7' }],
+    ['path', { d: 'M9 21H3v-6' }],
+  ],
+  download: [
+    ['path', { d: 'M12 15V3' }],
+    ['path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }],
+    ['path', { d: 'm7 10 5 5 5-5' }],
+  ],
+  ellipsis: [
+    ['circle', { cx: '12', cy: '12', r: '1' }],
+    ['circle', { cx: '19', cy: '12', r: '1' }],
+    ['circle', { cx: '5', cy: '12', r: '1' }],
+  ],
 } as const satisfies Record<string, readonly IconShape[]>;

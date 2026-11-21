@@ -7,6 +7,7 @@
     "packages/document/src/markdown.ts",
     "packages/store/src/index.ts",
     "packages/engine/src/index.ts",
+    "packages/image-tools/src/index.ts",
     "packages/locales/src/index.ts",
     "packages/react/src/index.ts"
   ],

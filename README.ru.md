@@ -6,15 +6,16 @@
 
 ## Структура
 
-| Пакет               | Назначение                                                                                      |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `packages/document` | Модель документа (`BaseBlock`, `Document`), схемы блоков (zod), `SchemaRegistry`. Без React.    |
-| `packages/store`    | `DocumentStore`, транзакции, `Change`-объекты с откатом, подписки на блоки.                     |
-| `packages/locales`  | Словари интерфейса: английский (эталон) и языки, которые грузятся по требованию (русский).      |
-| `packages/engine`   | `Editor`, `Dispatcher`, команды (ввод, Enter, Backspace, форматирование, отступы), движки.      |
-| `packages/react`    | `EditorProvider`, хуки, React-представления блоков, обработка ввода в `contenteditable`.        |
-| `packages/styles`   | Стандартные стили: токены Fluent, `@layer` + `:where()`, стилизация только по `data-`атрибутам. |
-| `apps/sandbox`      | Демо-приложение (Vite).                                                                         |
+| Пакет                  | Назначение                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `packages/document`    | Модель документа (`BaseBlock`, `Document`), схемы блоков (zod), `SchemaRegistry`. Без React.                    |
+| `packages/store`       | `DocumentStore`, транзакции, `Change`-объекты с откатом, подписки на блоки.                                     |
+| `packages/locales`     | Словари интерфейса: английский (эталон) и языки, которые грузятся по требованию (русский).                      |
+| `packages/image-tools` | Окно обрезки картинки во весь экран (формы, пропорции) и просмотр картинок для React; работает и без редактора. |
+| `packages/engine`      | `Editor`, `Dispatcher`, команды (ввод, Enter, Backspace, форматирование, отступы), движки.                      |
+| `packages/react`       | `EditorProvider`, хуки, React-представления блоков, обработка ввода в `contenteditable`.                        |
+| `packages/styles`      | Стандартные стили: токены Fluent, `@layer` + `:where()`, стилизация только по `data-`атрибутам.                 |
+| `apps/sandbox`         | Демо-приложение (Vite).                                                                                         |
 
 Поток данных: `React (beforeinput) → Editor.dispatch(intent) → команда → Transaction → Change → Document → подписчики store → React`.
 

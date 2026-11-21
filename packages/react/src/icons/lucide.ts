@@ -183,6 +183,9 @@ export const EXTRA_ICON_NAMES: readonly string[] = [
   'align-justify',
   'baseline',
   'highlighter',
+  'maximize',
+  'download',
+  'ellipsis',
 ];
 
 export type IconName = keyof typeof ICON_SHAPES | keyof typeof EXTRA_ICON_SHAPES;

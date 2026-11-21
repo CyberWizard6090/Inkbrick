@@ -12,7 +12,8 @@
     "./tokens.css": "./src/tokens.css",
     "./base.css": "./src/base.css",
     "./blocks.css": "./src/blocks.css",
-    "./ui.css": "./src/ui.css"
+    "./ui.css": "./src/ui.css",
+    "./image-tools.css": "./src/image-tools.css"
   },
   "files": [
     "src"

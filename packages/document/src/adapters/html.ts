@@ -31,21 +31,34 @@ const escapeHtml = (text: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-/** Кадрирование картинки как `style`: пропорции кадра и положение (масштаб в HTML не передаётся, нужен стиль страницы). */
+/**
+ * Обрезка картинки как `style`. Обычно `src` — уже файл обрезки, и стиль нужен только кругу. Если файла нет (обрезка
+ * стилем: картинка с чужого сервера без CORS), заданная форма передаётся пропорциями кадра и положением показанной части;
+ * свободная рамка без файла в HTML не передаётся.
+ */
 function cropStyle(block: BaseBlock): string {
-  const aspect = block.props.aspect;
-  const x = Number(block.props.cropX);
-  const y = Number(block.props.cropY);
-  const ratio = typeof aspect === 'string' ? aspect : 'auto';
+  const aspect = typeof block.props.aspect === 'string' ? block.props.aspect : 'free';
+  const known = (IMAGE_ASPECTS as readonly string[]).includes(aspect);
+  const circle = aspect === 'circle' ? ';border-radius:50%' : '';
 
-  if (!(IMAGE_ASPECTS as readonly string[]).includes(ratio) || ratio === 'auto') return '';
+  if (!known || aspect === 'free' || stringProp(block, 'originalSrc') !== '') {
+    return circle ? ` style="${circle.slice(1)}"` : '';
+  }
 
-  const position =
-    Number.isFinite(x) && Number.isFinite(y)
-      ? `;object-position:${Math.min(100, Math.max(0, x))}% ${Math.min(100, Math.max(0, y))}%`
-      : '';
+  const number = (key: string, fallback: number) => {
+    const value = Number(block.props[key]);
 
-  return ` style="aspect-ratio:${ratio.replace(':', '/')};object-fit:cover;width:100%${position}"`;
+    return Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : fallback;
+  };
+  const width = number('cropWidth', 100);
+  const height = number('cropHeight', 100);
+  // У `object-fit: cover` положение p% совмещает точку p% картинки с точкой p% кадра: рамка в x% при ширине w% — это
+  // x / (100 − w).
+  const position = (start: number, size: number) =>
+    size >= 100 ? 50 : Math.round((start / (100 - size)) * 1000) / 10;
+  const ratio = aspect === 'circle' ? '1/1' : aspect.replace(':', '/');
+
+  return ` style="aspect-ratio:${ratio};object-fit:cover;width:100%;object-position:${position(number('cropX', 0), width)}% ${position(number('cropY', 0), height)}%${circle}"`;
 }
 
 function inlineToHtml(nodes: readonly InlineNode[], inCode = false): string {
