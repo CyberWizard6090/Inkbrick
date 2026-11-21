@@ -225,7 +225,9 @@
     background: var(--inkbrick-tools-hover);
   }
 
-  :where([data-inkbrick-part='cropper-orientation']) {
+  /* Иконка ориентации — по центру кнопки (пункты меню выровнены по левому краю). */
+  :where([data-inkbrick-part='cropper-menu'] [data-inkbrick-part='cropper-orientation']) {
+    justify-content: center;
     min-width: 26px;
     height: 26px;
     padding: 0;
