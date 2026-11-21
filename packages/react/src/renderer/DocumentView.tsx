@@ -14,6 +14,7 @@ import { useEditorUI } from '../ui/EditorUIContext';
 import { FormulaPopoverHost } from '../formula/FormulaPopoverHost';
 import { preloadFormulaPalette } from '../formula/LazyFormulaPalette';
 import { preloadSoon } from '../ui/lazy';
+import { installTooltips } from '../ui/tooltips';
 import { preloadIcons } from '../icons/Icon';
 import { SlashMenuHost } from '../slash/SlashMenuHost';
 import { ToolbarHost } from '../toolbar/ToolbarHost';
@@ -57,6 +58,9 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
   useClipboard(ref, readOnly);
 
   useLayoutEffect(() => view.setRoot(ref.current), [view]);
+
+  // Подсказки кнопок редактора — своя плашка в цветах темы вместо системной (`title`), одна на страницу.
+  useEffect(() => installTooltips(), []);
 
   // Пока блоки выбраны целиком, мигающая каретка скрыта: она «припаркована» браузером в начале документа.
   useEffect(

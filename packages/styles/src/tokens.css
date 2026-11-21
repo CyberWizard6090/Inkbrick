@@ -94,6 +94,10 @@
     --inkbrick-shadow-ambient: rgba(15, 15, 15, 0.05);
     --inkbrick-shadow-key: rgba(15, 15, 15, 0.1);
 
+    /* Всплывающая подсказка кнопок: тёмная плашка на светлой странице, светлее фона — на тёмной. */
+    --inkbrick-tooltip-bg: #2f2f2f;
+    --inkbrick-tooltip-fg: #ffffff;
+
     --inkbrick-syntax-keyword: #0000ff;
     --inkbrick-syntax-string: #a31515;
     --inkbrick-syntax-comment: #5d7a5a;
@@ -208,6 +212,12 @@
 
       --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.3);
       --inkbrick-shadow-key: rgba(0, 0, 0, 0.4);
+
+      --inkbrick-tooltip-bg: #3f3f3f;
+      --inkbrick-tooltip-fg: rgba(255, 255, 255, 0.92);
+
+      --inkbrick-tooltip-bg: #3f3f3f;
+      --inkbrick-tooltip-fg: rgba(255, 255, 255, 0.92);
 
       --inkbrick-syntax-keyword: #569cd6;
       --inkbrick-syntax-string: #ce9178;
