@@ -2,6 +2,8 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 
 const editable = '.editable';
 const handle = '[data-testid="block-handle"]';
+const indicator = '[data-testid="drop-indicator"]';
+const picked = '[data-picked]';
 const columns = '[data-inkbrick-block="columns"]';
 const column = '[data-inkbrick-block="column"]';
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
@@ -26,6 +28,7 @@ async function drag(
   grab: Locator,
   target: Locator,
   drop: (box: { x: number; y: number; width: number; height: number }) => [number, number],
+  release = true,
 ) {
   await grab.hover();
   await expect(page.locator(handle)).toBeVisible();
@@ -38,7 +41,8 @@ async function drag(
   await page.mouse.down();
   await page.mouse.move(grip.x + 40, grip.y + grip.height / 2 + 12, { steps: 3 });
   await page.mouse.move(x, y, { steps: 8 });
-  await page.mouse.up();
+
+  if (release) await page.mouse.up();
 }
 
 const toRight = (page: Page, from: string, to: string) =>
@@ -157,5 +161,133 @@ test.describe('Dragging blocks into columns and back', () => {
       'one',
       'two',
     ]);
+  });
+
+  test('Escape in the middle of a drag to the side leaves everything as it was', async ({
+    page,
+  }) => {
+    await typeBlocks(page, ['one', 'two', 'three']);
+    await drag(
+      page,
+      block(page, 'three'),
+      block(page, 'one'),
+      (b) => [b.x + b.width - 6, b.y + b.height / 2],
+      false,
+    );
+    await expect(page.locator(indicator)).toHaveAttribute('data-side', 'right');
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator(indicator)).toHaveCount(0);
+    await page.mouse.up();
+
+    await expect(page.locator(columns)).toHaveCount(0);
+    await expect(page.locator(editable)).toHaveText(['one', 'two', 'three']);
+
+    // Курсор остался, где был: набор идёт в «three».
+    await page.keyboard.type('!');
+    await expect(page.locator(editable)).toHaveText(['one', 'two', 'three!']);
+  });
+
+  test('Escape while dragging a block out of the columns keeps it in its column', async ({
+    page,
+  }) => {
+    await typeBlocks(page, ['one', 'two', 'three']);
+    await toRight(page, 'two', 'one');
+    await drag(
+      page,
+      block(page, 'two'),
+      block(page, 'three'),
+      (b) => [b.x + b.width / 2, b.y + b.height - 3],
+      false,
+    );
+    await page.keyboard.press('Escape');
+    await page.mouse.up();
+
+    await expectColumns(page, [['one'], ['two']]);
+    await expect(page.locator(editable)).toHaveText(['one', 'two', 'three']);
+  });
+
+  test('six columns at most: a seventh block shows no side line and drops as a plain move', async ({
+    page,
+  }) => {
+    const names = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'];
+
+    await typeBlocks(page, names);
+
+    for (let i = 1; i < 6; i++) await toRight(page, names[i], names[i - 1]);
+    await expectColumns(page, [['c1'], ['c2'], ['c3'], ['c4'], ['c5'], ['c6']]);
+
+    await drag(
+      page,
+      block(page, 'c7'),
+      block(page, 'c6'),
+      (b) => [b.x + b.width - 4, b.y + b.height / 2],
+      false,
+    );
+    // К краю нельзя: вертикальной линии нет (если линия есть — она обычная, без стороны).
+    await expect(page.locator(`${indicator}[data-side]`)).toHaveCount(0);
+    await page.mouse.up();
+
+    await expect(page.locator(`${columns} > [data-inkbrick-part="grid"] > ${column}`)).toHaveCount(
+      6,
+    );
+    await expect(page.locator(editable)).toHaveText(names);
+  });
+
+  test('picked blocks of a column leave together, and the emptied column goes', async ({
+    page,
+  }) => {
+    await typeBlocks(page, ['one', 'two', 'three', 'four']);
+    await toRight(page, 'two', 'one');
+    await below(page, 'three', 'one');
+    await expectColumns(page, [['one', 'three'], ['two']]);
+
+    // Выбираем оба блока левой колонки и уносим их под «four» одним переносом.
+    await block(page, 'one').click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect(page.locator(picked)).toHaveCount(2);
+
+    await below(page, 'one', 'four');
+
+    await expect(page.locator(columns)).toHaveCount(0);
+    await expect(page.locator(editable)).toHaveText(['two', 'four', 'one', 'three']);
+
+    // Один шаг отмены возвращает обе колонки.
+    await page.keyboard.press(`${modifier}+z`);
+    await expectColumns(page, [['one', 'three'], ['two']]);
+  });
+
+  test('picked blocks go into a column and come back in order', async ({ page }) => {
+    await typeBlocks(page, ['one', 'two', 'three', 'four']);
+    await toRight(page, 'two', 'one');
+
+    await block(page, 'three').click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect(page.locator(picked)).toHaveCount(2);
+
+    await below(page, 'three', 'two');
+    await expectColumns(page, [['one'], ['two', 'three', 'four']]);
+
+    await block(page, 'three').click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Shift+ArrowDown');
+    await below(page, 'three', 'one');
+    await expectColumns(page, [['one', 'three', 'four'], ['two']]);
+  });
+
+  test('the caret stays in its block when that block is dragged into columns and back', async ({
+    page,
+  }) => {
+    await typeBlocks(page, ['one', 'two', 'three']);
+
+    await toRight(page, 'three', 'one');
+    await page.keyboard.type('!');
+    await expect(page.locator(`${column}:nth-child(2) ${editable}`)).toHaveText('three!');
+
+    await below(page, 'three!', 'two');
+    await page.keyboard.type('?');
+    await expect(page.locator(editable)).toHaveText(['one', 'two', 'three!?']);
   });
 });
