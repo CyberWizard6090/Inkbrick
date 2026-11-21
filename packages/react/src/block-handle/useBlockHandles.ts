@@ -6,6 +6,9 @@ import { blockAtPoint, blockElement, hasHandle, probePoint, rowRect } from './ge
 
 const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Meta', 'Alt']);
 
+/** Полоса слева от блока, где стоит его ручка (ширина ручки, промежуток и запас): по пути к ручке она не уходит. */
+const HANDLE_REACH = 72;
+
 /**
  * Следит за указателем: показывает ручку у блока под курсором (в том числе в полосе слева от текста),
  * на сенсорном экране — у блока, которого коснулись; закрывает меню по клику снаружи/Esc/прокрутке
@@ -20,7 +23,29 @@ export function useBlockHandles(ref: RefObject<HTMLElement | null>, enabled: boo
 
     if (!root || !enabled) return;
 
+    /**
+     * Указатель идёт от блока к его ручке: между ними может оказаться соседний блок (таблица в соседней колонке), промежуток
+     * колонок или поле. Пока указатель на высоте блока и между его левым краем и ручкой, ручка остаётся у этого блока.
+     */
+    const towardHandle = (event: PointerEvent) => {
+      const { hover } = view.blocks.getState();
+      const wrapper = hover ? blockElement(view, hover.blockId) : null;
+
+      if (!hover || !wrapper) return false;
+
+      const box = wrapper.getBoundingClientRect();
+
+      return (
+        event.clientY >= box.top &&
+        event.clientY <= box.bottom &&
+        event.clientX >= hover.x - HANDLE_REACH &&
+        event.clientX <= box.left
+      );
+    };
+
     const showAt = (event: PointerEvent) => {
+      if (towardHandle(event)) return;
+
       const probe = probePoint(view, event.clientX, event.clientY);
 
       if (!probe) {

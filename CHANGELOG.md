@@ -180,6 +180,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 ### Fixed
 
 - A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
+- The block handle stays with its block while the pointer travels to it, also across a neighbouring table, the gap of columns or the margin: a table inside columns could not be grabbed because its handle jumped away on the way.
+- Folding a heading with a long section animates again: only the blocks near the screen move, the rest go at once; whole sections fold without an animation only above 200 blocks (was 40).
 - Table cells coloured lime, teal, cyan, indigo or magenta showed the pale block background instead of the saturated cell colour: five block rules came after the cell rules and won.
 - Every cell colour now keeps AA contrast with its text: the dark text of coloured cells is `#111111` (was `#1a1a1a`, 4.4:1 on purple), and indigo is a little darker (`#5e61ef`) with white text.
 - A table copied to Google Docs, Word or mail keeps its merged cells (`colspan`/`rowspan`, hidden cells left out), cell backgrounds and borders; a table pasted from HTML keeps its cell backgrounds (palette colours by name, white skipped) and column widths (Excel writes them in points).

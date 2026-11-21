@@ -19,7 +19,18 @@ export interface BlockRendererProps {
 const warned = new Set<string>();
 
 /** Больше стольких блоков за раз раздел сворачивается и разворачивается без анимации. */
-const MAX_ANIMATED_FOLD = 40;
+const MAX_ANIMATED_FOLD = 200;
+
+/**
+ * Блок на экране или рядом с ним (в пределах половины высоты окна): только такие сворачиваются плавно. Блоки дальше от
+ * экрана уходят сразу — разницы не видно, а большой раздел не анимирует десятки невидимых блоков.
+ */
+function nearViewport(element: HTMLElement): boolean {
+  const { top, bottom } = element.getBoundingClientRect();
+  const height = globalThis.innerHeight || 0;
+
+  return height === 0 || (bottom >= -height / 2 && top <= height * 1.5);
+}
 
 export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererProps) {
   const editor = useEditor();
@@ -72,8 +83,9 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     const element = view
       .getRoot()
       ?.querySelector<HTMLElement>(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
-    // Раздел из сотен блоков двигать нельзя: каждый анимировался бы сам. Он сворачивается сразу.
-    const animated = !!element && view.folds.canAnimate(MAX_ANIMATED_FOLD);
+    // Раздел из сотен блоков двигать нельзя: каждый анимировался бы сам. Он сворачивается сразу. В разделе поменьше плавно
+    // двигаются только блоки у экрана.
+    const animated = !!element && view.folds.canAnimate(MAX_ANIMATED_FOLD) && nearViewport(element);
 
     const appear = () => {
       if (!animated) return;

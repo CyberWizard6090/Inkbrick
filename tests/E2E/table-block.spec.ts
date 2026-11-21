@@ -224,3 +224,92 @@ test.describe('A table as a block', () => {
     await expect(cellsOf(page, 0).nth(8).locator(editable)).toHaveText('t22');
   });
 });
+
+test.describe('Reaching the handle of a table inside columns', () => {
+  /** Две таблицы рядом в колонках и абзац под ними. */
+  async function sideBySide(page: Page) {
+    await page.goto('/?lang=en');
+    await typeBlocks(page, ['one']);
+    await addTable(page, 'a');
+    await page.locator(editable, { hasText: /^one$/ }).click();
+    await page.keyboard.press('End');
+    await addTable(page, 'b');
+    await page.keyboard.press(`${modifier}+End`);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('below');
+    await page.evaluate(() => {
+      const { editor } = (
+        window as never as {
+          __inkbrick: {
+            main: {
+              editor: {
+                document: {
+                  rootId: string;
+                  getBlock: (id: string) => { flavour: string; id: string; children: string[] };
+                };
+                dispatch: (intent: unknown) => unknown;
+              };
+            };
+          };
+        }
+      ).__inkbrick.main;
+      const tables: string[] = [];
+      const walk = (id: string) => {
+        const block = editor.document.getBlock(id);
+
+        if (!block) return;
+        if (block.flavour === 'block:table') tables.push(block.id);
+        else block.children.forEach(walk);
+      };
+
+      walk(editor.document.rootId);
+      editor.dispatch({
+        type: 'moveBlockToSide',
+        payload: { blockId: tables[1], targetId: tables[0], side: 'right' },
+      });
+    });
+    await page.mouse.move(2, 2);
+  }
+
+  const column = (n: number) =>
+    `[data-inkbrick-block="columns"] [data-inkbrick-block="column"]:nth-child(${n})`;
+
+  for (const side of [1, 2]) {
+    test(`the handle of the ${side === 1 ? 'left' : 'right'} table stays while the pointer goes to it, and drags the table out`, async ({
+      page,
+    }) => {
+      await sideBySide(page);
+
+      const target = page.locator(`${column(side)} ${table}`);
+      const firstCell = (await target.locator('td').first().boundingBox())!;
+      const y = firstCell.y + 8;
+
+      // Наведение на первую ячейку: ручка таблицы появляется.
+      await page.mouse.move(firstCell.x + firstCell.width / 2, y, { steps: 4 });
+      await expect(page.locator(handle)).toBeVisible();
+      // Ручка появляется плавно (сдвиг на несколько пикселей): меряем, когда она встала.
+      await page.waitForTimeout(400);
+
+      const grip = (await page.locator(`${handle} [data-action="grip"]`).boundingBox())!;
+
+      // Указатель медленно идёт к ручке по горизонтали: ручка не переезжает (к соседней таблице или к колонкам).
+      for (let x = firstCell.x + 10; x >= grip.x + grip.width / 2; x -= 3) {
+        await page.mouse.move(x, grip.y + grip.height / 2);
+        const now = (await page.locator(`${handle} [data-action="grip"]`).boundingBox())!;
+
+        expect(Math.abs(now.x - grip.x)).toBeLessThan(2);
+      }
+
+      // Хватаем и уносим под абзац «below»: таблица выходит из колонок, колонки разворачиваются.
+      const below = (await page.locator(editable, { hasText: /^below$/ }).boundingBox())!;
+
+      await page.mouse.down();
+      await page.mouse.move(grip.x + 30, grip.y + 40, { steps: 4 });
+      await page.mouse.move(below.x + below.width / 2, below.y + below.height - 3, { steps: 8 });
+      await page.mouse.up();
+
+      await expect(page.locator('[data-inkbrick-block="columns"]')).toHaveCount(0);
+      await expect(page.locator(table)).toHaveCount(2);
+    });
+  }
+});

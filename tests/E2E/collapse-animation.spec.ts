@@ -175,23 +175,97 @@ test.describe('Collapse animation: list items and headings', () => {
     await expect(page.locator(editable, { hasText: 'second inside' })).toHaveCount(1);
   });
 
-  test('a section of many blocks folds at once, without an animation', async ({ page }) => {
+  /** Заголовок «Big» и под ним `count` строк — через движок песочницы (быстрее набора). Заголовок — у верха окна. */
+  async function bigSection(page: Page, count: number) {
     await page.goto('/?lang=en');
     await page.addStyleTag({ content: SLOW });
     await page.locator(editable).first().click();
     await page.keyboard.press(`${modifier}+End`);
     await page.keyboard.press('Enter');
     await page.keyboard.type('# Big');
+    await page.evaluate((count) => {
+      type Block = {
+        id: string;
+        flavour: string;
+        children: string[];
+        content: { insert: string }[];
+      };
+      const { editor } = (
+        window as never as {
+          __inkbrick: {
+            main: {
+              editor: {
+                document: { rootId: string; getBlock: (id: string) => Block };
+                dispatch: (intent: unknown) => { blockId: string };
+              };
+            };
+          };
+        }
+      ).__inkbrick.main;
+      const note = editor.document.getBlock(
+        editor.document.getBlock(editor.document.rootId).children[0],
+      );
+      let after = note.children[note.children.length - 1];
 
-    for (let i = 0; i < 45; i++) {
-      await page.keyboard.press('Enter');
-      await page.keyboard.type(`line ${i}`);
-    }
+      for (let i = 0; i < count; i++) {
+        after = editor.dispatch({
+          type: 'insertBlock',
+          payload: {
+            flavour: 'block:paragraph',
+            afterId: after,
+            content: [{ insert: `line ${i}` }],
+          },
+        }).blockId;
+      }
+    }, count);
+    await heading(page, 'Big').evaluate((node) => node.scrollIntoView({ block: 'start' }));
+  }
 
+  test('a long section animates the lines on the screen; lines far below go at once', async ({
+    page,
+  }) => {
+    await bigSection(page, 60);
     await heading(page, 'Big').hover();
     await heading(page, 'Big').locator('[data-inkbrick-part="fold"]').click();
 
-    await expect(page.locator(editable, { hasText: 'line 0' })).toHaveCount(0, { timeout: 1500 });
+    // Строка у заголовка ещё уходит (3 с), а строка далеко ниже экрана исчезла сразу.
+    await page.waitForTimeout(300);
+    await expect(page.locator(editable, { hasText: /^line 0$/ })).toHaveCount(1);
+    expect(
+      await animations(
+        page
+          .locator(editable, { hasText: /^line 0$/ })
+          .locator('xpath=ancestor::*[@data-block-id][1]'),
+      ),
+    ).toBeGreaterThan(0);
+    await expect(page.locator(editable, { hasText: /^line 59$/ })).toHaveCount(0);
+
+    await expect(page.locator(editable, { hasText: /^line 0$/ })).toHaveCount(0, { timeout: 5000 });
+  });
+
+  test('a section of hundreds of blocks animates only what is on the screen and folds whole', async ({
+    page,
+  }) => {
+    await bigSection(page, 205);
+    await heading(page, 'Big').hover();
+    await heading(page, 'Big').locator('[data-inkbrick-part="fold"]').click();
+    await page.waitForTimeout(300);
+
+    // Одновременно движутся только строки у экрана, а не две сотни.
+    const moving = await page.evaluate(
+      () =>
+        document.getAnimations().filter((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target as Element | null;
+
+          return !!target?.closest('[data-inkbrick-block="paragraph"]');
+        }).length,
+    );
+
+    expect(moving).toBeGreaterThan(0);
+    expect(moving).toBeLessThan(60);
+
+    await expect(page.locator(editable, { hasText: /^line 0$/ })).toHaveCount(0, { timeout: 5000 });
+    await expect(page.locator(editable, { hasText: /^line 204$/ })).toHaveCount(0);
   });
 });
 
