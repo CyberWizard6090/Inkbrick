@@ -249,7 +249,15 @@ test.describe('Frozen first row and column', () => {
     await expect(cell(page, 11, 0).locator(editable)).toHaveText('r11c0?');
 
     // Протяжка от закреплённого столбца в тело выделяет прямоугольник.
-    // Столбец 0 закреплён поверх прокрученного тела; столбец 7 виден правее него, строки 10–11 — под заголовком.
+    // Столбец 0 закреплён поверх прокрученного тела; столбец 7 виден правее него. Строка 10 ставится сразу под
+    // закреплённый заголовок: высота строк зависит от шрифтов машины, поэтому прокрутка считается, а не задаётся числом.
+    await scroller.evaluate((node) => {
+      const rows = node.querySelectorAll('tr');
+      const header = (rows[0] as HTMLElement).getBoundingClientRect().height;
+
+      node.scrollTop = (rows[10] as HTMLElement).offsetTop - header - 2;
+    });
+
     const frame = (await scroller.boundingBox())!;
     const a = (await cell(page, 10, 0).boundingBox())!;
 
