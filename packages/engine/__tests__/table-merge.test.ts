@@ -12,7 +12,7 @@ import {
   tableRangeFragment,
   tableValue,
 } from '../src';
-import { toHtml } from '@inkbrick/document';
+import { toHtml, toMarkdown } from '@inkbrick/document';
 
 const m = (row: number, column: number, rows: number, columns: number) => ({
   row,
@@ -384,5 +384,37 @@ describe('merges at the edges', () => {
       ['', 'c', 'f'],
       ['e', 'f', 'i'],
     ]);
+  });
+});
+
+describe('merged cells in Markdown', () => {
+  it('a merge flattens into a plain grid: its text in the first cell, the rest empty, rows of one width', () => {
+    const editor = createTableEditor({
+      rows: [
+        ['H1', 'H2', 'H3'],
+        ['a|b', 'x\ny', 'z'],
+        ['g', 'h', 'i'],
+      ],
+    });
+
+    editor.dispatch({
+      type: 'mergeTableCells',
+      payload: { blockId: tableIdOf(editor), range: { top: 1, left: 1, bottom: 2, right: 2 } },
+    } as never);
+
+    const lines = toMarkdown(editor.document, { schema: editor.schema })
+      .split('\n')
+      .filter((line) => line.startsWith('|'));
+    // Ячейки строки: разделители `|`, кроме экранированных `\|`.
+    const cells = (line: string) =>
+      line
+        .split(/(?<!\\)\|/)
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+
+    expect(lines).toHaveLength(4);
+    expect(lines.map((line) => cells(line).length)).toEqual([3, 3, 3, 3]);
+    expect(cells(lines[2])).toEqual(['a\\|b', 'x<br>y<br>z<br>h<br>i', '']);
+    expect(cells(lines[3])).toEqual(['g', '', '']);
   });
 });

@@ -1,4 +1,4 @@
-import { type InlineNode, isAlignment } from '@inkbrick/document';
+import { type InlineNode, TABLE_CELL_COLORS, isAlignment } from '@inkbrick/document';
 import type { FragmentBlock } from '@inkbrick/engine';
 import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from '@inkbrick/engine';
 import { cleanInline, inlineOf } from './inline';
@@ -8,6 +8,7 @@ import type { Style } from './tags';
 interface Slot {
   content: InlineNode[];
   align?: string;
+  background?: string;
 }
 
 const block = (
@@ -29,6 +30,61 @@ function alignOf(cell: HTMLElement): string | undefined {
   const value = (cell.style?.textAlign || cell.getAttribute('align') || '').trim().toLowerCase();
 
   return isAlignment(value) && value !== 'left' ? value : undefined;
+}
+
+/** `#rrggbb` из цвета CSS (`#rgb`, `#rrggbb`, `rgb()`); прозрачный, полупрозрачный и прочее — `undefined`. */
+function hexOf(value: string): string | undefined {
+  const color = value.trim().toLowerCase();
+  const short = /^#([\da-f])([\da-f])([\da-f])$/.exec(color);
+
+  if (short) return `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`;
+  if (/^#[\da-f]{6}$/.test(color)) return color;
+
+  const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)\s*(?:[,/]\s*([\d.]+%?))?\s*\)$/.exec(color);
+
+  if (!rgb) return undefined;
+  if (rgb[4] !== undefined && parseFloat(rgb[4]) < (rgb[4].endsWith('%') ? 100 : 1))
+    return undefined;
+
+  return `#${rgb
+    .slice(1, 4)
+    .map((part) => Math.min(255, Number(part)).toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+const CELL_NAMES = new Map(
+  Object.entries(TABLE_CELL_COLORS).map(([name, hex]) => [hex.toLowerCase(), name]),
+);
+
+/**
+ * Фон ячейки: цвет палитры ячеек — по имени (так он следует теме), иной — свой `#rrggbb`. Белый не переносится: это фон
+ * страницы в Word и Excel, а в тёмной теме он стал бы белым пятном.
+ */
+function backgroundOf(cell: HTMLElement): string | undefined {
+  const hex = hexOf(cell.style?.backgroundColor || cell.getAttribute('bgcolor') || '');
+
+  if (!hex || hex === '#ffffff') return undefined;
+
+  return CELL_NAMES.get(hex) ?? hex;
+}
+
+/** Ширины столбцов из `<colgroup>`: `style="width:120px"` или `width="120"`; прочее — по содержимому. */
+function widthsOf(table: HTMLTableElement, count: number): (number | null)[] | undefined {
+  const cols = Array.from(table.querySelectorAll(':scope > colgroup > col'));
+  const widths: (number | null)[] = [];
+
+  for (const col of cols) {
+    const raw = (col as HTMLElement).style?.width || col.getAttribute('width') || '';
+    const px = /^(\d+(?:\.\d+)?)(px)?$/.exec(raw.trim());
+    const value = px ? Math.round(Number(px[1])) : null;
+    const span = Math.max(1, Math.trunc(Number(col.getAttribute('span'))) || 1);
+
+    for (let i = 0; i < span; i++) widths.push(value && value > 0 ? value : null);
+  }
+
+  const result = Array.from({ length: count }, (_, i) => widths[i] ?? null);
+
+  return result.some((width) => width !== null) ? result : undefined;
 }
 
 /** Текст ячейки: абзацы и `<br>` — строки внутри ячейки (подряд идущие переводы строк сворачиваются). */
@@ -78,14 +134,20 @@ export function importTable(
 
       if (columns > 1 || height > 1) merges.push({ row: r, column, rows: height, columns });
 
-      const slot: Slot = { content: cellContent(cell, style, depth), align: alignOf(cell) };
+      const slot: Slot = {
+        content: cellContent(cell, style, depth),
+        align: alignOf(cell),
+        background: backgroundOf(cell),
+      };
 
       for (let dr = 0; dr < height; dr++) {
         grid[r + dr] ??= [];
 
         for (let dc = 0; dc < columns; dc++)
           grid[r + dr][column + dc] =
-            dr === 0 && dc === 0 ? slot : { content: [], align: slot.align };
+            dr === 0 && dc === 0
+              ? slot
+              : { content: [], align: slot.align, background: slot.background };
       }
 
       column += columns;
@@ -107,10 +169,16 @@ export function importTable(
     rows[0].parentElement?.tagName === 'THEAD' ||
     (rows[0].cells.length > 0 && Array.from(rows[0].cells).every((cell) => cell.tagName === 'TH'));
 
+  const widths = widthsOf(table, width);
+  const props: Record<string, unknown> = { header };
+
+  if (merges.length > 0) props.merges = merges;
+  if (widths) props.widths = widths;
+
   return [
     block(
       'block:table',
-      merges.length > 0 ? { header, merges } : { header },
+      props,
       [],
       grid.map((row) =>
         block(
@@ -120,12 +188,12 @@ export function importTable(
           Array.from({ length: width }, (_, column) => {
             const slot = row[column];
 
-            return block(
-              'block:table-cell',
-              slot?.align ? { align: slot.align } : {},
-              slot?.content ?? [],
-              [],
-            );
+            const cellProps: Record<string, unknown> = {};
+
+            if (slot?.align) cellProps.align = slot.align;
+            if (slot?.background) cellProps.background = slot.background;
+
+            return block('block:table-cell', cellProps, slot?.content ?? [], []);
           }),
         ),
       ),

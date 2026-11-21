@@ -4,7 +4,9 @@ import {
   isFormulaNode,
   isSafeImageUrl,
   isSafeUrl,
+  normalizeMerges,
   serializeDelimited,
+  tableCellStyle,
   type InlineNode,
 } from '@inkbrick/document';
 
@@ -105,29 +107,49 @@ function inlineToHtml(nodes: InlineNode[], inCode: boolean): string {
     .join('');
 }
 
+/**
+ * Таблица для буфера обмена (её читают Google Docs, Word, почта): объединения — `colspan`/`rowspan` без скрытых ячеек,
+ * у ячеек выравнивание, фон и свои границы, как в экспорте документа.
+ */
 function tableHtml(table: FragmentBlock): string {
-  const { header, rows, align, widths } = readTable(table);
+  const { header, rows, cellProps, widths } = readTable(table);
 
   if (rows.length === 0) return '';
 
-  const cell = (content: InlineNode[], column: number, tag: 'td' | 'th') => {
-    const side = align[column];
-    const style = side && side !== 'left' ? ` style="text-align:${side}"` : '';
+  // `rowspan` не может пересечь границу `thead` и `tbody`: объединение из строки заголовка обрезается по ней.
+  const merges = normalizeMerges(table.props.merges, rows.length, rows[0].length).map((merge) =>
+    header && merge.row < 1 && merge.row + merge.rows > 1 ? { ...merge, rows: 1 } : merge,
+  );
+  const cell = (content: InlineNode[], r: number, c: number, tag: 'td' | 'th') => {
+    const found = merges.find(
+      (merge) =>
+        r >= merge.row &&
+        r < merge.row + merge.rows &&
+        c >= merge.column &&
+        c < merge.column + merge.columns,
+    );
 
-    return `<${tag}${style}>${inlineToHtml(content, false)}</${tag}>`;
+    if (found && (found.row !== r || found.column !== c)) return '';
+
+    const spans =
+      (found && found.columns > 1 ? ` colspan="${found.columns}"` : '') +
+      (found && found.rows > 1 ? ` rowspan="${found.rows}"` : '');
+
+    return `<${tag}${spans}${tableCellStyle(cellProps[r]?.[c] ?? {})}>${inlineToHtml(content, false)}</${tag}>`;
   };
-  const row = (cells: readonly InlineNode[][], tag: 'td' | 'th') =>
-    `<tr>${cells.map((content, column) => cell(content, column, tag)).join('')}</tr>`;
+  const row = (r: number, tag: 'td' | 'th') =>
+    `<tr>${rows[r].map((content, c) => cell(content, r, c, tag)).join('')}</tr>`;
   const columns = widths.some((width) => width !== null)
     ? `<colgroup>${widths
         .map((width) => (width === null ? '<col>' : `<col style="width:${width}px">`))
         .join('')}</colgroup>`
     : '';
+  const body = rows.map((_, r) => r).slice(header ? 1 : 0);
 
   return (
     `<table>${columns}` +
-    (header ? `<thead>${row(rows[0], 'th')}</thead>` : '') +
-    `<tbody>${(header ? rows.slice(1) : rows).map((cells) => row(cells, 'td')).join('')}</tbody></table>`
+    (header ? `<thead>${row(0, 'th')}</thead>` : '') +
+    `<tbody>${body.map((r) => row(r, 'td')).join('')}</tbody></table>`
   );
 }
 
