@@ -180,6 +180,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 ### Fixed
 
 - A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
+- While cells of a table are selected, the browser's text highlight is hidden in that table: it followed the reading order and also painted cells outside the selected rectangle.
 - Deleting the row or column that holds the main cell of a merge lost the merged text while the merge itself stayed: the text and look of the cell now move to the next cell of the merge.
 - Pasting into a table cell hidden by a merge wrote the text into that hidden cell, where it could not be seen; it now goes to the visible cell of the merge.
 - Dragging a block by its handle no longer moves the caret into another block: the caret (or selection) stays where it was in the document, also when its own block is the one moved. Escape during a drag only cancels the drag; it no longer also picks a block.

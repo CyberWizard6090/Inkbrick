@@ -200,6 +200,14 @@
     box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--inkbrick-brand-bg) 18%, transparent);
   }
 
+  /*
+   * Пока в таблице выделены ячейки, видно только их выделение: обычная подсветка текста браузера шла бы по порядку
+   * чтения и задевала ячейки вне прямоугольника.
+   */
+  :where([data-inkbrick-block='table']:has([data-cell-selected]) *)::selection {
+    background: transparent;
+  }
+
   :where([data-inkbrick-part='grid'][data-cell-selecting]) {
     user-select: none;
   }
