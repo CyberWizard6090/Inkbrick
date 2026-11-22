@@ -4,6 +4,9 @@ import { act, cleanup, fireEvent } from '@testing-library/react';
 import type { CaretResult } from '@inkbrick/engine';
 
 import { columnsBlocks } from '../src';
+import { getBlockDrag } from '../src/block-handle/blockDrag';
+import type { EditorView } from '../src/editing/EditorView';
+import { useEditorView } from '../src/hooks/useEditorView';
 import { mountEditor } from './harness';
 
 beforeEach(() => {
@@ -187,5 +190,46 @@ describe('columns', () => {
     expect(t.root.querySelector('[data-inkbrick-part="divider"]')).toBeNull();
     expect(t.root.querySelector('[data-inkbrick-part="toolbar"]')).toBeNull();
     expect(t.root.querySelectorAll('[data-inkbrick-block="column"]')).toHaveLength(3);
+  });
+});
+
+describe('moving picked blocks into columns', () => {
+  let captured: EditorView | null = null;
+
+  function Capture() {
+    captured = useEditorView();
+
+    return null;
+  }
+
+  it('refuses a target that lies inside one of the moved blocks (it would land inside itself)', () => {
+    const { editor, ids } = mountEditor(['a'], { blocks: columnsBlocks, extra: <Capture /> });
+    let caret!: CaretResult;
+
+    act(() => {
+      caret = editor.dispatch({
+        type: 'insertBlock',
+        payload: { flavour: 'block:columns', afterId: ids[0], props: { ratios: [1, 1] } },
+      }) as CaretResult;
+    });
+
+    const inside = caret.blockId;
+    const columnsId = editor.document.getBlock(
+      editor.document.getBlock(inside)!.parentId!,
+    )!.parentId!;
+
+    // Выбраны «a» и блок колонок; цель — абзац внутри этих колонок. Первый шаг (a в колонку) прошёл бы, а перенос
+    // самих колонок внутрь себя движок молча отклонил бы: перенос наполовину.
+    act(() => captured!.picked.set([ids[0], columnsId], ids[0], columnsId));
+
+    const snapshot = JSON.stringify(editor.serialize());
+    const drag = getBlockDrag(editor, captured!);
+
+    expect(drag.moveToSide(ids[0], inside, 'right')).toBe(false);
+    expect(JSON.stringify(editor.serialize())).toBe(snapshot);
+
+    // Один «a» — можно: он встаёт в новую колонку рядом.
+    act(() => captured!.picked.set([ids[0]], ids[0], ids[0]));
+    expect(drag.moveToSide(ids[0], inside, 'right')).toBe(true);
   });
 });

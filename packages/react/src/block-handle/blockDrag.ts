@@ -101,13 +101,15 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
   };
 
   // Ряд выбранных блоков встаёт рядом с целью целиком: первый — в новую колонку, остальные — под ним.
+  // Цель не может быть одним из переносимых блоков или лежать внутри него: блок не встаёт в колонку внутри себя.
   const canMoveToSide = (blockId: string, targetId: string, side: DropSide) => {
-    const group = targetsOf(view, blockId);
+    const group = new Set(targetsOf(view, blockId));
 
-    return (
-      !group.includes(targetId) &&
-      editor.can('moveBlockToSide', { blockId: group[0], targetId, side })
-    );
+    for (let id: string | null = targetId; id; id = editor.store.getBlock(id)?.parentId ?? null) {
+      if (group.has(id)) return false;
+    }
+
+    return editor.can('moveBlockToSide', { blockId: [...group][0], targetId, side });
   };
 
   /**
