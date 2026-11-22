@@ -1,5 +1,5 @@
 import { downloadImage, fileNameFor } from './download';
-import { el, iconButton } from './dom';
+import { el, iconButton, setDisabled } from './dom';
 import { modal, overlayHost, watchSize } from './modal';
 
 /** Надписи окна просмотра (по умолчанию английские). */
@@ -157,10 +157,10 @@ export function openViewer(options: ViewerOptions): ViewerHandle {
 
     image.style.transform = `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`;
     stage.toggleAttribute('data-zoomed', zoom > 1);
-    previous.disabled = index === 0;
-    next.disabled = index === images.length - 1;
-    zoomOut.disabled = zoom <= MIN_ZOOM + 1e-6;
-    zoomIn.disabled = zoom >= MAX_ZOOM - 1e-6;
+    setDisabled(previous, index === 0, dialog);
+    setDisabled(next, index === images.length - 1, dialog);
+    setDisabled(zoomOut, zoom <= MIN_ZOOM + 1e-6, dialog);
+    setDisabled(zoomIn, zoom >= MAX_ZOOM - 1e-6, dialog);
     level.textContent = percent;
     level.setAttribute('aria-label', `${labels.zoomReset} (${percent})`);
   };

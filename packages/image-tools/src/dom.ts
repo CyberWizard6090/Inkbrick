@@ -111,3 +111,18 @@ export function iconButton(part: string, label: string, name: IconName): HTMLBut
     [icon(name)],
   );
 }
+
+/**
+ * Включает или выключает кнопку. Выключаемая кнопка с фокусом отдаёт его `fallback` (обычно самому окну): иначе фокус
+ * уходит на `body`, и окно перестаёт слышать клавиши — Escape, стрелки, Tab по кругу.
+ */
+export function setDisabled(
+  button: HTMLButtonElement,
+  disabled: boolean,
+  fallback: HTMLElement,
+): void {
+  if (disabled && button.ownerDocument.activeElement === button)
+    fallback.focus({ preventScroll: true });
+
+  button.disabled = disabled;
+}

@@ -1,4 +1,4 @@
-import { el, icon, setAttributes, uniqueId, type IconName } from './dom';
+import { el, icon, setAttributes, setDisabled, uniqueId, type IconName } from './dom';
 import {
   CROP_HANDLES,
   CROP_RATIOS,
@@ -224,8 +224,8 @@ export function openCropper(options: CropperOptions): CropperHandle {
     }
 
     trigger.replaceChildren(icon(shapeIcon(aspect)), icon('chevron-down'));
-    cancel.disabled = busy;
-    save.disabled = busy || !natural;
+    setDisabled(cancel, busy, dialog);
+    setDisabled(save, busy || !natural, dialog);
     setAttributes(save, { 'data-busy': busy });
   };
 

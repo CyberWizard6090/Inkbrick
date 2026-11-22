@@ -292,6 +292,29 @@ describe('openViewer', () => {
     expect(picture().alt).toBe('one');
   });
 
+  it('a focused button that becomes disabled hands the focus to the window, so Escape still closes it', () => {
+    const onClose = vi.fn();
+
+    viewer({ onClose });
+
+    const dialog = $('[data-testid="image-viewer"]');
+    const next = $<HTMLButtonElement>('[data-inkbrick-part="viewer-next"]');
+    const zoomIn = $<HTMLButtonElement>('[data-inkbrick-part="viewer-zoom-in"]');
+
+    next.focus();
+    fireEvent.click(next);
+    expect(next.disabled).toBe(true);
+    expect(document.activeElement).toBe(dialog);
+
+    zoomIn.focus();
+    for (let i = 0; i < 6; i++) fireEvent.click(zoomIn);
+    expect(zoomIn.disabled).toBe(true);
+    expect(document.activeElement).toBe(dialog);
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('zooms by steps, with the wheel and a double click; 0 and the level button fit it back', () => {
     sizeStage(800, 600);
     viewer();
