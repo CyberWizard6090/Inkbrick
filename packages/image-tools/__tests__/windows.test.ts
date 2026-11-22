@@ -1,10 +1,31 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { useState } from 'react';
+import { fireEvent } from '@testing-library/dom';
 
-import { ImageCropper, ImageViewer, stepZoom, type CropResult, type ViewerImage } from '../src';
+import {
+  cropDialog,
+  openCropper,
+  openViewer,
+  stepZoom,
+  type CropResult,
+  type CropperHandle,
+  type CropperOptions,
+  type ViewerHandle,
+  type ViewerImage,
+  type ViewerOptions,
+} from '../src';
 
-afterEach(cleanup);
+/** Открытые в тесте окна: после каждого теста закрываются, как размонтирование компонента. */
+const opened: Array<CropperHandle | ViewerHandle> = [];
+
+/** Закрывает окна (как размонтирование компонента); страница остаётся. */
+function cleanup() {
+  for (const handle of opened.splice(0)) handle.close();
+}
+
+afterEach(() => {
+  cleanup();
+  document.body.innerHTML = '';
+});
 
 const $ = <T extends Element = HTMLElement>(selector: string) =>
   document.querySelector<T>(selector)!;
@@ -26,10 +47,10 @@ function loadPicture(selector: string, width: number, height: number) {
   fireEvent.load(image);
 }
 
-describe('ImageCropper', () => {
+describe('openCropper', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  function open(props: Partial<Parameters<typeof ImageCropper>[0]> = {}) {
+  function open(props: Partial<CropperOptions> & { busy?: boolean } = {}) {
     const onSave = vi.fn<(result: CropResult) => void>();
     const onCancel = vi.fn();
     const outside = document.createElement('button');
@@ -37,9 +58,11 @@ describe('ImageCropper', () => {
     document.body.append(outside);
     outside.focus();
     sizeStage(400, 200);
-    render(
-      <ImageCropper src="https://a.test/p.png" onSave={onSave} onCancel={onCancel} {...props} />,
-    );
+    const { busy, ...rest } = props;
+    const handle = openCropper({ src: 'https://a.test/p.png', onSave, onCancel, ...rest });
+
+    opened.push(handle);
+    if (busy) handle.setBusy(true);
     loadPicture('[data-inkbrick-part="cropper-image"]', 800, 400);
 
     return { onSave, onCancel, outside, box: $('[data-inkbrick-part="cropper-box"]') };
@@ -156,7 +179,7 @@ describe('ImageCropper', () => {
     const trigger = $('[data-inkbrick-part="cropper-shape-button"]');
 
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-    await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     const menu = $('[data-inkbrick-part="cropper-menu"]');
     const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
@@ -201,9 +224,7 @@ describe('ImageCropper', () => {
 
     const onError = vi.fn();
 
-    render(
-      <ImageCropper src="x.png" onSave={() => undefined} onCancel={onCancel} onError={onError} />,
-    );
+    opened.push(openCropper({ src: 'x.png', onSave: () => undefined, onCancel, onError }));
     fireEvent.error($('[data-inkbrick-part="cropper-image"]'));
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
@@ -233,7 +254,7 @@ describe('ImageCropper', () => {
   });
 });
 
-describe('ImageViewer', () => {
+describe('openViewer', () => {
   afterEach(() => vi.restoreAllMocks());
 
   const images: ViewerImage[] = [
@@ -241,25 +262,19 @@ describe('ImageViewer', () => {
     { src: 'https://a.test/2.png', alt: 'two', name: 'second.png' },
   ];
 
-  function Viewer(props: { onClose?: () => void; onDownload?: (image: ViewerImage) => void }) {
-    const [index, setIndex] = useState(0);
+  function viewer(props: Partial<ViewerOptions> = {}) {
+    const handle = openViewer({ images, onClose: () => undefined, ...props });
 
-    return (
-      <ImageViewer
-        images={images}
-        index={index}
-        onIndexChange={setIndex}
-        onClose={props.onClose ?? (() => undefined)}
-        onDownload={props.onDownload}
-      />
-    );
+    opened.push(handle);
+
+    return handle;
   }
 
   const picture = () => $<HTMLImageElement>('[data-inkbrick-part="viewer-image"]');
   const zoom = () => $('[data-inkbrick-part="viewer-zoom"]').textContent;
 
   it('walks the pictures with the buttons and the arrow keys', () => {
-    render(<Viewer />);
+    viewer();
 
     const dialog = $('[data-testid="image-viewer"]');
 
@@ -279,7 +294,7 @@ describe('ImageViewer', () => {
 
   it('zooms by steps, with the wheel and a double click; 0 and the level button fit it back', () => {
     sizeStage(800, 600);
-    render(<Viewer />);
+    viewer();
     loadPicture('[data-inkbrick-part="viewer-image"]', 1600, 1200);
 
     const dialog = $('[data-testid="image-viewer"]');
@@ -344,7 +359,7 @@ describe('ImageViewer', () => {
   it('downloads through the callback or saves the picture itself', async () => {
     const onDownload = vi.fn();
 
-    render(<Viewer onDownload={onDownload} />);
+    viewer({ onDownload });
     fireEvent.click($('[data-inkbrick-part="viewer-next"]'));
     fireEvent.click($('[data-inkbrick-part="viewer-download"]'));
     expect(onDownload).toHaveBeenCalledWith(images[1]);
@@ -357,25 +372,34 @@ describe('ImageViewer', () => {
       .mockImplementation(() => undefined);
 
     vi.stubGlobal('fetch', fetch);
-    render(<Viewer />);
+    viewer();
     fireEvent.click($('[data-inkbrick-part="viewer-download"]'));
     await vi.waitFor(() => expect(click).toHaveBeenCalled());
     expect(fetch).toHaveBeenCalledWith('https://a.test/1.png', expect.anything());
     vi.unstubAllGlobals();
   });
 
-  it('closes with the button, Escape and a click beside the picture (not after a drag)', () => {
+  it('closes itself with the button, Escape and a click beside the picture (not after a drag)', () => {
     const onClose = vi.fn();
+    const isOpen = () => document.querySelector('[data-testid="image-viewer"]') !== null;
 
-    render(<Viewer onClose={onClose} />);
-
-    const stage = $('[data-inkbrick-part="viewer-stage"]');
-
+    viewer({ onClose });
     fireEvent.click($('[data-inkbrick-part="viewer-close"]'));
-    fireEvent.keyDown($('[data-testid="image-viewer"]'), { key: 'Escape' });
-    fireEvent.click(picture());
-    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(isOpen()).toBe(false);
 
+    viewer({ onClose });
+    fireEvent.click(picture());
+    expect(isOpen()).toBe(true);
+    fireEvent.keyDown($('[data-testid="image-viewer"]'), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(isOpen()).toBe(false);
+
+    viewer({ onClose });
+
+    let stage = $('[data-inkbrick-part="viewer-stage"]');
+
+    // Конец перетаскивания — не щелчок мимо картинки.
     fireEvent.pointerDown(stage, {
       pointerId: 1,
       pointerType: 'mouse',
@@ -386,7 +410,7 @@ describe('ImageViewer', () => {
     fireEvent.pointerMove(stage, { pointerId: 1, clientX: 40, clientY: 0 });
     fireEvent.pointerUp(stage, { pointerId: 1 });
     fireEvent.click(stage);
-    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(isOpen()).toBe(true);
 
     fireEvent.pointerDown(stage, {
       pointerId: 2,
@@ -398,14 +422,42 @@ describe('ImageViewer', () => {
     fireEvent.pointerUp(stage, { pointerId: 2 });
     fireEvent.click(stage);
     expect(onClose).toHaveBeenCalledTimes(3);
+    expect(isOpen()).toBe(false);
+
+    // `close()` убирает окно без `onClose`; `show` переключает картинку снаружи.
+    const handle = viewer({ onClose });
+
+    handle.show(1);
+    expect(picture().alt).toBe('two');
+    stage = $('[data-inkbrick-part="viewer-stage"]');
+    handle.close();
+    handle.close();
+    expect(stage.isConnected).toBe(false);
+    expect(onClose).toHaveBeenCalledTimes(3);
+  });
+
+  it('cropDialog resolves with the result or null and closes the window', async () => {
+    sizeStage(400, 200);
+
+    const saved = cropDialog({ src: 'https://a.test/p.png' });
+
+    loadPicture('[data-inkbrick-part="cropper-image"]', 800, 400);
+    fireEvent.click($('[data-inkbrick-part="cropper-save"]'));
+    expect((await saved)?.natural).toEqual({ width: 800, height: 400 });
+    expect(document.querySelector('[data-testid="image-cropper"]')).toBeNull();
+
+    const cancelled = cropDialog({ src: 'https://a.test/p.png' });
+
+    fireEvent.click($('[data-inkbrick-part="cropper-cancel"]'));
+    expect(await cancelled).toBeNull();
   });
 
   it('a single picture has no arrows; no picture renders nothing', () => {
-    render(<ImageViewer images={[images[0]]} index={0} onClose={() => undefined} />);
+    viewer({ images: [images[0]] });
     expect(document.querySelector('[data-inkbrick-part="viewer-next"]')).toBeNull();
 
     cleanup();
-    render(<ImageViewer images={[]} index={0} onClose={() => undefined} />);
+    viewer({ images: [] });
     expect(document.querySelector('[data-testid="image-viewer"]')).toBeNull();
   });
 

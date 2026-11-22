@@ -39,7 +39,7 @@ const cases = [
     // Пакет отдельно от редактора: окно обрезки, просмотр и геометрия (редактор грузит его лениво).
     name: 'image-tools: cropper + viewer',
     budget: 8,
-    code: "import { ImageCropper, ImageViewer, cropImage } from '@inkbrick/image-tools'; console.log(ImageCropper, ImageViewer, cropImage);",
+    code: "import { openCropper, openViewer, cropImage } from '@inkbrick/image-tools'; console.log(openCropper, openViewer, cropImage);",
   },
   {
     name: 'react: EditorProvider + DocumentView',

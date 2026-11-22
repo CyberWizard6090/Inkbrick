@@ -1,80 +1,51 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
-
 const FOCUSABLE =
   'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
 /** Где показывать окно: внутри элемента с темой (если он задан), иначе в `body`. */
-export function overlayHost(container: Element | null | undefined): Element | null {
-  if (container) return container;
+export const overlayHost = (container: Element | null | undefined): Element =>
+  container ?? document.body;
 
-  return typeof document === 'undefined' ? null : document.body;
+export interface ModalOptions {
+  /** Куда поставить фокус при открытии (иначе — первый элемент окна или само окно). */
+  readonly initial?: () => HTMLElement | null | undefined;
+  /** Escape, если вложенный элемент (например, меню) не забрал клавишу себе (`preventDefault`). */
+  onEscape(): void;
 }
 
 /**
- * Поведение модального окна: фокус уходит внутрь (на `initial` или первый элемент) и возвращается туда, где был, при
- * закрытии; страница под окном не прокручивается. Возвращает обработчик клавиш для самого окна: Escape закрывает его
- * (если вложенный элемент, например меню, не забрал клавишу себе), Tab ходит по кругу внутри окна.
+ * Поведение модального окна: фокус уходит внутрь и возвращается туда, где был, при закрытии; страница под окном не
+ * прокручивается; Escape закрывает; Tab ходит по кругу внутри окна. Возвращает отмену всего этого.
  */
-export function useModal(
-  dialog: RefObject<HTMLElement | null>,
-  onClose: () => void,
-  initial?: RefObject<HTMLElement | null>,
-): (event: KeyboardEvent<HTMLElement>) => void {
-  const close = useRef(onClose);
+export function modal(dialog: HTMLElement, { initial, onEscape }: ModalOptions): () => void {
+  const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const root = document.documentElement;
+  const overflow = root.style.overflow;
 
-  close.current = onClose;
+  root.style.overflow = 'hidden';
 
-  useEffect(() => {
-    const element = dialog.current;
+  const focusInside = () => {
+    if (dialog.contains(document.activeElement)) return;
 
-    if (!element) return;
+    (initial?.() ?? dialog.querySelector<HTMLElement>(FOCUSABLE))?.focus({ preventScroll: true });
 
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const root = document.documentElement;
-    const overflow = root.style.overflow;
+    // Нужный элемент ещё скрыт (например, рамка до загрузки картинки): фокус — на само окно.
+    if (!dialog.contains(document.activeElement)) dialog.focus({ preventScroll: true });
+  };
 
-    root.style.overflow = 'hidden';
-
-    const focusInside = () => {
-      if (element.contains(document.activeElement)) return;
-
-      (initial?.current ?? element.querySelector<HTMLElement>(FOCUSABLE))?.focus({
-        preventScroll: true,
-      });
-
-      // Нужный элемент ещё скрыт (например, рамка до загрузки картинки): фокус — на само окно.
-      if (!element.contains(document.activeElement)) element.focus({ preventScroll: true });
-    };
-
-    focusInside();
-    // Окно часто открывается из обработчика, после которого страница сама ставит фокус (например, редактор — каретку
-    // под новой картинкой): забираем фокус обратно в следующем кадре.
-    const frame = requestAnimationFrame(focusInside);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      root.style.overflow = overflow;
-      if (previous?.isConnected) previous.focus({ preventScroll: true });
-    };
-    // Окно настраивается один раз на время жизни.
-  }, []);
-
-  return (event) => {
+  const key = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return;
 
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      close.current();
+      onEscape();
 
       return;
     }
 
-    const element = dialog.current;
+    if (event.key !== 'Tab') return;
 
-    if (event.key !== 'Tab' || !element) return;
-
-    const items = [...element.querySelectorAll<HTMLElement>(FOCUSABLE)];
+    const items = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)];
 
     if (items.length === 0) return;
 
@@ -89,46 +60,44 @@ export function useModal(
       first.focus();
     }
   };
+
+  focusInside();
+  // Окно часто открывается из обработчика, после которого страница сама ставит фокус (например, редактор — каретку под
+  // новой картинкой): забираем фокус обратно в следующем кадре.
+  const frame = requestAnimationFrame(focusInside);
+
+  dialog.addEventListener('keydown', key);
+
+  return () => {
+    cancelAnimationFrame(frame);
+    dialog.removeEventListener('keydown', key);
+    root.style.overflow = overflow;
+    if (previous?.isConnected) previous.focus({ preventScroll: true });
+  };
 }
 
-interface Size {
-  readonly width: number;
-  readonly height: number;
-}
+/** Следит за размером элемента (без `ResizeObserver` — за размером окна); возвращает отмену. */
+export function watchSize(
+  element: HTMLElement,
+  onSize: (width: number, height: number) => void,
+): () => void {
+  const measure = () => {
+    const box = element.getBoundingClientRect();
 
-/** Размер элемента в пикселях; следит за изменениями (без `ResizeObserver` — за размером окна). */
-export function useElementSize(element: RefObject<HTMLElement | null>): Size | null {
-  const [size, setSize] = useState<Size | null>(null);
+    onSize(box.width, box.height);
+  };
 
-  useEffect(() => {
-    const node = element.current;
+  measure();
 
-    if (!node) return;
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(measure);
 
-    const measure = () => {
-      const box = node.getBoundingClientRect();
+    observer.observe(element);
 
-      setSize((current) =>
-        current && current.width === box.width && current.height === box.height
-          ? current
-          : { width: box.width, height: box.height },
-      );
-    };
+    return () => observer.disconnect();
+  }
 
-    measure();
+  window.addEventListener('resize', measure);
 
-    if (typeof ResizeObserver === 'function') {
-      const observer = new ResizeObserver(measure);
-
-      observer.observe(node);
-
-      return () => observer.disconnect();
-    }
-
-    window.addEventListener('resize', measure);
-
-    return () => window.removeEventListener('resize', measure);
-  }, [element, setSize]);
-
-  return size;
+  return () => window.removeEventListener('resize', measure);
 }
