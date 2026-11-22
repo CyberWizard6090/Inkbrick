@@ -61,6 +61,9 @@ function scrollParents(element: HTMLElement): HTMLElement[] {
   return result;
 }
 
+/** Сколько перемеров подряд делается в одном коммите, прежде чем следующий откладывается на кадр. */
+const MAX_SYNC_PASSES = 8;
+
 function visibleRange(marker: HTMLElement, parents: readonly HTMLElement[]): Range {
   let top = 0;
   let bottom = window.innerHeight;
@@ -236,6 +239,9 @@ export function VirtualChildList({
 
   const observer = useRef<ResizeObserver | null>(null);
   const observed = useRef(new Map<Element, number>());
+  // Перемеры подряд в одном коммите и отложенный на кадр перемер (см. конец эффекта ниже).
+  const passes = useRef(0);
+  const deferred = useRef(0);
 
   useLayoutEffect(() => {
     if (!windowed || !rendered || !marker.current) return;
@@ -325,8 +331,28 @@ export function VirtualChildList({
         : next,
     );
 
-    if (changed) remeasure();
+    if (!changed) {
+      passes.current = 0;
+
+      return;
+    }
+
+    // Блоки намного ниже оценки (например, картинки до загрузки): после каждого замера в окно входит ещё один блок, и
+    // перемер тянет следующий. Синхронно — не больше нескольких проходов подряд (иначе React обрывает цикл ошибкой
+    // «Maximum update depth exceeded»), остальные — по одному на кадр.
+    if (passes.current < MAX_SYNC_PASSES) {
+      passes.current += 1;
+      remeasure();
+    } else if (!deferred.current) {
+      deferred.current = requestAnimationFrame(() => {
+        deferred.current = 0;
+        passes.current = 0;
+        remeasure();
+      });
+    }
   });
+
+  useEffect(() => () => cancelAnimationFrame(deferred.current), []);
 
   useEffect(() => () => observer.current?.disconnect(), []);
 

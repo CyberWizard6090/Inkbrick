@@ -373,3 +373,46 @@ test.describe('Large document (virtual renderer)', () => {
     );
   });
 });
+
+test('hundreds of images (much shorter than estimated before they load) do not loop the renderer', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+
+    canvas.width = 40;
+    canvas.height = 30;
+    canvas.getContext('2d')!.fillRect(0, 0, 40, 30);
+
+    const { editor } = window.__inkbrick!.main;
+    const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+    let after = editor.document.getBlock(note)!.children.at(-1)!;
+
+    editor.batch(() => {
+      for (let i = 0; i < 300; i++) {
+        after = (
+          editor.dispatch({
+            type: 'insertBlock',
+            payload: {
+              flavour: 'block:image',
+              afterId: after,
+              props: { src: canvas.toDataURL('image/png'), alt: `image ${i}` },
+            },
+          }) as { blockId: string }
+        ).blockId;
+      }
+    });
+  });
+
+  await expect(page.locator('[data-inkbrick-block="image"]').first()).toBeVisible();
+  // Окно отрисовки дорастает до экрана по кадрам: в DOM не все 300 и без «Maximum update depth exceeded».
+  await expect
+    .poll(() => page.locator('[data-inkbrick-block="image"]').count())
+    .toBeGreaterThan(20);
+  expect(await page.locator('[data-inkbrick-block="image"]').count()).toBeLessThan(300);
+  expect(errors).toEqual([]);
+});
