@@ -186,6 +186,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- Deleting thousands of blocks is no longer quadratic: deleting a range across 20 000 blocks, deleting the picked blocks and undoing either took 2–3 s, now about 40 ms (50 000 blocks: ~0.1 s). New command `delete-blocks` (`{ ids }`, one undo step, skips what cannot be deleted) and store change `RemoveChildrenChange`.
+- Hundreds of images in one document no longer blank the page: before they load, image blocks are far shorter than estimated, and the virtual renderer remeasured block by block until React aborted with «Maximum update depth exceeded». After a few synchronous passes the next remeasure waits for a frame.
+- Typing in a large table is fast again: a `:has()` rule for the cell selection made the browser restyle every cell on each key (~180 ms per character in a 100 × 20 table, now a few ms). The table carries `data-cells-selected` itself.
+- The image viewer and crop window keep the keyboard focus when the focused button becomes disabled (Next on the last picture, Zoom in at 400 %, Save while saving): Escape and the arrow keys kept working only until then.
 - The selection frame picks a block only when it crosses it (a frame on the page margin picks nothing until it reaches the text); a frame inside one column picks that column's blocks instead of the whole columns block, so dragging any of them moves all of them. A picked run dropped at the edge of a block goes into the new column together.
 - A menu scrolled to its end keeps the wheel (`overscroll-behavior: contain` on the slash, block and context menus, select lists, the command palette, the outline panel, tag suggestions and the formula palette): the page no longer scrolls and the context menu no longer closes.
 - One order of layers: new tokens `--inkbrick-z-panel`, `--inkbrick-z-dialog`, `--inkbrick-z-tooltip`; the outline panel no longer covers application panels, tooltips show above the crop and viewer windows, an open image tools menu lies over the blocks below.

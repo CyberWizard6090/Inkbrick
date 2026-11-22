@@ -42,6 +42,7 @@ function measure<T>(scenario: string, budget: number, run: () => T): T {
 }
 
 afterAll(() => {
+  // eslint-disable-next-line no-console -- сводка замеров — главный вывод нагрузочного прогона
   console.table(results);
 });
 

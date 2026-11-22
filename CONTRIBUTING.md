@@ -27,6 +27,11 @@ CI runs all of them; please run the relevant ones locally before opening a pull 
 | `pnpm size`          | Bundle size budget (minified + gzip)                                                     |
 | `pnpm audit`         | Known vulnerabilities in dependencies — must be zero; runs daily in CI (not on every PR) |
 | `pnpm bench`         | Load measurements (not a gate; run when you touch the model, store or rendering)         |
+| `pnpm test:load`     | Load tests of the engine with time budgets: 50 000 blocks, a 100 × 20 table, mass edits  |
+| `pnpm test:load:e2e` | Load tests in Chromium on the built sandbox: typing, paste, deletion, tables, images     |
+
+Load tests fail when a scenario exceeds its time budget; `LOAD_BUDGET_SCALE=2` widens every budget on a slow machine
+(CI uses 2). Each run prints a table of the measured times.
 
 ## Architecture
 

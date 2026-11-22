@@ -33,7 +33,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:load": "vitest run --config tests/load/vitest.config.ts",
-    "test:load:e2e": "playwright test tests/E2E/load.spec.ts"
+    "test:load:e2e": "playwright test --config tests/load/playwright.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",

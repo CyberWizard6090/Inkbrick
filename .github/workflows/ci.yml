@@ -53,6 +53,24 @@ jobs:
       - run: pnpm --filter @inkbrick/react add -D react@18.3.1 react-dom@18.3.1
       - run: pnpm --filter @inkbrick/react exec vitest run
 
+  load:
+    name: Load tests
+    runs-on: ubuntu-latest
+    env:
+      # Машины CI медленнее и неровнее рабочих: бюджеты вдвое шире, ловят только заметные откаты.
+      LOAD_BUDGET_SCALE: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:load
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:load:e2e
+
   e2e:
     name: E2E (${{ matrix.browser }})
     runs-on: ubuntu-latest
