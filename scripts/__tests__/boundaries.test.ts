@@ -3,6 +3,8 @@ import { join, relative } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { LAYERS } from '../../eslint.config.js';
+
 const ROOT = join(import.meta.dirname, '..', '..');
 
 function filesIn(dir: string): string[] {
@@ -70,5 +72,28 @@ describe('boundaries: the library and the sandbox', () => {
 
     expect(setters.every((file) => file.startsWith('apps/sandbox/'))).toBe(true);
     expect(setters.length).toBeGreaterThan(0);
+  });
+});
+
+describe('boundaries: package layers', () => {
+  // Пакет с кодом без места в слоях обходил бы правило линтера: каждый новый пакет получает строку в `LAYERS`.
+  it('every package with code has its place in LAYERS (eslint.config.js)', () => {
+    const withCode = readdirSync(join(ROOT, 'packages')).filter(
+      (name) =>
+        existsSync(join(ROOT, 'packages', name, 'src')) &&
+        filesIn(join(ROOT, 'packages', name, 'src')).length > 0,
+    );
+
+    expect(withCode.sort()).toEqual(Object.keys(LAYERS).sort());
+  });
+
+  it('the layers have no cycles: a package never depends on itself through others', () => {
+    const layers = LAYERS as Record<string, readonly string[]>;
+    const reaches = (from: string, target: string, seen = new Set<string>()): boolean =>
+      (layers[from] ?? []).some(
+        (next) => next === target || (!seen.has(next) && reaches(next, target, seen.add(next))),
+      );
+
+    expect(Object.keys(layers).filter((name) => reaches(name, name))).toEqual([]);
   });
 });
