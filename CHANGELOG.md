@@ -186,6 +186,11 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- The selection frame picks a block only when it crosses it (a frame on the page margin picks nothing until it reaches the text); a frame inside one column picks that column's blocks instead of the whole columns block, so dragging any of them moves all of them. A picked run dropped at the edge of a block goes into the new column together.
+- A menu scrolled to its end keeps the wheel (`overscroll-behavior: contain` on the slash, block and context menus, select lists, the command palette, the outline panel, tag suggestions and the formula palette): the page no longer scrolls and the context menu no longer closes.
+- One order of layers: new tokens `--inkbrick-z-panel`, `--inkbrick-z-dialog`, `--inkbrick-z-tooltip`; the outline panel no longer covers application panels, tooltips show above the crop and viewer windows, an open image tools menu lies over the blocks below.
+- Addresses starting with `/\` are rejected for links and images (browsers read them as `//host`); a block id `__proto__` in a loaded snapshot no longer replaces the prototype of the block map; a failed load of the formula chunk is retried by the next formula.
+
 - A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
 - Blocks look the same: a table, a code block, a callout, an image and a coloured block share the left and right edges of the text column, the vertical margin (4 px) and the card radius. A table is no longer indented by 28 px: its row and column handles (now 10 px thick, 16 px under a finger) lie on its left and top border, and its block handle stands where every block's does. A coloured block no longer sticks out of the column; its text is inset by 8 px instead.
 - The top left corner of a table has two separate insert markers instead of one that looked shared: «row above» on the left border just below the corner, «column left» on the top border just right of it.
