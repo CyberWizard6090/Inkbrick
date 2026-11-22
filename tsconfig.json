@@ -18,6 +18,7 @@
       "@inkbrick/store": ["./packages/store/src/index.ts"],
       "@inkbrick/engine": ["./packages/engine/src/index.ts"],
       "@inkbrick/image-tools": ["./packages/image-tools/src/index.ts"],
+      "@inkbrick/color-picker": ["./packages/color-picker/src/index.ts"],
       "@inkbrick/locales": ["./packages/locales/src/index.ts"],
       "@inkbrick/locales/*": ["./packages/locales/src/*.ts"],
       "@inkbrick/react": ["./packages/react/src/index.ts"]

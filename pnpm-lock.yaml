@@ -111,6 +111,15 @@ importers:
         specifier: ^7.3.7
         version: 7.3.7(@types/node@20.19.43)(yaml@2.9.0)
 
+  packages/color-picker:
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.1
+        version: 10.4.1
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+
   packages/document:
     dependencies:
       zod:
@@ -149,6 +158,9 @@ importers:
 
   packages/react:
     dependencies:
+      '@inkbrick/color-picker':
+        specifier: workspace:*
+        version: link:../color-picker
       '@inkbrick/document':
         specifier: workspace:*
         version: link:../document

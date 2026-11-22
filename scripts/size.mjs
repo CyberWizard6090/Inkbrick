@@ -13,6 +13,7 @@ const alias = {
   // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
   '@inkbrick/locales': fileURLToPath(new URL('../packages/locales/src', import.meta.url)),
   '@inkbrick/image-tools': pkg('image-tools'),
+  '@inkbrick/color-picker': pkg('color-picker'),
   '@inkbrick/react': pkg('react'),
 };
 const external = ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'temml', 'zod'];
@@ -40,6 +41,12 @@ const cases = [
     name: 'image-tools: cropper + viewer',
     budget: 8,
     code: "import { openCropper, openViewer, cropImage } from '@inkbrick/image-tools'; console.log(openCropper, openViewer, cropImage);",
+  },
+  {
+    // Выбор цвета отдельно от редактора (редактор грузит его лениво, когда открывают «Свой цвет…»).
+    name: 'color-picker',
+    budget: 4,
+    code: "import { createColorPicker } from '@inkbrick/color-picker'; console.log(createColorPicker);",
   },
   {
     name: 'react: EditorProvider + DocumentView',

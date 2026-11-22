@@ -1,0 +1,201 @@
+/*
+ * Выбор цвета @inkbrick/color-picker (data-inkbrick-ui="color-picker"): квадрат насыщенности и яркости, ползунки оттенка
+ * и прозрачности, образец, поля HEX / RGB / HSB и прозрачности. Файл можно подключить и без редактора — вместе с
+ * tokens.css:
+ *   import '@inkbrick/styles/tokens.css';
+ *   import '@inkbrick/styles/color-picker.css';
+ * Цвета, шрифт и скругления — из токенов темы, поэтому выбор цвета светлый или тёмный вместе с редактором.
+ */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='color-picker']) {
+    /* Шахматка под прозрачным цветом. */
+    --inkbrick-picker-checker: repeating-conic-gradient(#cfcfcf 0% 25%, #ffffff 0% 50%) 0 0 / 8px
+      8px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 220px;
+    max-width: 280px;
+    color: var(--inkbrick-fg-1, inherit);
+    font-family: var(--inkbrick-font-family, system-ui, sans-serif);
+    font-size: var(--inkbrick-font-size-caption, 12px);
+  }
+
+  :where([data-inkbrick-ui='color-picker'] *) {
+    box-sizing: border-box;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-area']) {
+    position: relative;
+    height: 150px;
+    border-radius: var(--inkbrick-radius-control, 4px);
+    background:
+      linear-gradient(to top, #000000, transparent),
+      linear-gradient(to right, #ffffff, var(--inkbrick-picker-hue, #ff0000));
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-row']) {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-sliders']) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  :where(
+    [data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-hue'],
+    [data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-alpha']
+  ) {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-hue']) {
+    background: linear-gradient(
+      to right,
+      #ff0000,
+      #ffff00 17%,
+      #00ff00 33%,
+      #00ffff 50%,
+      #0000ff 67%,
+      #ff00ff 83%,
+      #ff0000
+    );
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-alpha']) {
+    background: var(--inkbrick-picker-checker);
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-alpha-fill']) {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(to right, transparent, var(--inkbrick-picker-solid, #000000));
+  }
+
+  /* Бегунок: белое кольцо с тенью, видное на любом цвете. Стоит центром в точке значения. */
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-thumb']) {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.25),
+      0 1px 3px rgba(0, 0, 0, 0.3);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='color-picker'] [role='slider']:focus-visible,
+    [data-inkbrick-ui='color-picker'] :is(input, select, button):focus-visible
+  ) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2, #2383e2);
+    outline-offset: 2px;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-preview']) {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    overflow: hidden;
+    border-radius: var(--inkbrick-radius-control, 4px);
+    background: var(--inkbrick-picker-checker);
+    box-shadow: inset 0 0 0 1px var(--inkbrick-stroke-1, rgba(0, 0, 0, 0.12));
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-preview-fill']) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-inputs']) {
+    display: flex;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-fields']) {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-fields'][data-format='hex']) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :where([data-inkbrick-ui='color-picker'] input, [data-inkbrick-ui='color-picker'] select) {
+    min-width: 0;
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--inkbrick-stroke-1, #dfdedb);
+    border-radius: var(--inkbrick-radius-control, 4px);
+    background: var(--inkbrick-bg-1, #ffffff);
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] select) {
+    flex: none;
+    padding: 0 2px;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-opacity']) {
+    flex: none;
+    width: 48px;
+    text-align: right;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-actions']) {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-actions'] button) {
+    height: 26px;
+    padding: 0 10px;
+    border: 1px solid var(--inkbrick-stroke-1, #dfdedb);
+    border-radius: var(--inkbrick-radius-control, 4px);
+    background: var(--inkbrick-bg-1, #ffffff);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-actions'] button:hover) {
+    background: var(--inkbrick-bg-hover, #efeeec);
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-apply']) {
+    border-color: transparent;
+    background: var(--inkbrick-brand-bg, #2383e2);
+    color: #ffffff;
+  }
+
+  :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-apply']:hover) {
+    background: var(--inkbrick-brand-bg-hover, #0077d4);
+  }
+}
