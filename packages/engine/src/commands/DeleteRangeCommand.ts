@@ -69,23 +69,20 @@ export const DeleteRangeCommand: Command<DeleteRangePayload, CaretResult> = {
       }
     }
 
-    engine.block.remove(transaction, end.id);
+    // Блоки между границами: с конца к началу, чтобы потомки решались раньше родителей. Блок уходит, если все его
+    // дети уходят тоже; иначе внутри остались блоки за пределами выделения (например, следующие дочерние элементы
+    // родителя последнего блока) — контейнер остаётся, его текст удалён. Удаление — одной пачкой (`removeMany`).
+    const removing = new Set<BlockId>([end.id]);
 
-    // Блоки между границами: с конца к началу, чтобы потомки обрабатывались раньше родителей.
     for (const block of [...between].reverse()) {
       const current = transaction.getBlock(block.id);
       if (!current) continue;
 
-      if (current.children.length === 0) {
-        engine.block.remove(transaction, current.id);
-      } else {
-        /*
-         * Внутри остались блоки за пределами выделения (например, следующие дочерние элементы
-         * родителя последнего блока): контейнер остаётся, его текст удалён.
-         */
-        engine.block.updateContent(transaction, current.id, []);
-      }
+      if (current.children.every((child) => removing.has(child))) removing.add(current.id);
+      else engine.block.updateContent(transaction, current.id, []);
     }
+
+    engine.block.removeMany(transaction, [...removing]);
 
     return { blockId: start.id, offset: p.text.from.offset };
   },
@@ -156,9 +153,10 @@ function removeBoundaries(
     ? { parentId: parent.id, index: parent.children.indexOf(first.id) }
     : undefined;
 
-  for (const block of blocks) {
-    if (transaction.getBlock(block.id)) engine.block.remove(transaction, block.id);
-  }
+  engine.block.removeMany(
+    transaction,
+    blocks.map((block) => block.id),
+  );
 
   return position;
 }

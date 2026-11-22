@@ -308,7 +308,8 @@ describe('marquee from the margin', () => {
     act(() => queue.forEach((callback) => callback(0)));
   };
 
-  const moveTo = (y: number, x = 40) =>
+  // Рамку начинают на поле (x = 40) и ведут в текст: блоки лежат от x = 100.
+  const moveTo = (y: number, x = 150) =>
     act(
       () =>
         void document.dispatchEvent(
@@ -349,6 +350,20 @@ describe('marquee from the margin', () => {
     moveTo(5);
     flush();
     expect(t.picked()).toEqual([t.ids[0]]);
+  });
+
+  it('a frame that stays on the margin picks nothing; reaching the text picks', () => {
+    const t = mount(['a', 'b', 'c']);
+
+    press(t, 5);
+
+    moveTo(70, 60);
+    flush();
+    expect(t.picked()).toEqual([]);
+
+    moveTo(70, 101);
+    flush();
+    expect(t.picked()).toEqual([t.ids[0], t.ids[1], t.ids[2]]);
   });
 
   it('starting in a gap picks only the blocks the frame reaches', () => {
@@ -423,7 +438,8 @@ describe('marquee from the margin', () => {
     press(t, 5);
 
     expect(t.picked()).toEqual([]);
-    moveTo(6);
+    // Сдвиг на пиксель — не рамка.
+    moveTo(6, 41);
     flush();
     expect(document.querySelector('[data-inkbrick-ui="marquee"]')).toBeNull();
     act(() => void document.dispatchEvent(new MouseEvent('mouseup')));

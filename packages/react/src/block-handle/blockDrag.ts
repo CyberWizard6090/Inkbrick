@@ -48,7 +48,10 @@ export interface BlockDragApi {
   drop(): boolean;
   cancel(): void;
 
-  /** Ставит блок рядом с `targetId`, в колонки: слева или справа. Один шаг undo. Нужны колонки (`columnsBlocks`). */
+  /**
+   * Ставит блок рядом с `targetId`, в колонки: слева или справа; ряд выбранных блоков встаёт туда целиком, по порядку.
+   * Один шаг undo. Нужны колонки (`columnsBlocks`).
+   */
   moveToSide(blockId: string, targetId: string, side: DropSide): boolean;
   /** Переносит блок сразу, без жеста (например, из своего DnD без линии вставки). Один шаг undo. */
   move(blockId: string, targetId: string, position: DropPosition): boolean;
@@ -97,8 +100,17 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     );
   };
 
-  const canMoveToSide = (blockId: string, targetId: string, side: DropSide) =>
-    blockId !== targetId && editor.can('moveBlockToSide', { blockId, targetId, side });
+  // Ряд выбранных блоков встаёт рядом с целью целиком: первый — в новую колонку, остальные — под ним.
+  // Цель не может быть одним из переносимых блоков или лежать внутри него: блок не встаёт в колонку внутри себя.
+  const canMoveToSide = (blockId: string, targetId: string, side: DropSide) => {
+    const group = new Set(targetsOf(view, blockId));
+
+    for (let id: string | null = targetId; id; id = editor.store.getBlock(id)?.parentId ?? null) {
+      if (group.has(id)) return false;
+    }
+
+    return editor.can('moveBlockToSide', { blockId: [...group][0], targetId, side });
+  };
 
   /**
    * Перенос перерисовывает блоки, и выделение браузера оказывается в соседнем блоке: набор шёл бы не туда. Курсор
@@ -152,7 +164,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
             ? 'right'
             : null;
 
-      if (side && targetsOf(view, blockId).length === 1 && canMoveToSide(blockId, targetId, side)) {
+      if (side && canMoveToSide(blockId, targetId, side)) {
         return {
           targetId,
           position: side === 'left' ? 'before' : 'after',
@@ -246,8 +258,23 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     moveToSide(blockId, targetId, side) {
       if (!canMoveToSide(blockId, targetId, side)) return false;
 
+      const [first, ...rest] = targetsOf(view, blockId);
+
+      // Один шаг undo: первый блок открывает колонку, остальные встают под ним по порядку.
       keepingSelection(() => {
-        editor.dispatch({ type: 'moveBlockToSide', payload: { blockId, targetId, side } });
+        editor.batch(() => {
+          editor.dispatch({ type: 'moveBlockToSide', payload: { blockId: first, targetId, side } });
+
+          let after = first;
+
+          for (const id of rest) {
+            editor.dispatch({
+              type: 'moveBlock',
+              payload: { blockId: id, targetId: after, position: 'after' },
+            });
+            after = id;
+          }
+        });
       });
 
       controller.setHover(null);

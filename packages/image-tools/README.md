@@ -1,7 +1,8 @@
 # @inkbrick/image-tools
 
-Image cropping and a full-screen image viewer for React, from [Inkbrick](https://github.com/CyberWizard6090/Inkbrick).
-The editor uses it for its image block, but it does not depend on the editor: any React application can use it.
+Image cropping and a full-screen image viewer from [Inkbrick](https://github.com/CyberWizard6090/Inkbrick), in plain
+DOM: no framework inside, so it works the same in React, Vue, Svelte, Angular or a page without a framework. The editor
+uses it for its image block, but it does not depend on the editor.
 
 ```bash
 npm install @inkbrick/image-tools @inkbrick/styles
@@ -12,47 +13,68 @@ import '@inkbrick/styles/tokens.css';
 import '@inkbrick/styles/image-tools.css';
 ```
 
-## Crop dialog
+## Crop window
 
 A full-screen window: the picture with a frame that is moved and resized by its edges and corners; a shape menu
 (freeform, circle, square, 5:4, 4:3, 7:5, 3:2, 5:3, 16:9 — each in portrait or landscape), **Cancel** and **Save**.
 Keyboard: arrows move the frame (Ctrl — bigger steps), Shift with arrows resizes it, Enter saves, Escape cancels.
 
-```tsx
-import { ImageCropper, cropImage, type CropResult } from '@inkbrick/image-tools';
+The simplest way is a promise: the result, or `null` when the user cancelled.
 
-function Crop({ src, onDone }: { src: string; onDone(file: Blob): void }) {
-  const [open, setOpen] = useState(true);
+```ts
+import { cropDialog, cropImage } from '@inkbrick/image-tools';
 
-  const save = async ({ rect, aspect }: CropResult) => {
-    // The frame is in fractions of the picture; the file is made on a canvas (a circle is a WebP with clear corners, PNG where the browser cannot write WebP).
-    onDone(await cropImage(src, rect, { shape: aspect === 'circle' ? 'circle' : 'rect' }));
-    setOpen(false);
-  };
+const result = await cropDialog({ src });
 
-  return open ? <ImageCropper src={src} onSave={save} onCancel={() => setOpen(false)} /> : null;
+if (result) {
+  // The frame is in fractions of the picture; the file is made on a canvas
+  // (a circle is a WebP with clear corners, PNG where the browser cannot write WebP).
+  const file = await cropImage(src, result.rect, {
+    shape: result.aspect === 'circle' ? 'circle' : 'rect',
+  });
 }
 ```
 
-`ImageCropper` does not change anything itself: it returns the frame (`rect`, fractions 0…1 of the picture), the shape
-and the size of the picture. `cropImage` fails when the picture cannot be read (a server without CORS); keep the frame
-and crop with CSS then. Labels are English by default; pass `labels` to translate them.
+`openCropper` gives full control: callbacks, a busy state while you save, and `close()` when you are done.
+
+```ts
+const cropper = openCropper({
+  src,
+  labels: { title: 'Обрезать', cancel: 'Отмена', save: 'Сохранить' },
+  async onSave(result) {
+    cropper.setBusy(true);
+    await upload(await cropImage(src, result.rect));
+    cropper.close();
+  },
+  onCancel: () => cropper.close(),
+});
+```
+
+In Vue, for example, open it from a handler (or `onMounted`) and close it in `onUnmounted`; in React — in `useEffect`
+with `close` as the cleanup.
 
 ## Viewer
 
-```tsx
-import { ImageViewer } from '@inkbrick/image-tools';
+```ts
+import { openViewer } from '@inkbrick/image-tools';
 
-<ImageViewer
-  images={[{ src: a }, { src: b, alt: 'Second' }]}
-  index={index}
-  onIndexChange={setIndex}
-  onClose={close}
-/>;
+const viewer = openViewer({
+  images: [{ src: a }, { src: b, alt: 'Second' }],
+  index: 0,
+  onClose: () => {},
+});
+
+viewer.show(1); // another picture
+viewer.close(); // remove it without onClose
 ```
 
 Previous and next, zoom (buttons, wheel, pinch, double click), panning the zoomed picture, download (`onDownload` or the
-built-in one) and close. Keys: arrows, `+`, `-`, `0`, Escape.
+built-in one) and close (button, Escape, a click beside the picture — the window then closes itself and calls
+`onClose`). Keys: arrows, `+`, `-`, `0`, Escape.
+
+Both windows are modal: the focus goes in and comes back on close, Tab stays inside, the page does not scroll under
+them. `container` puts a window into another element (default `document.body`), `theme` sets `data-inkbrick-theme`.
+Labels are English by default; pass `labels` to translate them.
 
 ## Helpers
 

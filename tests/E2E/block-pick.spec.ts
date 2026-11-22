@@ -71,16 +71,21 @@ test.describe('Picking blocks', () => {
     expect(await texts(page)).toEqual(['one', 'two', 'one', 'two', 'three', 'four']);
   });
 
-  test('a frame dragged in the gutter picks the blocks it touches', async ({ page }) => {
+  test('a frame dragged in the gutter picks the blocks once it reaches them', async ({ page }) => {
     const first = (await page.locator(editable).nth(1).boundingBox())!;
     const last = (await page.locator(editable).nth(2).boundingBox())!;
 
-    // Поле левее документа (за краем корня).
+    // Поле левее документа (за краем корня): пока рамка не дошла до текста, ничего не выбрано.
     await page.mouse.move(60, first.y + 4);
     await page.mouse.down();
     await page.mouse.move(70, (first.y + last.y) / 2, { steps: 4 });
     await page.mouse.move(80, last.y + last.height - 4, { steps: 4 });
     await expect(page.locator('[data-inkbrick-ui="marquee"]')).toBeVisible();
+    await expect(page.locator(picked)).toHaveCount(0);
+
+    // Рамка задела блоки — они выбраны.
+    await page.mouse.move(first.x + 20, last.y + last.height - 4, { steps: 4 });
+    await expect(page.locator(picked)).toHaveCount(2);
     await page.mouse.up();
 
     await expect(page.locator('[data-inkbrick-ui="marquee"]')).toHaveCount(0);
@@ -88,6 +93,25 @@ test.describe('Picking blocks', () => {
 
     await page.keyboard.press('Delete');
     expect(await texts(page)).toEqual(['one', 'four']);
+  });
+
+  test('a frame on the right margin picks nothing until it reaches the blocks', async ({
+    page,
+  }) => {
+    const first = (await page.locator(editable).first().boundingBox())!;
+    const third = (await page.locator(editable).nth(2).boundingBox())!;
+    const root = (await page.locator('[data-inkbrick-root]').boundingBox())!;
+    const right = root.x + root.width + 40;
+
+    await page.mouse.move(right + 20, first.y - 6);
+    await page.mouse.down();
+    await page.mouse.move(right, third.y + 4, { steps: 6 });
+    await expect(page.locator('[data-inkbrick-ui="marquee"]')).toBeVisible();
+    await expect(page.locator(picked)).toHaveCount(0);
+
+    await page.mouse.move(first.x + first.width - 10, third.y + 4, { steps: 6 });
+    await expect(page.locator(picked)).toHaveCount(3);
+    await page.mouse.up();
   });
 
   test('a click in the gutter still puts the caret on the line', async ({ page }) => {
@@ -285,10 +309,10 @@ test.describe('Picking blocks: fill, Ctrl+A, Shift and Ctrl clicks, frame', () =
 
     await page.mouse.move(60, first.y + 4);
     await page.mouse.down();
-    await page.mouse.move(70, third.y + 4, { steps: 5 });
+    await page.mouse.move(first.x + 20, third.y + 4, { steps: 5 });
     await expect(page.locator(picked)).toHaveCount(3);
 
-    await page.mouse.move(70, first.y + 4, { steps: 5 });
+    await page.mouse.move(first.x + 20, first.y + 4, { steps: 5 });
     await expect(page.locator(picked)).toHaveCount(1);
     await page.mouse.up();
 

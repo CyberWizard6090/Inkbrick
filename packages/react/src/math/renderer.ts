@@ -22,7 +22,15 @@ type TemmlApi = typeof import('temml').default;
 let temml: Promise<TemmlApi> | undefined;
 
 /** Temml (≈ 480 КБ) подгружается при первой формуле: документы без формул её не платят. */
-const loadTemml = () => (temml ??= import('temml').then((module) => module.default));
+const loadTemml = () =>
+  (temml ??= import('temml').then(
+    (module) => module.default,
+    (error: unknown) => {
+      // Чанк не загрузился (сеть): следующая формула попробует снова, а не получит ту же ошибку навсегда.
+      temml = undefined;
+      throw error;
+    },
+  ));
 
 export const temmlRenderer: FormulaRenderer = async (latex, target, { display }) => {
   const api = await loadTemml();

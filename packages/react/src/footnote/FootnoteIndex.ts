@@ -334,6 +334,9 @@ export class FootnoteIndex {
 
     this.unsubscribe?.();
     this.unsubscribe = null;
+    // Отложенный пересчёт больше некому слушать.
+    if (this.scheduled) globalThis.clearTimeout(this.scheduled);
+    this.scheduled = 0;
     // Без подписки правки не отслеживаются: при следующем обращении индекс строится заново.
     this.fresh = false;
   }

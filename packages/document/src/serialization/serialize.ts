@@ -51,7 +51,8 @@ export function migrateSnapshot(
 
   const stored = isPlainObject(snapshot.schemaVersions) ? snapshot.schemaVersions : {};
   const versions: Record<string, number> = { ...stored };
-  const blocks: Record<string, BaseBlock> = {};
+  // Без прототипа: id «__proto__» из чужого снимка не должен подменить прототип объекта.
+  const blocks: Record<string, BaseBlock> = Object.create(null);
 
   for (const [id, raw] of Object.entries(snapshot.blocks)) {
     let block = raw as BaseBlock;

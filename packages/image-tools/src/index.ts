@@ -24,8 +24,8 @@ export type { CropImageOptions } from './canvas';
 
 export { downloadBlob, downloadImage, fileNameFor } from './download';
 
-export { DEFAULT_CROPPER_LABELS, ImageCropper } from './ImageCropper';
-export type { CropResult, CropperLabels, ImageCropperProps } from './ImageCropper';
+export { DEFAULT_CROPPER_LABELS, cropDialog, openCropper } from './cropper';
+export type { CropResult, CropperHandle, CropperLabels, CropperOptions } from './cropper';
 
-export { DEFAULT_VIEWER_LABELS, ImageViewer, VIEWER_ZOOMS, stepZoom } from './ImageViewer';
-export type { ImageViewerProps, ViewerImage, ViewerLabels } from './ImageViewer';
+export { DEFAULT_VIEWER_LABELS, VIEWER_ZOOMS, openViewer, stepZoom } from './viewer';
+export type { ViewerHandle, ViewerImage, ViewerLabels, ViewerOptions } from './viewer';

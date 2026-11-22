@@ -1,7 +1,7 @@
 {
   "name": "@inkbrick/image-tools",
   "version": "0.1.0-alpha.0",
-  "description": "Image cropping (shapes, aspect ratios, a full-screen crop dialog) and a full-screen image viewer for React. Works on its own, without the editor.",
+  "description": "Image cropping (shapes, aspect ratios, a full-screen crop window) and a full-screen image viewer in plain DOM: works with React, Vue, Svelte or no framework at all.",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -15,15 +15,9 @@
   "scripts": {
     "build": "tsup"
   },
-  "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
-  },
   "devDependencies": {
-    "@testing-library/react": "^16.3.2",
-    "jsdom": "^29.1.1",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "@testing-library/dom": "^10.4.1",
+    "jsdom": "^29.1.1"
   },
   "publishConfig": {
     "access": "public",

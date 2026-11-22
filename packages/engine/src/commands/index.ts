@@ -6,6 +6,7 @@ import { SplitBlockCommand } from './SplitBlockCommand';
 import { MorphBlockCommand } from './MorphBlockCommand';
 import { InsertParagraphCommand } from './InsertParagraphCommand';
 import { DeleteBlockCommand } from './DeleteBlockCommand';
+import { DeleteBlocksCommand } from './DeleteBlocksCommand';
 import { ToggleHeadingCommand } from './ToggleHeadingCommand';
 import { ReplaceTextCommand } from './ReplaceTextCommand';
 import { ToggleFormatCommand } from './ToggleFormatCommand';
@@ -33,6 +34,7 @@ export {
   MorphBlockCommand,
   InsertParagraphCommand,
   DeleteBlockCommand,
+  DeleteBlocksCommand,
   ToggleHeadingCommand,
   ReplaceTextCommand,
   ToggleFormatCommand,
@@ -60,6 +62,7 @@ export const builtinCommands: readonly Command<any, any>[] = [
   MorphBlockCommand,
   InsertParagraphCommand,
   DeleteBlockCommand,
+  DeleteBlocksCommand,
   ToggleHeadingCommand,
   ReplaceTextCommand,
   ToggleFormatCommand,

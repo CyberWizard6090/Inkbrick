@@ -294,8 +294,12 @@ test.describe('Large document (virtual renderer)', () => {
 
     const moves = 40;
 
-    for (let i = 0; i < moves; i++)
-      await page.mouse.move(x + (i % 2), 100 + ((height - 200) * i) / moves);
+    // Рамка идёт по полю, а в конце заходит в текст: блоки выбираются, только когда рамка их задела.
+    for (let i = 0; i < moves; i++) {
+      const inText = i >= moves - 2;
+
+      await page.mouse.move(inText ? box.x + 60 : x + (i % 2), 100 + ((height - 200) * i) / moves);
+    }
 
     const counts = await page.evaluate(
       () => (window as unknown as { __counts: { query: number; rects: number } }).__counts,
@@ -368,4 +372,49 @@ test.describe('Large document (virtual renderer)', () => {
       expect.arrayContaining(['block:quote', 'block:callout', 'block:list', 'block:code']),
     );
   });
+});
+
+test('hundreds of images (much shorter than estimated before they load) do not loop the renderer', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+
+    canvas.width = 40;
+    canvas.height = 30;
+    canvas.getContext('2d')!.fillRect(0, 0, 40, 30);
+
+    const { editor } = window.__inkbrick!.main;
+    const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+    let after = editor.document.getBlock(note)!.children.at(-1)!;
+
+    editor.batch(() => {
+      for (let i = 0; i < 300; i++) {
+        after = (
+          editor.dispatch({
+            type: 'insertBlock',
+            payload: {
+              flavour: 'block:image',
+              afterId: after,
+              props: { src: canvas.toDataURL('image/png'), alt: `image ${i}` },
+            },
+          }) as { blockId: string }
+        ).blockId;
+      }
+    });
+  });
+
+  await expect(page.locator('[data-inkbrick-block="image"]').first()).toBeVisible();
+  // Окно отрисовки дорастает до экрана по кадрам. Сколько картинок войдёт, зависит от браузера: где `data:` грузится
+  // сразу, каждая растянута на всю ширину и их на экране несколько; где позже — десятки. Главное — без «Maximum update
+  // depth exceeded» (до исправления страница пустела) и не все 300 в DOM.
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  expect(errors).toEqual([]);
+  expect(await page.locator('[data-inkbrick-block="image"]').count()).toBeLessThan(300);
 });

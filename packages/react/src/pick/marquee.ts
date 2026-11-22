@@ -1,7 +1,12 @@
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
-import { pickRun } from './actions';
+
+/**
+ * Модуль грузится отдельным чанком (сразу после отрисовки редактора) и ничего не импортирует во время выполнения:
+ * общий с ядром код сборщик вынес бы в ещё один чанк. Поэтому тип колонок и «выбор без каретки» — здесь, а не импортом.
+ */
+const COLUMNS = 'block:columns';
 
 /** Полоса у края окна, где рамка начинает прокручивать документ. */
 const EDGE = 48;
@@ -20,6 +25,16 @@ interface Spot {
   readonly id: string;
   readonly side: -1 | 0 | 1;
 }
+
+interface Box {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+const crosses = (a: Box, b: Box) =>
+  a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
 
 function scrollParent(element: HTMLElement | null): HTMLElement | null {
   for (let node = element?.parentElement; node; node = node.parentElement) {
@@ -60,7 +75,14 @@ export function startMarquee(
 
   /** Нарисованные блоки верхнего уровня с их границами, сверху вниз. */
   const rows = () => {
-    const found: { id: string; top: number; bottom: number }[] = [];
+    const found: {
+      id: string;
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+      element: Element;
+    }[] = [];
 
     for (const element of root.querySelectorAll('[data-block-id]')) {
       const id = element.getAttribute('data-block-id')!;
@@ -69,7 +91,16 @@ export function startMarquee(
 
       const rect = element.getBoundingClientRect();
 
-      if (rect.height > 0) found.push({ id, top: rect.top, bottom: rect.bottom });
+      if (rect.height > 0) {
+        found.push({
+          id,
+          top: rect.top,
+          bottom: rect.bottom,
+          left: rect.left,
+          right: rect.right,
+          element,
+        });
+      }
     }
 
     return found;
@@ -132,8 +163,68 @@ export function startMarquee(
     }
 
     const down = to >= from;
+    const picked = touched(ids, list, {
+      left: Math.min(origin.x, x),
+      right: Math.max(origin.x, x),
+      top,
+      bottom,
+    });
 
-    view.picked.set(ids, down ? ids[0] : ids.at(-1), down ? ids.at(-1) : ids[0]);
+    view.picked.set(picked, down ? picked[0] : picked.at(-1), down ? picked.at(-1) : picked[0]);
+  };
+
+  /**
+   * Из блоков, которые рамка проходит по высоте, оставляет те, которые она задевает и по ширине: рамка, которую тянут
+   * по полю страницы, ничего не выбирает, пока не дошла до текста. Рамка внутри одной колонки выбирает блоки этой
+   * колонки (их и переносят, и удаляют вместе); рамка через несколько колонок — весь блок колонок.
+   */
+  const touched = (
+    ids: readonly string[],
+    list: ReturnType<typeof rows>,
+    box: Box,
+  ): readonly string[] => {
+    const result: string[] = [];
+    const inner = new Map<string, string[]>();
+    // Нарисованные блоки уже измерены (`rows`): здесь — без новых обращений к DOM на каждый блок.
+    const drawn = new Map(list.map((row) => [row.id, row]));
+    // Ширина текста (для блоков вне экрана) — по любому нарисованному блоку.
+    const width = list[0];
+
+    if (width && (box.right < width.left || box.left > width.right)) return [];
+
+    for (const id of ids) {
+      const row = drawn.get(id);
+
+      // Блок вне экрана (виртуальный рендер, автопрокрутка): он целиком между краями рамки по высоте.
+      if (!row) {
+        result.push(id);
+        continue;
+      }
+
+      if (box.right < row.left || box.left > row.right) continue;
+
+      if (editor.store.getBlock(id)?.flavour !== COLUMNS) {
+        result.push(id);
+        continue;
+      }
+
+      for (const column of editor.store.getBlock(id)!.children) {
+        const blocks = (editor.store.getBlock(column)?.children ?? []).filter((child) => {
+          const node = row.element.querySelector(`[data-block-id="${CSS.escape(child)}"]`);
+
+          return !!node && crosses(box, node.getBoundingClientRect());
+        });
+
+        if (blocks.length > 0) inner.set(`${id}/${column}`, blocks);
+      }
+
+      if ([...inner.keys()].some((key) => key.startsWith(`${id}/`))) result.push(id);
+    }
+
+    // Задеты блоки одной колонки и больше ничего — выбираем их, а не блок колонок.
+    if (result.length === 1 && inner.size === 1) return [...inner.values()][0];
+
+    return result;
   };
 
   const schedule = () => {
@@ -187,7 +278,12 @@ export function startMarquee(
 
       const { ids, anchor: first, focus: last } = view.picked.getState();
 
-      if (ids.length > 0) pickRun(view, ids, first ?? undefined, last ?? undefined);
+      if (ids.length === 0) return;
+
+      // Как `pickRun`: выбор цельным рядом, каретка убрана, фокус остаётся в корне (клавиши работают дальше).
+      view.picked.set(ids, first ?? undefined, last ?? undefined);
+      if (globalThis.document.activeElement !== root) root.focus({ preventScroll: true });
+      globalThis.getSelection()?.removeAllRanges();
     },
   };
 }

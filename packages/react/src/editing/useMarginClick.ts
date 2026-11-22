@@ -2,10 +2,14 @@ import { useEffect, type RefObject } from 'react';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { startMarquee, type Marquee } from '../pick/marquee';
+import type { Marquee } from '../pick/marquee';
+import { lazyModule } from '../ui/lazy';
 import { findPoint } from './selection';
 
 const EDITABLE = '.editable[data-id]';
+
+/** Рамка выбора блоков — отдельный чанк, он подгружается сразу после отрисовки редактора. */
+const marqueeModule = lazyModule(() => import('../pick/marquee'), { soon: true });
 
 /** Цели, у которых своё поведение: кнопки, поля, ссылки, оболочка редактора, блоки без текста. */
 const OWN_BEHAVIOUR = [
@@ -85,9 +89,17 @@ export function useMarginClick(ref: RefObject<HTMLElement | null>, enabled: bool
       const onMove = (move: MouseEvent) => {
         if ((move.buttons & 1) === 0) return finish();
 
-        if (gutter && !marquee && Math.hypot(move.clientX - start.x, move.clientY - start.y) > 4) {
+        const chunk = marqueeModule.get();
+
+        // Чанк рамки ещё не пришёл (первое мгновение после открытия): протягивание выделяет текст, как обычно.
+        if (
+          gutter &&
+          !marquee &&
+          chunk &&
+          Math.hypot(move.clientX - start.x, move.clientY - start.y) > 4
+        ) {
           selection.removeAllRanges();
-          marquee = startMarquee(editor, view, start);
+          marquee = chunk.startMarquee(editor, view, start);
         }
 
         if (marquee) return marquee.move(move.clientX, move.clientY);

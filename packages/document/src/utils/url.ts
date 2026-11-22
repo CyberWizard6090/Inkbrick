@@ -1,4 +1,5 @@
-const SAFE_URL = /^(https?:|mailto:|tel:|\/|#)/i;
+// `/\host` браузер читает как `//host` (чужой сервер), поэтому обратная косая после `/` не считается путём.
+const SAFE_URL = /^(https?:|mailto:|tel:|\/(?!\\)|#)/i;
 
 /** Безопасен ли адрес ссылки: только http(s), mailto, tel, относительные пути и якоря (никаких javascript:/data:). */
 export function isSafeUrl(url: string): boolean {
@@ -41,6 +42,7 @@ export function isSafeImageUrl(url: string): boolean {
   if (/^data:/i.test(value))
     return value.length <= MAX_DATA_IMAGE_LENGTH && IMAGE_DATA_URL.test(value);
 
+  // Относительный путь — не `//host` и не `/\host`: браузер ведёт оба на чужой сервер.
   // eslint-disable-next-line no-control-regex
-  return !/[\u0000-\u001f\u007f\s]/.test(value) && /^(https?:\/\/|\/(?!\/))/i.test(value);
+  return !/[\u0000-\u001f\u007f\s]/.test(value) && /^(https?:\/\/|\/(?![/\\]))/i.test(value);
 }

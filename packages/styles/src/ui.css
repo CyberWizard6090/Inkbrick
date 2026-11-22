@@ -32,6 +32,7 @@
     max-height: min(320px, 50vh);
     padding: 4px;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   /* Меню появляются плавно: проявляются и чуть выезжают от каретки или ручки (снизу, если открыты над ней). */
@@ -591,6 +592,7 @@
     max-height: 60vh;
     padding: 4px;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']) {
@@ -665,7 +667,7 @@
    */
   :where([data-inkbrick-ui='tooltip']) {
     position: fixed;
-    z-index: calc(var(--inkbrick-z-popup) + 1);
+    z-index: var(--inkbrick-z-tooltip);
     box-sizing: border-box;
     max-width: min(280px, calc(100vw - 16px));
     padding: 4px 8px;
@@ -695,6 +697,7 @@
     max-height: calc(100vh - 16px);
     padding: 4px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: var(--inkbrick-shadow-16);
   }
 
@@ -1570,6 +1573,7 @@
     max-height: min(320px, 50vh);
     padding: 4px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     border: 1px solid var(--inkbrick-stroke-2);
     border-radius: var(--inkbrick-radius-surface);
     background: var(--inkbrick-bg-1);
@@ -2231,6 +2235,7 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 4px;
   }
 
@@ -2391,6 +2396,7 @@
     min-width: 200px;
     max-height: min(320px, 50vh);
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 4px;
     border: 1px solid var(--inkbrick-stroke-2);
     border-radius: var(--inkbrick-radius-surface);
@@ -2423,11 +2429,13 @@
   :where([data-inkbrick-ui='toc-panel']) {
     position: fixed;
     top: 96px;
-    z-index: var(--inkbrick-z-handle);
+    /* Панель у края — ниже ручек и меню редактора и ниже боковых панелей приложения. */
+    z-index: var(--inkbrick-z-panel);
     box-sizing: border-box;
     width: 220px;
     max-height: calc(100vh - 128px);
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 4px 0;
     font-family: var(--inkbrick-font-family);
     font-size: var(--inkbrick-font-size-caption);
@@ -2507,6 +2515,7 @@
     max-width: min(320px, calc(100vw - 16px));
     max-height: min(240px, 50vh);
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 4px;
     border: 1px solid var(--inkbrick-stroke-2);
     border-radius: var(--inkbrick-radius-surface);

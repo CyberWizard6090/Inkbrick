@@ -17,7 +17,7 @@
 
     position: fixed;
     inset: 0;
-    z-index: calc(var(--inkbrick-z-popup, 9999) + 2);
+    z-index: var(--inkbrick-z-dialog, 10000);
     box-sizing: border-box;
     color: var(--inkbrick-tools-fg);
     font-family: var(--inkbrick-font-family, system-ui, sans-serif);

@@ -136,7 +136,8 @@ export function droppedImageUrls(
   const urls: string[] = [];
 
   if (html) {
-    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    // Разбираем только начало: картинка с сайта — это пара тегов, а не мегабайты разметки.
+    const parsed = new DOMParser().parseFromString(html.slice(0, 200_000), 'text/html');
 
     for (const image of parsed.querySelectorAll('img[src]')) urls.push(image.getAttribute('src')!);
   }

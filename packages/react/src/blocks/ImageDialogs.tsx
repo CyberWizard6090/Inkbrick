@@ -1,6 +1,9 @@
+import { useEffect, useRef } from 'react';
+
 import type { ImageAspect } from '@inkbrick/document';
-import type { Editor } from '@inkbrick/engine';
 import { isSafeImageUrl } from '@inkbrick/document';
+import type { Editor } from '@inkbrick/engine';
+import type { CropperHandle } from '@inkbrick/image-tools';
 
 import { useT } from '../hooks/useT';
 import type { BlockCrop, Rect } from '../images/crop';
@@ -24,24 +27,28 @@ interface CropDialogProps {
   onCancel(): void;
 }
 
-/** Окно обрезки из `@inkbrick/image-tools` (чанк грузится при первом открытии) с надписями на языке редактора. */
+/**
+ * Окно обрезки из `@inkbrick/image-tools` (чанк грузится при первом открытии) с надписями на языке редактора. Окно — не
+ * React-компонент: оно открывается при монтировании и закрывается при размонтировании, а обработчики берутся свежими.
+ */
 export function CropDialog({ src, alt, crop, busy, theme, onSave, onCancel }: CropDialogProps) {
   const tools = useLazy(imageTools);
   const t = useT();
+  const handle = useRef<CropperHandle | null>(null);
+  const handlers = useRef({ onSave, onCancel });
 
-  if (!tools) return null;
+  handlers.current = { onSave, onCancel };
 
-  const { ImageCropper } = tools;
+  useEffect(() => {
+    if (!tools) return;
 
-  return (
-    <ImageCropper
-      src={src}
-      alt={alt}
-      initialRect={crop.rect}
-      initialAspect={crop.aspect}
-      busy={busy}
-      theme={theme}
-      labels={{
+    handle.current = tools.openCropper({
+      src,
+      alt,
+      initialRect: crop.rect,
+      initialAspect: crop.aspect,
+      theme,
+      labels: {
         title: t('image.crop'),
         cancel: t('image.crop.cancel'),
         save: t('image.crop.save'),
@@ -52,11 +59,21 @@ export function CropDialog({ src, alt, crop, busy, theme, onSave, onCancel }: Cr
         portrait: t('image.crop.portrait'),
         landscape: t('image.crop.landscape'),
         frame: t('image.crop.frame'),
-      }}
-      onSave={(result) => onSave(result.rect, result.aspect)}
-      onCancel={onCancel}
-    />
-  );
+      },
+      onSave: (result) => handlers.current.onSave(result.rect, result.aspect),
+      onCancel: () => handlers.current.onCancel(),
+    });
+
+    return () => {
+      handle.current?.close();
+      handle.current = null;
+    };
+    // Окно открывается один раз на картинку; надписи и рамка берутся на момент открытия.
+  }, [tools, src]);
+
+  useEffect(() => handle.current?.setBusy(busy), [busy, tools]);
+
+  return null;
 }
 
 /** Картинка документа для просмотра: блок и что показать. */
@@ -102,21 +119,22 @@ interface ViewDialogProps {
   onClose(): void;
 }
 
-/** Просмотр во весь экран из `@inkbrick/image-tools` с надписями на языке редактора. */
+/** Просмотр во весь экран из `@inkbrick/image-tools` с надписями на языке редактора (открыт, пока смонтирован). */
 export function ViewDialog({ images, index, theme, onIndexChange, onClose }: ViewDialogProps) {
   const tools = useLazy(imageTools);
   const t = useT();
+  const handlers = useRef({ onIndexChange, onClose });
 
-  if (!tools) return null;
+  handlers.current = { onIndexChange, onClose };
 
-  const { ImageViewer } = tools;
+  useEffect(() => {
+    if (!tools) return;
 
-  return (
-    <ImageViewer
-      images={images}
-      index={index}
-      theme={theme}
-      labels={{
+    const handle = tools.openViewer({
+      images,
+      index,
+      theme,
+      labels: {
         dialog: t('image.viewer'),
         previous: t('image.viewer.previous'),
         next: t('image.viewer.next'),
@@ -125,9 +143,14 @@ export function ViewDialog({ images, index, theme, onIndexChange, onClose }: Vie
         zoomReset: t('image.viewer.zoomReset'),
         download: t('image.download'),
         close: t('image.viewer.close'),
-      }}
-      onIndexChange={onIndexChange}
-      onClose={onClose}
-    />
-  );
+      },
+      onIndexChange: (next) => handlers.current.onIndexChange(next),
+      onClose: () => handlers.current.onClose(),
+    });
+
+    return () => handle.close();
+    // Список картинок собирается при открытии; номер дальше ведёт само окно.
+  }, [tools, images]);
+
+  return null;
 }
