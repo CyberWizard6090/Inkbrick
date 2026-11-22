@@ -186,6 +186,7 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Fixed
 
+- A block picked as a whole (for example a columns block picked by a frame across its columns) moves whole when it is dragged by the handle of a block inside it; before, only that inner block moved (the first picture of the left column). The block menu opened there also acts on the picked block.
 - Deleting thousands of blocks is no longer quadratic: deleting a range across 20 000 blocks, deleting the picked blocks and undoing either took 2–3 s, now about 40 ms (50 000 blocks: ~0.1 s). New command `delete-blocks` (`{ ids }`, one undo step, skips what cannot be deleted) and store change `RemoveChildrenChange`.
 - Hundreds of images in one document no longer blank the page: before they load, image blocks are far shorter than estimated, and the virtual renderer remeasured block by block until React aborted with «Maximum update depth exceeded». After a few synchronous passes the next remeasure waits for a frame.
 - Typing in a large table is fast again: a `:has()` rule for the cell selection made the browser restyle every cell on each key (~180 ms per character in a 100 × 20 table, now a few ms). The table carries `data-cells-selected` itself.

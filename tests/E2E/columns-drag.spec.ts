@@ -299,6 +299,32 @@ test.describe('Picked blocks and columns', () => {
     expect(await tree(page)).toBe('columns[column[a1,a2,a3],column[b1]],c');
   });
 
+  test('a frame across both columns picks the columns block; dragging a block inside it moves the whole block', async ({
+    page,
+  }) => {
+    const a1 = (await line(page, 'a1').boundingBox())!;
+    const b1 = (await line(page, 'b1').boundingBox())!;
+    const a3 = (await line(page, 'a3').boundingBox())!;
+
+    // Рамка от поля слева через обе колонки: выбран блок колонок целиком.
+    await page.mouse.move(a1.x - 80, a1.y + 3);
+    await page.mouse.down();
+    await page.mouse.move(b1.x + 20, a3.y + a3.height - 3, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator(`${columns}[data-picked]`)).toHaveCount(1);
+
+    const c = (await line(page, 'c').boundingBox())!;
+
+    // За ручку картинки/абзаца в левой колонке — едет весь блок колонок, а не один a1.
+    await dragGrip(page, 'a1', c.x + 40, c.y + c.height - 3);
+    await page.mouse.up();
+
+    expect(await tree(page)).toBe('c,columns[column[a1,a2,a3],column[b1]]');
+
+    await page.keyboard.press(`${modifier}+z`);
+    expect(await tree(page)).toBe('columns[column[a1,a2,a3],column[b1]],c');
+  });
+
   test('picked blocks dropped at the edge of a block go into a column together', async ({
     page,
   }) => {

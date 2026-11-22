@@ -240,6 +240,28 @@ export function leavePick(editor: Editor, view: EditorView, edge: 'start' | 'end
 }
 
 /** Блоки, к которым относится действие над `blockId`: весь выбор, если блок в нём, иначе только он сам. */
+/**
+ * Блок, за который на самом деле взялись: если `blockId` лежит внутри выбранного блока (например, рамка выбрала блок
+ * колонок, а ручку тянут у картинки в колонке), действие относится к выбранному блоку целиком.
+ */
+export function pickedOwner(editor: Editor, view: EditorView, blockId: string): string {
+  const { ids } = view.picked.getState();
+
+  if (ids.length === 0 || ids.includes(blockId)) return blockId;
+
+  const picked = new Set(ids);
+
+  for (
+    let id = editor.store.getBlock(blockId)?.parentId;
+    id;
+    id = editor.store.getBlock(id)?.parentId
+  ) {
+    if (picked.has(id)) return id;
+  }
+
+  return blockId;
+}
+
 export function targetsOf(view: EditorView, blockId: string): readonly string[] {
   const { ids } = view.picked.getState();
 
