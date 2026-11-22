@@ -409,10 +409,12 @@ test('hundreds of images (much shorter than estimated before they load) do not l
   });
 
   await expect(page.locator('[data-inkbrick-block="image"]').first()).toBeVisible();
-  // Окно отрисовки дорастает до экрана по кадрам: в DOM не все 300 и без «Maximum update depth exceeded».
-  await expect
-    .poll(() => page.locator('[data-inkbrick-block="image"]').count())
-    .toBeGreaterThan(20);
-  expect(await page.locator('[data-inkbrick-block="image"]').count()).toBeLessThan(300);
+  // Окно отрисовки дорастает до экрана по кадрам. Сколько картинок войдёт, зависит от браузера: где `data:` грузится
+  // сразу, каждая растянута на всю ширину и их на экране несколько; где позже — десятки. Главное — без «Maximum update
+  // depth exceeded» (до исправления страница пустела) и не все 300 в DOM.
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
   expect(errors).toEqual([]);
+  expect(await page.locator('[data-inkbrick-block="image"]').count()).toBeLessThan(300);
 });
