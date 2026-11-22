@@ -228,6 +228,21 @@ describe('openCropper', () => {
     fireEvent.error($('[data-inkbrick-part="cropper-image"]'));
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
+    // Окно закрыли раньше, чем картинка ответила: владельца больше не зовут.
+    const late = vi.fn();
+    const handle = openCropper({ src: 'y.png', onSave: () => undefined, onCancel: late });
+    const image = $<HTMLImageElement>('[data-inkbrick-part="cropper-image"][src="y.png"]');
+
+    handle.close();
+    fireEvent.error(image);
+    expect(late).not.toHaveBeenCalled();
+  });
+
+  it('Escape does not cancel while the crop is being saved', () => {
+    const { onCancel } = open({ busy: true });
+
+    fireEvent.keyDown($('[data-testid="image-cropper"]'), { key: 'Escape' });
+    expect(onCancel).not.toHaveBeenCalled();
   });
 
   it('while saving the buttons are locked; Tab stays inside the window', () => {
@@ -340,7 +355,10 @@ describe('openViewer', () => {
     fireEvent.click($('[data-inkbrick-part="viewer-zoom"]'));
     expect(zoom()).toBe('100%');
 
-    fireEvent.wheel($('[data-inkbrick-part="viewer-stage"]'), { deltaY: -200 });
+    // Колесо (и щипок тачпада — колесо с Ctrl) не масштабирует страницу под окном.
+    expect(
+      fireEvent.wheel($('[data-inkbrick-part="viewer-stage"]'), { deltaY: -200, ctrlKey: true }),
+    ).toBe(false);
     expect(zoom()).toBe('135%');
 
     fireEvent.doubleClick(picture());

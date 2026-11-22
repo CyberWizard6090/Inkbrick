@@ -457,7 +457,7 @@ export function openCropper(options: CropperOptions): CropperHandle {
   image.addEventListener('load', () => {
     const { naturalWidth, naturalHeight } = image;
 
-    if (naturalWidth <= 0 || naturalHeight <= 0) return;
+    if (closed || naturalWidth <= 0 || naturalHeight <= 0) return;
 
     natural = { width: naturalWidth, height: naturalHeight };
     // Форма задана, а рамка — вся картинка: рамка сразу принимает её пропорции.
@@ -468,7 +468,10 @@ export function openCropper(options: CropperOptions): CropperHandle {
     render();
     focusFrame();
   });
-  image.addEventListener('error', () => onError());
+  // Окно уже закрыли, пока картинка грузилась: его владельцу ответ больше не нужен.
+  image.addEventListener('error', () => {
+    if (!closed) onError();
+  });
 
   cancel.addEventListener('click', () => options.onCancel());
   save.addEventListener('click', doSave);
@@ -490,7 +493,11 @@ export function openCropper(options: CropperOptions): CropperHandle {
   const releaseModal = modal(dialog, {
     // Пока картинка не загружена, рамка скрыта и фокус не примет: тогда его берёт само окно, а потом — рамка.
     initial: () => box,
-    onEscape: () => (menu ? closeMenu(true) : options.onCancel()),
+    // Пока идёт сохранение, «Отмена» заблокирована — и Escape тоже не отменяет.
+    onEscape: () => {
+      if (menu) closeMenu(true);
+      else if (!busy) options.onCancel();
+    },
   });
   const stopWatching = watchSize(stage, (width, height) => {
     if (area?.width === width && area.height === height) return;

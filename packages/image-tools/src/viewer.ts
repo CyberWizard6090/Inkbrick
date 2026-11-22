@@ -227,9 +227,16 @@ export function openViewer(options: ViewerOptions): ViewerHandle {
     else void downloadImage(current.src, current.name ?? fileNameFor(current.src));
   });
 
-  stage.addEventListener('wheel', (event) => {
-    if (event.deltaY !== 0) applyZoom(zoom * Math.exp(-event.deltaY * 0.0015));
-  });
+  // Колесо масштабирует картинку, а не страницу: щипок на тачпаде приходит колесом с Ctrl, и без preventDefault браузер
+  // увеличил бы всю страницу под окном.
+  stage.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      if (event.deltaY !== 0) applyZoom(zoom * Math.exp(-event.deltaY * 0.0015));
+    },
+    { passive: false },
+  );
   stage.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
