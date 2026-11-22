@@ -337,6 +337,7 @@ describe('exportDocument', () => {
         commands: [],
         shortcuts: [],
         rendererHint: 'section',
+        version: 1,
         propsSchema: schema.requireBlockSchema('block:note').propsSchema,
       },
     ]);

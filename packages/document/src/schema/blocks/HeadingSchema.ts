@@ -18,6 +18,7 @@ export type HeadingProps = z.infer<typeof headingPropsSchema>;
 
 export const HeadingSchema: BlockSchema = {
   flavour: 'block:heading',
+  version: 1,
   name: 'Heading',
   icon: 'heading',
 

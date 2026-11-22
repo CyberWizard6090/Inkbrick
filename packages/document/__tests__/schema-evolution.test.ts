@@ -34,7 +34,7 @@ const WidgetV2: BlockSchema = {
 
 const WidgetV1: BlockSchema = {
   ...WidgetV2,
-  version: undefined,
+  version: 1,
   migrate: undefined,
   propsSchema: widgetV1,
 };
@@ -79,7 +79,7 @@ describe('block roles and role: constraints', () => {
       ...WidgetV2,
       flavour: 'block:section',
       role: 'hub',
-      version: undefined,
+      version: 1,
       migrate: undefined,
       allowedParents: ['block:note'],
       allowedChildren: '*',
@@ -201,14 +201,53 @@ describe('schema versions and migrations', () => {
     expect(snapshot).toEqual(copy);
   });
 
-  it('rejects data saved by a newer schema than supported', () => {
+  it('rejects data saved by a newer schema than supported (the block version first)', () => {
     const snapshot = snapshotWith();
 
-    snapshot.schemaVersions!['block:widget'] = 3;
+    snapshot.blocks['w1'].version = 3;
 
     expect(() =>
       deserializeDocument(snapshot, { schema: createSchemaRegistry([WidgetV2]) }),
     ).toThrow('newer than supported 2');
+
+    // Снимок до версий у блоков: версия берётся из сводки по типу.
+    const legacy = snapshotWith();
+
+    delete legacy.blocks['w1'].version;
+    legacy.schemaVersions!['block:widget'] = 3;
+
+    expect(() => deserializeDocument(legacy, { schema: createSchemaRegistry([WidgetV2]) })).toThrow(
+      'newer than supported 2',
+    );
+  });
+
+  it('migrates each block from its own version, even when blocks of one type were saved by different versions', () => {
+    const snapshot = snapshotWith();
+    const note = snapshot.blocks[snapshot.rootId].children[0];
+
+    // w1 записан версией 1 (label), w2 — уже версией 2 (title); сводка по типу говорит «1».
+    snapshot.blocks['w2'] = {
+      id: 'w2',
+      flavour: 'block:widget',
+      parentId: note,
+      children: [],
+      content: [],
+      props: { title: 'new' },
+      version: 2,
+    };
+    snapshot.blocks[note].children.push('w2');
+
+    const document = deserializeDocument(snapshot, { schema: createSchemaRegistry([WidgetV2]) });
+
+    expect(document.getBlock('w1')!.props).toEqual({ title: 'hello' });
+    expect(document.getBlock('w2')!.props).toEqual({ title: 'new' });
+  });
+
+  it('a schema needs an integer version of 1 or more', () => {
+    expect(() => createSchemaRegistry([{ ...WidgetV2, version: 0 }])).toThrow('integer "version"');
+    expect(() => createSchemaRegistry([{ ...WidgetV2, version: 1.5 }])).toThrow(
+      'integer "version"',
+    );
   });
 
   it('reports a failing migration as a validation error', () => {

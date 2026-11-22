@@ -13,9 +13,8 @@ export interface DocumentSnapshot {
   blocks: Record<BlockId, BaseBlock>;
 
   /**
-   * Версия схемы каждого flavour на момент сохранения. Нет записи — версия 1: так читаются снимки, записанные
-   * до появления поля; `serializeDocument` заполняет его всегда.
-   * По ней при загрузке запускаются миграции props (`BlockSchema.migrate`).
+   * Версия схемы каждого flavour на момент сохранения. Главная — версия у самого блока (`BaseBlock.version`); эта
+   * запись нужна снимкам, записанным до неё. Нет ни той, ни другой — версия 1. `serializeDocument` заполняет обе.
    */
   schemaVersions?: Record<string, number>;
 }

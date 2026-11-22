@@ -14,6 +14,7 @@ const WidgetSchema: BlockSchema = {
   flavour: 'block:widget',
   name: 'Widget',
   icon: 'info',
+  version: 1,
   propsSchema: z.object({ tone: z.enum(['info', 'warn']).default('info') }),
   allowedParents: ['block:note'],
   allowedChildren: [],
@@ -34,6 +35,7 @@ function snapshotWithWidget(props: Record<string, unknown> = { tone: 'warn' }) {
     children: [],
     content: [{ insert: 'hi' }],
     props,
+    version: 1,
   };
   snapshot.blocks[note].children.push('c1');
   snapshot.schemaVersions = { ...snapshot.schemaVersions, 'block:widget': 1 };
@@ -48,6 +50,35 @@ describe('serialization', () => {
     const restored = deserializeDocument(snapshot, { schema });
 
     expect(serializeDocument(restored, schema)).toEqual(snapshot);
+  });
+
+  it('writes the schema version on every block, and a block of an unknown type keeps its own', () => {
+    const { snapshot, schema } = snapshotWithWidget();
+    const saved = serializeDocument(deserializeDocument(snapshot, { schema }), schema);
+
+    for (const block of Object.values(saved.blocks)) expect(block.version).toBe(1);
+
+    // Тип не зарегистрирован: версия блока не известна редактору и сохраняется как пришла.
+    snapshot.blocks['c1'].version = 7;
+
+    const withoutWidget = createSchemaRegistry();
+    const kept = serializeDocument(
+      deserializeDocument(snapshot, { schema: withoutWidget }),
+      withoutWidget,
+    );
+
+    expect(kept.blocks['c1'].version).toBe(7);
+    // В открытом документе у блоков известного типа версии нет: она ставится только при сохранении.
+    expect(
+      deserializeDocument(snapshot, { schema: withoutWidget }).getBlock(snapshot.rootId)!.version,
+    ).toBe(undefined);
+  });
+
+  it('rejects a block version that is not a whole number from 1', () => {
+    const { snapshot, schema } = snapshotWithWidget();
+
+    snapshot.blocks['c1'].version = 0;
+    expect(validateSnapshot(snapshot, schema).join()).toContain('invalid version');
   });
 
   it('produces plain JSON (no functions, components or class instances)', () => {

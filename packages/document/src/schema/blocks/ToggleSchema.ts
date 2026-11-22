@@ -37,6 +37,7 @@ const NESTED = new Set([
  */
 export const ToggleSchema: BlockSchema<typeof togglePropsSchema> = {
   flavour: TOGGLE,
+  version: 1,
   name: 'Toggle',
   icon: 'chevron-right',
 

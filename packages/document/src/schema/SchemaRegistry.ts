@@ -13,6 +13,8 @@ export class SchemaRegistry {
 
   /** Регистрирует новый тип блока. Повторная регистрация — ошибка: для намеренной замены есть `replaceBlock`. */
   public registerBlock(schema: BlockSchema): void {
+    assertVersion(schema);
+
     if (this.blockSchemas.has(schema.flavour)) {
       throw new Error(
         `Block "${schema.flavour}" is already registered; use replaceBlock() to override it`,
@@ -23,6 +25,8 @@ export class SchemaRegistry {
   }
 
   public replaceBlock(schema: BlockSchema): void {
+    assertVersion(schema);
+
     if (!this.blockSchemas.has(schema.flavour)) {
       throw new Error(`Block "${schema.flavour}" is not registered; use registerBlock() to add it`);
     }
@@ -110,5 +114,14 @@ export class SchemaRegistry {
     }
 
     return result.data as BlockProps;
+  }
+}
+
+/** Версия схемы — целое число от 1: по ней мигрируют сохранённые блоки, ошибку лучше увидеть при регистрации. */
+function assertVersion(schema: BlockSchema): void {
+  if (!Number.isInteger(schema.version) || schema.version < 1) {
+    throw new Error(
+      `Block "${schema.flavour}" needs an integer "version" of 1 or more, got ${String(schema.version)}`,
+    );
   }
 }

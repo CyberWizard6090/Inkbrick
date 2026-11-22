@@ -25,6 +25,7 @@ const counterSchema: BlockSchema = {
   icon: 'plus',
   // Подпись счётчика — обычный текст: в неё ставится каретка (onFocus/onBlur, клавиши контроллера).
   enter: { nextFlavour: 'block:paragraph' },
+  version: 1,
   propsSchema: z.object({
     count: z.number().int().min(0).default(0),
     step: z.number().int().min(1).max(100).default(1),

@@ -31,6 +31,7 @@ const pollSchema: BlockSchema = {
   flavour: 'test:poll',
   name: 'Poll',
   icon: 'list',
+  version: 1,
   propsSchema: z.object({ votes: z.number().int().min(0).default(0) }),
   allowedParents: ['role:hub'],
   allowedChildren: [],

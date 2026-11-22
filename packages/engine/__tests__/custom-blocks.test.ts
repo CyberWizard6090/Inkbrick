@@ -8,6 +8,7 @@ const WidgetSchema: BlockSchema = {
   flavour: 'block:widget',
   name: 'Widget',
   icon: 'info',
+  version: 1,
   propsSchema: z.object({ tone: z.enum(['info', 'warn']).default('info') }),
   allowedParents: ['block:note'],
   allowedChildren: [],

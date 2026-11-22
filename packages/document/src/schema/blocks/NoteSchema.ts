@@ -5,6 +5,7 @@ export const notePropsSchema = z.object({});
 
 export const NoteSchema: BlockSchema<typeof notePropsSchema> = {
   flavour: 'block:note',
+  version: 1,
   name: 'Note',
 
   role: 'hub',

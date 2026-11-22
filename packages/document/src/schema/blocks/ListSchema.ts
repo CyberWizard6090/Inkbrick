@@ -17,6 +17,7 @@ export type ListProps = z.infer<typeof listPropsSchema>;
 
 export const ListSchema: BlockSchema<typeof listPropsSchema> = {
   flavour: 'block:list',
+  version: 1,
   name: 'List Item',
   icon: 'bullet-list',
 

@@ -12,6 +12,7 @@ export type CodeProps = z.infer<typeof codePropsSchema>;
 
 export const CodeSchema: BlockSchema<typeof codePropsSchema> = {
   flavour: 'block:code',
+  version: 1,
   name: 'Code',
   icon: 'code',
 

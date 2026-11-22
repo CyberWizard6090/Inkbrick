@@ -11,6 +11,7 @@ export type FormulaProps = z.infer<typeof formulaPropsSchema>;
 
 export const FormulaSchema: BlockSchema<typeof formulaPropsSchema> = {
   flavour: 'block:formula',
+  version: 1,
   name: 'Formula',
   icon: 'sigma',
   inline: false,

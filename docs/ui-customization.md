@@ -80,6 +80,7 @@ export const CalloutSchema: BlockSchema<typeof calloutProps> = {
   flavour: 'app:callout',
   name: 'Callout',
   icon: 'info',
+  version: 1, // версия формата блока, см. docs/schema-rules.md
   propsSchema: calloutProps,
   allowedParents: ['block:note'], // правила вложенности
   allowedChildren: [],
@@ -233,6 +234,7 @@ const schema: BlockSchema = {
   flavour: 'app:counter',
   name: 'Counter',
   icon: 'plus',
+  version: 1,
   propsSchema: z.object({
     count: z.number().int().min(0).default(0),
     step: z.number().int().min(1).default(1),

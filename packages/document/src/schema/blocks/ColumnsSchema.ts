@@ -32,6 +32,7 @@ const column = (): BlockTemplate => ({
  */
 export const ColumnsSchema: BlockSchema<typeof columnsPropsSchema> = {
   flavour: COLUMNS,
+  version: 1,
   name: 'Columns',
   icon: 'columns',
 
@@ -87,6 +88,7 @@ export const ColumnsSchema: BlockSchema<typeof columnsPropsSchema> = {
 
 export const ColumnSchema: BlockSchema<typeof columnPropsSchema> = {
   flavour: COLUMN,
+  version: 1,
   name: 'Column',
   icon: 'columns',
 

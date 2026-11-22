@@ -17,6 +17,7 @@ const CounterSchema: BlockSchema = {
   name: 'Counter',
   icon: 'plus',
   inline: false,
+  version: 1,
   propsSchema: z.object({
     count: z.number().int().min(0).default(0),
     step: z.number().int().min(1).default(1),
