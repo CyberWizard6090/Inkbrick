@@ -20,6 +20,7 @@ import {
   duplicateBlocks,
   moveBlocks,
   setBackgrounds,
+  pickedOwner,
   targetsOf,
 } from '../pick/actions';
 import type { BlockMenuAction, BlockMenuBackground } from './types';
@@ -46,7 +47,7 @@ export function performBlockAction(view: EditorView, action: () => unknown): voi
 export function buildBlockActions(
   editor: Editor,
   view: EditorView,
-  blockId: string,
+  handleId: string,
   slashItems: readonly SlashMenuItem[],
   t: TFunction,
 ): {
@@ -54,6 +55,8 @@ export function buildBlockActions(
   turnInto: BlockMenuAction[];
   background?: BlockMenuBackground;
 } {
+  // Меню блока внутри выбранного блока относится к выбранному блоку целиком (как и перетаскивание).
+  const blockId = pickedOwner(editor, view, handleId);
   const group = targetsOf(view, blockId);
   const previous = editor.document.getPreviousSibling(group[0]);
   const next = editor.document.getNextSibling(group.at(-1)!);

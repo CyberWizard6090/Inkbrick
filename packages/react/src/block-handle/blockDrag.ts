@@ -5,7 +5,7 @@ import type { Editor } from '@inkbrick/engine';
 import type { EditorView } from '../editing/EditorView';
 import { readDocSelection } from '../editing/selection';
 import type { DragState, DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
-import { targetsOf } from '../pick/actions';
+import { pickedOwner, targetsOf } from '../pick/actions';
 import { blockAtPoint, blockElement, probePoint, rowRect } from './geometry';
 
 export interface BlockDropTarget {
@@ -91,7 +91,11 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
   };
 
   // Перетаскивание блока из выбранного ряда переносит весь ряд одним жестом; цель внутри ряда недопустима.
-  const canMove = (blockId: string, targetId: string, position: DropPosition) => {
+  // Ручка блока внутри выбранного блока несёт выбранный блок целиком.
+  const own = (blockId: string) => pickedOwner(editor, view, blockId);
+
+  const canMove = (dragged: string, targetId: string, position: DropPosition) => {
+    const blockId = own(dragged);
     const group = targetsOf(view, blockId);
 
     return (
@@ -102,8 +106,8 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
 
   // Ряд выбранных блоков встаёт рядом с целью целиком: первый — в новую колонку, остальные — под ним.
   // Цель не может быть одним из переносимых блоков или лежать внутри него: блок не встаёт в колонку внутри себя.
-  const canMoveToSide = (blockId: string, targetId: string, side: DropSide) => {
-    const group = new Set(targetsOf(view, blockId));
+  const canMoveToSide = (dragged: string, targetId: string, side: DropSide) => {
+    const group = new Set(targetsOf(view, own(dragged)));
 
     for (let id: string | null = targetId; id; id = editor.store.getBlock(id)?.parentId ?? null) {
       if (group.has(id)) return false;
@@ -195,7 +199,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     },
 
     start(blockId) {
-      controller.startDrag(blockId);
+      controller.startDrag(own(blockId));
       markBody(true);
     },
 
@@ -258,7 +262,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
     moveToSide(blockId, targetId, side) {
       if (!canMoveToSide(blockId, targetId, side)) return false;
 
-      const [first, ...rest] = targetsOf(view, blockId);
+      const [first, ...rest] = targetsOf(view, own(blockId));
 
       // Один шаг undo: первый блок открывает колонку, остальные встают под ним по порядку.
       keepingSelection(() => {
@@ -286,7 +290,7 @@ function createBlockDrag(editor: Editor, view: EditorView): BlockDragApi {
       if (!canMove(blockId, targetId, position)) return false;
 
       // Ряд выбранных блоков: перед целью — по порядку, после неё — с конца, порядок внутри ряда сохраняется.
-      const group = targetsOf(view, blockId);
+      const group = targetsOf(view, own(blockId));
       const order = position === 'before' ? group : [...group].reverse();
 
       // Синхронно обновляем DOM: сразу после переноса можно мерить блоки на новых местах. Один шаг undo.
