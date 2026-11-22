@@ -34,7 +34,7 @@ const TEXT_COMMANDS = new Set([
   'insertFormula',
 ]);
 
-const ALLOWED_ON_UNKNOWN = new Set(['delete-block']);
+const ALLOWED_ON_UNKNOWN = new Set(['delete-block', 'delete-blocks']);
 
 function isCaret(value: unknown): value is CaretResult {
   return (

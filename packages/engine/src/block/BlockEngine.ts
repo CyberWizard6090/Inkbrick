@@ -12,6 +12,7 @@ import {
   InsertChildChange,
   MoveChildChange,
   RemoveChildChange,
+  RemoveChildrenChange,
   SetBlockChange,
   UpdateBlockChange,
   type Transaction,
@@ -156,6 +157,54 @@ export class BlockEngine {
     }
 
     this.deleteSubtree(tx, id);
+  }
+
+  /**
+   * Удаляет несколько блоков вместе с потомками. Соседи одного родителя убираются одним изменением: по одному каждый
+   * раз копировался бы весь список детей, и удаление тысяч блоков (и его отмена) росло бы квадратично. Блоки, лежащие
+   * внутри других удаляемых, уходят вместе с ними.
+   */
+  removeMany(tx: Transaction, ids: readonly BlockId[]): void {
+    const all = new Set(ids);
+    const byParent = new Map<BlockId, BlockId[]>();
+    const roots: BlockId[] = [];
+
+    for (const id of all) {
+      const block = tx.getBlock(id);
+
+      if (!block) continue;
+
+      // Внутри другого удаляемого блока: уйдёт вместе с ним.
+      let inside = false;
+
+      for (let parent = block.parentId; parent; parent = tx.getBlock(parent)?.parentId ?? null) {
+        if (all.has(parent)) {
+          inside = true;
+          break;
+        }
+      }
+
+      if (inside) continue;
+
+      roots.push(id);
+
+      if (block.parentId) {
+        const siblings = byParent.get(block.parentId) ?? [];
+
+        siblings.push(id);
+        byParent.set(block.parentId, siblings);
+      }
+    }
+
+    for (const [parentId, children] of byParent) {
+      tx.apply(
+        children.length === 1
+          ? new RemoveChildChange(parentId, children[0])
+          : new RemoveChildrenChange(parentId, children),
+      );
+    }
+
+    for (const id of roots) this.deleteSubtree(tx, id);
   }
 
   move(tx: Transaction, id: BlockId, parentId: BlockId, index: number): void {

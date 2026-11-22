@@ -255,17 +255,19 @@ export function deleteBlocks(editor: Editor, view: EditorView, ids: readonly str
   const last = deletable.at(-1)!;
   const parent = editor.store.getBlock(last)?.parentId;
   const siblings = parent ? (editor.store.getBlock(parent)?.children ?? []) : [];
-  const after = siblings.slice(siblings.indexOf(last) + 1).find((id) => !deletable.includes(id));
+  const removing = new Set(deletable);
+  const after = siblings.slice(siblings.indexOf(last) + 1).find((id) => !removing.has(id));
   const before = siblings
     .slice(0, siblings.indexOf(deletable[0]))
     .reverse()
-    .find((id) => !deletable.includes(id));
+    .find((id) => !removing.has(id));
 
   view.picked.clear();
 
   flushSync(() => {
     editor.batch(() => {
-      for (const id of deletable) editor.execute('delete-block', { id });
+      // Одной командой: по одному удаление тысяч выбранных блоков росло бы квадратично.
+      editor.execute('delete-blocks', { ids: deletable });
     });
   });
 

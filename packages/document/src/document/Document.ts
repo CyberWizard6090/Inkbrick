@@ -112,6 +112,21 @@ export class Document {
     });
   }
 
+  /**
+   * Убирает сразу несколько потомков одним новым списком: удалять их по одному — копировать список детей на каждого
+   * (тысячи блоков — секунды).
+   */
+  _removeChildren(parentId: BlockId, childIds: ReadonlySet<BlockId>): void {
+    const parent = this.requireBlock(parentId);
+
+    this._replaceBlock({ ...parent, children: parent.children.filter((id) => !childIds.has(id)) });
+  }
+
+  /** Возвращает список детей целиком (откат `_removeChildren`). */
+  _restoreChildren(parentId: BlockId, children: readonly BlockId[]): void {
+    this._replaceBlock({ ...this.requireBlock(parentId), children: [...children] });
+  }
+
   _moveChild(fromParent: BlockId, toParent: BlockId, childId: BlockId, index: number): void {
     const child = this.requireBlock(childId);
     const fromIndex = this.requireBlock(fromParent).children.indexOf(childId);

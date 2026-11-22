@@ -6,6 +6,7 @@ export {
   UpdateBlockChange,
   InsertChildChange,
   RemoveChildChange,
+  RemoveChildrenChange,
   MoveChildChange,
   DeleteBlockChange,
 } from './changes';

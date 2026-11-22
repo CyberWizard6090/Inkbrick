@@ -97,6 +97,14 @@ export class DocumentWriter {
     this.document._removeChild(parentId, childId);
   }
 
+  removeChildren(parentId: BlockId, childIds: ReadonlySet<BlockId>): void {
+    this.document._removeChildren(parentId, childIds);
+  }
+
+  restoreChildren(parentId: BlockId, children: readonly BlockId[]): void {
+    this.document._restoreChildren(parentId, children);
+  }
+
   moveChild(fromParent: BlockId, toParent: BlockId, childId: BlockId, index: number): void {
     this.document._moveChild(fromParent, toParent, childId, index);
   }
