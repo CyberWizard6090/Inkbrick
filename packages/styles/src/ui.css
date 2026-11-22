@@ -1401,8 +1401,7 @@
     background: var(--inkbrick-highlight-magenta);
   }
 
-  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). Сам <input
-     type="color"> прозрачен и лежит под кнопкой: он нужен только как якорь системного окна выбора. */
+  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). */
   :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-color='custom']) {
     background: var(
       --inkbrick-custom-color,
@@ -1415,15 +1414,14 @@
     display: grid;
   }
 
-  :where([data-inkbrick-part='custom-color-input']) {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    border: 0;
-    opacity: 0;
-    pointer-events: none;
+  /* Выбор цвета раскрывается строкой под палитрой, во всю её ширину (палитры — сетки). */
+  :where([data-inkbrick-part='color-picker-panel']) {
+    grid-column: 1 / -1;
+    padding: 6px 2px 2px;
+  }
+
+  :where([data-inkbrick-part='color-picker-panel'] [data-inkbrick-ui='color-picker']) {
+    max-width: none;
   }
 
   :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {

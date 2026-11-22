@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 
 import { createTableEditor, tableIdOf } from '@inkbrick/engine';
 
@@ -8,6 +8,7 @@ import { preloadContextMenu } from '../src/context-menu/ContextMenuHost';
 import { hideKeyboard } from '../src/hooks/useSheet';
 import { CustomColorSwatch } from '../src/ui/CustomColorSwatch';
 import './harness';
+import { pickCustomColor } from './pickCustomColor';
 
 beforeAll(async () => {
   await preloadContextMenu();
@@ -97,26 +98,27 @@ describe('cell menu: background, borders and style', () => {
     expect(t.cellBlock(1, 1).props.background).toBeUndefined();
   });
 
-  it('a custom colour from the picker paints the cell, and its text gets a contrasting colour', () => {
+  it('a custom colour from the picker paints the cell, and its text gets a contrasting colour', async () => {
     pointer(false);
     const t = mount();
 
     t.openMenu();
     t.open('table-cell-background');
 
-    const input = t
-      .flyout('table-cell-background')!
-      .querySelector<HTMLInputElement>('input[type="color"]')!;
-
-    act(() => {
-      input.value = '#1e3a8a';
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    await pickCustomColor(t.flyout('table-cell-background')!, '1e3a8a');
 
     expect(t.cellBlock(1, 1).props.background).toBe('#1e3a8a');
     expect(t.td(1, 1).style.getPropertyValue('--inkbrick-cell-text')).toBe(
       'var(--inkbrick-cell-text-light)',
     );
+
+    // Полупрозрачный фон почти не меняет страницу под собой: текст остаётся цветом темы.
+    t.openMenu();
+    t.open('table-cell-background');
+    await pickCustomColor(t.flyout('table-cell-background')!, '1e3a8a40');
+    expect(t.cellBlock(1, 1).props.background).toBe('#1e3a8a40');
+    expect(t.td(1, 1).getAttribute('data-background')).toBe('custom-alpha');
+    expect(t.td(1, 1).style.getPropertyValue('--inkbrick-cell-text')).toBe('');
   });
 
   it('line width, style and colour change the existing lines; placements draw new ones', () => {
@@ -275,38 +277,56 @@ describe('menus as bottom sheets on a phone', () => {
 });
 
 describe('custom colour swatch', () => {
-  it('marks the field while the system picker is open and reports the chosen colour', () => {
+  it('opens the colour picker under itself, applies #rrggbb / #rrggbbaa, and Escape and Cancel close it', async () => {
     const onPick = vi.fn();
-    const showPicker = vi.fn();
+    const view = render(
+      <div data-inkbrick-part="swatches">
+        <CustomColorSwatch
+          value={undefined}
+          fallback="#ffe74a"
+          label="Custom colour"
+          pressed={false}
+          onPick={onPick}
+        />
+      </div>,
+    );
+    const swatch = view.container.querySelector<HTMLElement>('[data-color="custom"]')!;
+    const part = (name: string) =>
+      view.container.querySelector<HTMLElement>(`[data-inkbrick-part="${name}"]`);
 
-    (HTMLInputElement.prototype as { showPicker?: () => void }).showPicker = showPicker;
+    expect(swatch.getAttribute('aria-expanded')).toBe('false');
+    await pickCustomColor(view.container, '3366FF');
+    expect(onPick).toHaveBeenLastCalledWith('#3366ff');
+    expect(part('color-picker-panel')).toBeNull();
 
+    await pickCustomColor(view.container, '#3366ff80');
+    expect(onPick).toHaveBeenLastCalledWith('#3366ff80');
+
+    // Выбор начинается с запасного цвета; Escape закрывает его, ничего не выбирая, и фокус возвращается на образец.
+    act(() => void fireEvent.click(swatch));
+    await waitFor(() => expect(part('color-field')).not.toBeNull());
+    expect((part('color-field') as HTMLInputElement).value).toBe('FFE74A');
+    act(() => void fireEvent.keyDown(part('color-area')!, { key: 'Escape' }));
+    expect(part('color-picker-panel')).toBeNull();
+    expect(document.activeElement).toBe(swatch);
+    expect(onPick).toHaveBeenCalledTimes(2);
+  });
+
+  it('alphaHex="always" gives eight digits even for an opaque colour', async () => {
+    const onPick = vi.fn();
     const view = render(
       <CustomColorSwatch
-        value={undefined}
+        value="#12ab34"
         fallback="#ffe74a"
         label="Custom colour"
-        pressed={false}
+        pressed
+        alphaHex="always"
         onPick={onPick}
       />,
     );
-    const input = view.container.querySelector<HTMLInputElement>('input[type="color"]')!;
 
-    act(() => void fireEvent.click(view.container.querySelector('button')!));
-    expect(showPicker).toHaveBeenCalled();
-    expect(input.hasAttribute('data-picking')).toBe(true);
-
-    act(() => {
-      input.value = '#3366FF';
-      input.dispatchEvent(new Event('change'));
-    });
-    expect(onPick).toHaveBeenCalledWith('#3366ff');
-
-    vi.useFakeTimers();
-    window.dispatchEvent(new Event('focus'));
-    vi.runAllTimers();
-    vi.useRealTimers();
-    expect(input.hasAttribute('data-picking')).toBe(false);
+    await pickCustomColor(view.container, '12ab34');
+    expect(onPick).toHaveBeenCalledWith('#12ab34ff');
   });
 });
 

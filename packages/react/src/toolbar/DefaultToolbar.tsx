@@ -122,8 +122,9 @@ export function DefaultToolbar({
                 transform: below ? 'translateY(28px)' : 'translateY(calc(-100% - 8px))',
               }
       }
+      // Клик по панели не уводит выделение из документа — кроме полей (ссылка, поля выбора цвета), которым нужен фокус.
       onMouseDown={(event) => {
-        if (event.target !== input.current) event.preventDefault();
+        if (!isField(event.target)) event.preventDefault();
       }}
     >
       {linkOpen ? (
@@ -390,7 +391,10 @@ export function DefaultToolbar({
               ))}
               <CustomColorSwatch
                 value={customColor}
-                fallback={panel === 'color' ? '#1473e6' : '#ffe74a'}
+                // Выделение начинается с 35 % (как заготовленные): текст под ним читается.
+                fallback={panel === 'color' ? '#1473e6' : '#ffe74a59'}
+                // Выделение из выбора — всегда с прозрачностью: рисуется ровно таким, как выбрано.
+                alphaHex={panel === 'highlight' ? 'always' : 'auto'}
                 label={t('color.custom')}
                 pressed={customColor !== undefined}
                 onPick={(hex) => onApplyColor(colorKind, hex)}
@@ -402,3 +406,6 @@ export function DefaultToolbar({
     </div>
   );
 }
+
+const isField = (target: EventTarget) =>
+  target instanceof HTMLInputElement || target instanceof HTMLSelectElement;

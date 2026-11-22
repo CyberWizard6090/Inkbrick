@@ -41,7 +41,8 @@ packages/store     transactions, history, subscriptions       — no React
 packages/locales   UI dictionaries: English and on-demand languages — no React, no dependencies
 packages/engine    Editor, commands, controllers               — no React
 packages/image-tools  image crop window and viewer, plain DOM   — no React, no editor, usable on its own
-packages/react     EditorProvider, DocumentView, UI            — React, uses image-tools lazily
+packages/color-picker colour picker with alpha, plain DOM      — no React, no editor, usable on its own
+packages/react     EditorProvider, DocumentView, UI            — React, uses image-tools and color-picker lazily
 packages/styles    CSS: tokens, layers, data-attribute contract
 ```
 

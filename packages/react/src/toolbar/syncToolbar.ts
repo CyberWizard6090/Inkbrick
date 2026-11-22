@@ -9,6 +9,13 @@ export function syncToolbar(editor: Editor, view: EditorView): void {
 
   if (state.linkOpen) return;
 
+  // Фокус в самой панели (например, в полях выбора цвета): выделение ушло из документа в поле, но панель и запомненный
+  // диапазон нужны, пока ей пользуются.
+  const active = document.activeElement;
+
+  if (state.visible && active instanceof Element && active.closest('[data-inkbrick-ui="toolbar"]'))
+    return;
+
   const root = view.getRoot();
   const selection = root ? readDocSelection(root) : null;
   const native = globalThis.getSelection();

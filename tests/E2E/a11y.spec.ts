@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
 
-import { useTool } from './sandbox';
+import { pickCustomColor, useTool } from './sandbox';
 
 async function violations(page: Page) {
   // Меню и панели появляются плавно (100 мс): axe считает контраст по установившемуся виду, а не по полупрозрачному кадру.
@@ -54,7 +54,12 @@ test.describe('Accessibility (axe)', () => {
     }
 
     // Выбран свой цвет: образец и индикатор с произвольным значением тоже проходят проверку.
-    await page.locator(`${toolbar} [data-kind="highlight"] input[type="color"]`).fill('#8ee0a0');
+    await page.locator(`${toolbar} [data-kind="highlight"] [data-color="custom"]`).click();
+    // Открытый выбор цвета (квадрат, ползунки, поля) тоже проходит проверку.
+    await expect(page.locator(`${toolbar} [data-inkbrick-part="color-area"]`)).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+    await page.locator(`${toolbar} [data-inkbrick-part="color-cancel"]`).click();
+    await pickCustomColor(page.locator(`${toolbar} [data-kind="highlight"]`), '8ee0a0');
     await page.locator(`${toolbar} [data-format="highlight"]`).click();
     expect(await violations(page)).toEqual([]);
   });
@@ -65,7 +70,7 @@ test.describe('Accessibility (axe)', () => {
     await expect(page.getByTestId('block-menu')).toBeVisible();
     expect(await violations(page)).toEqual([]);
 
-    await page.locator('[data-testid="block-menu"] input[type="color"]').fill('#12ab34');
+    await pickCustomColor(page.getByTestId('block-menu'), '12ab34');
     await page.locator('.editable').first().hover();
     await page.locator('[data-testid="block-handle"] [data-action="grip"]').click();
     await expect(page.getByTestId('block-menu')).toBeVisible();

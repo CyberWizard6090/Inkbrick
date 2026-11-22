@@ -1805,6 +1805,11 @@
     background-color: color-mix(in srgb, var(--inkbrick-custom-bg) 35%, transparent);
   }
 
+  /* Выделение своим цветом с прозрачностью (`#rrggbbaa` из выбора цвета): прозрачность уже выбрана, цвет как есть. */
+  :where([data-inkbrick-bg='custom-alpha']) {
+    background-color: var(--inkbrick-custom-bg);
+  }
+
   :where([data-inkbrick-bg='gray']) {
     background-color: var(--inkbrick-highlight-gray);
   }
@@ -2298,8 +2303,18 @@
     background-color: color-mix(in srgb, var(--inkbrick-block-background) 35%, transparent);
   }
 
-  /* Свой цвет ячейки таблицы — ровно тот, что выбран, без прозрачности; цвет текста по контрасту ставит сама ячейка. */
-  :where([data-inkbrick-block='table-cell'][data-background='custom']) {
+  /* Свой цвет с прозрачностью (`#rrggbbaa`): прозрачность уже выбрана, цвет рисуется как есть. */
+  :where([data-background='custom-alpha']) {
+    background-color: var(--inkbrick-block-background);
+  }
+
+  /* Свой цвет ячейки таблицы — ровно тот, что выбран; цвет текста по контрасту ставит сама ячейка. */
+  :where(
+    [data-inkbrick-block='table-cell']:is(
+      [data-background='custom'],
+      [data-background='custom-alpha']
+    )
+  ) {
     background-color: var(--inkbrick-block-background);
     color: var(--inkbrick-cell-text, inherit);
   }

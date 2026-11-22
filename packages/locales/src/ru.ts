@@ -116,6 +116,13 @@ export const ru: Messages = {
   'color.indigo': 'Индиго',
   'color.magenta': 'Маджента',
   'color.custom': 'Свой цвет…',
+  'color.picker': 'Выбор цвета',
+  'color.picker.area': 'Насыщенность и яркость',
+  'color.picker.hue': 'Оттенок',
+  'color.picker.alpha': 'Непрозрачность',
+  'color.picker.format': 'Формат цвета',
+  'color.picker.saturation': 'Насыщенность',
+  'color.picker.brightness': 'Яркость',
 
   'toolbar.turnInto.label': 'Превратить в: {type}',
   'toolbar.turnInto.title': 'Превратить в',

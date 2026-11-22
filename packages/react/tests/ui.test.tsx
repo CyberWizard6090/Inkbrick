@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { Editor } from '@inkbrick/engine';
 
@@ -249,27 +249,43 @@ describe('formatting toolbar', () => {
     expect(block().content[0].attributes).toMatchObject({ backgroundColor: 'magenta' });
   });
 
-  it('"Custom color…" applies #rrggbb as text color and as highlight, then shows it', () => {
+  it('"Custom color…" opens the colour picker under the palette; Apply sets #rrggbb or #rrggbbaa, Cancel and Escape close it', async () => {
     const { editor, ids, select } = mountEditor(['format me'], { formatting: 'toolbar' });
     const block = () => editor.document.getBlock(ids[0])!;
     const custom = (kind: string) =>
       toolbar().querySelector<HTMLElement>(`[data-kind="${kind}"] [data-color="custom"]`)!;
+    const part = <T extends HTMLElement = HTMLElement>(name: string) =>
+      toolbar().querySelector<T>(`[data-inkbrick-part="${name}"]`)!;
+    const picker = () => waitFor(() => expect(part('color-area')).not.toBeNull());
 
     select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
 
     fireEvent.click(button('color'));
     expect(custom('color').getAttribute('aria-label')).toBe('Custom color…');
     expect(custom('color').hasAttribute('data-pressed')).toBe(false);
+    expect(custom('color').getAttribute('aria-expanded')).toBe('false');
 
-    const input = toolbar().querySelector<HTMLInputElement>(
-      '[data-kind="color"] input[type="color"]',
-    )!;
+    fireEvent.click(custom('color'));
+    await picker();
+    expect(custom('color').getAttribute('aria-expanded')).toBe('true');
+    // Фокус уходит в квадрат насыщенности; надписи — на языке редактора.
+    expect(document.activeElement).toBe(part('color-area'));
+    expect(part('color-apply').textContent).toBe('Apply');
 
-    // Поле выбора не вложено в кнопку и не берёт фокус: в Tab-порядке только сама кнопка.
-    expect(input.closest('button')).toBeNull();
-    expect(input.tabIndex).toBe(-1);
+    // Cancel закрывает выбор, ничего не меняя, и возвращает фокус на кнопку.
+    fireEvent.click(part('color-cancel'));
+    expect(part('color-area')).toBeNull();
+    expect(document.activeElement).toBe(custom('color'));
+    expect(block().content[0].attributes).toBeUndefined();
 
-    fireEvent.change(input, { target: { value: '#12ab34' } });
+    fireEvent.click(custom('color'));
+    await picker();
+
+    const field = part<HTMLInputElement>('color-field');
+
+    field.value = '12ab34';
+    fireEvent.change(field);
+    fireEvent.click(part('color-apply'));
     expect(block().content[0].attributes).toMatchObject({ color: '#12ab34' });
 
     // После выбора панель закрылась: открываем снова и видим свой цвет на образце.
@@ -281,15 +297,29 @@ describe('formatting toolbar', () => {
         .background,
     ).not.toBe('');
 
+    // Выделение с прозрачностью: Enter в поле прозрачности применяет #rrggbbaa.
     fireEvent.click(button('highlight'));
-    fireEvent.change(
-      toolbar().querySelector<HTMLInputElement>('[data-kind="highlight"] input[type="color"]')!,
-      { target: { value: '#ffcc00' } },
-    );
+    fireEvent.click(custom('highlight'));
+    await picker();
+    part<HTMLInputElement>('color-field').value = 'ffcc00';
+    fireEvent.change(part('color-field'));
+
+    const opacity = part<HTMLInputElement>('color-opacity');
+
+    opacity.value = '50';
+    fireEvent.keyDown(opacity, { key: 'Enter' });
     expect(block().content[0].attributes).toMatchObject({
       color: '#12ab34',
-      backgroundColor: '#ffcc00',
+      backgroundColor: '#ffcc0080',
     });
+
+    // Escape закрывает только выбор, а не панель цвета.
+    fireEvent.click(button('highlight'));
+    fireEvent.click(custom('highlight'));
+    await picker();
+    fireEvent.keyDown(part('color-area'), { key: 'Escape' });
+    expect(part('color-area')).toBeNull();
+    expect(custom('highlight')).not.toBeNull();
   });
 
   it('link: the form validates the address; a safe one is applied, Escape cancels', () => {

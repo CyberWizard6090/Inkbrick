@@ -7,6 +7,7 @@ import { hideKeyboard, useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
 import { Icon } from '../icons/Icon';
+import { useGrowth } from '../hooks/useGrowth';
 import { CustomColorSwatch } from '../ui/CustomColorSwatch';
 import type { BlockMenuAction, BlockMenuProps } from './types';
 
@@ -38,6 +39,9 @@ export function DefaultBlockMenu({
       ?.focus();
   }, []);
 
+  // Меню выросло (раскрылся выбор цвета): положение пересчитывается, чтобы меню не уходило за край окна.
+  const grown = useGrowth(ref, !sheet);
+
   useLayoutEffect(() => {
     const menu = ref.current;
 
@@ -64,7 +68,7 @@ export function DefaultBlockMenu({
       height: menu.offsetHeight,
       width: natural,
     });
-  }, [position.x, position.y, sheet]);
+  }, [position.x, position.y, sheet, grown]);
 
   const move = (delta: number) => {
     const items = [
@@ -203,8 +207,11 @@ export function DefaultBlockMenu({
               <CustomColorSwatch
                 role="menuitemradio"
                 action="background-custom"
+                // Фон из выбора — с прозрачностью всегда: он рисуется ровно таким, как выбран.
+                alphaHex="always"
                 value={isHexColor(background.current) ? background.current : undefined}
-                fallback="#94c8ff"
+                // Фон начинается с 35 % (как заготовленные оттенки): текст на нём читается.
+                fallback="#94c8ff59"
                 label={t('color.custom')}
                 pressed={isHexColor(background.current)}
                 onPick={background.onPick}

@@ -9,6 +9,7 @@ import {
 
 import { hideKeyboard, useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
+import { useGrowth } from '../hooks/useGrowth';
 import { Icon } from '../icons/Icon';
 import { PortalPresence } from '../ui/Presence';
 import type { ContextMenuItem, ContextMenuProps } from './types';
@@ -29,6 +30,9 @@ export function DefaultContextMenu({
   // Меню открылось над точкой клика: при появлении оно выезжает снизу.
   const [above, setAbove] = useState(false);
 
+  // Меню выросло (раскрылся выбор цвета в кнопках форматирования): положение пересчитывается.
+  const grown = useGrowth(ref, !sheet);
+
   // Меню целиком в окне: у правого/нижнего края открывается влево/вверх от точки клика.
   useLayoutEffect(() => {
     const menu = ref.current;
@@ -47,7 +51,7 @@ export function DefaultContextMenu({
       left: Math.max(MARGIN, Math.min(left, window.innerWidth - width - MARGIN)),
       top: Math.max(MARGIN, Math.min(top, window.innerHeight - height - MARGIN)),
     });
-  }, [position.x, position.y, formatting !== null, sheet]);
+  }, [position.x, position.y, formatting !== null, sheet, grown]);
 
   // Лист на телефоне без кнопок форматирования: экранная клавиатура не закрывает его (кнопкам нужен курсор в тексте).
   useLayoutEffect(() => {
@@ -91,9 +95,9 @@ export function DefaultContextMenu({
         role="menu"
         aria-label={t('contextMenu.label')}
         style={sheet ? { bottom: inset } : place}
-        // Клик по меню не уводит выделение из документа (кроме поля ссылки внутри кнопок форматирования).
+        // Клик по меню не уводит выделение из документа (кроме полей: ссылка, поля выбора цвета).
         onMouseDown={(event) => {
-          if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
+          if (!isField(event.target)) event.preventDefault();
         }}
         onContextMenu={(event) => event.preventDefault()}
         onKeyDown={(event) => {
@@ -336,6 +340,9 @@ function Flyout({
     maxHeight?: number;
   } | null>(null);
 
+  // Панель выросла (например, раскрылся выбор цвета): позиция пересчитывается, чтобы она не уходила за край окна.
+  const grown = useGrowth(ref, !sheet);
+
   useLayoutEffect(() => {
     const panel = ref.current;
     const row = anchor.current?.getBoundingClientRect();
@@ -372,7 +379,7 @@ function Flyout({
       maxWidth: fitted < width ? fitted : undefined,
       maxHeight: height > maxHeight ? maxHeight : undefined,
     });
-  }, [anchor, sheet]);
+  }, [anchor, sheet, grown]);
 
   useEffect(() => {
     // Панель скрыта, пока не получила позицию (см. `place`): фокус ставим только после этого.
@@ -433,7 +440,7 @@ function Flyout({
               }
         }
         onMouseDown={(event) => {
-          if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
+          if (!isField(event.target)) event.preventDefault();
         }}
         onContextMenu={(event) => event.preventDefault()}
         // Панель лежит в портале, но по дереву React это потомок пункта: без этого её клики переключали бы сам пункт.
@@ -457,3 +464,7 @@ function Flyout({
 export function MenuSwitch({ on }: { on: boolean }) {
   return <span data-inkbrick-part="switch" data-on={on || undefined} aria-hidden="true" />;
 }
+
+/** Поле ввода или список: им нужен фокус, поэтому нажатие мыши по ним не отменяется. */
+const isField = (target: EventTarget) =>
+  target instanceof HTMLInputElement || target instanceof HTMLSelectElement;

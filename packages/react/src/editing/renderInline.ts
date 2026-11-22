@@ -158,7 +158,11 @@ function renderNode(
     if (isColorName(background)) span.setAttribute('data-inkbrick-bg', background);
     else if (safeBackground) {
       // Цвет пользователя смешивается с фоном (стили в blocks.css), как и заготовленные: чистый красный не режет глаз.
-      span.setAttribute('data-inkbrick-bg', 'custom');
+      // Цвет с выбранной прозрачностью (`#rrggbbaa`) рисуется как есть.
+      span.setAttribute(
+        'data-inkbrick-bg',
+        /^#[\da-f]{8}$/i.test(safeBackground) ? 'custom-alpha' : 'custom',
+      );
       span.style.setProperty('--inkbrick-custom-bg', safeBackground);
     }
 
