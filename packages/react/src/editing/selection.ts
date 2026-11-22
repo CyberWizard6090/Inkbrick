@@ -272,16 +272,23 @@ export function setDomSelection(
 
   if (!selection) return;
 
-  const range = globalThis.document.createRange();
-  const from = findPoint(start, startOffset);
-  const to = start === end && startOffset === endOffset ? from : findPoint(end, endOffset);
+  const from = findPoint(start, startOffset) ?? { node: start, offset: 0 };
+  const to =
+    start === end && startOffset === endOffset
+      ? from
+      : (findPoint(end, endOffset) ?? { node: end, offset: 0 });
 
-  if (from) range.setStart(from.node, from.offset);
-  else range.setStart(start, 0);
+  // Выделение уже там: не трогаем. `removeAllRanges` + `addRange` в Chromium пересчитывают раскладку страницы
+  // синхронно — в таблице из тысяч ячеек это сотни миллисекунд на каждую нажатую клавишу.
+  if (
+    selection.rangeCount === 1 &&
+    selection.anchorNode === from.node &&
+    selection.anchorOffset === from.offset &&
+    selection.focusNode === to.node &&
+    selection.focusOffset === to.offset
+  ) {
+    return;
+  }
 
-  if (to) range.setEnd(to.node, to.offset);
-  else range.setEnd(end, 0);
-
-  selection.removeAllRanges();
-  selection.addRange(range);
+  selection.setBaseAndExtent(from.node, from.offset, to.node, to.offset);
 }

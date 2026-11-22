@@ -83,6 +83,7 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
   const { header, headerColumn, striped, borders, tableStyle, widths, freezeRow, freezeColumn } =
     block.props as TableProps;
   const editor = useEditor();
+  const view = useEditorView();
   const table = useRef<HTMLTableElement>(null);
   const merged = useMemo(() => mergedCells(editor, block), [editor, block]);
   // Ширины, пока границу тянут: рисуются поверх widths, пока перетаскивание не записано в модель.
@@ -126,6 +127,14 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       ? shown.reduce((sum, width) => sum + width, 0)
       : undefined;
 
+  // Выделены ячейки этой таблицы: CSS прячет обычную подсветку текста. Атрибут, а не `:has([data-cell-selected])`:
+  // с `:has` браузер пересчитывал стили всех ячеек при каждой правке внутри таблицы (сотни мс на клавишу в 100 × 20).
+  const cellsSelected = useSyncExternalStore(
+    view.cells.subscribe,
+    () => view.cells.get()?.tableId === block.id,
+    () => false,
+  );
+
   return (
     <div
       ref={holder}
@@ -140,6 +149,7 @@ export function TableBlock({ block, selected, readOnly }: BlockProps) {
       data-table-style={tableStyle && tableStyle !== 'plain' ? tableStyle : undefined}
       data-freeze-row={freezeRow || undefined}
       data-freeze-column={freezeColumn || undefined}
+      data-cells-selected={cellsSelected || undefined}
     >
       <table
         ref={table}

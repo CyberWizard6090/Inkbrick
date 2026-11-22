@@ -205,7 +205,7 @@
    * Пока в таблице выделены ячейки, видно только их выделение: обычная подсветка текста браузера шла бы по порядку
    * чтения и задевала ячейки вне прямоугольника.
    */
-  :where([data-inkbrick-block='table']:has([data-cell-selected]) *)::selection {
+  :where([data-inkbrick-block='table'][data-cells-selected] *)::selection {
     background: transparent;
   }
 
