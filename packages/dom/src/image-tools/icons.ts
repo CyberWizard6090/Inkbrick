@@ -1,32 +1,4 @@
-/** Маленькие помощники DOM: окна пакета строятся без фреймворка и работают в React, Vue, Svelte и без них. */
-
-type Attributes = Readonly<Record<string, string | number | boolean | null | undefined>>;
-
-/** Элемент с атрибутами (`false`, `null` и `undefined` — атрибута нет, `true` — пустой атрибут) и детьми. */
-export function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attributes: Attributes = {},
-  children: ReadonlyArray<Node | string> = [],
-): HTMLElementTagNameMap[K] {
-  const element = document.createElement(tag);
-
-  setAttributes(element, attributes);
-  element.append(...children);
-
-  return element;
-}
-
-export function setAttributes(element: Element, attributes: Attributes): void {
-  for (const [name, value] of Object.entries(attributes)) {
-    if (value === false || value === null || value === undefined) element.removeAttribute(name);
-    else element.setAttribute(name, value === true ? '' : String(value));
-  }
-}
-
-let counter = 0;
-
-/** Уникальный id для связей `aria-*` внутри окна. */
-export const uniqueId = (prefix: string): string => `${prefix}-${(counter += 1)}`;
+import { el, setAttributes } from '../shared/dom';
 
 // Контуры иконок Lucide (https://lucide.dev, лицензия ISC — см. THIRD_PARTY_NOTICES.md).
 type Shape = readonly [
@@ -110,19 +82,4 @@ export function iconButton(part: string, label: string, name: IconName): HTMLBut
     { type: 'button', 'data-inkbrick-part': part, 'aria-label': label, title: label },
     [icon(name)],
   );
-}
-
-/**
- * Включает или выключает кнопку. Выключаемая кнопка с фокусом отдаёт его `fallback` (обычно самому окну): иначе фокус
- * уходит на `body`, и окно перестаёт слышать клавиши — Escape, стрелки, Tab по кругу.
- */
-export function setDisabled(
-  button: HTMLButtonElement,
-  disabled: boolean,
-  fallback: HTMLElement,
-): void {
-  if (disabled && button.ownerDocument.activeElement === button)
-    fallback.focus({ preventScroll: true });
-
-  button.disabled = disabled;
 }

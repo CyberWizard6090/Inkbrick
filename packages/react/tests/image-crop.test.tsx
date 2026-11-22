@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent } from '@testing-library/react';
 
 import { IMAGE_ASPECTS } from '@inkbrick/document';
-import { CROP_ASPECTS } from '@inkbrick/image-tools';
+import { CROP_ASPECTS } from '@inkbrick/dom/image-tools';
 import { Editor } from '@inkbrick/engine';
 
 import {
@@ -25,8 +25,8 @@ const tools = vi.hoisted(() => ({
   downloadBlob: vi.fn(),
 }));
 
-vi.mock('@inkbrick/image-tools', async (original) => ({
-  ...(await original<typeof import('@inkbrick/image-tools')>()),
+vi.mock('@inkbrick/dom/image-tools', async (original) => ({
+  ...(await original<typeof import('@inkbrick/dom/image-tools')>()),
   cropImage: tools.cropImage,
   downloadImage: tools.downloadImage,
   downloadBlob: tools.downloadBlob,
@@ -53,7 +53,7 @@ function editorWithImage(props: Record<string, unknown> = { src: ORIGINAL }) {
 const HALF = { x: 0.25, y: 0, width: 0.5, height: 1 };
 
 describe('the crop of a block', () => {
-  it('the shape list matches the one of @inkbrick/image-tools', () => {
+  it('the shape list matches the one of @inkbrick/dom/image-tools', () => {
     expect([...IMAGE_ASPECTS]).toEqual([...CROP_ASPECTS]);
   });
 

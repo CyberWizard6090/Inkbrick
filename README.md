@@ -84,16 +84,15 @@ const myDesignSystem = definePresentation({
 
 ## Packages
 
-| Package                  | Purpose                                                                                                                             |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `@inkbrick/document`     | Model, block schemas (zod), validation, serialization, migrations, export. No React, no DOM.                                        |
-| `@inkbrick/store`        | Transactions with rollback, history (undo/redo), subscriptions.                                                                     |
-| `@inkbrick/engine`       | `Editor`, commands, block controllers. Headless — usable on a server.                                                               |
-| `@inkbrick/locales`      | UI dictionaries: English, and languages that load on demand (Russian).                                                              |
-| `@inkbrick/react`        | `EditorProvider`, `DocumentView`, default UI, input and clipboard handling.                                                         |
-| `@inkbrick/image-tools`  | Full-screen image crop window (shapes, ratios) and image viewer in plain DOM: React, Vue or no framework; works without the editor. |
-| `@inkbrick/color-picker` | Colour picker with an alpha channel (area, hue and opacity sliders, HEX / RGB / HSB fields) in plain DOM; works without the editor. |
-| `@inkbrick/styles`       | Default styles: design tokens, themes, `@layer` + `:where()` over `data-inkbrick-*` attributes.                                     |
+| Package              | Purpose                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@inkbrick/document` | Model, block schemas (zod), validation, serialization, migrations, export. No React, no DOM.                                                                                          |
+| `@inkbrick/store`    | Transactions with rollback, history (undo/redo), subscriptions.                                                                                                                       |
+| `@inkbrick/engine`   | `Editor`, commands, block controllers. Headless — usable on a server.                                                                                                                 |
+| `@inkbrick/locales`  | UI dictionaries: English, and languages that load on demand (Russian).                                                                                                                |
+| `@inkbrick/react`    | `EditorProvider`, `DocumentView`, default UI, input and clipboard handling.                                                                                                           |
+| `@inkbrick/dom`      | Interface parts in plain DOM, usable without the editor and with any framework: colour picker with an alpha channel (`/color-picker`), image crop window and viewer (`/image-tools`). |
+| `@inkbrick/styles`   | Default styles: design tokens, themes, `@layer` + `:where()` over `data-inkbrick-*` attributes.                                                                                       |
 
 ## Documentation
 

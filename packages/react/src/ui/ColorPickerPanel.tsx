@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-import { createColorPicker } from '@inkbrick/color-picker';
+import { createColorPicker } from '@inkbrick/dom/color-picker';
 
 import { useT } from '../hooks/useT';
 
-/** Выбор цвета из `@inkbrick/color-picker` с надписями на языке редактора (отдельный чанк, см. `CustomColorSwatch`). */
+/** Выбор цвета из `@inkbrick/dom/color-picker` с надписями на языке редактора (отдельный чанк, см. `CustomColorSwatch`). */
 export function ColorPickerPanel({
   value,
   alphaHex,

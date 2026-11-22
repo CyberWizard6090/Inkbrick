@@ -17,7 +17,7 @@ import {
   resizeRect,
   roundRect,
   type CropRect,
-} from '../src';
+} from '../../src/image-tools';
 
 const close = (actual: CropRect, expected: CropRect) => {
   for (const key of ['x', 'y', 'width', 'height'] as const) {

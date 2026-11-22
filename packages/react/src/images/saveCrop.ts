@@ -7,7 +7,7 @@ import type { ImageOptions } from './types';
 import { uploadImage } from './upload';
 
 /** Окно обрезки, просмотр и холст — отдельный чанк: он нужен, только когда картинку обрезают, смотрят или скачивают. */
-export const imageTools = lazyModule(() => import('@inkbrick/image-tools'));
+export const imageTools = lazyModule(() => import('@inkbrick/dom/image-tools'));
 
 /** Как сохранилась обрезка: файлом, стилем (файл сделать не вышло), сброшена или блока уже нет. */
 export type SavedCrop = 'file' | 'style' | 'reset' | 'gone';

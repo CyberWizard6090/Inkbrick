@@ -1,3 +1,4 @@
+import { el } from '../shared/dom';
 import { formatHex, hsvToRgb, parseColor, rgbToHsv, type Hsva } from './color';
 
 /** Надписи выбора цвета (по умолчанию английские). */
@@ -64,25 +65,6 @@ export interface ColorPickerHandle {
   setValue(value: string): void;
   /** Снимает обработчики и убирает элемент. */
   destroy(): void;
-}
-
-type Attributes = Record<string, string | number | boolean | null | undefined>;
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  attributes: Attributes = {},
-  children: Array<Node | string> = [],
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-
-  for (const [name, value] of Object.entries(attributes)) {
-    if (value === false || value === null || value === undefined) continue;
-    node.setAttribute(name, value === true ? '' : String(value));
-  }
-
-  node.append(...children);
-
-  return node;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));

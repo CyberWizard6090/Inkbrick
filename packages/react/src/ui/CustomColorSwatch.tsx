@@ -3,7 +3,7 @@ import { useRef, useState, type CSSProperties } from 'react';
 import { lazyModule, useLazy } from './lazy';
 
 /**
- * Выбор цвета (`@inkbrick/color-picker` и его обёртка): отдельный чанк, грузится, когда «Свой цвет…» открывают (или
+ * Выбор цвета (`@inkbrick/dom/color-picker` и его обёртка): отдельный чанк, грузится, когда «Свой цвет…» открывают (или
  * наводят на него).
  */
 const colorPicker = lazyModule(() => import('./ColorPickerPanel'));

@@ -21,8 +21,7 @@
   "dependencies": {
     "@inkbrick/document": "workspace:*",
     "@inkbrick/engine": "workspace:*",
-    "@inkbrick/color-picker": "workspace:*",
-    "@inkbrick/image-tools": "workspace:*",
+    "@inkbrick/dom": "workspace:*",
     "@inkbrick/locales": "workspace:*",
     "temml": "^0.14.0"
   },

@@ -9,7 +9,7 @@ import {
   rgbToHsv,
   type ColorPickerHandle,
   type ColorPickerOptions,
-} from '../src';
+} from '../../src/color-picker';
 
 describe('colour math', () => {
   it('parses short and long hex, with and without alpha, and rgb()', () => {

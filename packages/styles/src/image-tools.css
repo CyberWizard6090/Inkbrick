@@ -1,5 +1,5 @@
 /*
- * Окна @inkbrick/image-tools: обрезка картинки (data-inkbrick-ui="image-cropper") и просмотр во весь экран
+ * Окна @inkbrick/dom/image-tools: обрезка картинки (data-inkbrick-ui="image-cropper") и просмотр во весь экран
  * (data-inkbrick-ui="image-viewer"). Файл можно подключить и без редактора — вместе с tokens.css:
  *   import '@inkbrick/styles/tokens.css';
  *   import '@inkbrick/styles/image-tools.css';

@@ -1,5 +1,5 @@
 /*
- * Выбор цвета @inkbrick/color-picker (data-inkbrick-ui="color-picker"): квадрат насыщенности и яркости, ползунки оттенка
+ * Выбор цвета @inkbrick/dom/color-picker (data-inkbrick-ui="color-picker"): квадрат насыщенности и яркости, ползунки оттенка
  * и прозрачности, образец, поля HEX / RGB / HSB и прозрачности. Файл можно подключить и без редактора — вместе с
  * tokens.css:
  *   import '@inkbrick/styles/tokens.css';

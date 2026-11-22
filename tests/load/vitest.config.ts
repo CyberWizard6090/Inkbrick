@@ -15,7 +15,8 @@ export default defineConfig({
       '@inkbrick/document': pkg('document'),
       '@inkbrick/store': pkg('store'),
       '@inkbrick/engine': pkg('engine'),
-      '@inkbrick/image-tools': pkg('image-tools'),
+      // Каталог: подпути (`@inkbrick/dom/image-tools`) разрешаются внутрь него.
+      '@inkbrick/dom': fileURLToPath(new URL('../../packages/dom/src', import.meta.url)),
       '@inkbrick/locales': fileURLToPath(
         new URL('../../packages/locales/src/index.ts', import.meta.url),
       ),
