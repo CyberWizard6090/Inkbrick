@@ -11,6 +11,7 @@ export const paragraphPropsSchema = z.object({
 
 export const ParagraphSchema: BlockSchema<typeof paragraphPropsSchema> = {
   flavour: 'block:paragraph',
+  version: 1,
   name: 'Paragraph',
   icon: 'text',
   allowedParents: () => true,

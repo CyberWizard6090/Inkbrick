@@ -71,6 +71,7 @@ describe('SchemaRegistry: register / replace / unregister', () => {
     flavour,
     name,
     icon: 'x',
+    version: 1,
     propsSchema: z.object({}),
     allowedParents: ['role:hub'],
     allowedChildren: [],

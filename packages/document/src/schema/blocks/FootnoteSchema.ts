@@ -17,6 +17,7 @@ export type FootnoteProps = z.infer<typeof footnotePropsSchema>;
  */
 export const FootnoteSchema: BlockSchema<typeof footnotePropsSchema> = {
   flavour: FOOTNOTE,
+  version: 1,
   name: 'Footnote',
   icon: 'text',
 

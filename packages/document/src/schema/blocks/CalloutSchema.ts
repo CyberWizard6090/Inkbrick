@@ -17,6 +17,7 @@ export type CalloutProps = z.infer<typeof calloutPropsSchema>;
 
 export const CalloutSchema: BlockSchema<typeof calloutPropsSchema> = {
   flavour: 'block:callout',
+  version: 1,
   name: 'Callout',
   icon: 'callout',
 

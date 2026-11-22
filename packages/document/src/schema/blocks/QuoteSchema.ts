@@ -11,6 +11,7 @@ export const quotePropsSchema = z.object({
 
 export const QuoteSchema: BlockSchema<typeof quotePropsSchema> = {
   flavour: 'block:quote',
+  version: 1,
   name: 'Quote',
   icon: 'quote',
 

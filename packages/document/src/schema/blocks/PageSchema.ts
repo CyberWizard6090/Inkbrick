@@ -7,6 +7,7 @@ export const pagePropsSchema = z.object({
 
 export const PageSchema: BlockSchema<typeof pagePropsSchema> = {
   flavour: 'block:page',
+  version: 1,
   name: 'Page',
   role: 'root',
   allowedParents: [],

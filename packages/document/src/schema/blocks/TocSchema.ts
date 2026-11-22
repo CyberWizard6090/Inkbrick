@@ -19,6 +19,7 @@ export type TocProps = z.infer<typeof tocPropsSchema>;
  */
 export const TocSchema: BlockSchema<typeof tocPropsSchema> = {
   flavour: TOC,
+  version: 1,
   name: 'Table of contents',
   icon: 'list',
 

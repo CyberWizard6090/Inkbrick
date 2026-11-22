@@ -81,6 +81,7 @@ export type ImageProps = z.infer<typeof imagePropsSchema>;
 
 export const ImageSchema: BlockSchema<typeof imagePropsSchema> = {
   flavour: 'block:image',
+  version: 1,
   name: 'Image',
   icon: 'image',
 

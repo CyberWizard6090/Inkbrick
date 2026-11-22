@@ -5,6 +5,7 @@ export const dividerPropsSchema = z.object({});
 
 export const DividerSchema: BlockSchema<typeof dividerPropsSchema> = {
   flavour: 'block:divider',
+  version: 1,
   name: 'Divider',
   icon: 'divider',
 

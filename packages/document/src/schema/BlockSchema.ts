@@ -52,8 +52,11 @@ export interface BlockSchema<TPropsSchema extends ZodTypeAny = ZodTypeAny> {
   /** Роль в дереве (по умолчанию `content`). Позволяет писать правила вложенности как `'role:hub'`. */
   role?: BlockRole;
 
-  /** Версия формата props (по умолчанию 1). Увеличивайте при несовместимой смене props и добавляйте `migrate`. */
-  version?: number;
+  /**
+   * Версия формата блока — целое число от 1. Пишется в снимок у каждого блока (`BaseBlock.version`); при несовместимой
+   * смене props увеличивайте её и добавляйте `migrate`. У всех встроенных блоков сейчас 1.
+   */
+  version: number;
 
   /**
    * Приводит props, сохранённые версией `fromVersion`, к текущей `version`. Вызывается при загрузке снимка

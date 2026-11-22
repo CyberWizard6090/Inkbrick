@@ -135,6 +135,7 @@ export function tableTemplate(rows: number, columns: number): BlockTemplate[] {
  */
 export const TableSchema: BlockSchema<typeof tablePropsSchema> = {
   flavour: TABLE,
+  version: 1,
   name: 'Table',
   icon: 'table',
 
@@ -195,6 +196,7 @@ export const TableSchema: BlockSchema<typeof tablePropsSchema> = {
 
 export const TableRowSchema: BlockSchema<typeof tableRowPropsSchema> = {
   flavour: TABLE_ROW,
+  version: 1,
   name: 'Table row',
   icon: 'table',
 
@@ -212,6 +214,7 @@ export const TableRowSchema: BlockSchema<typeof tableRowPropsSchema> = {
 
 export const TableCellSchema: BlockSchema<typeof tableCellPropsSchema> = {
   flavour: TABLE_CELL,
+  version: 1,
   name: 'Table cell',
   icon: 'table',
 

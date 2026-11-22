@@ -267,6 +267,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- **Breaking:** `BlockSchema.version` is required — an integer from 1; `registerBlock` and `replaceBlock` throw without it. Every built-in block declares `version: 1`. Add `version: 1` to your own block schemas (`defineBlock`).
+- Every block in a snapshot carries its schema version (`BaseBlock.version`): `serializeDocument` writes it on each block, and loading migrates each block from its own version (then `schemaVersions` of its type, then 1), so blocks of one type saved by different versions migrate correctly. A block of an unknown type keeps the version it came with; a block of a known type has no `version` in the open document. `schemaVersions` is still written for older readers; `validateSnapshot` rejects a block version that is not an integer from 1 or newer than supported.
+
 - The cell context menu has nested menus, as in office editors: «Cell background» (colour dots and a custom colour), «Cell borders» (with line width, style and colour) and «Table style». Context menu items can carry `submenu`, `flyout` and `checked`.
 - Line width, style and colour change the existing lines of the selected cells at once (mode `keep` of `setTableCellsBorders`); they used to be only remembered until a border placement was chosen.
 - New: the line style of cell borders (`borderStyle`: solid, dashed, dotted) and a custom cell background `#rrggbb`.

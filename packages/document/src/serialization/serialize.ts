@@ -4,8 +4,8 @@ import type { SchemaRegistry } from '../schema';
 
 /**
  * Снимок документа в виде обычного JSON: никаких компонентов, стилей и функций.
- * В снимок всегда попадают версия формата (`version`) и версии схем (`schemaVersions`): по ним при загрузке
- * запускаются миграции. Реестр обязателен: без версий после повышения версии блока уже сохранённые props
+ * В снимок всегда попадают версия формата (`version`), версия схемы у каждого блока (`BaseBlock.version`) и сводка
+ * версий по типам (`schemaVersions`, для старых читателей): по ним при загрузке запускаются миграции. Реестр обязателен: без версий после повышения версии блока уже сохранённые props
  * мигрировались бы повторно. Передавайте `editor.schema` или вызывайте `editor.serialize()`.
  */
 export function serializeDocument(document: Document, schema: SchemaRegistry): DocumentSnapshot {
@@ -15,8 +15,11 @@ export function serializeDocument(document: Document, schema: SchemaRegistry): D
   );
   const versions: Record<string, number> = {};
 
-  for (const { flavour } of Object.values(blocks)) {
-    if (schema.hasBlock(flavour)) versions[flavour] = schema.getVersion(flavour);
+  // Версия — у каждого блока: блок известного типа записан текущей версией схемы, неизвестного — той, с которой пришёл.
+  for (const block of Object.values(snapshot.blocks)) {
+    if (!schema.hasBlock(block.flavour)) continue;
+
+    block.version = versions[block.flavour] = schema.getVersion(block.flavour);
   }
 
   snapshot.schemaVersions = versions;
@@ -40,8 +43,8 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 
 /**
  * Возвращает копию снимка, где props блоков, сохранённых устаревшей версией схемы, приведены к текущей
- * (`BlockSchema.migrate`). Блоки без версии считаются версией 1; блоки новее реестра не трогаются —
- * их отклонит `validateSnapshot`. Исключение миграции превращается в `DocumentValidationError`.
+ * (`BlockSchema.migrate`). Версия блока берётся из `BaseBlock.version`, иначе из `schemaVersions`, иначе 1; блоки новее
+ * реестра не трогаются — их отклонит `validateSnapshot`. Исключение миграции превращается в `DocumentValidationError`.
  */
 export function migrateSnapshot(
   snapshot: DocumentSnapshot,
@@ -59,7 +62,13 @@ export function migrateSnapshot(
 
     if (isPlainObject(raw) && typeof block.flavour === 'string' && schema.hasBlock(block.flavour)) {
       const current = schema.getVersion(block.flavour);
-      const from = typeof stored[block.flavour] === 'number' ? stored[block.flavour] : 1;
+      // Версия блока главнее сводки по типу: блоки одного типа могли быть записаны разными версиями.
+      const from =
+        typeof block.version === 'number'
+          ? block.version
+          : typeof stored[block.flavour] === 'number'
+            ? stored[block.flavour]
+            : 1;
 
       if (from < current && isPlainObject(block.props)) {
         try {
@@ -73,7 +82,9 @@ export function migrateSnapshot(
         }
       }
 
-      versions[block.flavour] = Math.max(from, current);
+      // Блок новее реестра остаётся со своей версией — его отклонит `validateSnapshot`.
+      block = { ...block, version: Math.max(from, current) };
+      versions[block.flavour] = Math.max(versions[block.flavour] ?? 0, from, current);
     }
 
     blocks[id] = block;
@@ -148,10 +159,20 @@ export function validateSnapshot(snapshot: DocumentSnapshot, schema: SchemaRegis
       }
     }
 
+    if (
+      block.version !== undefined &&
+      (!Number.isInteger(block.version) || (block.version as number) < 1)
+    ) {
+      issues.push(`block "${id}" has an invalid version: ${String(block.version)}`);
+    }
+
     if (typeof block.flavour === 'string' && schema.hasBlock(block.flavour)) {
-      const savedWith = isObject(snapshot.schemaVersions)
-        ? snapshot.schemaVersions[block.flavour]
-        : undefined;
+      const savedWith =
+        typeof block.version === 'number'
+          ? block.version
+          : isObject(snapshot.schemaVersions)
+            ? snapshot.schemaVersions[block.flavour]
+            : undefined;
       const supported = schema.getVersion(block.flavour);
 
       if (typeof savedWith === 'number' && savedWith > supported) {
@@ -315,7 +336,13 @@ export function deserializeDocument(
   const document = new Document(migrated.rootId);
 
   for (const block of Object.values(migrated.blocks) as BaseBlock[]) {
-    document._setBlock(structuredClone(block));
+    const copy = structuredClone(block);
+
+    // Блок известного типа после миграции — текущей версии: в открытом документе версия не хранится (её ставит
+    // `serializeDocument`). Неизвестный тип хранит свою, чтобы сохраниться с ней же.
+    if (options.schema.hasBlock(copy.flavour)) delete copy.version;
+
+    document._setBlock(copy);
   }
 
   return document;
