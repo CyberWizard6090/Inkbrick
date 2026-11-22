@@ -75,7 +75,14 @@ export function startMarquee(
 
   /** Нарисованные блоки верхнего уровня с их границами, сверху вниз. */
   const rows = () => {
-    const found: { id: string; top: number; bottom: number }[] = [];
+    const found: {
+      id: string;
+      top: number;
+      bottom: number;
+      left: number;
+      right: number;
+      element: Element;
+    }[] = [];
 
     for (const element of root.querySelectorAll('[data-block-id]')) {
       const id = element.getAttribute('data-block-id')!;
@@ -84,7 +91,16 @@ export function startMarquee(
 
       const rect = element.getBoundingClientRect();
 
-      if (rect.height > 0) found.push({ id, top: rect.top, bottom: rect.bottom });
+      if (rect.height > 0) {
+        found.push({
+          id,
+          top: rect.top,
+          bottom: rect.bottom,
+          left: rect.left,
+          right: rect.right,
+          element,
+        });
+      }
     }
 
     return found;
@@ -147,7 +163,7 @@ export function startMarquee(
     }
 
     const down = to >= from;
-    const picked = touched(ids, {
+    const picked = touched(ids, list, {
       left: Math.min(origin.x, x),
       right: Math.max(origin.x, x),
       top,
@@ -162,22 +178,30 @@ export function startMarquee(
    * по полю страницы, ничего не выбирает, пока не дошла до текста. Рамка внутри одной колонки выбирает блоки этой
    * колонки (их и переносят, и удаляют вместе); рамка через несколько колонок — весь блок колонок.
    */
-  const touched = (ids: readonly string[], box: Box): readonly string[] => {
+  const touched = (
+    ids: readonly string[],
+    list: ReturnType<typeof rows>,
+    box: Box,
+  ): readonly string[] => {
     const result: string[] = [];
     const inner = new Map<string, string[]>();
+    // Нарисованные блоки уже измерены (`rows`): здесь — без новых обращений к DOM на каждый блок.
+    const drawn = new Map(list.map((row) => [row.id, row]));
+    // Ширина текста (для блоков вне экрана) — по любому нарисованному блоку.
+    const width = list[0];
+
+    if (width && (box.right < width.left || box.left > width.right)) return [];
 
     for (const id of ids) {
-      const element = root.querySelector<HTMLElement>(`[data-block-id="${CSS.escape(id)}"]`);
+      const row = drawn.get(id);
 
       // Блок вне экрана (виртуальный рендер, автопрокрутка): он целиком между краями рамки по высоте.
-      if (!element) {
+      if (!row) {
         result.push(id);
         continue;
       }
 
-      const rect = element.getBoundingClientRect();
-
-      if (box.right < rect.left || box.left > rect.right) continue;
+      if (box.right < row.left || box.left > row.right) continue;
 
       if (editor.store.getBlock(id)?.flavour !== COLUMNS) {
         result.push(id);
@@ -186,7 +210,7 @@ export function startMarquee(
 
       for (const column of editor.store.getBlock(id)!.children) {
         const blocks = (editor.store.getBlock(column)?.children ?? []).filter((child) => {
-          const node = root.querySelector(`[data-block-id="${CSS.escape(child)}"]`);
+          const node = row.element.querySelector(`[data-block-id="${CSS.escape(child)}"]`);
 
           return !!node && crosses(box, node.getBoundingClientRect());
         });

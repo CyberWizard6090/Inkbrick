@@ -294,8 +294,12 @@ test.describe('Large document (virtual renderer)', () => {
 
     const moves = 40;
 
-    for (let i = 0; i < moves; i++)
-      await page.mouse.move(x + (i % 2), 100 + ((height - 200) * i) / moves);
+    // Рамка идёт по полю, а в конце заходит в текст: блоки выбираются, только когда рамка их задела.
+    for (let i = 0; i < moves; i++) {
+      const inText = i >= moves - 2;
+
+      await page.mouse.move(inText ? box.x + 60 : x + (i % 2), 100 + ((height - 200) * i) / moves);
+    }
 
     const counts = await page.evaluate(
       () => (window as unknown as { __counts: { query: number; rects: number } }).__counts,
