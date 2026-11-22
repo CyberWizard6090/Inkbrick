@@ -48,3 +48,15 @@ describe('normalizeLinkUrl', () => {
     expect(normalizeLinkUrl('data:text/plain,x')).toBeNull();
   });
 });
+
+describe('a slash and a backslash lead to another server', () => {
+  it('links and images reject /\\host (browsers read it as //host)', async () => {
+    const { isSafeImageUrl } = await import('../src');
+
+    expect(isSafeUrl('/\\evil.test/page')).toBe(false);
+    expect(isSafeUrl('/docs\\page')).toBe(true);
+    expect(isSafeImageUrl('/\\evil.test/x.png')).toBe(false);
+    expect(isSafeImageUrl('//evil.test/x.png')).toBe(false);
+    expect(isSafeImageUrl('/uploads/x.png')).toBe(true);
+  });
+});

@@ -1,8 +1,12 @@
-import { COLUMNS } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
-import { pickRun } from './actions';
+
+/**
+ * Модуль грузится отдельным чанком (сразу после отрисовки редактора) и ничего не импортирует во время выполнения:
+ * общий с ядром код сборщик вынес бы в ещё один чанк. Поэтому тип колонок и «выбор без каретки» — здесь, а не импортом.
+ */
+const COLUMNS = 'block:columns';
 
 /** Полоса у края окна, где рамка начинает прокручивать документ. */
 const EDGE = 48;
@@ -250,7 +254,12 @@ export function startMarquee(
 
       const { ids, anchor: first, focus: last } = view.picked.getState();
 
-      if (ids.length > 0) pickRun(view, ids, first ?? undefined, last ?? undefined);
+      if (ids.length === 0) return;
+
+      // Как `pickRun`: выбор цельным рядом, каретка убрана, фокус остаётся в корне (клавиши работают дальше).
+      view.picked.set(ids, first ?? undefined, last ?? undefined);
+      if (globalThis.document.activeElement !== root) root.focus({ preventScroll: true });
+      globalThis.getSelection()?.removeAllRanges();
     },
   };
 }

@@ -152,3 +152,21 @@ describe('block background after repair', () => {
     }
   });
 });
+
+describe('hostile block ids', () => {
+  it('a block with the id «__proto__» does not replace the prototype of the block map', async () => {
+    const { migrateSnapshot } = await import('../src');
+    const { snapshot, note } = base();
+    const hostile = JSON.parse(
+      JSON.stringify({ ...snapshot, schemaVersions: {} }).replace(
+        '"blocks":{',
+        `"blocks":{"__proto__":${JSON.stringify(paragraph('__proto__', note))},`,
+      ),
+    ) as DocumentSnapshot;
+    const migrated = migrateSnapshot(hostile, schema);
+
+    expect(Object.getPrototypeOf(migrated.blocks)).toBeNull();
+    expect(Object.prototype.hasOwnProperty.call(migrated.blocks, '__proto__')).toBe(true);
+    expect(migrated.blocks[snapshot.rootId]).toBeDefined();
+  });
+});
