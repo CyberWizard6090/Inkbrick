@@ -667,7 +667,7 @@
    */
   :where([data-inkbrick-ui='tooltip']) {
     position: fixed;
-    z-index: calc(var(--inkbrick-z-popup) + 1);
+    z-index: var(--inkbrick-z-tooltip);
     box-sizing: border-box;
     max-width: min(280px, calc(100vw - 16px));
     padding: 4px 8px;
@@ -2429,7 +2429,8 @@
   :where([data-inkbrick-ui='toc-panel']) {
     position: fixed;
     top: 96px;
-    z-index: var(--inkbrick-z-handle);
+    /* Панель у края — ниже ручек и меню редактора и ниже боковых панелей приложения. */
+    z-index: var(--inkbrick-z-panel);
     box-sizing: border-box;
     width: 220px;
     max-height: calc(100vh - 128px);

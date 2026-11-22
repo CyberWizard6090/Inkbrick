@@ -1419,6 +1419,11 @@
     display: flex;
   }
 
+  /* Пока открыта выпадающая панель, панель картинки — на слое меню: иначе её перекрыли бы блоки ниже (например, таблица). */
+  :where([data-inkbrick-part='tools']:has([aria-expanded='true'])) {
+    z-index: var(--inkbrick-z-menu);
+  }
+
   :where([data-inkbrick-part='tool-wrap']) {
     position: relative;
     display: inline-flex;
