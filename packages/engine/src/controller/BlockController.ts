@@ -107,6 +107,7 @@ export interface BlockController<TProps extends BlockProps = BlockProps> {
   onFocus?(context: BlockContext<TProps>): void;
   onBlur?(context: BlockContext<TProps>): void;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each command has its own payload type
   readonly commands?: readonly BlockCommand<TProps, any>[];
   readonly slashItems?: readonly BlockSlashItem<TProps>[];
   readonly menuItems?: readonly BlockMenuItem<TProps>[];
@@ -117,6 +118,17 @@ export interface BlockDefinition<TProps extends BlockProps = BlockProps> {
   readonly schema: BlockSchema;
   readonly controller?: BlockController<TProps>;
 }
+
+/*
+ * Определения, контроллеры и команды блоков с любыми props: так их держат списки разных блоков. Props у каждого блока
+ * свои, а параметр типа инвариантен (props и принимаются, и отдаются), поэтому общего типа, кроме `any`, у списка нет.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- a list of blocks with different props (see above)
+export type AnyBlockDefinition = BlockDefinition<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- a list of blocks with different props (see above)
+export type AnyBlockController = BlockController<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- commands of blocks with different props and payloads
+export type AnyBlockCommand = BlockCommand<any, any>;
 
 export function defineBlockController<TProps extends BlockProps = BlockProps>(
   controller: BlockController<TProps>,
@@ -132,8 +144,8 @@ export function defineBlockCommand<
 }
 
 export function isBlockDefinition(
-  value: BlockSchema | BlockDefinition<any>,
-): value is BlockDefinition<any> {
+  value: BlockSchema | AnyBlockDefinition,
+): value is AnyBlockDefinition {
   return (
     typeof (value as BlockDefinition).schema === 'object' &&
     (value as BlockDefinition).schema !== null

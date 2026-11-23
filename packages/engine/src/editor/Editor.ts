@@ -17,14 +17,20 @@ import {
 import { createEngine } from './createEngine';
 import type { Engine } from './Engine';
 import { Dispatcher } from '../dispatcher';
-import type { CaretResult, EditorIntent } from '../dispatcher';
+import type {
+  CaretResult,
+  CommandName,
+  CommandPayload,
+  CommandResult,
+  EditorIntent,
+} from '../dispatcher';
 import { builtinCommands } from '../commands';
 import { extractFragment } from '../clipboard/extract';
 import type { Fragment } from '../clipboard/types';
 import { getRangeFormats, type RangeFormats } from '../formats';
 import { orderRange } from '../utils';
 import { BlockControllers, isBlockDefinition } from '../controller';
-import type { BlockController, BlockDefinition } from '../controller';
+import type { AnyBlockController, AnyBlockDefinition } from '../controller/BlockController';
 
 export interface EditorOptions {
   document?: Document;
@@ -33,12 +39,12 @@ export interface EditorOptions {
    * Пользовательские блоки, добавляемые к встроенным: схемы или определения `{ schema, controller }`
    * (например, из `defineBlock` в `@inkbrick/react`). Контроллер определения подключается к его flavour.
    */
-  blocks?: readonly (BlockSchema | BlockDefinition<any>)[];
+  blocks?: readonly (BlockSchema | AnyBlockDefinition)[];
   /**
    * Контроллеры по flavour — для блоков, схема которых задана иначе (через `schema` или встроенных).
    * Контроллер того же flavour в `blocks` и здесь — ошибка.
    */
-  controllers?: Readonly<Record<string, BlockController<any>>>;
+  controllers?: Readonly<Record<string, AnyBlockController>>;
   history?: HistoryOptions;
   /** Заполнять `meta` блоков (создан/изменён, кем). `true` — только время, объект — ещё и автор (`user`). */
   meta?: boolean | BlockMetaOptions;
@@ -110,7 +116,11 @@ export class Editor {
       : null;
   }
 
-  dispatch(intent: EditorIntent): unknown {
+  /**
+   * Выполняет намерение — команду из `CommandMap` с её данными — одним шагом undo. Тип результата выводится из имени
+   * команды; `undefined` — команда не выполнена.
+   */
+  dispatch<I extends EditorIntent>(intent: I): CommandResult<I['type']> | undefined {
     return this.dispatcher.dispatch(intent);
   }
 
@@ -206,8 +216,11 @@ export class Editor {
     this.store.clearHistory();
   }
 
+  /** Выполнится ли команда (документ не меняется). Для команды из `CommandMap` данные проверяются. */
+  can<K extends CommandName>(type: K, payload: CommandPayload<K>): boolean;
+  can<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): boolean;
   can(type: string, payload?: unknown): boolean {
-    return this.dispatcher.can(type, payload);
+    return this.dispatcher.can(type as never, payload);
   }
 
   copyFragment(
@@ -224,7 +237,10 @@ export class Editor {
     return getRangeFormats(this, from, to);
   }
 
+  /** Выполняет команду по имени, в том числе команду своего блока. Для команды из `CommandMap` данные и результат типизированы. */
+  execute<K extends CommandName>(type: K, payload: CommandPayload<K>): CommandResult<K> | undefined;
+  execute<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): unknown;
   execute(type: string, payload?: unknown): unknown {
-    return this.dispatcher.execute(type, payload);
+    return this.dispatcher.execute(type as never, payload);
   }
 }

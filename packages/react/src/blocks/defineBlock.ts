@@ -52,6 +52,10 @@ export interface ReactBlockDefinition<
   readonly slashActions?: readonly SlashMenuItem[];
 }
 
+/** Блок с любыми props — так их держат списки разных блоков (см. `AnyBlockDefinition` в `@inkbrick/engine`). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- a list of blocks with different props, the type parameter is invariant
+export type AnyReactBlockDefinition = ReactBlockDefinition<any>;
+
 /**
  * Объявляет пользовательский блок одним объектом:
  *
@@ -70,7 +74,7 @@ export function defineBlock<TProps extends DocumentBlockProps = DocumentBlockPro
 }
 
 export function blockComponentsOf(
-  blocks: readonly ReactBlockDefinition<any>[] | undefined,
+  blocks: readonly AnyReactBlockDefinition[] | undefined,
 ): BlockComponentRegistry {
   const registry: Record<string, BlockComponent> = {};
 

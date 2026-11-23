@@ -2,26 +2,16 @@ import type { Transaction } from '@inkbrick/store';
 
 import { collapseEmptyColumns } from '../columns/columnsCommands';
 import type { Engine } from '../editor/Engine';
-import type { Command } from '../commands/Command';
-import type { CaretResult, EditorIntent } from './Intents';
+import type { AnyCommand } from '../commands/Command';
+import type {
+  CaretResult,
+  CommandName,
+  CommandPayload,
+  CommandResult,
+  EditorIntent,
+} from './Intents';
 import { isTextBlock } from '../utils';
-
-function targetBlockIds(payload: unknown): string[] {
-  if (typeof payload !== 'object' || payload === null) return [];
-
-  const p = payload as Record<string, any>;
-
-  return [
-    p.blockId,
-    p.id,
-    p.targetId,
-    p.afterId,
-    p.selection?.anchor?.blockId,
-    p.from?.blockId,
-    p.to?.blockId,
-    p.at?.blockId,
-  ].filter((id): id is string => typeof id === 'string');
-}
+import { caretBefore, hasExplicitMergeKey, isCaret, mergeKeyOf, targetBlockIds } from './history';
 
 /** Команды над текстом: блоки без текста (разделитель, контейнеры) их не принимают. */
 const TEXT_COMMANDS = new Set([
@@ -35,87 +25,6 @@ const TEXT_COMMANDS = new Set([
 ]);
 
 const ALLOWED_ON_UNKNOWN = new Set(['delete-block', 'delete-blocks']);
-
-function isCaret(value: unknown): value is CaretResult {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as CaretResult).blockId === 'string' &&
-    typeof (value as CaretResult).offset === 'number'
-  );
-}
-
-function caretBefore(type: string, payload: unknown): CaretResult | undefined {
-  if (typeof payload !== 'object' || payload === null) return undefined;
-
-  const p = payload as Record<string, any>;
-
-  // Команда, которой вызывающий сам сообщил, где стояла каретка (вставка строки таблицы клавишей Tab): отмена вернёт её туда.
-  const given = p.caretBefore as Partial<CaretResult> | undefined;
-
-  if (given && typeof given.blockId === 'string' && typeof given.offset === 'number')
-    return { blockId: given.blockId, offset: given.offset };
-
-  switch (type) {
-    case 'insertText':
-      return p.selection?.anchor;
-    case 'replaceText':
-      return { blockId: p.blockId, offset: p.from };
-    case 'deleteText':
-      return { blockId: p.blockId, offset: Math.max(p.from, p.to) };
-    case 'pasteFragment':
-      return p.at;
-    case 'insertFormula':
-      return { blockId: p.blockId, offset: Math.min(p.from, p.to) };
-    case 'setAlign':
-    case 'deleteRange':
-    case 'toggleFormatRange':
-    case 'setInlineAttributes':
-      return p.from;
-    case 'morphBlock':
-      return { blockId: p.blockId, offset: p.clearFromOffset ?? 0 };
-    default:
-      return typeof p.blockId === 'string'
-        ? { blockId: p.blockId, offset: typeof p.offset === 'number' ? p.offset : 0 }
-        : undefined;
-  }
-}
-
-/**
- * Ключ слияния шагов истории: набор текста подряд (по одному символу) и стирание
- * подряд в одном блоке превращаются в один шаг undo.
- */
-/** Явный `mergeKey` в payload: вызывающий код сам связывает правки, и они сливаются независимо от времени между ними. */
-function hasExplicitMergeKey(payload: unknown): boolean {
-  return (
-    typeof payload === 'object' &&
-    payload !== null &&
-    typeof (payload as { mergeKey?: unknown }).mergeKey === 'string'
-  );
-}
-
-function mergeKeyOf(type: string, payload: unknown): string | undefined {
-  if (typeof payload !== 'object' || payload === null) return undefined;
-
-  const p = payload as Record<string, any>;
-
-  // Явный ключ: вызывающий код сам объединяет связанные правки (например, вставка картинки и её загрузка).
-  if (typeof p.mergeKey === 'string') return p.mergeKey;
-
-  if (type === 'insertText') return `insert:${p.selection?.anchor?.blockId}`;
-  if (
-    type === 'replaceText' &&
-    p.from === p.to &&
-    typeof p.text === 'string' &&
-    p.text.length === 1
-  ) {
-    return `insert:${p.blockId}`;
-  }
-  if (type === 'deleteBackward' && p.offset > 0) return `delete:${p.blockId}`;
-  if (type === 'deleteText' && Math.abs(p.to - p.from) === 1) return `delete:${p.blockId}`;
-
-  return undefined;
-}
 
 /** Команда сняла бы закреплённый блок: транзакция откатывается, `dispatch` возвращает `undefined`. */
 export class PinnedBlockError extends Error {
@@ -131,13 +40,13 @@ interface BatchState {
 }
 
 export class Dispatcher {
-  private readonly commands = new Map<string, Command<any>>();
+  private readonly commands = new Map<string, AnyCommand>();
 
   private batchState: BatchState | null = null;
 
   constructor(private readonly engine: Engine) {}
 
-  register(command: Command<any>): void {
+  register(command: AnyCommand): void {
     this.commands.set(command.type, command);
   }
 
@@ -149,10 +58,15 @@ export class Dispatcher {
     return this.commands.has(type);
   }
 
-  dispatch(intent: EditorIntent): unknown {
-    return this.execute(intent.type, intent.payload);
+  dispatch<I extends EditorIntent>(intent: I): CommandResult<I['type']> | undefined {
+    return this.execute(intent.type, intent.payload as never) as
+      CommandResult<I['type']> | undefined;
   }
 
+  /** Выполняет команду из `CommandMap`: данные проверены, результат типизирован (`undefined` — не выполнена). */
+  execute<K extends CommandName>(type: K, payload: CommandPayload<K>): CommandResult<K> | undefined;
+  /** Команда, которой нет в `CommandMap` (своя, не объявленная): данные и результат не проверяются. */
+  execute<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): unknown;
   execute(type: string, payload?: unknown): unknown {
     const command = this.commands.get(type);
 
@@ -197,6 +111,8 @@ export class Dispatcher {
    * Проверяет, выполнится ли команда, не меняя документ (для подсветки допустимых целей перетаскивания,
    * доступности пунктов меню). Блоки неизвестного типа и недопустимые цели дают false.
    */
+  can<K extends CommandName>(type: K, payload: CommandPayload<K>): boolean;
+  can<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): boolean;
   can(type: string, payload?: unknown): boolean {
     const command = this.commands.get(type);
 
@@ -239,7 +155,7 @@ export class Dispatcher {
     );
   }
 
-  private run(command: Command<any>, type: string, payload: unknown, transaction: Transaction) {
+  private run(command: AnyCommand, type: string, payload: unknown, transaction: Transaction) {
     if (!this.accepts(command, type, payload, transaction)) return undefined;
 
     const result = command.execute({ engine: this.engine, transaction }, payload);
@@ -263,7 +179,7 @@ export class Dispatcher {
   }
 
   private accepts(
-    command: Command<any>,
+    command: AnyCommand,
     type: string,
     payload: unknown,
     transaction: Transaction,

@@ -7,7 +7,7 @@ import {
   getBlockBackgroundColor,
 } from '@inkbrick/document';
 
-import { Editor, type CaretResult } from '../src/internal';
+import { Editor } from '../src/internal';
 
 function make(flavour = 'block:paragraph', props: Record<string, unknown> = {}) {
   const editor = new Editor();
@@ -126,7 +126,7 @@ describe('block background', () => {
     const result = editor.dispatch({
       type: 'splitBlock',
       payload: { blockId: id, offset: 5 },
-    } as never) as CaretResult;
+    })!;
 
     expect(bg(editor, result.blockId)).toBe('blue');
   });

@@ -18,6 +18,10 @@ export type { RangeFormats } from './formats';
 
 // Намерения (`editor.dispatch`) и их результаты.
 export type {
+  CommandMap,
+  CommandName,
+  CommandPayload,
+  CommandResult,
   EditorIntent,
   CaretResult,
   InsertTextPayload,
@@ -40,9 +44,12 @@ export type {
 } from './dispatcher';
 
 // Свои команды и блоки.
-export type { Command, CommandContext } from './commands';
+export type { AnyCommand, Command, CommandContext } from './commands';
 export { defineBlockCommand, defineBlockController, isBlockDefinition } from './controller';
 export type {
+  AnyBlockCommand,
+  AnyBlockController,
+  AnyBlockDefinition,
   BlockCommand,
   BlockCommandContext,
   BlockCommandPayload,

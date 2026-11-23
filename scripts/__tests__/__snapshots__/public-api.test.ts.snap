@@ -243,6 +243,10 @@ exports[`public API of the packages > @inkbrick/dom 1`] = `
 
 exports[`public API of the packages > @inkbrick/engine 1`] = `
 [
+  "type AnyBlockCommand",
+  "type AnyBlockController",
+  "type AnyBlockDefinition",
+  "type AnyCommand",
   "type BlockCommand",
   "type BlockCommandContext",
   "type BlockCommandPayload",
@@ -259,6 +263,10 @@ exports[`public API of the packages > @inkbrick/engine 1`] = `
   "columnsBlocks",
   "type Command",
   "type CommandContext",
+  "type CommandMap",
+  "type CommandName",
+  "type CommandPayload",
+  "type CommandResult",
   "type ConvertBlockPayload",
   "createTableEditor",
   "defineBlockCommand",
@@ -329,6 +337,10 @@ exports[`public API of the packages > @inkbrick/engine/internal (not public) 1`]
 [
   "AddColumnCommand",
   "AlignTableCellsCommand",
+  "type AnyBlockCommand",
+  "type AnyBlockController",
+  "type AnyBlockDefinition",
+  "type AnyCommand",
   "type BlockCommand",
   "type BlockCommandContext",
   "type BlockCommandPayload",
@@ -491,6 +503,7 @@ exports[`public API of the packages > @inkbrick/locales 1`] = `
 
 exports[`public API of the packages > @inkbrick/react 1`] = `
 [
+  "type AnyReactBlockDefinition",
   "type AppMessages",
   "backgroundAttrs",
   "BlockChildren",

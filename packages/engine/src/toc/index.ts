@@ -1,6 +1,6 @@
 import { TocSchema, type TocProps } from '@inkbrick/document';
 
-import type { BlockDefinition } from '../controller/BlockController';
+import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockController';
 
 /**
  * Оглавление для редактора: схема блока `block:toc`. Во встроенный набор не входит — подключается явно:
@@ -11,6 +11,6 @@ import type { BlockDefinition } from '../controller/BlockController';
  * editor.dispatch({ type: 'insertBlock', payload: { flavour: 'block:toc', afterId } });
  * ```
  */
-export const tocBlocks: readonly BlockDefinition<any>[] = [
+export const tocBlocks: readonly AnyBlockDefinition[] = [
   { schema: TocSchema } as BlockDefinition<TocProps>,
 ];

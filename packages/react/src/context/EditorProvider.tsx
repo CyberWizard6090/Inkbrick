@@ -23,7 +23,7 @@ import type { EditorPresentation } from '../ui/presentation';
 import type { BlockComponentRegistry, EditorSlots } from '../ui/types';
 import type { FormattingMode } from '../context-menu/types';
 import { EditorContext, EditorViewContext } from './EditorContext';
-import { blockComponentsOf, type ReactBlockDefinition } from '../blocks/defineBlock';
+import { blockComponentsOf, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import { controllerKeymap, controllerSlashItems, mergeById } from '../controllers/adapters';
 
 export interface EditorProviderProps {
@@ -39,7 +39,7 @@ export interface EditorProviderProps {
    * с тем же flavour важнее). Схемы и контроллеры этих блоков передайте и в `new Editor({ blocks })`:
    * пункты slash-меню, меню блока и клавиши берутся из контроллеров редактора. Держите массив стабильным.
    */
-  readonly blocks?: readonly ReactBlockDefinition<any>[];
+  readonly blocks?: readonly AnyReactBlockDefinition[];
   /**
    * Свои React-представления блоков: `{ 'block:paragraph': MyParagraph }`.
    * Не указанные flavour используют стандартные компоненты Inkbrick.

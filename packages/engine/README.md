@@ -34,8 +34,10 @@ toMarkdown(editor.document, { schema: editor.schema });
 const snapshot = editor.serialize(); // plain JSON, load it back with deserializeDocument
 ```
 
-- **Commands:** `editor.dispatch(intent)` for the typed built-in intents, `editor.execute(type, payload)` and
-  `editor.can(type, payload)` for any command, including those of your own blocks. Every command runs in a
+- **Commands:** `editor.dispatch(intent)`, `editor.execute(type, payload)` and `editor.can(type, payload)`. The commands
+  are described in `CommandMap`: the name gives the payload type and the result type (`undefined` when the command did
+  not run). Add your own commands to `CommandMap` with `declare module '@inkbrick/engine'` to have them checked too;
+  an undeclared command still works, untyped. Every command runs in a
   transaction: it applies completely or not at all.
 - **History:** `undo`, `redo`, `canUndo`, `canRedo`; typing is grouped into one step.
 - **Read-only:** `editor.setReadOnly(true)` rejects every change.

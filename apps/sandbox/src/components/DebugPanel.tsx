@@ -118,9 +118,13 @@ function useCommandLog(editor: Editor) {
 
   useEffect(() => {
     const { dispatcher, store } = editor;
-    const original = dispatcher.execute.bind(dispatcher);
+    const original = dispatcher.execute.bind(dispatcher) as (
+      type: string,
+      payload?: unknown,
+    ) => unknown;
 
-    dispatcher.execute = (type, payload) => {
+    // Журнал перехватывает любую команду по имени: здесь важна общая сигнатура, а не типы отдельных команд.
+    dispatcher.execute = ((type: string, payload?: unknown) => {
       const started = performance.now();
       const push = (error?: string) => {
         const entry: LogEntry = {
@@ -144,10 +148,10 @@ function useCommandLog(editor: Editor) {
         push(error instanceof Error ? error.message : String(error));
         throw error;
       }
-    };
+    }) as typeof dispatcher.execute;
 
     return () => {
-      dispatcher.execute = original;
+      dispatcher.execute = original as typeof dispatcher.execute;
     };
   }, [editor]);
 

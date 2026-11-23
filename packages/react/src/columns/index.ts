@@ -1,7 +1,7 @@
 import { ColumnSchema, ColumnsSchema, type ColumnsProps } from '@inkbrick/document';
 import { columnsCommands } from '@inkbrick/engine/internal';
 
-import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
+import { defineBlock, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';
 import { ColumnBlock } from './ColumnBlock';
 import { ColumnsBlock } from './ColumnsBlock';
@@ -22,7 +22,7 @@ const view = (component: BlockComponent) => component as never;
  * <EditorProvider editor={editor} blocks={columnsBlocks}>…
  * ```
  */
-export const columnsBlocks: readonly ReactBlockDefinition<any>[] = [
+export const columnsBlocks: readonly AnyReactBlockDefinition[] = [
   defineBlock<ColumnsProps>({
     schema: ColumnsSchema,
     component: view(ColumnsBlock),

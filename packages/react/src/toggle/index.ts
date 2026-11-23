@@ -1,6 +1,6 @@
 import { ToggleSchema, type ToggleProps } from '@inkbrick/document';
 
-import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
+import { defineBlock, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import type { KeyBinding } from '../keymap/types';
 import type { BlockComponent } from '../ui/types';
 import { ToggleBlock } from './ToggleBlock';
@@ -78,7 +78,7 @@ const keymap: readonly KeyBinding[] = [
  * <EditorProvider editor={editor} blocks={toggleBlocks}>…
  * ```
  */
-export const toggleBlocks: readonly ReactBlockDefinition<any>[] = [
+export const toggleBlocks: readonly AnyReactBlockDefinition[] = [
   defineBlock<ToggleProps>({
     schema: ToggleSchema,
     component: ToggleBlock as unknown as BlockComponent as never,

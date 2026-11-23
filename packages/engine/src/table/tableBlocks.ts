@@ -1,6 +1,6 @@
 import { TableCellSchema, TableRowSchema, TableSchema, type TableProps } from '@inkbrick/document';
 
-import type { BlockDefinition } from '../controller/BlockController';
+import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockController';
 import { tableCommands } from './tableCommands';
 
 /**
@@ -14,7 +14,7 @@ import { tableCommands } from './tableCommands';
  * editor.dispatch({ type: 'insertTableRow', payload: { blockId: tableId, index: 1 } });
  * ```
  */
-export const tableBlocks: readonly BlockDefinition<any>[] = [
+export const tableBlocks: readonly AnyBlockDefinition[] = [
   { schema: TableSchema, controller: { commands: tableCommands } } as BlockDefinition<TableProps>,
   { schema: TableRowSchema },
   { schema: TableCellSchema },

@@ -1,6 +1,6 @@
 import { ColumnSchema, ColumnsSchema, type ColumnsProps } from '@inkbrick/document';
 
-import type { BlockDefinition } from '../controller/BlockController';
+import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockController';
 import { columnsCommands } from './columnsCommands';
 
 export * from './columnsCommands';
@@ -17,7 +17,7 @@ export { MoveBlockToSideCommand } from './moveToSide';
  * editor.dispatch({ type: 'addColumn', payload: { blockId: columnsId, index: 2 } });
  * ```
  */
-export const columnsBlocks: readonly BlockDefinition<any>[] = [
+export const columnsBlocks: readonly AnyBlockDefinition[] = [
   {
     schema: ColumnsSchema,
     controller: { commands: columnsCommands },

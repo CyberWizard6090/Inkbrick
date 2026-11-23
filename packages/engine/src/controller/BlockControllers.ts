@@ -1,12 +1,12 @@
 import type { BaseBlock, BlockFlavour, BlockId, BlockProps } from '@inkbrick/document';
 
-import type { Command, CommandContext } from '../commands/Command';
+import type { AnyCommand, CommandContext } from '../commands/Command';
 import type { Editor } from '../editor/Editor';
 import type {
-  BlockCommand,
+  AnyBlockCommand,
+  AnyBlockController,
   BlockCommandContext,
   BlockContext,
-  BlockController,
   TypedBlock,
 } from './BlockController';
 
@@ -24,11 +24,11 @@ function propsDiffer(a: BlockProps, b: BlockProps): boolean {
   return a !== b && JSON.stringify(a) !== JSON.stringify(b);
 }
 
-function toCommand(flavour: BlockFlavour, command: BlockCommand<any, any>): Command<any> {
+function toCommand(flavour: BlockFlavour, command: AnyBlockCommand): AnyCommand {
   const contextFor = (
     { engine, transaction }: CommandContext,
     blockId: BlockId,
-  ): BlockCommandContext<any> => ({
+  ): BlockCommandContext<BlockProps> => ({
     engine,
     transaction,
     get block() {
@@ -71,7 +71,7 @@ function toCommand(flavour: BlockFlavour, command: BlockCommand<any, any>): Comm
  * UI-слой только сообщает, где каретка (`setFocusedBlock`), и читает пункты меню и клавиши через `get`.
  */
 export class BlockControllers {
-  private readonly controllers = new Map<BlockFlavour, BlockController<any>>();
+  private readonly controllers = new Map<BlockFlavour, AnyBlockController>();
 
   private readonly known = new Map<BlockId, BaseBlock>();
 
@@ -86,7 +86,7 @@ export class BlockControllers {
   constructor(private readonly editor: Editor) {}
 
   /** Подключает контроллер к типу блока и регистрирует его команды. Повторно для того же flavour — ошибка. */
-  register(flavour: BlockFlavour, controller: BlockController<any>): void {
+  register(flavour: BlockFlavour, controller: AnyBlockController): void {
     if (!this.editor.schema.hasBlock(flavour)) {
       throw new Error(`Controller for "${flavour}": block is not registered in the schema`);
     }
@@ -109,7 +109,7 @@ export class BlockControllers {
     if (this.started) this.scan(flavour);
   }
 
-  get(flavour: BlockFlavour): BlockController<any> | undefined {
+  get(flavour: BlockFlavour): AnyBlockController | undefined {
     return this.controllers.get(flavour);
   }
 
@@ -117,7 +117,7 @@ export class BlockControllers {
     return this.controllers.has(flavour);
   }
 
-  entries(): [BlockFlavour, BlockController<any>][] {
+  entries(): [BlockFlavour, AnyBlockController][] {
     return [...this.controllers];
   }
 

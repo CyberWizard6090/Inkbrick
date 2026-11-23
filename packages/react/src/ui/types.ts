@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 
 import type { BaseBlock } from '@inkbrick/document';
-import type { BlockController, Editor } from '@inkbrick/engine';
+import type { AnyBlockController, Editor } from '@inkbrick/engine';
 
 import type { ImageOptions } from '../images/types';
 import type { SlashMenuItem, SlashMenuProps } from '../slash/types';
@@ -31,7 +31,7 @@ export interface BlockViewProps<TBlock extends BaseBlock = BaseBlock> {
    * Контроллер типа блока (`defineBlock({ controller })`), если есть. Удобнее хук `useBlockController(block)`:
    * его `execute`/`can` сами подставляют `blockId`.
    */
-  readonly controller?: BlockController<any>;
+  readonly controller?: AnyBlockController;
 }
 
 export type BlockComponent<TBlock extends BaseBlock = BaseBlock> = ComponentType<

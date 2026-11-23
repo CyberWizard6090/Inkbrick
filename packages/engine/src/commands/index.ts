@@ -1,4 +1,4 @@
-import type { Command } from './Command';
+import type { AnyCommand } from './Command';
 import { InsertTextCommand } from './InsertTextCommand';
 import { DeleteTextCommand } from './DeleteTextCommand';
 import { DeleteBackwardCommand } from './DeleteBackwardCommand';
@@ -24,7 +24,7 @@ import { IndentBlockCommand, OutdentBlockCommand } from './IndentCommands';
 import { InsertFormulaCommand } from './InsertFormulaCommand';
 import { SetAlignCommand } from './SetAlignCommand';
 
-export type { Command, CommandContext } from './Command';
+export type { AnyCommand, Command, CommandContext } from './Command';
 
 export {
   InsertTextCommand,
@@ -54,7 +54,7 @@ export {
   SetAlignCommand,
 };
 
-export const builtinCommands: readonly Command<any, any>[] = [
+export const builtinCommands: readonly AnyCommand[] = [
   InsertTextCommand,
   DeleteTextCommand,
   DeleteBackwardCommand,

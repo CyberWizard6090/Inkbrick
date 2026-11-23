@@ -66,7 +66,11 @@ export {
 export type { CommandPaletteProps, PaletteCommand, PaletteContext, PaletteState } from './palette';
 export { toggleBlocks, ToggleBlock } from './toggle';
 export type { HeadingEntry, TocPanelProps } from './toc';
-export type { ReactBlockDefinition, CustomBlockViewProps } from './blocks/defineBlock';
+export type {
+  AnyReactBlockDefinition,
+  ReactBlockDefinition,
+  CustomBlockViewProps,
+} from './blocks/defineBlock';
 export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
 export type { ImageOptions } from './images/types';
 export { uploadImage, normalizeImageUrl } from './images/upload';

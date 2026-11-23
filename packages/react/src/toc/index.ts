@@ -1,6 +1,6 @@
 import { TocSchema, type TocProps } from '@inkbrick/document';
 
-import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
+import { defineBlock, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';
 import { TocBlock } from './TocBlock';
 
@@ -21,7 +21,7 @@ export type { HeadingEntry } from './useHeadings';
  * <EditorProvider editor={editor} blocks={tocBlocks}>…
  * ```
  */
-export const tocBlocks: readonly ReactBlockDefinition<any>[] = [
+export const tocBlocks: readonly AnyReactBlockDefinition[] = [
   defineBlock<TocProps>({
     schema: TocSchema,
     component: TocBlock as unknown as BlockComponent as never,

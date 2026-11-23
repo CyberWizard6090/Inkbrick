@@ -121,28 +121,62 @@ export interface BlockTargetPayload {
   blockId: BlockId;
 }
 
-export type EditorIntent =
-  | { type: 'insertText'; payload: InsertTextPayload }
-  | { type: 'deleteText'; payload: DeleteTextPayload }
-  | { type: 'deleteBackward'; payload: DeleteBackwardPayload }
-  | { type: 'splitBlock'; payload: SplitBlockPayload }
-  | { type: 'morphBlock'; payload: MorphBlockPayload }
-  | { type: 'replaceText'; payload: ReplaceTextPayload }
-  | { type: 'toggleFormat'; payload: ToggleFormatPayload }
-  | { type: 'setBlockProps'; payload: SetBlockPropsPayload }
-  | { type: 'insertBlock'; payload: InsertBlockPayload }
-  | { type: 'convertBlock'; payload: ConvertBlockPayload }
-  | { type: 'pasteFragment'; payload: PasteFragmentPayload }
-  | { type: 'moveBlock'; payload: MoveBlockPayload }
-  | { type: 'moveBlockToSide'; payload: MoveBlockToSidePayload }
-  | { type: 'duplicateBlock'; payload: BlockTargetPayload }
-  | { type: 'deleteRange'; payload: DeleteRangePayload }
-  | { type: 'toggleFormatRange'; payload: ToggleFormatRangePayload }
-  | { type: 'setInlineAttributes'; payload: SetInlineAttributesPayload }
-  | { type: 'insertFormula'; payload: InsertFormulaPayload }
-  | { type: 'setAlign'; payload: SetAlignPayload }
-  | { type: 'indentBlock'; payload: BlockTargetPayload }
-  | { type: 'outdentBlock'; payload: BlockTargetPayload };
+/**
+ * Команды редактора: имя → данные (`payload`) и результат (`result`). По этой карте `editor.dispatch`,
+ * `editor.execute` и `editor.can` проверяют данные и знают тип результата. Результат `undefined` — команда не выполнена
+ * (недопустима здесь, редактор только для чтения, затронула бы закреплённый блок).
+ *
+ * Свои команды добавляются в карту объявлением модуля — тогда и они проверяются:
+ *
+ * ```ts
+ * declare module '@inkbrick/engine' {
+ *   interface CommandMap {
+ *     'callout:toggle-icon': { payload: { blockId: string }; result: void };
+ *   }
+ * }
+ * ```
+ */
+export interface CommandMap {
+  insertText: { payload: InsertTextPayload; result: CaretResult };
+  deleteText: { payload: DeleteTextPayload; result: CaretResult };
+  deleteBackward: { payload: DeleteBackwardPayload; result: CaretResult | undefined };
+  splitBlock: { payload: SplitBlockPayload; result: CaretResult };
+  morphBlock: { payload: MorphBlockPayload; result: CaretResult };
+  replaceText: { payload: ReplaceTextPayload; result: CaretResult };
+  toggleFormat: { payload: ToggleFormatPayload; result: void };
+  setBlockProps: { payload: SetBlockPropsPayload; result: void };
+  insertBlock: { payload: InsertBlockPayload; result: CaretResult | undefined };
+  convertBlock: { payload: ConvertBlockPayload; result: CaretResult };
+  pasteFragment: { payload: PasteFragmentPayload; result: CaretResult };
+  moveBlock: { payload: MoveBlockPayload; result: CaretResult };
+  moveBlockToSide: { payload: MoveBlockToSidePayload; result: CaretResult };
+  duplicateBlock: { payload: BlockTargetPayload; result: CaretResult };
+  deleteRange: { payload: DeleteRangePayload; result: CaretResult };
+  toggleFormatRange: { payload: ToggleFormatRangePayload; result: void };
+  setInlineAttributes: { payload: SetInlineAttributesPayload; result: void };
+  insertFormula: { payload: InsertFormulaPayload; result: CaretResult };
+  setAlign: { payload: SetAlignPayload; result: void };
+  indentBlock: { payload: BlockTargetPayload; result: void };
+  outdentBlock: { payload: BlockTargetPayload; result: void };
+  'insert-paragraph': { payload: { targetId: BlockId }; result: BlockId };
+  'delete-block': { payload: { id: BlockId }; result: void };
+  'delete-blocks': { payload: { ids: readonly BlockId[] }; result: void };
+  'toggle-heading': { payload: { id: BlockId; level?: 1 | 2 | 3 | 4 | 5 | 6 }; result: void };
+}
+
+/** Имя команды из `CommandMap`. */
+export type CommandName = keyof CommandMap;
+
+/** Данные команды `K`. */
+export type CommandPayload<K extends CommandName> = CommandMap[K]['payload'];
+
+/** Результат команды `K`, когда она выполнена (`execute` и `dispatch` дают ещё `undefined`, если нет). */
+export type CommandResult<K extends CommandName> = CommandMap[K]['result'];
+
+/** Намерение для `editor.dispatch`: имя команды из `CommandMap` и её данные. */
+export type EditorIntent = {
+  [K in CommandName]: { type: K; payload: CommandPayload<K> };
+}[CommandName];
 
 export interface CaretResult {
   blockId: BlockId;

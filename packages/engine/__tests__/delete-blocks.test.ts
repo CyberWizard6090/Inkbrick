@@ -79,7 +79,7 @@ describe('delete-blocks', () => {
     const { editor, note, ids, texts } = setup(['a', 'b']);
 
     expect(editor.can('delete-blocks', { ids: [note, 'missing'] })).toBe(false);
-    expect(editor.can('delete-blocks', { ids: 'nope' })).toBe(false);
+    expect(editor.can('delete-blocks', { ids: 'nope' } as never)).toBe(false);
 
     editor.execute('delete-blocks', { ids: [note, 'missing', ids[0]] });
     expect(texts()).toEqual(['b']);

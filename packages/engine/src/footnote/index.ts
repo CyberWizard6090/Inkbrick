@@ -1,6 +1,6 @@
 import { FootnoteSchema, type FootnoteProps } from '@inkbrick/document';
 
-import type { BlockDefinition } from '../controller/BlockController';
+import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockController';
 
 /**
  * Сноски для редактора: схема блока `block:footnote` (текст сноски). Во встроенный набор не входят — подключаются явно:
@@ -11,6 +11,6 @@ import type { BlockDefinition } from '../controller/BlockController';
  *
  * Ссылка в тексте — символ-объект с атрибутом `footnote` (код сноски); номер считается по порядку ссылок.
  */
-export const footnoteBlocks: readonly BlockDefinition<any>[] = [
+export const footnoteBlocks: readonly AnyBlockDefinition[] = [
   { schema: FootnoteSchema } as BlockDefinition<FootnoteProps>,
 ];

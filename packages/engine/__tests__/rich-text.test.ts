@@ -204,7 +204,11 @@ describe('setAlign', () => {
     const { editor, ids } = setup(['a']);
 
     expect(
-      editor.can('setAlign', { from: p(ids[0], 0), to: p(ids[0], 0), align: 'diagonal' }),
+      editor.can('setAlign', {
+        from: p(ids[0], 0),
+        to: p(ids[0], 0),
+        align: 'diagonal',
+      } as never),
     ).toBe(false);
 
     editor.dispatch({ type: 'convertBlock', payload: { blockId: ids[0], flavour: 'block:code' } });

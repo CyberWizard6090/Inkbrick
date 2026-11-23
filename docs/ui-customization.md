@@ -342,6 +342,23 @@ const editor = new Editor({ blocks: [counterBlock] });
 Вызов: `editor.execute('counter.increment', { blockId })`; из хука или обработчика — `context.execute('counter.increment')`;
 из компонента — `useBlockController(block).execute(...)` (`blockId` подставляется сам).
 
+**Типы.** Встроенные команды описаны в `CommandMap` (`@inkbrick/engine`): по имени `editor.dispatch`, `editor.execute` и
+`editor.can` проверяют данные и знают тип результата (`undefined` — команда не выполнена). Свою команду добавьте в карту
+объявлением модуля — тогда и она проверяется:
+
+```ts
+declare module '@inkbrick/engine' {
+  interface CommandMap {
+    'counter.increment': { payload: { blockId: string }; result: void };
+  }
+}
+
+editor.execute('counter.increment', { blockId }); // данные проверены
+editor.execute('counter.increment', { id: blockId }); // ошибка компиляции
+```
+
+Без объявления команда вызывается так же, только данные и результат (`unknown`) не проверяются.
+
 ### Slash-меню, меню блока, клавиши
 
 Контроллер описывает их без React: иконка — имя из набора Inkbrick (`IconName`), обработчики получают `BlockContext`.

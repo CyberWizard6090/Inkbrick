@@ -1,6 +1,6 @@
 import { FootnoteSchema, type FootnoteProps } from '@inkbrick/document';
 
-import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
+import { defineBlock, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';
 import type { SlashMenuItem } from '../slash/types';
 import { canInsertFootnote, createFootnote } from './actions';
@@ -40,7 +40,7 @@ const footnoteSlashItem: SlashMenuItem = {
  * <EditorProvider editor={editor} blocks={footnoteBlocks}>…
  * ```
  */
-export const footnoteBlocks: readonly ReactBlockDefinition<any>[] = [
+export const footnoteBlocks: readonly AnyReactBlockDefinition[] = [
   defineBlock<FootnoteProps>({
     schema: FootnoteSchema,
     component: FootnoteBlock as unknown as BlockComponent as never,

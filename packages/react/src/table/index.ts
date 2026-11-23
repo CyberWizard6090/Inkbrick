@@ -1,7 +1,7 @@
 import { TableCellSchema, TableRowSchema, TableSchema, type TableProps } from '@inkbrick/document';
 import { tableCommands } from '@inkbrick/engine/internal';
 
-import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
+import { defineBlock, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';
 import { TableBlock, TableCellBlock, TableRowBlock } from './TableBlock';
 import { tableContextMenu } from './tableContextMenu';
@@ -26,7 +26,7 @@ const view = (component: BlockComponent) => component as never;
  * <EditorProvider editor={editor} blocks={tableBlocks}>…
  * ```
  */
-export const tableBlocks: readonly ReactBlockDefinition<any>[] = [
+export const tableBlocks: readonly AnyReactBlockDefinition[] = [
   defineBlock<TableProps>({
     schema: TableSchema,
     component: view(TableBlock),
