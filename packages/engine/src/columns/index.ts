@@ -14,7 +14,7 @@ const feature: { -readonly [K in keyof EditorFeature]: EditorFeature[K] } = {
   // Перенос блока вбок, в колонки (перетаскивание к краю блока).
   commands: [MoveBlockToSideCommand],
   // Колонка, оставшаяся без блоков, и колонки из одной колонки убираются после каждой команды.
-  afterCommand: [collapseEmptyColumns],
+  normalizers: [collapseEmptyColumns],
 };
 
 export const columnsBlocks: readonly AnyBlockDefinition[] = [

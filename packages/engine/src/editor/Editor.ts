@@ -100,6 +100,7 @@ export class Editor {
     for (const feature of features) {
       for (const command of feature.commands ?? []) this.dispatcher.register(command);
       for (const guard of feature.guards ?? []) this.dispatcher.addGuard(guard);
+      for (const rule of feature.normalizers ?? []) this.engine.normalizer.add(rule);
       for (const hook of feature.afterCommand ?? []) this.dispatcher.addAfterCommand(hook);
     }
 
@@ -149,6 +150,24 @@ export class Editor {
    */
   dispatch<I extends EditorIntent>(intent: I): CommandResult<I['type']> | undefined {
     return this.dispatcher.dispatch(intent);
+  }
+
+  /**
+   * Приводит весь документ к правилам нормализации (`engine.normalizer`: пустые контейнеры, колонки, таблицы и правила
+   * возможностей) одной правкой вне истории отмены. Для документа из внешнего источника: импорта, сервера, совместной
+   * правки. Возвращает, менялся ли документ. Свои правки редактор нормализует сам после каждой команды.
+   */
+  normalize(): boolean {
+    const before = this.store.getVersion();
+
+    this.store.transact(
+      (transaction) => this.engine.normalizer.normalizeAll(this.engine, transaction),
+      {
+        history: false,
+      },
+    );
+
+    return this.store.getVersion() !== before;
   }
 
   /** JSON-снимок документа с версиями формата и схем: его можно сохранить и позже загрузить через `deserializeDocument`. */

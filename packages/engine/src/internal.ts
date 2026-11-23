@@ -56,3 +56,5 @@ export * from './columns';
 export * from './toggle';
 export { defineFeature, resolveFeatures } from './feature';
 export type { EditorFeature } from './feature';
+export { DocumentNormalizer, fillEmptyContainers } from './normalizer';
+export type { NormalizeContext, NormalizeRule } from './normalizer';

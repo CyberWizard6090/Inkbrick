@@ -1,7 +1,14 @@
-import { TableCellSchema, TableRowSchema, TableSchema, type TableProps } from '@inkbrick/document';
+import {
+  TableCellSchema,
+  TableRowSchema,
+  TableSchema,
+  normalizeMerges,
+  type TableProps,
+} from '@inkbrick/document';
 
 import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockController';
 import type { EditorFeature } from '../feature';
+import type { NormalizeRule } from '../normalizer';
 import { tableCommands } from './tableCommands';
 
 /**
@@ -22,4 +29,33 @@ export const tableBlocks: readonly AnyBlockDefinition[] = [
 ];
 
 /** Таблицы: блоки таблицы, строки и ячейки с командами строк, столбцов, объединения, сортировки и оформления. */
-export const tableFeature: EditorFeature = { name: 'table', blocks: tableBlocks };
+/**
+ * Правило нормализации таблиц: объединения ячеек не выходят за таблицу и не пересекаются (после правки строк и
+ * столбцов и в документе из внешнего источника). Табличные команды поддерживают это сами — правило страхует остальные пути.
+ */
+export const normalizeTableMerges: NormalizeRule = {
+  name: 'normalizeTableMerges',
+  flavours: ['block:table'],
+  normalize({ engine, transaction, block }) {
+    const merges = block.props.merges;
+
+    if (merges === undefined) return;
+
+    const rows = block.children.length;
+    const columns = rows > 0 ? (transaction.getBlock(block.children[0])?.children.length ?? 0) : 0;
+    const valid = normalizeMerges(merges, rows, columns);
+
+    if (JSON.stringify(valid) === JSON.stringify(merges)) return;
+
+    engine.block.update(transaction, block.id, (table) => ({
+      ...table,
+      props: { ...table.props, merges: valid.length > 0 ? valid : undefined },
+    }));
+  },
+};
+
+export const tableFeature: EditorFeature = {
+  name: 'table',
+  blocks: tableBlocks,
+  normalizers: [normalizeTableMerges],
+};

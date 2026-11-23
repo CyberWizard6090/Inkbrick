@@ -33,8 +33,12 @@ export class Dispatcher {
 
   private readonly guards: CommandGuard[] = [...DEFAULT_GUARDS];
 
-  // Проверка закреплённого блока — последней, на итоговом дереве: обработка возможностей встаёт перед ней.
-  private readonly afterCommand: AfterCommand[] = [assertPinned];
+  // Сначала нормализация документа (правила возможностей и общие), затем обработка возможностей, последней — проверка
+  // закреплённого блока на итоговом дереве.
+  private readonly afterCommand: AfterCommand[] = [
+    (engine, transaction) => engine.normalizer.normalizeChanged(engine, transaction),
+    assertPinned,
+  ];
 
   private batchState: BatchState | null = null;
 

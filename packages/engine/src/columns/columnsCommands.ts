@@ -9,6 +9,7 @@ import type { Transaction } from '@inkbrick/store';
 
 import { defineBlockCommand, type BlockCommandContext } from '../controller/BlockController';
 import type { CaretResult } from '../dispatcher/Intents';
+import type { NormalizeRule } from '../normalizer';
 import type { Engine } from '../editor/Engine';
 
 type Context = BlockCommandContext<ColumnsProps>;
@@ -90,30 +91,28 @@ export function reshape(
 }
 
 /**
- * Колонки, опустевшие в транзакции (из них унесли или удалили последний блок), пропадают: остальные колонки занимают их
- * место; когда колонка остаётся одна, колонки разворачиваются в обычные блоки. Смотрит только изменённые блоки.
+ * Правило нормализации колонок: колонка, которая опустела (из неё унесли последний блок), пропадает — остальные
+ * занимают её место; когда колонка остаётся одна, колонки разворачиваются в обычные блоки.
  */
-export function collapseEmptyColumns(engine: Engine, tx: Transaction): void {
-  if (!engine.schema.hasBlock(COLUMNS)) return;
-
-  for (const id of tx.getChangedBlocks()) {
-    const column = tx.getBlock(id);
-
-    if (column?.flavour !== COLUMN || column.children.length > 0 || !column.parentId) continue;
+export const collapseEmptyColumns: NormalizeRule = {
+  name: 'collapseEmptyColumns',
+  flavours: [COLUMN],
+  normalize({ engine, transaction: tx, block: column }) {
+    if (column.children.length > 0 || !column.parentId) return;
 
     const owner = tx.getBlock(column.parentId);
 
-    if (owner?.flavour !== COLUMNS) continue;
+    if (owner?.flavour !== COLUMNS) return;
 
-    const at = owner.children.indexOf(id);
+    const at = owner.children.indexOf(column.id);
 
-    engine.block.remove(tx, id);
+    engine.block.remove(tx, column.id);
 
     if (tx.getBlock(owner.id)!.children.length === 1)
       unwrapColumns(engine, tx, tx.getBlock(owner.id)!);
     else reshape(engine, tx, owner.id, (ratios) => ratios.splice(at, 1));
-  }
-}
+  },
+};
 
 /** Колонки превращаются в обычные блоки: блоки всех колонок по порядку встают на место блока колонок. */
 function unwrap(context: Context): CaretResult {

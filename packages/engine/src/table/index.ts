@@ -8,6 +8,6 @@ export * from './tableFormat';
 export * from './tableMerge';
 export { parseNumber, parseDate, sortKey, sortedOrder } from './tableSort';
 export type { SortKey } from './tableSort';
-export { tableBlocks, tableFeature } from './tableBlocks';
+export { normalizeTableMerges, tableBlocks, tableFeature } from './tableBlocks';
 export { createTableEditor, tableIdOf, tableValue } from './tableEditor';
 export type { TableEditorOptions, TableValue } from './tableEditor';

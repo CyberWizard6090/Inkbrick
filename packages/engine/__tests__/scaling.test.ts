@@ -54,7 +54,9 @@ function measure(fn: () => void, runs = 5): number {
     times.push(performance.now() - started);
   }
 
-  return times.sort((a, b) => a - b)[Math.floor(runs / 2)] || 0.01;
+  // Минимум, а не медиана: шум (сборка мусора, соседние процессы тестов) время только увеличивает, а лучший прогон ближе
+  // к цене самого алгоритма — отношение не скачет под нагрузкой.
+  return Math.min(...times) || 0.01;
 }
 
 const SMALL = 2_000;
@@ -65,7 +67,9 @@ describe('scaling (no quadratic algorithms)', () => {
   const large = snapshotOf(LARGE);
 
   const ratio = (fn: (snapshot: DocumentSnapshot) => void) => {
-    fn(small); // прогрев JIT
+    // Прогрев JIT на обоих размерах.
+    fn(small);
+    fn(large);
     return measure(() => fn(large)) / measure(() => fn(small));
   };
 

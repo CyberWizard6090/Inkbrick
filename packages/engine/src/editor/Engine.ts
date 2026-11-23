@@ -3,6 +3,7 @@ import type { DocumentStore } from '@inkbrick/store';
 
 import { BlockEngine } from '../block';
 import { InlineEngine } from '../inline';
+import { DocumentNormalizer, fillEmptyContainers } from '../normalizer';
 
 export interface EngineOptions {
   store: DocumentStore;
@@ -14,6 +15,8 @@ export class Engine {
   readonly schema: SchemaRegistry;
   readonly block: BlockEngine;
   readonly inline: InlineEngine;
+  /** Правила нормализации документа: выполняются после каждой команды (см. `DocumentNormalizer`). */
+  readonly normalizer = new DocumentNormalizer();
 
   readOnly = false;
 
@@ -25,5 +28,6 @@ export class Engine {
     this.schema = options.schema;
     this.block = new BlockEngine(options.schema);
     this.inline = new InlineEngine();
+    this.normalizer.add(fillEmptyContainers);
   }
 }

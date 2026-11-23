@@ -4,6 +4,7 @@ import type { AnyCommand } from './commands/Command';
 import type { AnyBlockDefinition } from './controller/BlockController';
 import { isBlockDefinition } from './controller/BlockController';
 import type { AfterCommand } from './dispatcher/afterCommand';
+import type { NormalizeRule } from './normalizer';
 import type { CommandGuard } from './dispatcher/guards';
 import type { Editor } from './editor/Editor';
 
@@ -27,6 +28,8 @@ export interface EditorFeature {
   readonly commands?: readonly AnyCommand[];
   /** Общие правила перед каждой командой (см. `CommandGuard`). */
   readonly guards?: readonly CommandGuard[];
+  /** Правила нормализации документа (см. `NormalizeRule`): выполняются после каждой команды, до `afterCommand`. */
+  readonly normalizers?: readonly NormalizeRule[];
   /** Обработка после каждой выполненной команды, в её транзакции (см. `AfterCommand`). */
   readonly afterCommand?: readonly AfterCommand[];
   /** Вызывается, когда редактор создан и всё остальное подключено. */
