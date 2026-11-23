@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 
-import type { Alignment, BaseBlock, TableProps } from '@inkbrick/document';
+import type { BaseBlock, TableProps } from '@inkbrick/document';
 import {
   MAX_TABLE_CELLS,
   MAX_TABLE_COLUMNS,
@@ -18,47 +18,46 @@ import {
   tableCellAt,
   tableSize,
   type CaretResult,
-  type TableRange,
 } from '@inkbrick/engine';
 
-import type { BlockMenuAction } from '../block-handle/types';
 import { DefaultBlockMenu } from '../block-handle/DefaultBlockMenu';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { Icon } from '../icons/Icon';
-import type { TFunction } from '../i18n/translate';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
-import { selectTableCells, selectTableLine } from './cellSelection';
+import { selectTableCells } from './cellSelection';
 import { ColumnWidthBar } from './ColumnWidthBar';
-import { fitWidths } from './fitWidths';
-
-interface Position {
-  readonly row: number;
-  readonly column: number;
-}
-
-interface Box {
-  readonly left: number;
-  readonly top: number;
-  readonly width: number;
-  readonly height: number;
-}
-
-interface Layout {
-  /** Видимая часть сетки: при прокрутке внутри блока таблицы (широкая, закреплённая строка) она меньше сетки. */
-  readonly table: Box;
-  /** Вся сетка, в том числе прокрученная за край блока. */
-  readonly grid: Box;
-  readonly row: Box;
-  readonly cell: Box;
-  /** Правые края столбцов (по ячейкам первой строки). */
-  readonly edges: readonly Edge[];
-  /** Все участки границ столбцов: у объединённых ячеек граница лежит кусками, и у каждого куска своя ручка. */
-  readonly segments: readonly (Edge & { column: number })[];
-  /** Рамка выделения (телефон): прямоугольник выделенных ячеек, а без выделения — ячейка с кареткой. */
-  readonly frame: Box;
-}
+import {
+  MAX_WIDTH,
+  MIN_WIDTH,
+  availableWidth,
+  columnsToWrite,
+  resized,
+  roundWidths,
+  widthRange,
+  widthsOnScreen,
+} from './controls/columnWidths';
+import {
+  clamp,
+  edgeTop,
+  measure,
+  sameLayout,
+  type Layout,
+  type Position,
+} from './controls/geometry';
+import {
+  getHoveredTable,
+  nearestTable,
+  setHoveredTable,
+  subscribeHovered,
+} from './controls/hoveredTable';
+import {
+  columnActions,
+  decimalSeparator,
+  groupColumnActions,
+  rowActions,
+  type LineActionsContext,
+} from './controls/lineActions';
 
 interface MenuState {
   readonly kind: 'row' | 'column';
@@ -78,223 +77,11 @@ export interface TableControlsProps {
 /** На сколько пикселей за краем таблицы управление остаётся доступным: с каждой стороны своё (кнопки добавления). */
 const REACH = { left: 28, top: 30, right: 40, bottom: 30 } as const;
 
-const MIN_WIDTH = 40;
-/** Внешняя граница таблицы с border-collapse: один пиксель сверх ширин столбцов. */
-const BORDER_PIXEL = 1;
-const MAX_WIDTH = 1200;
 /** Насколько выше и левее точки рамки берётся ячейка под пальцем (палец закрывает саму точку). */
 const KNOB_REACH = 14;
 const KEY_STEP = 10;
 
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-/** Верх ручки не уходит за верхний край окна: когда таблица почти у верха, ручки остаются доступны. */
-const edgeTop = (top: number) => Math.max(4, top);
-
 const prevent = (event: { preventDefault(): void }) => event.preventDefault();
-
-function boxOf(element: Element): Box {
-  const { left, top, width, height } = element.getBoundingClientRect();
-
-  return { left, top, width, height };
-}
-
-/**
- * Сетка, обрезанная рамкой блока таблицы, который прокручивается сам: ручки строки, столбца и угла стоят у видимого
- * края, а не у края сетки, уехавшего за рамку.
- */
-function visibleBox(grid: Element): Box {
-  const own = grid.getBoundingClientRect();
-  const frame = grid.closest('[data-inkbrick-block="table"]')?.getBoundingClientRect() ?? own;
-  const left = Math.max(own.left, frame.left);
-  const top = Math.max(own.top, frame.top);
-  const right = Math.min(own.right, frame.right);
-  const bottom = Math.min(own.bottom, frame.bottom);
-
-  return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
-}
-
-interface Edge {
-  readonly x: number;
-  readonly top: number;
-  readonly height: number;
-}
-
-/**
- * Правые границы столбцов и участок, где граница настоящая. Скрытые (перекрытые) ячейки остаются в `row.cells`, поэтому
- * номер ячейки — это столбец; объединённая ячейка даёт границу только своего последнего столбца. Участок — самая длинная
- * непрерывная цепочка строк с такой границей: ручка не лежит поверх текста объединённых ячеек.
- */
-function columnEdges(table: HTMLTableElement): {
-  edges: Edge[];
-  segments: (Edge & { column: number })[];
-} {
-  const columns = table.rows[0]?.cells.length ?? 0;
-  const found: { x: number; top: number; bottom: number }[][] = Array.from(
-    { length: columns },
-    () => [],
-  );
-
-  for (const row of Array.from(table.rows)) {
-    Array.from(row.cells).forEach((cell, index) => {
-      const last = index + Math.max(1, cell.colSpan) - 1;
-
-      if (cell.hidden || last >= columns) return;
-
-      const { right, top, bottom } = cell.getBoundingClientRect();
-
-      found[last].push({ x: right, top, bottom });
-    });
-  }
-
-  const bounds = table.getBoundingClientRect();
-  const all: (Edge & { column: number })[] = [];
-  let previous = bounds.left;
-
-  const edges = found.map((segments, column) => {
-    const runs: { x: number; top: number; bottom: number }[] = [];
-
-    for (const segment of segments.sort((a, b) => a.top - b.top)) {
-      const run = runs[runs.length - 1];
-
-      if (run && segment.top - run.bottom <= 2) run.bottom = Math.max(run.bottom, segment.bottom);
-      else runs.push({ ...segment });
-    }
-
-    const best = [...runs].sort((a, b) => b.bottom - b.top - (a.bottom - a.top))[0];
-
-    previous = best?.x ?? previous;
-
-    const edge = best
-      ? { x: best.x, top: best.top, height: best.bottom - best.top }
-      : { x: previous, top: bounds.top, height: bounds.height };
-
-    // Ручка на каждом участке границы: объединение внизу не должно оставлять без ручки верхние строки. У столбца всегда
-    // есть хотя бы одна: основная, даже если все участки короче порога.
-    const long = runs.filter((run) => run.bottom - run.top >= MIN_SEGMENT);
-
-    if (long.length === 0) all.push({ column, ...edge });
-    else
-      for (const run of long)
-        all.push({ column, x: run.x, top: run.top, height: run.bottom - run.top });
-
-    return edge;
-  });
-
-  return { edges, segments: all };
-}
-
-/** Участок границы короче этого не получает ручки: под палец он слишком мал. */
-const MIN_SEGMENT = 16;
-
-/**
- * Прямоугольник выделенных ячеек: хватает ячеек по периметру диапазона (скрытые ячейки объединений пропускаются, а их
- * видимая верхняя левая ячейка занимает всю площадь объединения).
- */
-function rangeBox(table: HTMLTableElement, range: TableRange): Box | null {
-  let left = Infinity;
-  let top = Infinity;
-  let right = -Infinity;
-  let bottom = -Infinity;
-  const add = (cell: HTMLTableCellElement | undefined) => {
-    if (!cell || cell.hidden) return;
-
-    const box = cell.getBoundingClientRect();
-
-    if (box.width === 0) return;
-
-    left = Math.min(left, box.left);
-    top = Math.min(top, box.top);
-    right = Math.max(right, box.right);
-    bottom = Math.max(bottom, box.bottom);
-  };
-
-  for (let column = range.left; column <= range.right; column++) {
-    add(table.rows[range.top]?.cells[column]);
-    add(table.rows[range.bottom]?.cells[column]);
-  }
-
-  for (let row = range.top; row <= range.bottom; row++) {
-    add(table.rows[row]?.cells[range.left]);
-    add(table.rows[row]?.cells[range.right]);
-  }
-
-  return Number.isFinite(left) ? { left, top, width: right - left, height: bottom - top } : null;
-}
-
-function measure(table: HTMLTableElement, position: Position, range?: TableRange): Layout | null {
-  const row = table.rows[position.row];
-  const cell = row?.cells[position.column];
-  const first = table.rows[0];
-
-  if (!row || !cell || !first) return null;
-
-  return {
-    table: visibleBox(table),
-    grid: boxOf(table),
-    row: boxOf(row),
-    cell: boxOf(cell),
-    ...columnEdges(table),
-    frame: (range && rangeBox(table, range)) || boxOf(cell),
-  };
-}
-
-const sameLayout = (a: Layout | null, b: Layout | null) =>
-  a === b || (!!a && !!b && JSON.stringify(a) === JSON.stringify(b));
-
-/**
- * Какая таблица сейчас под указателем. Ручки есть у таблицы под мышью и у таблицы с кареткой; когда мышь над другой
- * таблицей, ручки той, где стоит каретка, прячутся: иначе две соседние таблицы рисуют их друг поверх друга.
- */
-let hoveredTable: string | null = null;
-const hoverListeners = new Set<() => void>();
-
-function setHoveredTable(id: string | null) {
-  if (hoveredTable === id) return;
-
-  hoveredTable = id;
-  hoverListeners.forEach((listener) => listener());
-}
-
-const subscribeHovered = (listener: () => void) => {
-  hoverListeners.add(listener);
-
-  return () => void hoverListeners.delete(listener);
-};
-
-/** Расстояние от точки до прямоугольника: 0, если точка внутри. */
-function distanceTo(rect: DOMRect, x: number, y: number): number {
-  const dx = Math.max(rect.left - x, 0, x - rect.right);
-  const dy = Math.max(rect.top - y, 0, y - rect.bottom);
-
-  return Math.hypot(dx, dy);
-}
-
-/** Ближайшая к точке таблица документа: между двумя таблицами ручки показывает только она. */
-function nearestTable(x: number, y: number): Element | null {
-  let best: Element | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (const element of document.querySelectorAll('[data-inkbrick-block="table"]')) {
-    const distance = distanceTo(element.getBoundingClientRect(), x, y);
-
-    if (distance < bestDistance) {
-      best = element;
-      bestDistance = distance;
-    }
-  }
-
-  return best;
-}
-
-/** Дробный разделитель языка (`Intl`): «,» у русского, немецкого, французского…, «.» у английского. */
-function decimalSeparator(locale: string): ',' | '.' {
-  try {
-    return (1.5).toLocaleString(locale).includes(',') ? ',' : '.';
-  } catch {
-    return '.';
-  }
-}
 
 /**
  * Управление таблицей мышью: полоски у строки и столбца под курсором (меню действий), кнопки «добавить строку/столбец»
@@ -351,7 +138,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   );
   const otherHovered = useSyncExternalStore(
     subscribeHovered,
-    () => hoveredTable !== null && hoveredTable !== block.id,
+    () => getHoveredTable() !== null && getHoveredTable() !== block.id,
     () => false,
   );
   // Выделенные ячейки без каретки (долгое нажатие): рамка и точка стоят у головы выделения.
@@ -437,7 +224,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
 
         if (!inside || (nearest && ownBlock && nearest !== ownBlock)) {
           setHover(null);
-          if (hoveredTable === block.id) setHoveredTable(null);
+          if (getHoveredTable() === block.id) setHoveredTable(null);
           return;
         }
 
@@ -461,7 +248,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     const onOut = (event: PointerEvent) => {
       if (!event.relatedTarget && !frozen.current) {
         setHover(null);
-        if (hoveredTable === block.id) setHoveredTable(null);
+        if (getHoveredTable() === block.id) setHoveredTable(null);
       }
     };
 
@@ -558,260 +345,24 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
   const canAddColumn =
     size.columns < MAX_TABLE_COLUMNS && size.rows * (size.columns + 1) <= MAX_TABLE_CELLS;
 
-  const rowActions = ({ row }: Position): BlockMenuAction[] => {
-    const actions: BlockMenuAction[] = [
-      {
-        id: 'row-select',
-        title: t('table.row.select'),
-        icon: <Icon name="select-all" />,
-        run: () => {
-          setMenu(null);
-          selectTableLine(editor, view, block.id, { row });
-        },
-      },
-      {
-        id: 'row-insert-above',
-        title: t('table.row.insertAbove'),
-        icon: <Icon name="plus" />,
-        disabled: !canAddRow,
-        run: () => perform(() => run('insertTableRow', { index: row })),
-      },
-      {
-        id: 'row-insert-below',
-        title: t('table.row.insertBelow'),
-        icon: <Icon name="plus" />,
-        disabled: !canAddRow,
-        run: () => perform(() => run('insertTableRow', { index: row + 1 })),
-      },
-      {
-        id: 'row-move-up',
-        title: t('table.row.moveUp'),
-        icon: <Icon name="arrow-up" />,
-        disabled: !can('moveTableRow', { from: row, to: row - 1 }),
-        run: () =>
-          perform(() => {
-            run('moveTableRow', { from: row, to: row - 1 });
-
-            return cellAt(row - 1, 0);
-          }),
-      },
-      {
-        id: 'row-move-down',
-        title: t('table.row.moveDown'),
-        icon: <Icon name="arrow-down" />,
-        disabled: !can('moveTableRow', { from: row, to: row + 1 }),
-        run: () =>
-          perform(() => {
-            run('moveTableRow', { from: row, to: row + 1 });
-
-            return cellAt(row + 1, 0);
-          }),
-      },
-    ];
-
-    if (row === 0) {
-      actions.push({
-        id: 'row-header',
-        title: t('table.toggle.header'),
-        icon: <Icon name="heading-1" />,
-        toggle: props.header !== false,
-        run: () =>
-          perform(() => {
-            editor.dispatch({
-              type: 'setBlockProps',
-              payload: { blockId: block.id, props: { header: props.header === false } },
-            });
-
-            return cellAt(0, active.column);
-          }),
-      });
-    }
-
-    if (row === 0) {
-      actions.push({
-        id: 'row-freeze',
-        title: t('table.toggle.freezeRow'),
-        icon: <Icon name="pin" />,
-        toggle: props.freezeRow === true,
-        run: () =>
-          perform(() => {
-            editor.dispatch({
-              type: 'setBlockProps',
-              payload: { blockId: block.id, props: { freezeRow: !props.freezeRow } },
-            });
-
-            return cellAt(0, active.column);
-          }),
-      });
-    }
-
-    actions.push({
-      id: 'row-delete',
-      title: t('table.row.delete'),
-      icon: <Icon name="trash" />,
-      danger: true,
-      disabled: !can('deleteTableRow', { index: row }),
-      run: () => perform(() => run('deleteTableRow', { index: row })),
-    });
-
-    return actions;
+  const lineContext: LineActionsContext = {
+    editor,
+    view,
+    block,
+    t,
+    props,
+    size,
+    active,
+    decimal,
+    canAddRow,
+    canAddColumn,
+    perform,
+    run,
+    can,
+    cellAt,
+    closeMenu: () => setMenu(null),
+    startSizing: (column) => startSizing(column),
   };
-
-  const alignColumn = (column: number, align: Alignment) =>
-    perform(() => {
-      editor.batch(() => {
-        for (let row = 0; row < size.rows; row++) {
-          const point = { blockId: cellAt(row, column).blockId, offset: 0 };
-
-          editor.dispatch({ type: 'setAlign', payload: { from: point, to: point, align } });
-        }
-      });
-
-      return cellAt(active.row, column);
-    });
-
-  const columnActions = ({ column }: Position): BlockMenuAction[] => [
-    // На телефоне границу столбца под палец не поймать: ширину задаёт ползунок.
-    ...(coarsePointer()
-      ? [
-          {
-            id: 'column-width-slider',
-            title: t('table.width.open'),
-            icon: <Icon name="arrow-right" />,
-            run: () => startSizing(column),
-          } satisfies BlockMenuAction,
-        ]
-      : []),
-    {
-      id: 'column-select',
-      title: t('table.column.select'),
-      icon: <Icon name="select-all" />,
-      run: () => {
-        setMenu(null);
-        selectTableLine(editor, view, block.id, { column });
-      },
-    },
-    {
-      id: 'column-insert-left',
-      title: t('table.column.insertLeft'),
-      icon: <Icon name="plus" />,
-      disabled: !canAddColumn,
-      run: () => perform(() => run('insertTableColumn', { index: column })),
-    },
-    {
-      id: 'column-insert-right',
-      title: t('table.column.insertRight'),
-      icon: <Icon name="plus" />,
-      disabled: !canAddColumn,
-      run: () => perform(() => run('insertTableColumn', { index: column + 1 })),
-    },
-    {
-      id: 'column-move-left',
-      title: t('table.column.moveLeft'),
-      icon: <Icon name="arrow-left" />,
-      disabled: !can('moveTableColumn', { from: column, to: column - 1 }),
-      run: () =>
-        perform(() => {
-          run('moveTableColumn', { from: column, to: column - 1 });
-
-          return cellAt(active.row, column - 1);
-        }),
-    },
-    {
-      id: 'column-move-right',
-      title: t('table.column.moveRight'),
-      icon: <Icon name="arrow-right" />,
-      disabled: !can('moveTableColumn', { from: column, to: column + 1 }),
-      run: () =>
-        perform(() => {
-          run('moveTableColumn', { from: column, to: column + 1 });
-
-          return cellAt(active.row, column + 1);
-        }),
-    },
-    {
-      id: 'column-align-left',
-      title: t('toolbar.align.left.label'),
-      icon: <Icon name="align-left" />,
-      run: () => alignColumn(column, 'left'),
-    },
-    {
-      id: 'column-align-center',
-      title: t('toolbar.align.center.label'),
-      icon: <Icon name="align-center" />,
-      run: () => alignColumn(column, 'center'),
-    },
-    {
-      id: 'column-align-right',
-      title: t('toolbar.align.right.label'),
-      icon: <Icon name="align-right" />,
-      run: () => alignColumn(column, 'right'),
-    },
-    ...(['text', 'number', 'date'] as const).map((type) => ({
-      id: `column-type-${type}`,
-      title: t(`table.column.type.${type}`),
-      icon: <Icon name={(props.columnTypes?.[column] ?? 'text') === type ? 'check' : 'text'} />,
-      run: () =>
-        perform(() => {
-          run('setTableColumnType', { index: column, type });
-
-          return cellAt(active.row, column);
-        }),
-    })),
-    {
-      id: 'column-sort-asc',
-      title: t('table.column.sortAsc'),
-      icon: <Icon name="arrow-up" />,
-      disabled: !can('sortTableRows', { column, direction: 'asc', decimal }),
-      run: () => perform(() => void run('sortTableRows', { column, direction: 'asc', decimal })),
-    },
-    {
-      id: 'column-sort-desc',
-      title: t('table.column.sortDesc'),
-      icon: <Icon name="arrow-down" />,
-      disabled: !can('sortTableRows', { column, direction: 'desc', decimal }),
-      run: () => perform(() => void run('sortTableRows', { column, direction: 'desc', decimal })),
-    },
-    {
-      id: 'column-auto-width',
-      title: t('table.column.autoWidth'),
-      icon: <Icon name="refresh-cw" />,
-      disabled: !props.widths?.[column],
-      run: () =>
-        perform(() => {
-          run('setTableColumnWidth', { index: column, width: null });
-
-          return cellAt(active.row, column);
-        }),
-    },
-    ...(column === 0
-      ? [
-          {
-            id: 'column-freeze',
-            title: t('table.toggle.freezeColumn'),
-            icon: <Icon name="pin" />,
-            toggle: props.freezeColumn === true,
-            run: () =>
-              perform(() => {
-                editor.dispatch({
-                  type: 'setBlockProps',
-                  payload: { blockId: block.id, props: { freezeColumn: !props.freezeColumn } },
-                });
-
-                return cellAt(active.row, 0);
-              }),
-          },
-        ]
-      : []),
-    {
-      id: 'column-delete',
-      title: t('table.column.delete'),
-      icon: <Icon name="trash" />,
-      danger: true,
-      disabled: !can('deleteTableColumn', { index: column }),
-      run: () => perform(() => run('deleteTableColumn', { index: column })),
-    },
-  ];
 
   /** Меню таблицы: форматирование таблицы целиком и фон выделенных ячеек (без выделения — всех). */
   const open = (kind: MenuState['kind'], x: number, y: number) =>
@@ -823,112 +374,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
         : { kind, position: active, x, y },
     );
 
-  /**
-   * Ширины всех столбцов в пикселях, как они сейчас на экране (по первой строке; объединённая ячейка делится поровну
-   * между своими столбцами, скрытая берёт долю той, что её накрывает).
-   */
-  const widthsNow = (): number[] => {
-    const cells = [...(tableRef.current?.rows[0]?.cells ?? [])];
-    const result: number[] = [];
-    let share = MIN_WIDTH;
-    let left = 0;
-
-    for (const cell of cells) {
-      if (!cell.hidden) {
-        left = Math.max(1, cell.colSpan);
-        share = cell.getBoundingClientRect().width / left || MIN_WIDTH;
-      }
-
-      result.push(left > 0 ? share : MIN_WIDTH);
-      left -= 1;
-    }
-
-    // Перетаскивание считается по сохранённым ширинам: отрисованные уже подогнаны под страницу, и записать их — потерять
-    // пользовательские значения. Измеряются только столбцы без ширины.
-    return result.map((width, index) => {
-      const saved = props.widths?.[index];
-
-      return typeof saved === 'number' && saved > 0 ? saved : width;
-    });
-  };
-
-  /** Индексы столбцов, ширина которых изменилась (с округлением до пикселя). */
-  const changedColumns = (before: readonly number[], after: readonly number[]): number[] =>
-    after.flatMap((width, index) =>
-      Math.abs(width - (before[index] ?? width)) >= 1 ? [index] : [],
-    );
-
-  /**
-   * Что записывать после перетаскивания. Пока таблица помещается на страницу, отрисованные ширины — настоящие, и все
-   * столбцы фиксируются как есть (таблица становится ровно своей ширины). Когда страница уже таблицы, отрисованные ширины
-   * подогнаны, и записываются только изменённые столбцы: подогнанные значения в модель не попадают.
-   */
-  const columnsToWrite = (start: readonly number[], after: readonly number[]): number[] => {
-    const changed = changedColumns(start, after);
-
-    if (changed.length === 0) return [];
-
-    return fitWidths(start, availableWidth()) === start ? after.map((_, index) => index) : changed;
-  };
-
-  /** Сколько места под таблицу на странице: видимая ширина самого блока таблицы (у него `max-width: 100%`). */
-  const availableWidth = (): number => {
-    const width =
-      tableRef.current?.closest<HTMLElement>('[data-inkbrick-block="table"]')?.clientWidth ?? 0;
-
-    // Без раскладки (скрытый блок, тестовое окружение) предела нет. Внешняя граница таблицы (border-collapse) добавляет
-    // ещё пиксель сверх суммы ширин столбцов, поэтому места под столбцы на пиксель меньше.
-    return width > 0 ? width - BORDER_PIXEL : Number.POSITIVE_INFINITY;
-  };
-
-  /**
-   * Новые ширины при смещении правой границы столбца `column` на `delta`: у границы между столбцами меняются только два
-   * соседних (сумма та же, остальные стоят), у правого края последнего столбца меняется он один, а с ним и таблица.
-   */
-  const resized = (start: readonly number[], column: number, delta: number): number[] => {
-    const next = [...start];
-    const neighbour = column + 1 < start.length ? column + 1 : -1;
-
-    if (neighbour < 0) {
-      // Таблица не шире страницы: последний столбец тянется, пока сумма ширин помещается в видимую область.
-      const others = start.reduce((sum, width, index) => (index === column ? sum : sum + width), 0);
-      const room = Math.floor(availableWidth()) - Math.ceil(others);
-      // Растянуть дальше места нельзя, а сжать можно всегда: верхняя граница не ниже текущей ширины.
-      const upper = Math.max(start[column], Math.min(MAX_WIDTH, room));
-
-      next[column] = clamp(start[column] + delta, MIN_WIDTH, upper);
-
-      return next;
-    }
-
-    const total = start[column] + start[neighbour];
-
-    next[column] = clamp(start[column] + delta, MIN_WIDTH, Math.max(MIN_WIDTH, total - MIN_WIDTH));
-    next[neighbour] = total - next[column];
-
-    return next;
-  };
-
-  /**
-   * Округляет ширины до целых пикселей так, чтобы их сумма осталась прежней (до целого): каждая ширина округляется вниз, а
-   * недостающие пиксели отдаются столбцам с наибольшей дробной частью. Иначе таблица теряла бы по пикселю на каждый столбец.
-   */
-  const roundWidths = (widths: readonly number[]): number[] => {
-    const floors = widths.map((width) => Math.floor(width));
-    const total = Math.round(widths.reduce((sum, width) => sum + width, 0));
-    let rest = total - floors.reduce((sum, width) => sum + width, 0);
-
-    const order = widths.map((_, index) => index).sort((a, b) => (widths[b] % 1) - (widths[a] % 1));
-
-    for (const index of order) {
-      if (rest <= 0) break;
-
-      floors[index] += 1;
-      rest -= 1;
-    }
-
-    return floors;
-  };
+  const widthsNow = () => widthsOnScreen(tableRef.current, props.widths);
+  const available = () => availableWidth(tableRef.current);
 
   /** Записывает ширины только изменённых столбцов одним шагом истории: остальные остаются как были в модели. */
   const writeWidths = (widths: readonly number[], indexes: readonly number[]) =>
@@ -954,7 +401,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     frozen.current = true;
 
     const move = (moved: PointerEvent) => {
-      widths = resized(start, column, moved.clientX - startX);
+      widths = resized(start, column, moved.clientX - startX, available());
 
       if (frame) return;
 
@@ -970,7 +417,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       document.removeEventListener('pointercancel', finish);
       frozen.current = false;
 
-      const indexes = columnsToWrite(start, widths);
+      const indexes = columnsToWrite(start, widths, available());
 
       // Предпросмотр снимается вместе с записью в модель: таблица не дёргается между двумя отрисовками.
       flushSync(() => {
@@ -995,8 +442,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
 
     event.preventDefault();
     const start = widthsNow();
-    const next = resized(start, column, step);
-    const indexes = columnsToWrite(start, next);
+    const next = resized(start, column, step, available());
+    const indexes = columnsToWrite(start, next, available());
 
     // Фокус остаётся на ручке: иначе следующая стрелка уже уходила бы в документ.
     if (indexes.length === 0) return;
@@ -1005,24 +452,6 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     flushSync(() => {
       writeWidths(next, indexes);
     });
-  };
-
-  /** Пределы ползунка: как далеко можно сдвинуть правую границу столбца, пока соседи не уже минимума. */
-  const widthRange = (start: readonly number[], column: number) => {
-    const neighbour = column + 1 < start.length ? column + 1 : -1;
-
-    if (neighbour >= 0)
-      return { min: MIN_WIDTH, max: start[column] + start[neighbour] - MIN_WIDTH };
-
-    const others = start.reduce((sum, width, index) => (index === column ? sum : sum + width), 0);
-
-    return {
-      min: MIN_WIDTH,
-      max: Math.max(
-        start[column],
-        Math.min(MAX_WIDTH, Math.floor(availableWidth()) - Math.ceil(others)),
-      ),
-    };
   };
 
   const startSizing = (column: number) => {
@@ -1043,7 +472,7 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (!sizing) return;
 
     const base = sizingBase.current;
-    const next = resized(base, sizing.column, width - base[sizing.column]);
+    const next = resized(base, sizing.column, width - base[sizing.column], available());
 
     onPreview(next);
     setSizing({ ...sizing, value: next[sizing.column] });
@@ -1054,8 +483,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
     if (!sizing) return;
 
     const base = sizingBase.current;
-    const next = resized(base, sizing.column, width - base[sizing.column]);
-    const indexes = columnsToWrite(base, next);
+    const next = resized(base, sizing.column, width - base[sizing.column], available());
+    const indexes = columnsToWrite(base, next, available());
 
     flushSync(() => {
       if (indexes.length > 0) {
@@ -1318,8 +747,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
           {sizing && (
             <ColumnWidthBar
               column={sizing.column + 1}
-              min={widthRange(sizingBase.current, sizing.column).min}
-              max={widthRange(sizingBase.current, sizing.column).max}
+              min={widthRange(sizingBase.current, sizing.column, available()).min}
+              max={widthRange(sizingBase.current, sizing.column, available()).max}
               value={sizing.value}
               auto={!props.widths?.[sizing.column]}
               onInput={slideWidth}
@@ -1341,8 +770,8 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
               position={{ x: menu.x, y: menu.y }}
               actions={
                 menu.kind === 'row'
-                  ? rowActions(menu.position)
-                  : groupColumnActions(columnActions(menu.position), t)
+                  ? rowActions(lineContext, menu.position)
+                  : groupColumnActions(columnActions(lineContext, menu.position), t)
               }
               turnInto={[]}
               onClose={() => {
@@ -1356,32 +785,4 @@ export function TableControls({ block, tableRef, onPreview }: TableControlsProps
       />
     </>
   );
-}
-
-/** Основной указатель — палец (нет наведения и правой кнопки). */
-const coarsePointer = () =>
-  typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-
-/**
- * Меню столбца по группам, как меню выбора блоков: сам столбец (ширина, выделение, вставка, перенос, закрепление,
- * удаление), затем выравнивание, тип и сортировка.
- */
-function groupColumnActions(actions: BlockMenuAction[], t: TFunction): BlockMenuAction[] {
-  const groupOf = (id: string) =>
-    id.startsWith('column-align-')
-      ? 'align'
-      : id.startsWith('column-type-')
-        ? 'type'
-        : id.startsWith('column-sort-')
-          ? 'sort'
-          : 'columns';
-  const order = ['columns', 'align', 'type', 'sort'];
-
-  return actions
-    .map((action, index) => ({ action, index, group: groupOf(action.id) }))
-    .sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.index - b.index)
-    .map(({ action, group }) => ({
-      ...action,
-      group: t(`table.group.${group}` as 'table.group.align'),
-    }));
 }
