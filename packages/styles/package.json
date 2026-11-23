@@ -13,7 +13,8 @@
     "./base.css": "./src/base.css",
     "./blocks.css": "./src/blocks.css",
     "./ui.css": "./src/ui.css",
-    "./image-tools.css": "./src/image-tools.css"
+    "./image-tools.css": "./src/image-tools.css",
+    "./color-picker.css": "./src/color-picker.css"
   },
   "files": [
     "src"

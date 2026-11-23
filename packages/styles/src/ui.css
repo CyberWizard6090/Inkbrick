@@ -848,97 +848,6 @@
     border-top: 1px solid currentColor;
   }
 
-  /* Панель цветов: «Убрать цвет», круглые образцы и «+» для своего цвета. */
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-panel']) {
-    display: grid;
-    gap: 8px;
-    padding: 4px;
-  }
-
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-remove']) {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 32px;
-    padding: 0 10px;
-    border: 1px solid var(--inkbrick-stroke-2);
-    border-radius: var(--inkbrick-radius-control);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-  }
-
-  :where(
-    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-remove']:hover,
-    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot-remove'][aria-checked='true']
-  ) {
-    background: var(--inkbrick-bg-hover);
-  }
-
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='none-mark']) {
-    width: 14px;
-    height: 14px;
-    border: 1.5px solid currentColor;
-    border-radius: 50%;
-    background: linear-gradient(
-      to top right,
-      transparent calc(50% - 1px),
-      currentColor calc(50% - 1px),
-      currentColor calc(50% + 1px),
-      transparent calc(50% + 1px)
-    );
-  }
-
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dots']) {
-    display: grid;
-    grid-template-columns: repeat(7, 24px);
-    gap: 6px;
-    padding-top: 8px;
-    border-top: 1px solid var(--inkbrick-stroke-3);
-  }
-
-  :where(
-    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot'],
-    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dots'] [data-inkbrick-part='swatch']
-  ) {
-    box-sizing: border-box;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid var(--inkbrick-stroke-2);
-    border-radius: 50%;
-    cursor: pointer;
-  }
-
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot']) {
-    background: var(--inkbrick-dot);
-  }
-
-  :where(
-    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dots'] [data-inkbrick-part='swatch']
-  ) {
-    background: var(
-      --inkbrick-custom-color,
-      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
-    );
-  }
-
-  :where(
-    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot'][aria-checked='true'],
-    [data-inkbrick-ui='context-menu']
-      [data-inkbrick-part='dots']
-      [data-inkbrick-part='swatch'][data-pressed]
-  ) {
-    outline: 2px solid var(--inkbrick-brand-bg);
-    outline-offset: 1px;
-  }
-
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='dot']:focus-visible) {
-    outline: 2px solid var(--inkbrick-stroke-focus-2);
-    outline-offset: 1px;
-  }
-
   :where([data-inkbrick-ui='drop-indicator']) {
     position: fixed;
     z-index: var(--inkbrick-z-drop);
@@ -968,60 +877,12 @@
     background: color-mix(in srgb, currentColor 35%, transparent);
   }
 
-  /* Базовый вид образца стоит до цветовых правил: при нулевой специфичности :where() побеждает тот, кто ниже */
-  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
-    display: inline-grid;
-    place-content: center;
-    box-sizing: border-box;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 1px solid var(--inkbrick-stroke-2);
-    border-radius: var(--inkbrick-radius-control);
-    background: var(--inkbrick-bg-1);
-    color: var(--inkbrick-fg-1);
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
-  }
-
-  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-color='']:hover) {
-    background: var(--inkbrick-bg-hover);
-  }
-
-  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-pressed]) {
-    outline: 2px solid var(--inkbrick-brand-bg);
-    outline-offset: 1px;
-  }
-
-  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']:focus-visible) {
-    outline: 2px solid var(--inkbrick-stroke-focus-2);
-    outline-offset: 1px;
-  }
-
   :where(
     [data-inkbrick-ui='toolbar']
       [data-inkbrick-part='button'][data-current-color='gray']
       [data-inkbrick-part='indicator']
   ) {
     background: var(--inkbrick-color-gray);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='gray']
-  ) {
-    color: var(--inkbrick-color-gray);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='gray']
-  ) {
-    background: var(--inkbrick-highlight-gray);
   }
 
   :where(
@@ -1034,59 +895,10 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='black']
-  ) {
-    color: var(--inkbrick-color-black);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='black']
-  ) {
-    background: var(--inkbrick-highlight-black);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
       [data-inkbrick-part='button'][data-current-color='white']
       [data-inkbrick-part='indicator']
   ) {
     background: var(--inkbrick-color-white);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='white']
-  ) {
-    color: var(--inkbrick-color-white);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='white']
-  ) {
-    background: var(--inkbrick-highlight-white);
-  }
-
-  /* Образцы чёрного и белого стоят на светлой/тёмной плашке: иначе «A» сливается с фоном панели в одной из тем */
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='black']
-  ) {
-    background: #d4d4d4;
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='white']
-  ) {
-    background: #3d3d3d;
   }
 
   :where(
@@ -1099,42 +911,10 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='brown']
-  ) {
-    color: var(--inkbrick-color-brown);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='brown']
-  ) {
-    background: var(--inkbrick-highlight-brown);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
       [data-inkbrick-part='button'][data-current-color='orange']
       [data-inkbrick-part='indicator']
   ) {
     background: var(--inkbrick-color-orange);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='orange']
-  ) {
-    color: var(--inkbrick-color-orange);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='orange']
-  ) {
-    background: var(--inkbrick-highlight-orange);
   }
 
   :where(
@@ -1147,42 +927,10 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='yellow']
-  ) {
-    color: var(--inkbrick-color-yellow);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='yellow']
-  ) {
-    background: var(--inkbrick-highlight-yellow);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
       [data-inkbrick-part='button'][data-current-color='green']
       [data-inkbrick-part='indicator']
   ) {
     background: var(--inkbrick-color-green);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='green']
-  ) {
-    color: var(--inkbrick-color-green);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='green']
-  ) {
-    background: var(--inkbrick-highlight-green);
   }
 
   :where(
@@ -1195,22 +943,6 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='blue']
-  ) {
-    color: var(--inkbrick-color-blue);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='blue']
-  ) {
-    background: var(--inkbrick-highlight-blue);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
       [data-inkbrick-part='button'][data-current-color='purple']
       [data-inkbrick-part='indicator']
   ) {
@@ -1219,42 +951,10 @@
 
   :where(
     [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='purple']
-  ) {
-    color: var(--inkbrick-color-purple);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='purple']
-  ) {
-    background: var(--inkbrick-highlight-purple);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
       [data-inkbrick-part='button'][data-current-color='pink']
       [data-inkbrick-part='indicator']
   ) {
     background: var(--inkbrick-color-pink);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='pink']
-  ) {
-    color: var(--inkbrick-color-pink);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='pink']
-  ) {
-    background: var(--inkbrick-highlight-pink);
   }
 
   :where(
@@ -1305,105 +1005,97 @@
     background: var(--inkbrick-color-magenta);
   }
 
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='red']
-  ) {
-    color: var(--inkbrick-color-red);
+  /*
+   * Палитра цветов — один вид во всём редакторе (панель форматирования, меню блока, фон ячеек и цвет границ таблицы):
+   * сетка скруглённых образцов, первый — «×» (снять цвет), последний — «Свой цвет…». Цвет образца приходит переменной
+   * `--inkbrick-swatch`; у цвета текста (`data-sample='text'`) это цвет буквы «A» на обычном фоне. Размер и число
+   * столбцов — `--inkbrick-swatch-size` и `--inkbrick-swatch-columns`.
+   */
+  :where([data-inkbrick-part='swatches']) {
+    --inkbrick-swatch-size: 28px;
+
+    display: grid;
+    grid-template-columns: repeat(var(--inkbrick-swatch-columns, 8), var(--inkbrick-swatch-size));
+    gap: 4px;
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    width: var(--inkbrick-swatch-size);
+    height: var(--inkbrick-swatch-size);
+    padding: 0;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-swatch, var(--inkbrick-bg-1));
+    color: var(--inkbrick-fg-2);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      border-color var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'] svg) {
+    width: 16px;
+    height: 16px;
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch']:hover) {
+    border-color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'][data-color='']:hover) {
+    background: var(--inkbrick-bg-hover);
   }
 
   :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='lime']
+    [data-inkbrick-part='swatches']
+      [data-inkbrick-part='swatch']:is([data-pressed], [aria-checked='true'])
   ) {
-    color: var(--inkbrick-color-lime);
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  /* Цвет текста: буква «A» этого цвета на обычном фоне. Чёрная и белая — на серой плашке, иначе сливаются с фоном темы. */
+  :where(
+    [data-inkbrick-part='swatches'][data-sample='text'] [data-inkbrick-part='swatch'][data-color]
+  ) {
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-swatch, var(--inkbrick-fg-1));
   }
 
   :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='teal']
+    [data-inkbrick-part='swatches'][data-sample='text']
+      [data-inkbrick-part='swatch'][data-color='black']
   ) {
-    color: var(--inkbrick-color-teal);
+    background: #d4d4d4;
   }
 
   :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='cyan']
+    [data-inkbrick-part='swatches'][data-sample='text']
+      [data-inkbrick-part='swatch'][data-color='white']
   ) {
-    color: var(--inkbrick-color-cyan);
+    background: #3d3d3d;
   }
 
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='indigo']
-  ) {
-    color: var(--inkbrick-color-indigo);
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatches']) {
+    padding: 4px 8px 8px;
   }
 
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='color']
-      [data-inkbrick-part='swatch'][data-color='magenta']
-  ) {
-    color: var(--inkbrick-color-magenta);
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='swatches']) {
+    padding: 4px;
   }
 
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='red']
-  ) {
-    background: var(--inkbrick-highlight-red);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='lime']
-  ) {
-    background: var(--inkbrick-highlight-lime);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='teal']
-  ) {
-    background: var(--inkbrick-highlight-teal);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='cyan']
-  ) {
-    background: var(--inkbrick-highlight-cyan);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='indigo']
-  ) {
-    background: var(--inkbrick-highlight-indigo);
-  }
-
-  :where(
-    [data-inkbrick-ui='toolbar']
-      > [data-inkbrick-part='panel'][data-kind='highlight']
-      [data-inkbrick-part='swatch'][data-color='magenta']
-  ) {
-    background: var(--inkbrick-highlight-magenta);
-  }
-
-  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). Сам <input
-     type="color"> прозрачен и лежит под кнопкой: он нужен только как якорь системного окна выбора. */
-  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch'][data-color='custom']) {
+  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). */
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'][data-color='custom']) {
     background: var(
       --inkbrick-custom-color,
       conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
@@ -1415,23 +1107,19 @@
     display: grid;
   }
 
-  :where([data-inkbrick-part='custom-color-input']) {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    border: 0;
-    opacity: 0;
-    pointer-events: none;
+  /* Выбор цвета раскрывается строкой под палитрой, во всю её ширину (палитры — сетки). */
+  :where([data-inkbrick-part='color-picker-panel']) {
+    grid-column: 1 / -1;
+    padding: 6px 2px 2px;
+  }
+
+  :where([data-inkbrick-part='color-picker-panel'] [data-inkbrick-ui='color-picker']) {
+    max-width: none;
   }
 
   :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {
     position: absolute;
     left: 0;
-    display: grid;
-    grid-template-columns: repeat(6, 32px);
-    gap: 4px;
     padding: 8px;
     border: 1px solid var(--inkbrick-stroke-2);
     border-radius: var(--inkbrick-radius-surface);
@@ -1702,92 +1390,19 @@
       min-height: 40px;
     }
 
-    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']),
-    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
+    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']) {
       min-width: 40px;
       height: 40px;
     }
 
-    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='swatch']) {
-      width: 40px;
-    }
-
-    :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {
-      grid-template-columns: repeat(6, 40px);
+    /* Палитры под палец: образцы крупнее везде (панель форматирования, меню блока, меню таблицы). */
+    :where([data-inkbrick-part='swatches']) {
+      --inkbrick-swatch-size: 36px;
     }
 
     :where([data-inkbrick-part='formula-symbol']) {
       height: 38px;
     }
-  }
-
-  /* Меню блока: ряд цветов фона. */
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatches']) {
-    display: grid;
-    grid-template-columns: repeat(8, 28px);
-    gap: 4px;
-    padding: 4px 8px 8px;
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch']) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: 1px solid var(--inkbrick-stroke-2);
-    border-radius: var(--inkbrick-radius-control);
-    background: none;
-    color: var(--inkbrick-fg-2);
-    cursor: pointer;
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch']:hover),
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch']:focus-visible) {
-    border-color: var(--inkbrick-brand-bg);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][aria-checked='true']) {
-    outline: 2px solid var(--inkbrick-brand-bg);
-    outline-offset: 1px;
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='gray']) {
-    background: var(--inkbrick-highlight-gray);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='brown']) {
-    background: var(--inkbrick-highlight-brown);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='orange']) {
-    background: var(--inkbrick-highlight-orange);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='yellow']) {
-    background: var(--inkbrick-highlight-yellow);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='green']) {
-    background: var(--inkbrick-highlight-green);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='blue']) {
-    background: var(--inkbrick-highlight-blue);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='purple']) {
-    background: var(--inkbrick-highlight-purple);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='pink']) {
-    background: var(--inkbrick-highlight-pink);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='red']) {
-    background: var(--inkbrick-highlight-red);
   }
 
   /* Меню таблицы (ручка и контекстное): галерея стилей — миниатюры красятся теми же правилами, что и таблица — и границы. */
@@ -2149,33 +1764,6 @@
     padding: 6px 12px 2px;
     color: var(--inkbrick-fg-3);
     font-size: var(--inkbrick-font-size-caption);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='lime']) {
-    background: var(--inkbrick-highlight-lime);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='teal']) {
-    background: var(--inkbrick-highlight-teal);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='cyan']) {
-    background: var(--inkbrick-highlight-cyan);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='indigo']) {
-    background: var(--inkbrick-highlight-indigo);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='magenta']) {
-    background: var(--inkbrick-highlight-magenta);
-  }
-
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatch'][data-color='custom']) {
-    background: var(
-      --inkbrick-custom-color,
-      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
-    );
   }
 
   /* Рамка выбора блоков мышью с поля. */

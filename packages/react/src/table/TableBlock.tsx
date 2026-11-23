@@ -11,6 +11,7 @@ import {
 import {
   getBlockAlign,
   isColorName,
+  isHexColor,
   normalizeMerges,
   TABLE_BORDER_WIDTHS,
   type BaseBlock,
@@ -217,9 +218,15 @@ function borderOf(block: BlockProps['block'], key: string): TableBorderWidth | u
 
 const SIDES = ['Top', 'Right', 'Bottom', 'Left'] as const;
 
-/** Свой цвет фона ячейки (`#rrggbb`): текст на нём чёрный или белый — тот, что контрастнее (относительная яркость WCAG). */
+/**
+ * Свой цвет фона ячейки (`#rrggbb`): текст на нём чёрный или белый — тот, что контрастнее (относительная яркость WCAG).
+ * Полупрозрачный фон (`#rrggbbaa` с прозрачностью больше половины) почти не меняет страницу под собой: текст остаётся
+ * цветом темы.
+ */
 function readableText(background: unknown): CSSProperties | undefined {
-  if (typeof background !== 'string' || !/^#[0-9a-f]{6}$/i.test(background)) return undefined;
+  if (typeof background !== 'string' || !/^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i.test(background))
+    return undefined;
+  if (background.length === 9 && parseInt(background.slice(7), 16) < 128) return undefined;
 
   const [r, g, b] = [1, 3, 5].map((at) => {
     const channel = parseInt(background.slice(at, at + 2), 16) / 255;
@@ -255,6 +262,8 @@ function sideLook(block: BlockProps['block']): CSSProperties {
         color === 'black' || color === 'white'
           ? `var(--inkbrick-cell-line-${color})`
           : `var(--inkbrick-color-${color})`;
+    // Свой цвет из выбора цвета: схема пропускает только `#rrggbb` и `#rrggbbaa`.
+    else if (isHexColor(color)) style[`border${side}Color`] = color;
     if (line === 'dashed' || line === 'dotted') style[`border${side}Style`] = line;
   }
 

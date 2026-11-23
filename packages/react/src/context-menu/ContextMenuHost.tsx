@@ -78,18 +78,8 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
     };
 
     const close = () => view.contextMenu.close();
-    // Окно браузера потеряло фокус. Системное окно «Свой цвет…» тоже забирает его: меню с полем цвета остаётся открытым,
-    // иначе поле исчезло бы раньше, чем браузер сообщит выбранный цвет, и цвет не применился бы.
-    const onBlur = () => {
-      if (
-        document.querySelector(
-          '[data-inkbrick-ui="context-menu"] input[type="color"][data-picking]',
-        )
-      )
-        return;
-
-      close();
-    };
+    // Окно браузера потеряло фокус — меню закрывается.
+    const onBlur = close;
 
     // Esc закрывает меню и тогда, когда фокус остался в документе (кнопки меню его не забирают).
     const onKeyDown = (event: KeyboardEvent) => {

@@ -4,7 +4,7 @@ import { isSafeImageUrl } from '../../utils/url';
 
 /**
  * Форма обрезки: `free` — любые пропорции, `circle` — круг, остальные — ширина:высота (альбомная и книжная
- * ориентация — отдельные значения). Совпадает с `CROP_ASPECTS` пакета `@inkbrick/image-tools`.
+ * ориентация — отдельные значения). Совпадает с `CROP_ASPECTS` пакета `@inkbrick/dom/image-tools`.
  */
 export const IMAGE_ASPECTS = [
   'free',

@@ -1,4 +1,4 @@
-import { test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
 export async function useTool(
   page: Page,
@@ -42,4 +42,19 @@ export async function useSystemClipboard(context: BrowserContext) {
 
 export function requireCdp(page: Page) {
   test.skip(!isChromium(page.context()), 'CDP (IME and touch emulation) is Chromium-only');
+}
+
+/**
+ * Свой цвет через выбор цвета: открывает «Свой цвет…» внутри `scope`, вводит `hex` (шесть или восемь цифр) в поле HEX и
+ * нажимает «Применить».
+ */
+export async function pickCustomColor(scope: Locator, hex: string) {
+  await scope.locator('[data-inkbrick-part="swatch"][data-color="custom"]').click();
+
+  const field = scope.locator('[data-inkbrick-part="color-field"]');
+
+  await expect(field).toBeVisible();
+  await field.fill(hex);
+  await field.press('Tab');
+  await scope.locator('[data-inkbrick-part="color-apply"]').click();
 }

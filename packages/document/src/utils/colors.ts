@@ -73,8 +73,11 @@ export const COLOR_HEX: Readonly<Record<ColorName, { text: string; background: s
 
 const CSS_COLOR = /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\([\d\s.,%/-]+\)|[a-z]{3,20})$/i;
 
-/** Свой цвет из выбора «Свой цвет…» (`<input type="color">`): ровно `#rrggbb`, ничего другого в фон блока не попадает. */
-export const HEX_COLOR = /^#[\da-f]{6}$/i;
+/**
+ * Свой цвет из выбора «Свой цвет…»: ровно `#rrggbb` или `#rrggbbaa` (с прозрачностью), ничего другого в фон блока не
+ * попадает.
+ */
+export const HEX_COLOR = /^#[\da-f]{6}(?:[\da-f]{2})?$/i;
 
 export const isHexColor = (value: unknown): value is string =>
   typeof value === 'string' && HEX_COLOR.test(value);
@@ -85,7 +88,7 @@ export const getBlockBackground = (block: {
 }): BlockBackground | undefined =>
   isBlockBackground(block.props.background) ? block.props.background : undefined;
 
-/** Любой допустимый фон блока: имя из палитры или свой цвет `#rrggbb`; иначе `undefined`. */
+/** Любой допустимый фон блока: имя из палитры или свой цвет `#rrggbb` / `#rrggbbaa`; иначе `undefined`. */
 export const getBlockBackgroundColor = (block: {
   props: Readonly<Record<string, unknown>>;
 }): string | undefined => {

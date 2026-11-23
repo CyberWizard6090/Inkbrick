@@ -27,10 +27,14 @@ const CELL_HEX: Readonly<Record<string, string>> = {
   magenta: '#d946ef',
 };
 
-/** Чёрный или белый текст на фоне `#rrggbb` — тот, что контрастнее (относительная яркость WCAG). */
+/**
+ * Чёрный или белый текст на фоне `#rrggbb` (или `#rrggbbaa` — поверх белой страницы) — тот, что контрастнее
+ * (относительная яркость WCAG).
+ */
 function textOn(hex: string): string {
+  const alpha = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
   const [r, g, b] = [1, 3, 5].map((at) => {
-    const channel = parseInt(hex.slice(at, at + 2), 16) / 255;
+    const channel = (parseInt(hex.slice(at, at + 2), 16) / 255) * alpha + (1 - alpha);
 
     return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   });
@@ -53,7 +57,10 @@ export function alignStyle(block: BaseBlock, extra: readonly string[] = []): str
   const background = cell
     ? `${cell};color:${textOn(cell)}`
     : isHexColor(color)
-      ? `${color}59`
+      ? // Свой цвет с прозрачностью — как выбран; без неё — разбавлен до 35 %, как в редакторе.
+        color.length === 9
+        ? color
+        : `${color}59`
       : exportColor(color, 'background');
   const style = [
     typeof align === 'string' && ALIGNED.has(align) && `text-align:${align}`,

@@ -118,6 +118,13 @@ export const en = {
   'color.indigo': 'Indigo',
   'color.magenta': 'Magenta',
   'color.custom': 'Custom color…',
+  'color.picker': 'Color picker',
+  'color.picker.area': 'Saturation and brightness',
+  'color.picker.hue': 'Hue',
+  'color.picker.alpha': 'Opacity',
+  'color.picker.format': 'Color format',
+  'color.picker.saturation': 'Saturation',
+  'color.picker.brightness': 'Brightness',
 
   'toolbar.turnInto.label': 'Turn into: {type}',
   'toolbar.turnInto.title': 'Turn into',

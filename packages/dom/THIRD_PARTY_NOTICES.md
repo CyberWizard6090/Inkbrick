@@ -1,6 +1,6 @@
 # Third-party notices
 
-`@inkbrick/image-tools` contains the following third-party material.
+`@inkbrick/dom` (its image tools) contains the following third-party material.
 
 ## Lucide icons
 

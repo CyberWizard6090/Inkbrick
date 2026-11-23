@@ -127,6 +127,15 @@ importers:
         specifier: ^4.1.12
         version: 4.1.12(@types/node@20.19.43)(@vitest/coverage-v8@4.1.12)(jsdom@29.1.1)(vite@7.3.7(@types/node@20.19.43)(yaml@2.9.0))
 
+  packages/dom:
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.1
+        version: 10.4.1
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
+
   packages/engine:
     dependencies:
       '@inkbrick/document':
@@ -136,15 +145,6 @@ importers:
         specifier: workspace:*
         version: link:../store
 
-  packages/image-tools:
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^10.4.1
-        version: 10.4.1
-      jsdom:
-        specifier: ^29.1.1
-        version: 29.1.1
-
   packages/locales: {}
 
   packages/react:
@@ -152,12 +152,12 @@ importers:
       '@inkbrick/document':
         specifier: workspace:*
         version: link:../document
+      '@inkbrick/dom':
+        specifier: workspace:*
+        version: link:../dom
       '@inkbrick/engine':
         specifier: workspace:*
         version: link:../engine
-      '@inkbrick/image-tools':
-        specifier: workspace:*
-        version: link:../image-tools
       '@inkbrick/locales':
         specifier: workspace:*
         version: link:../locales

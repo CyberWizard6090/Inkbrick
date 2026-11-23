@@ -251,7 +251,8 @@ export const SetTableCellsBordersCommand = defineBlockCommand<
     range: TableRange;
     mode: TableBorderMode;
     width?: TableBorderWidth;
-    color?: ColorName | null;
+    /** Имя из палитры или свой цвет `#rrggbb` / `#rrggbbaa`; `null` — обычный цвет линии. */
+    color?: ColorName | string | null;
     style?: TableBorderStyle;
   }
 >({
@@ -260,7 +261,8 @@ export const SetTableCellsBordersCommand = defineBlockCommand<
   canExecute(context, { range, mode, width, color, style }) {
     if (mode !== 'keep' && !TABLE_BORDER_MODES.includes(mode)) return false;
     if (width !== undefined && !TABLE_BORDER_WIDTHS.includes(width)) return false;
-    if (color !== undefined && color !== null && !isColorName(color)) return false;
+    if (color !== undefined && color !== null && !isColorName(color) && !isHexColor(color))
+      return false;
     if (style !== undefined && !TABLE_BORDER_STYLES.includes(style)) return false;
 
     if (mode === 'keep') {

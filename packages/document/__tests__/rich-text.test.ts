@@ -96,10 +96,22 @@ describe('colors', () => {
     expect(BLOCK_BACKGROUNDS[0]).toBe('gray');
   });
 
-  it('isHexColor takes only #rrggbb', () => {
-    for (const ok of ['#000000', '#12ab34', '#12AB34']) expect(isHexColor(ok), ok).toBe(true);
+  it('isHexColor takes only #rrggbb and #rrggbbaa', () => {
+    for (const ok of ['#000000', '#12ab34', '#12AB34', '#12ab34ff', '#12ab3480'])
+      expect(isHexColor(ok), ok).toBe(true);
 
-    for (const bad of ['#fff', '#12ab34ff', '12ab34', 'red', '#12ab3g', '#12ab34;x', '', 5, null])
+    for (const bad of [
+      '#fff',
+      '#12ab34f',
+      '#12ab34fff',
+      '12ab34',
+      'red',
+      '#12ab3g',
+      '#12ab34;x',
+      '',
+      5,
+      null,
+    ])
       expect(isHexColor(bad), String(bad)).toBe(false);
   });
 

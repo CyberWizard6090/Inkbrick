@@ -9,7 +9,7 @@ import {
   loadImage,
   mimeOf,
   outputType,
-} from '../src';
+} from '../../src/image-tools';
 
 describe('types and names', () => {
   it('reads the type from a data: address or the extension', () => {

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import type { ImageAspect } from '@inkbrick/document';
 import { isSafeImageUrl } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
-import type { CropperHandle } from '@inkbrick/image-tools';
+import type { CropperHandle } from '@inkbrick/dom/image-tools';
 
 import { useT } from '../hooks/useT';
 import type { BlockCrop, Rect } from '../images/crop';
@@ -28,7 +28,7 @@ interface CropDialogProps {
 }
 
 /**
- * Окно обрезки из `@inkbrick/image-tools` (чанк грузится при первом открытии) с надписями на языке редактора. Окно — не
+ * Окно обрезки из `@inkbrick/dom/image-tools` (чанк грузится при первом открытии) с надписями на языке редактора. Окно — не
  * React-компонент: оно открывается при монтировании и закрывается при размонтировании, а обработчики берутся свежими.
  */
 export function CropDialog({ src, alt, crop, busy, theme, onSave, onCancel }: CropDialogProps) {
@@ -119,7 +119,7 @@ interface ViewDialogProps {
   onClose(): void;
 }
 
-/** Просмотр во весь экран из `@inkbrick/image-tools` с надписями на языке редактора (открыт, пока смонтирован). */
+/** Просмотр во весь экран из `@inkbrick/dom/image-tools` с надписями на языке редактора (открыт, пока смонтирован). */
 export function ViewDialog({ images, index, theme, onIndexChange, onClose }: ViewDialogProps) {
   const tools = useLazy(imageTools);
   const t = useT();

@@ -1,4 +1,5 @@
-import { el, icon, setAttributes, setDisabled, uniqueId, type IconName } from './dom';
+import { el, setAttributes, setDisabled, uniqueId } from '../shared/dom';
+import { icon, type IconName } from './icons';
 import {
   CROP_HANDLES,
   CROP_RATIOS,

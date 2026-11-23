@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties } from 'react';
+import { useEffect } from 'react';
 
 import {
   BLOCK_BACKGROUNDS,
@@ -6,9 +6,7 @@ import {
   TABLE_BORDER_STYLES,
   TABLE_STYLES,
   getBlockBackgroundColor,
-  isHexColor,
   type BaseBlock,
-  type ColorName,
   type TableBorderStyle,
   type TableBorderWidth,
   type TableProps,
@@ -22,7 +20,7 @@ import type { TFunction } from '../i18n/translate';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import type { MessageKey } from '../i18n/en';
-import { CustomColorSwatch } from '../ui/CustomColorSwatch';
+import { ColorSwatches } from '../ui/ColorSwatches';
 import { backgroundCells } from './cellFormatting';
 import { backgroundTarget } from './tableFormatActions';
 
@@ -200,7 +198,8 @@ function StyleGallery({
 interface BorderLook {
   width: TableBorderWidth;
   style: TableBorderStyle;
-  color: ColorName | null;
+  /** Имя из палитры или свой `#rrggbb[aa]`; `null` — обычный цвет линии. */
+  color: string | null;
 }
 
 /** У каждого редактора своё: выбор в одном редакторе страницы не меняет линии другого. */
@@ -226,7 +225,7 @@ function applyBorders(
   change: {
     mode: TableBorderMode;
     width?: TableBorderWidth;
-    color?: ColorName | null;
+    color?: string | null;
     style?: TableBorderStyle;
   },
 ) {
@@ -256,72 +255,46 @@ function LineSample({ width, style }: { width?: TableBorderWidth; style?: TableB
 }
 
 /**
- * Круглые образцы цвета с кнопкой «Убрать цвет» сверху; при `custom` внизу есть «+» для своего цвета. Общие для фона ячейки и
- * цвета границ. `current` — выбранный сейчас цвет (`null` — нет цвета).
+ * Палитра меню таблицы — та же, что везде в редакторе (`ColorSwatches`): «×» снимает цвет, за ним цвета палитры и «Свой
+ * цвет…». Общая для фона ячейки и цвета границ. `current` — выбранный сейчас цвет (`null` — нет цвета).
  */
-function ColorDots({
+function TableColors({
+  label,
   names,
   current,
-  custom,
   tone,
+  custom,
   onPick,
 }: {
+  label: string;
   names: readonly string[];
   current: string | null;
-  custom: boolean;
-  /** Переменная цвета кружка: тот цвет, что ляжет на ячейку (`cell`) или на линию (`color`). */
+  /** Цвет образца: тот, что ляжет на ячейку (`cell`) или на линию (`color`). */
   tone: 'cell' | 'color';
+  /** С какого цвета начинает «Свой цвет…». */
+  custom: string;
   onPick: (color: string | null) => void;
 }) {
   const t = useT();
 
   return (
-    <div data-inkbrick-part="dot-panel">
-      <button
-        type="button"
-        role="menuitemradio"
-        aria-checked={current === null}
-        data-inkbrick-part="dot-remove"
-        data-action="color-remove"
-        onClick={() => onPick(null)}
-      >
-        <span aria-hidden="true" data-inkbrick-part="none-mark" />
-        {t('color.remove')}
-      </button>
-      <div data-inkbrick-part="dots" role="group">
-        {names.map((name) => (
-          <button
-            key={name}
-            type="button"
-            role="menuitemradio"
-            aria-checked={current === name}
-            data-inkbrick-part="dot"
-            data-color={name}
-            data-action={`color-${name}`}
-            aria-label={t(`color.${name}` as MessageKey)}
-            title={t(`color.${name}` as MessageKey)}
-            style={
-              {
-                '--inkbrick-dot':
-                  tone === 'color' && (name === 'black' || name === 'white')
-                    ? `var(--inkbrick-color-${name})`
-                    : `var(--inkbrick-${tone}-${name})`,
-              } as CSSProperties
-            }
-            onClick={() => onPick(name)}
-          />
-        ))}
-        {custom && (
-          <CustomColorSwatch
-            value={isHexColor(current) ? current : undefined}
-            fallback="#ffe74a"
-            label={t('color.custom')}
-            pressed={isHexColor(current)}
-            onPick={(hex) => onPick(hex)}
-          />
-        )}
-      </div>
-    </div>
+    <ColorSwatches
+      label={label}
+      names={names}
+      current={current}
+      colorOf={(name) =>
+        tone === 'color' && (name === 'black' || name === 'white')
+          ? `var(--inkbrick-color-${name})`
+          : `var(--inkbrick-${tone}-${name})`
+      }
+      nameOf={(name) => t(`color.${name}` as MessageKey)}
+      resetLabel={t('color.remove')}
+      customLabel={t('color.custom')}
+      custom={{ fallback: custom }}
+      role="menuitemradio"
+      actions={{ reset: 'color-remove', color: (name) => `color-${name}`, custom: 'color-custom' }}
+      onPick={onPick}
+    />
   );
 }
 
@@ -353,7 +326,7 @@ export function tableDesignMenuItems(
   const change = (patch: {
     width?: TableBorderWidth;
     style?: TableBorderStyle;
-    color?: ColorName | null;
+    color?: string | null;
   }) => {
     Object.assign(lookOf(editor), patch);
     apply({ mode: 'keep', ...patch });
@@ -366,11 +339,12 @@ export function tableDesignMenuItems(
       icon: <Icon name="palette" />,
       separatorBefore: true,
       flyout: (
-        <ColorDots
+        <TableColors
+          label={t('table.format.cellsBackground')}
           names={BLOCK_BACKGROUNDS}
           current={currentBackground}
-          custom
           tone="cell"
+          custom="#ffe74a"
           onPick={(color) => run(() => void backgroundCells(editor, target, color))}
         />
       ),
@@ -425,12 +399,13 @@ export function tableDesignMenuItems(
           title: t('table.border.colorMenu'),
           icon: <Icon name="palette" />,
           flyout: (
-            <ColorDots
+            <TableColors
+              label={t('table.border.colorMenu')}
               names={COLOR_NAMES}
               current={lookOf(editor).color}
-              custom={false}
               tone="color"
-              onPick={(color) => change({ color: color as ColorName | null })}
+              custom="#1473e6"
+              onPick={(color) => change({ color })}
             />
           ),
           run: () => undefined,

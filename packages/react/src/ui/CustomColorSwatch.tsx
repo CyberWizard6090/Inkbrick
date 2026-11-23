@@ -1,25 +1,33 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 
-import { isHexColor } from '@inkbrick/document';
+import { lazyModule, useLazy } from './lazy';
+
+/**
+ * Выбор цвета (`@inkbrick/dom/color-picker` и его обёртка): отдельный чанк, грузится, когда «Свой цвет…» открывают (или
+ * наводят на него).
+ */
+const colorPicker = lazyModule(() => import('./ColorPickerPanel'));
 
 export interface CustomColorSwatchProps {
   /** Текущий свой цвет (любой безопасный CSS-цвет) или `undefined`, если сейчас цвет не «свой». */
   readonly value: string | undefined;
-  /** С какого цвета начинает системное окно выбора, когда своего цвета ещё нет. */
+  /** С какого цвета начинает выбор, когда своего цвета ещё нет. */
   readonly fallback: string;
   readonly label: string;
   readonly pressed: boolean;
   /** `menuitemradio` в меню блока; в панелях toolbar роли нет. */
   readonly role?: 'menuitemradio';
   readonly action?: string;
-  /** Получает цвет вида `#rrggbb`, когда выбор в системном окне подтверждён. */
+  /** `'always'` — результат всегда с прозрачностью (`#rrggbbaa`), даже непрозрачный; по умолчанию — только при < 100 %. */
+  readonly alphaHex?: 'auto' | 'always';
+  /** Получает `#rrggbb` или `#rrggbbaa`, когда выбор подтверждён («Применить» или Enter). */
   readonly onPick: (hex: string) => void;
 }
 
 /**
- * Образец «Свой цвет…». Видимая и доступная с клавиатуры часть — кнопка: Enter или Space открывают системное окно
- * выбора, у которого свои стрелки. Сам `<input type="color">` скрыт и лежит над кнопкой (вложить его в кнопку нельзя); цвет применяется по `change`
- * (когда окно закрыто с выбором), а не по каждому движению ползунка, поэтому в историю попадает одна правка.
+ * Образец «Свой цвет…». Кнопка раскрывает под палитрой выбор цвета с прозрачностью (квадрат, оттенок, прозрачность, поля
+ * HEX / RGB / HSB); цвет применяется по «Применить» или Enter — одной правкой, — «Отмена» и Escape закрывают выбор и
+ * возвращают фокус на кнопку. Выбор лежит внутри меню или панели, поэтому они не закрываются, пока им пользуются.
  */
 export function CustomColorSwatch({
   value,
@@ -28,66 +36,59 @@ export function CustomColorSwatch({
   pressed,
   role,
   action,
+  alphaHex,
   onPick,
 }: CustomColorSwatchProps) {
-  const input = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    const node = input.current;
-
-    if (!node) return;
-
-    const listener = () => {
-      if (isHexColor(node.value)) onPick(node.value.toLowerCase());
-    };
-
-    node.addEventListener('change', listener);
-
-    return () => node.removeEventListener('change', listener);
-  }, [onPick]);
-
-  const open = () => {
-    const node = input.current;
-
-    if (!node) return;
-
-    // Пока открыто системное окно, поле помечено: меню видит, что выбирают цвет, и не закрывается, когда окно браузера
-    // теряет фокус. Метка снимается, когда фокус вернулся на страницу (системное окно закрыто).
-    node.dataset.picking = '';
-    window.addEventListener('focus', () => setTimeout(() => delete node.dataset.picking), {
-      once: true,
-    });
-
-    try {
-      node.showPicker();
-    } catch {
-      node.click();
-    }
+  const close = () => {
+    setOpen(false);
+    button.current?.focus({ preventScroll: true });
   };
 
   return (
-    <span data-inkbrick-part="custom-color">
-      <button
-        type="button"
-        role={role}
-        aria-checked={role ? pressed : undefined}
-        data-inkbrick-part="swatch"
-        data-color="custom"
-        data-action={action}
-        data-pressed={pressed || undefined}
-        aria-label={label}
-        title={label}
-        style={value ? ({ '--inkbrick-custom-color': value } as CSSProperties) : undefined}
-        onClick={open}
-      />
-      <input
-        ref={input}
-        type="color"
-        data-inkbrick-part="custom-color-input"
-        defaultValue={isHexColor(value) ? value : fallback}
-        tabIndex={-1}
-        aria-hidden="true"
-      />
-    </span>
+    <>
+      <span data-inkbrick-part="custom-color">
+        <button
+          ref={button}
+          type="button"
+          role={role}
+          aria-checked={role ? pressed : undefined}
+          aria-expanded={open}
+          data-inkbrick-part="swatch"
+          data-color="custom"
+          data-action={action}
+          data-pressed={pressed || undefined}
+          aria-label={label}
+          title={label}
+          style={value ? ({ '--inkbrick-custom-color': value } as CSSProperties) : undefined}
+          onPointerEnter={() => void colorPicker.preload()}
+          onClick={() => setOpen(!open)}
+        />
+      </span>
+      {open && (
+        <LazyPanel
+          value={value ?? fallback}
+          alphaHex={alphaHex}
+          onApply={(hex) => {
+            setOpen(false);
+            onPick(hex);
+          }}
+          onCancel={close}
+        />
+      )}
+    </>
+  );
+}
+
+function LazyPanel(props: Parameters<typeof import('./ColorPickerPanel').ColorPickerPanel>[0]) {
+  const loaded = useLazy(colorPicker);
+
+  // Пока чанк грузится, место под выбором уже занято: палитра не прыгает.
+  return loaded ? (
+    <loaded.ColorPickerPanel {...props} />
+  ) : (
+    <div data-inkbrick-part="color-picker-panel" />
   );
 }

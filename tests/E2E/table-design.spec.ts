@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '@playwright/test';
 
+import { pickCustomColor } from './sandbox';
+
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 const editable = '.editable';
 const table = '.block-table';
@@ -233,24 +235,14 @@ test.describe('Table style gallery and borders', () => {
     expect(await page.locator(cells).nth(4).getAttribute('data-background')).toBeNull();
   });
 
-  test('a custom cell colour: the menu waits for the system picker, the colour is applied without transparency', async ({
+  test('a custom cell colour: the menu stays open while the colour picker is used, the colour is applied as chosen', async ({
     page,
   }) => {
     await openTableMenu(page);
 
     const flyout = await openFlyout(page, 'table-cell-background');
 
-    // «Свой цвет…» открывает системное окно: оно забирает фокус у страницы, а меню с полем цвета не закрывается.
-    await flyout.locator('[data-inkbrick-part="swatch"][data-color="custom"]').click();
-    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-    // Закрытое меню ещё видно, пока идёт анимация ухода: ждём её конца.
-    await page.waitForTimeout(400);
-    await expect(page.locator(contextMenu)).toBeVisible();
-
-    await flyout.locator('input[type="color"]').evaluate((node: HTMLInputElement) => {
-      node.value = '#3366ff';
-      node.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    await pickCustomColor(flyout, '3366ff');
 
     await expect(page.locator(cells).nth(4)).toHaveCSS('background-color', 'rgb(51, 102, 255)');
     // Текст на тёмном своём цвете — белый (по контрасту).
@@ -262,7 +254,7 @@ test.describe('Table style gallery and borders', () => {
     const dots = await openFlyout(page, 'table-cell-background');
     const dot = await dots
       .locator('[data-action="color-blue"]')
-      .evaluate((node) => getComputedStyle(node).getPropertyValue('--inkbrick-dot').trim());
+      .evaluate((node) => getComputedStyle(node).getPropertyValue('--inkbrick-swatch').trim());
 
     await dots.locator('[data-action="color-blue"]').click();
 

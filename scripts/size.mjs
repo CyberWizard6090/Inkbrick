@@ -12,7 +12,8 @@ const alias = {
   '@inkbrick/engine': pkg('engine'),
   // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
   '@inkbrick/locales': fileURLToPath(new URL('../packages/locales/src', import.meta.url)),
-  '@inkbrick/image-tools': pkg('image-tools'),
+  // Каталог: подпути (`@inkbrick/dom/color-picker`) разрешаются внутрь него.
+  '@inkbrick/dom': fileURLToPath(new URL('../packages/dom/src', import.meta.url)),
   '@inkbrick/react': pkg('react'),
 };
 const external = ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'temml', 'zod'];
@@ -37,9 +38,15 @@ const cases = [
   },
   {
     // Пакет отдельно от редактора: окно обрезки, просмотр и геометрия (редактор грузит его лениво).
-    name: 'image-tools: cropper + viewer',
+    name: 'dom/image-tools: cropper + viewer',
     budget: 8,
-    code: "import { openCropper, openViewer, cropImage } from '@inkbrick/image-tools'; console.log(openCropper, openViewer, cropImage);",
+    code: "import { openCropper, openViewer, cropImage } from '@inkbrick/dom/image-tools'; console.log(openCropper, openViewer, cropImage);",
+  },
+  {
+    // Выбор цвета отдельно от редактора (редактор грузит его лениво, когда открывают «Свой цвет…»).
+    name: 'dom/color-picker',
+    budget: 4,
+    code: "import { createColorPicker } from '@inkbrick/dom/color-picker'; console.log(createColorPicker);",
   },
   {
     name: 'react: EditorProvider + DocumentView',

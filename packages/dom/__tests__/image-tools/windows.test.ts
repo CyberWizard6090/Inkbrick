@@ -12,7 +12,7 @@ import {
   type ViewerHandle,
   type ViewerImage,
   type ViewerOptions,
-} from '../src';
+} from '../../src/image-tools';
 
 /** Открытые в тесте окна: после каждого теста закрываются, как размонтирование компонента. */
 const opened: Array<CropperHandle | ViewerHandle> = [];

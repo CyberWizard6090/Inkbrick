@@ -1,5 +1,6 @@
 import { downloadImage, fileNameFor } from './download';
-import { el, iconButton, setDisabled } from './dom';
+import { el, setDisabled } from '../shared/dom';
+import { iconButton } from './icons';
 import { modal, overlayHost, watchSize } from './modal';
 
 /** Надписи окна просмотра (по умолчанию английские). */

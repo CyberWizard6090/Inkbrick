@@ -40,10 +40,40 @@ packages/document  model, schemas, serialization, export   — no React, no DOM
 packages/store     transactions, history, subscriptions       — no React
 packages/locales   UI dictionaries: English and on-demand languages — no React, no dependencies
 packages/engine    Editor, commands, controllers               — no React
-packages/image-tools  image crop window and viewer, plain DOM   — no React, no editor, usable on its own
-packages/react     EditorProvider, DocumentView, UI            — React, uses image-tools lazily
+packages/dom       UI parts in plain DOM (color-picker, image-tools) — no React, no editor, usable on its own
+packages/react     EditorProvider, DocumentView, UI            — React, loads parts of dom lazily
 packages/styles    CSS: tokens, layers, data-attribute contract
 ```
+
+### Layers and new packages
+
+Each package imports only the packages below it. The order is `LAYERS` in `eslint.config.js`:
+
+- `document` → `store` → `engine` → `react`;
+- `locales` and `dom` depend on nothing, and only `react` uses them;
+- only `react` imports React.
+
+ESLint rejects an import against the order, by name or by a path into another package's folder.
+`scripts/__tests__/boundaries.test.ts` checks that every package with code is listed in `LAYERS` and that the order has
+no cycles.
+
+A new **package** is worth it only when at least one of these is true:
+
+1. it is useful without the editor;
+2. it brings other peer dependencies (a framework, a heavy library);
+3. it needs its own release cycle or is a replaceable adapter.
+
+Otherwise it is a folder in an existing package, with its own entry in `exports` when it must stay out of the main bundle
+(`@inkbrick/document/markdown`, `@inkbrick/dom/color-picker`). Parts of the interface without a framework go to
+`@inkbrick/dom` as a new entry, not as a new package.
+
+For a new package:
+
+- give it `tsconfig.json`, `tsup.config.ts` and `vitest.config.ts` like `packages/dom`;
+- add a line in `LAYERS`;
+- add a path in `tsconfig.json`;
+- add a case in `scripts/size.mjs`;
+- keep the shared version: all packages are released together under one version.
 
 ### Where things live
 

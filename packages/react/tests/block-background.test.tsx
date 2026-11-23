@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent } from '@testing-library/react';
 import { useEditorView } from '../src/hooks/useEditorView';
 import type { EditorView } from '../src/editing/EditorView';
 import { mountEditor } from './harness';
+import { pickCustomColor } from './pickCustomColor';
 
 beforeEach(() => {
   document.elementFromPoint = () => null;
@@ -53,32 +54,43 @@ describe('block background in the block menu', () => {
     expect(t.swatch('custom').getAttribute('aria-label')).toBe('Custom color…');
   });
 
-  it('"Custom color…" stores #rrggbb, draws it through a variable and checks the swatch', () => {
+  it('"Custom color…" stores #rrggbbaa from the picker, draws it as chosen and checks the swatch', async () => {
     const t = mount();
 
     t.openMenu();
     expect(t.swatch('custom').getAttribute('aria-checked')).toBe('false');
 
-    const input = t.menu()!.querySelector<HTMLInputElement>('input[type="color"]')!;
+    // Фон из выбора всегда с прозрачностью; выбор начинается с 35 %, и шесть цифр в поле HEX её не меняют.
+    await pickCustomColor(t.menu()!, '12ab34');
 
-    // Кнопка и скрытое поле — соседи: интерактивный элемент внутри кнопки недопустим.
-    expect(input.closest('button')).toBeNull();
-    expect(input.getAttribute('aria-hidden')).toBe('true');
-
-    act(() => void fireEvent.change(input, { target: { value: '#12ab34' } }));
-
-    expect(t.editor.document.getBlock(t.ids[0])!.props.background).toBe('#12ab34');
-    expect(t.block().getAttribute('data-background')).toBe('custom');
-    expect(t.block().style.getPropertyValue('--inkbrick-block-background')).toBe('#12ab34');
+    expect(t.editor.document.getBlock(t.ids[0])!.props.background).toBe('#12ab3459');
+    expect(t.block().getAttribute('data-background')).toBe('custom-alpha');
+    expect(t.block().style.getPropertyValue('--inkbrick-block-background')).toBe('#12ab3459');
     expect(t.menu()).toBeNull();
 
     t.openMenu();
     expect(t.swatch('custom').getAttribute('aria-checked')).toBe('true');
     expect(t.swatch('none').getAttribute('aria-checked')).toBe('false');
 
+    await pickCustomColor(t.menu()!, '12ab3466');
+    expect(t.editor.document.getBlock(t.ids[0])!.props.background).toBe('#12ab3466');
+
+    t.openMenu();
     act(() => void fireEvent.click(t.swatch('none')));
     expect(t.block().hasAttribute('data-background')).toBe(false);
     expect(t.block().style.getPropertyValue('--inkbrick-block-background')).toBe('');
+  });
+
+  it('a #rrggbb background from older documents is still drawn diluted', () => {
+    const t = mount();
+
+    act(() => {
+      t.editor.dispatch({
+        type: 'setBlockProps',
+        payload: { blockId: t.ids[0], props: { background: '#12ab34' } },
+      });
+    });
+    expect(t.block().getAttribute('data-background')).toBe('custom');
   });
 
   it('the engine refuses a background that is not a palette name or #rrggbb', () => {
@@ -90,6 +102,7 @@ describe('block background in the block menu', () => {
       });
 
     expect(can('#12ab34')).toBe(true);
+    expect(can('#12ab3480')).toBe(true);
     expect(can('magenta')).toBe(true);
 
     for (const bad of ['url(x)', 'red; x', '#fff', '#12ab34;', 'rgb(1,2,3)', 'white', 'black'])

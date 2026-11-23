@@ -4,7 +4,7 @@ import { getBlockBackgroundColor, isHexColor } from '@inkbrick/document';
 
 /**
  * Атрибуты фона блока. Имя из палитры отдаётся как `data-background="<имя>"` (оттенок задаёт тема), свой цвет — как
- * `data-background="custom"` и переменная `--inkbrick-block-background`. В `style` попадает только `#rrggbb`, прошедший
+ * `data-background="custom"` (`"custom-alpha"` с прозрачностью) и переменная `--inkbrick-block-background`. В `style` попадает только `#rrggbb` / `#rrggbbaa`, прошедший
  * проверку схемы: ничего другого из документа туда не приходит.
  */
 export function backgroundAttrs(block: { props: Readonly<Record<string, unknown>> }): {
@@ -17,7 +17,8 @@ export function backgroundAttrs(block: { props: Readonly<Record<string, unknown>
 
   return isHexColor(color)
     ? {
-        'data-background': 'custom',
+        // `#rrggbbaa` (прозрачность выбрана) рисуется как есть, `#rrggbb` — разбавленным, чтобы текст читался.
+        'data-background': color.length === 9 ? 'custom-alpha' : 'custom',
         style: { '--inkbrick-block-background': color } as CSSProperties,
       }
     : { 'data-background': color };

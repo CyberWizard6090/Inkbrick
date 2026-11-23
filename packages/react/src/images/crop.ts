@@ -1,6 +1,6 @@
 import { IMAGE_ASPECTS, type ImageAspect } from '@inkbrick/document';
 
-/** Рамка обрезки в долях оригинала (как `CropRect` из `@inkbrick/image-tools`). */
+/** Рамка обрезки в долях оригинала (как `CropRect` из `@inkbrick/dom/image-tools`). */
 export interface Rect {
   readonly x: number;
   readonly y: number;
