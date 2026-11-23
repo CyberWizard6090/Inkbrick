@@ -477,6 +477,7 @@ exports[`public API of the packages > @inkbrick/engine/internal (not public) 1`]
   "readTable",
   "REMOTE_ORIGIN",
   "RemoveColumnCommand",
+  "repairBySchema",
   "ReplaceTextCommand",
   "type ReplaceTextPayload",
   "ResetTableColumnWidthsCommand",

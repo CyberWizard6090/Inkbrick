@@ -9,10 +9,11 @@ import {
   columnsFeature,
   onPatch,
   tableFeature,
+  toggleFeature,
   type LocalPatch,
 } from '../src/internal';
 
-const features = [tableFeature, columnsFeature];
+const features = [tableFeature, columnsFeature, toggleFeature];
 
 /** Два редактора с одним документом: правки первого доходят до второго патчами. */
 function pair() {
@@ -84,6 +85,67 @@ describe('patches between editors', () => {
     expect(b.canUndo).toBe(false);
   });
 
+  it('concurrent edits the author did not see survive: new siblings stay, gone children drop out, deletion takes the subtree', () => {
+    const a = new Editor({ features });
+    const b = new Editor({
+      features,
+      schema: a.schema,
+      document: deserializeDocument(serializeDocument(a.document, a.schema), { schema: a.schema }),
+    });
+    const note = a.document.getBlock(a.document.rootId)!.children[0];
+    const first = a.document.getBlock(note)!.children[0];
+    const patches = (editor: Editor) => {
+      const sent: LocalPatch[] = [];
+
+      onPatch(editor, (patch) => sent.push(patch));
+
+      return sent;
+    };
+    const fromA = patches(a);
+    const fromB = patches(b);
+
+    // Оба добавляют абзац после первого: каждый патч переписывает список детей заметки.
+    const ownA = a.dispatch({
+      type: 'insertBlock',
+      payload: { flavour: 'block:paragraph', afterId: first },
+    })!.blockId;
+    const ownB = b.dispatch({
+      type: 'insertBlock',
+      payload: { flavour: 'block:paragraph', afterId: first },
+    })!.blockId;
+
+    applyPatch(b, fromA[0]);
+    expect(b.document.getBlock(note)!.children).toEqual([first, ownB, ownA]);
+
+    // Патч ссылается на ребёнка, которого здесь уже нет: он выпадает, остальное применяется.
+    const result = applyPatch(b, {
+      blocks: { [note]: { ...b.document.getBlock(note)!, children: [first, ownA, ownB, 'ghost'] } },
+    });
+
+    expect(result.blocks[note]!.children).toEqual([first, ownA, ownB]);
+
+    // Удаление переключателя уносит и блок, который в нём успели добавить, не зная об удалении.
+    const toggle = a.dispatch({
+      type: 'insertBlock',
+      payload: { flavour: 'block:toggle', afterId: ownA },
+    })!.blockId;
+
+    applyPatch(b, fromA.at(-1)!);
+    const inner = b.document.getBlock(toggle)!.children[0];
+
+    b.dispatch({ type: 'insertBlock', payload: { flavour: 'block:paragraph', afterId: inner } });
+    a.dispatch({ type: 'delete-blocks', payload: { ids: [toggle] } });
+    applyPatch(b, fromA.at(-1)!);
+
+    expect(b.document.getBlock(toggle)).toBeUndefined();
+    expect(
+      Object.values(b.document.dump()).every(
+        (block) => block.parentId === null || b.document.getBlock(block.parentId),
+      ),
+    ).toBe(true);
+    expect(fromB.length).toBeGreaterThan(0);
+  });
+
   it('a broken patch is refused whole and the document stays as it was', () => {
     const { b, note, first } = pair();
     const before = structuredClone(b.document.dump());
@@ -92,7 +154,6 @@ describe('patches between editors', () => {
     const attempts = [
       { blocks: { [first]: { ...block, id: 'other' } } },
       { blocks: { [first]: { ...block, parentId: 'missing' } } },
-      { blocks: { [note]: { ...b.document.getBlock(note)!, children: [first, 'ghost'] } } },
       { blocks: { [b.document.rootId]: null } },
       { blocks: { [first]: null } }, // ещё числится в заметке
       {

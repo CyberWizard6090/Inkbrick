@@ -55,6 +55,11 @@ export class DocumentNormalizer {
     this.run(engine, transaction, transaction.getChangedBlocks());
   }
 
+  /** Нормализует указанные блоки (например, изменённые предыдущей правкой). */
+  normalizeBlocks(engine: Engine, transaction: Transaction, ids: readonly BlockId[]): void {
+    this.run(engine, transaction, ids);
+  }
+
   /** Нормализует все блоки документа. */
   normalizeAll(engine: Engine, transaction: Transaction): void {
     this.run(engine, transaction, Object.keys(engine.store.document.dump()));
@@ -100,6 +105,25 @@ export class DocumentNormalizer {
   }
 }
 
+/**
+ * Блок, который создаёт правило: с id, который зависит от родителя и места, а не случаен. Одна и та же нормализация у
+ * разных участников совместной правки создаёт один и тот же блок, и после обмена патчами их не становится два.
+ */
+function createStable(
+  engine: Engine,
+  transaction: Transaction,
+  flavour: string,
+  parentId: BlockId,
+): BaseBlock {
+  const kind = flavour.replace('block:', '');
+  let index = transaction.getBlock(parentId)?.children.length ?? 0;
+  let id = `${kind}-${parentId}-${index}`;
+
+  while (transaction.getBlock(id)) id = `${kind}-${parentId}-${++index}`;
+
+  return { ...engine.block.create({ flavour, parentId }), id };
+}
+
 /** Пустой контейнер с `BlockSchema.fillWhenEmpty` (заметка, колонка) получает блок для ввода. */
 export const fillEmptyContainers: NormalizeRule = {
   name: 'fillWhenEmpty',
@@ -113,7 +137,48 @@ export const fillEmptyContainers: NormalizeRule = {
       transaction,
       block.id,
       0,
-      engine.block.create({ flavour: fill, parentId: block.id }),
+      createStable(engine, transaction, fill, block.id),
     );
+  },
+};
+
+/**
+ * Поддерево, которое нарушает проверку своей схемы (`BlockSchema.validate`), исправляется её же `repair`: таблица без
+ * строк получает строку, короткие строки — ячейки. Такое бывает, когда сходятся одновременные правки (двое удалили по
+ * строке из таблицы в две строки). Запасной вариант (`late`): правило конкретного блока (опустевшая колонка убирается)
+ * может сделать починку ненужной.
+ */
+export const repairBySchema: NormalizeRule = {
+  name: 'repairBySchema',
+  order: 'late',
+  normalize({ engine, transaction, block }) {
+    // Проверка схемы смотрит на поддерево: правка строки или ячейки может сломать таблицу, поэтому проверяются и предки.
+    for (let current: BaseBlock | undefined = block; current;) {
+      const schema = engine.schema.getBlockSchema(current.flavour);
+
+      if (
+        schema?.validate &&
+        schema.repair &&
+        schema.validate(current, (id) => transaction.getBlock(id)).length > 0
+      ) {
+        schema.repair(current, {
+          get: (id) => transaction.getBlock(id),
+          append: (parentId, flavour) => {
+            const child = createStable(engine, transaction, flavour, parentId);
+
+            engine.block.insert(
+              transaction,
+              parentId,
+              transaction.getBlock(parentId)!.children.length,
+              child,
+            );
+
+            return transaction.getBlock(child.id)!;
+          },
+        });
+      }
+
+      current = current.parentId ? transaction.getBlock(current.parentId) : undefined;
+    }
   },
 };

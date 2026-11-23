@@ -3,7 +3,7 @@ import type { DocumentStore } from '@inkbrick/store';
 
 import { BlockEngine } from '../block';
 import { InlineEngine } from '../inline';
-import { DocumentNormalizer, fillEmptyContainers } from '../normalizer';
+import { DocumentNormalizer, fillEmptyContainers, repairBySchema } from '../normalizer';
 
 export interface EngineOptions {
   store: DocumentStore;
@@ -28,6 +28,7 @@ export class Engine {
     this.schema = options.schema;
     this.block = new BlockEngine(options.schema);
     this.inline = new InlineEngine();
+    this.normalizer.add(repairBySchema);
     this.normalizer.add(fillEmptyContainers);
   }
 }
