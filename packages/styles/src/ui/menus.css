@@ -1,0 +1,267 @@
+/* Меню блока и контекстное меню: пункты, выключатели, вложенные панели, образцы линий; всплывающая подсказка кнопок. Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='block-menu']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-menu);
+    box-sizing: border-box;
+    min-width: 220px;
+    max-width: calc(100vw - 16px);
+    max-height: 60vh;
+    padding: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    outline: none;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']:hover:not([data-disabled])),
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']:focus-visible) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item']:active:not([data-disabled])
+  ) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item'][data-disabled]) {
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu'] > [data-inkbrick-part='item'][data-danger]:not([data-disabled])
+  ) {
+    color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='icon']) {
+    display: inline-grid;
+    place-content: center;
+    width: 20px;
+    color: var(--inkbrick-fg-2);
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu']
+      > [data-inkbrick-part='item'][data-danger]
+      [data-inkbrick-part='icon']
+  ) {
+    color: inherit;
+  }
+
+  :where(
+    [data-inkbrick-ui='block-menu']
+      > [data-inkbrick-part='item'][data-disabled]
+      [data-inkbrick-part='icon']
+  ) {
+    color: inherit;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] > [data-inkbrick-part='label']) {
+    padding: 8px 8px 4px;
+    border-top: 1px solid var(--inkbrick-stroke-3);
+    margin-top: 4px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+  }
+
+  /*
+   * Всплывающая подсказка кнопок редактора (вместо системной `title`): одна на странице, в цветах темы. Появляется плавно,
+   * указатель её не задевает.
+   */
+  :where([data-inkbrick-ui='tooltip']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-tooltip);
+    box-sizing: border-box;
+    max-width: min(280px, calc(100vw - 16px));
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-tooltip-bg);
+    box-shadow: var(--inkbrick-shadow-8);
+    color: var(--inkbrick-tooltip-fg);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+    white-space: pre-line;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='tooltip'][data-state='open']) {
+    opacity: 1;
+  }
+
+  :where([data-inkbrick-ui='context-menu']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-menu);
+    box-sizing: border-box;
+    min-width: 220px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  /* Кнопки форматирования внутри меню: тот же toolbar, но без своей рамки, тени и позиционирования. */
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-ui='toolbar'][data-placement='inline']) {
+    position: static;
+    width: auto;
+    max-width: 100%;
+    padding: 0 0 4px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='separator']) {
+    height: 1px;
+    margin: 0 -4px 4px;
+    background: var(--inkbrick-stroke-3);
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+    padding: 4px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    outline: none;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']:hover:not([data-disabled]),
+    [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']:focus-visible
+  ) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item']:active:not([data-disabled])
+  ) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item'][data-disabled]) {
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='icon']) {
+    display: inline-grid;
+    place-content: center;
+    width: 20px;
+    color: var(--inkbrick-fg-2);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-part='item'][data-disabled]
+      [data-inkbrick-part='icon']
+  ) {
+    color: inherit;
+  }
+
+  /* Выключатель у пункта-переключателя (строка заголовка, закрепление): дорожка с бегунком, справа; включён — синий. */
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='switch'],
+    [data-inkbrick-ui='block-menu'] [data-inkbrick-part='switch']
+  ) {
+    position: relative;
+    flex: none;
+    width: 28px;
+    height: 16px;
+    margin-inline-start: auto;
+    border-radius: 8px;
+    background: var(--inkbrick-stroke-1);
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='switch'],
+    [data-inkbrick-ui='block-menu'] [data-inkbrick-part='switch']
+  )::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+    transition: translate var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='switch'][data-on],
+    [data-inkbrick-ui='block-menu'] [data-inkbrick-part='switch'][data-on]
+  ) {
+    background: var(--inkbrick-brand-bg);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='switch'][data-on],
+    [data-inkbrick-ui='block-menu'] [data-inkbrick-part='switch'][data-on]
+  )::after {
+    translate: 12px 0;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='shortcut']) {
+    margin-left: auto;
+    padding-left: 16px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  /* Вложенные меню: шеврон у пункта, галочка у выбранного значения, открытый пункт подсвечен, панель справа от него. */
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='check'],
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='chevron']
+  ) {
+    display: inline-grid;
+    margin-left: auto;
+    padding-left: 12px;
+    color: var(--inkbrick-fg-3);
+  }
+
+  :where(
+    [data-inkbrick-ui='context-menu'] [data-inkbrick-part='check'] + [data-inkbrick-part='chevron']
+  ) {
+    margin-left: 0;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item'][aria-expanded='true']) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='context-menu'][data-inkbrick-part='flyout']) {
+    min-width: 200px;
+  }
+
+  /* Образец линии для толщины и начертания границ. */
+  :where([data-inkbrick-part='line-sample']) {
+    display: inline-block;
+    width: 20px;
+    height: 0;
+    border-top: 1px solid currentColor;
+  }
+}

@@ -153,7 +153,8 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 
 Прежние имена (`--inkbrick-bg-surface`, `--inkbrick-text-primary`, `--inkbrick-accent-color`, …) продолжают работать как псевдонимы.
 
-Подключать можно по частям: `@inkbrick/styles/tokens.css`, `base.css`, `blocks.css`, `ui.css`.
+Подключать можно по частям: `@inkbrick/styles/tokens.css`, `base.css`, `blocks.css`, `ui.css`. В исходниках `ui.css`
+собирается из файлов `src/ui/*.css` (по одному на группу элементов интерфейса) в порядке каскада; подключайте сам `ui.css`.
 
 ### Слои
 

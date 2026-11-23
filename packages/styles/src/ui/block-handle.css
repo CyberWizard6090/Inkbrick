@@ -1,0 +1,72 @@
+/* Ручка блока: «+» и захват слева от блока, подложка на узком экране. Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='block-handle']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-handle);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 28px;
+  }
+
+  /* Ручка появляется плавно: проявляется и чуть выезжает слева. Переход от блока к блоку её не мигает — она та же. */
+  :where([data-inkbrick-ui='block-handle']) {
+    animation: inkbrick-handle-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* Узкий экран: слева от текста нет полосы, ручка лежит поверх текста — нужна подложка */
+  :where([data-inkbrick-ui='block-handle'][data-compact]) {
+    padding: 0 2px;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-8);
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='button']),
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='grip']) {
+    display: inline-grid;
+    place-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-3);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='grip']) {
+    cursor: grab;
+    /* Долгое нажатие пальцем переносит блок: без прокрутки, выделения и системного меню. */
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='block-handle']
+      > :is([data-inkbrick-part='button'], [data-inkbrick-part='grip']):hover:not(:disabled)
+  ) {
+    background: var(--inkbrick-bg-hover);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > [data-inkbrick-part='grip'][data-active]) {
+    background: var(--inkbrick-bg-selected);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where(
+    [data-inkbrick-ui='block-handle']
+      > :is([data-inkbrick-part='button'], [data-inkbrick-part='grip']):focus-visible
+  ) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='block-handle'] > :disabled) {
+    opacity: 0.35;
+    cursor: default;
+  }
+}

@@ -1,0 +1,288 @@
+/* Управление таблицей: плашки строки и столбца, маркеры вставки, ручки ширины, рамка выделения на телефоне, панель ширины столбца. Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  /* ---- Управление таблицей: полоски строки и столбца, кнопки добавления, ручки ширины ---- */
+  :where([data-inkbrick-ui='table-controls']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-handle);
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+  }
+
+  /* Ручки таблицы: плашки с шестью точками; круглые маркеры на их концах вставляют столбец или строку по границе. */
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']
+  ) {
+    display: grid;
+    place-content: center;
+    border-radius: 6px;
+    background: var(--inkbrick-bg-4);
+    color: var(--inkbrick-fg-4);
+    cursor: pointer;
+    transition:
+      background-color var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  /* Плашки строки и столбца одинаковой толщины: 10 px поперёк (лежат на границе таблицы), вдоль — по строке или столбцу. */
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
+    width: 10px;
+    height: 24px;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
+    width: 24px;
+    height: 10px;
+  }
+
+  /* Шесть точек: 3 × 2 у столбца, 2 × 3 у строки. */
+  :where([data-inkbrick-ui='table-controls'] > [data-inkbrick-part='dots']) {
+    display: block;
+    width: 8px;
+    height: 12px;
+    background: radial-gradient(circle at 2px 2px, currentColor 1.2px, transparent 1.5px) 0 0 / 4px
+      4px;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']
+      > [data-inkbrick-part='dots']
+  ) {
+    width: 12px;
+    height: 8px;
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-grip'],
+        [data-inkbrick-part='column-grip']
+      ):hover,
+    [data-inkbrick-ui='table-controls'][aria-expanded='true']
+  ) {
+    background: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-on-brand);
+  }
+
+  /* Плашка и маркеры строки стоят слева от таблицы рядом с язычком блока: они выше него, чтобы нажатие доставалось им. */
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-insert']
+  ) {
+    z-index: calc(var(--inkbrick-z-handle) - 1);
+  }
+
+  /* Круглый маркер на границе: кольцо, а при наведении — кнопка «+». */
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-insert'],
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-insert']
+  ) {
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: 50%;
+    background: var(--inkbrick-bg-1);
+    cursor: pointer;
+    transition:
+      width var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      height var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      margin var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-insert'],
+        [data-inkbrick-part='column-insert']
+      ):hover:not(:disabled),
+    [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-insert'],
+        [data-inkbrick-part='column-insert']
+      ):focus-visible
+  ) {
+    width: 18px;
+    height: 18px;
+    margin: -4px 0 0 -4px;
+    border-color: var(--inkbrick-brand-bg);
+    background-color: var(--inkbrick-brand-bg);
+    background-image:
+      linear-gradient(var(--inkbrick-fg-on-brand), var(--inkbrick-fg-on-brand)),
+      linear-gradient(var(--inkbrick-fg-on-brand), var(--inkbrick-fg-on-brand));
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size:
+      8px 1.5px,
+      1.5px 8px;
+  }
+
+  /* Телефон: рамка вокруг ячейки с кареткой или выделенных ячеек и точка на её углу, которую тянут пальцем. */
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='cell-frame']) {
+    border: 2px solid var(--inkbrick-brand-bg);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='cell-knob']) {
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--inkbrick-bg-1);
+    border-radius: 50%;
+    background: var(--inkbrick-brand-bg);
+    box-shadow: 0 0 0 1px var(--inkbrick-brand-bg);
+    /* Точку ведут пальцем: страница при этом не прокручивается. */
+    touch-action: none;
+    cursor: grab;
+  }
+
+  :where([data-inkbrick-ui='table-controls']:is(button):focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='table-controls']:disabled) {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
+    width: 6px;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  /* Псевдоэлемент — снаружи `:where()`: внутри него селектор недопустим, и правило отбрасывалось целиком. */
+  :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize'])::after {
+    content: '';
+    display: block;
+    width: 2px;
+    height: 100%;
+    margin: 0 auto;
+    background: transparent;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where(
+    [data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']:is(:hover, :focus-visible)
+  )::after {
+    background: var(--inkbrick-brand-bg);
+  }
+
+  /* Палец не наводится: ручки и маркеры крупнее, чтобы в них попадать. */
+  @media (pointer: coarse) {
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip']) {
+      width: 16px;
+      /* Не выше, чем помещается между маркерами вставки строки (они на той же оси, на границах строки). */
+      min-height: 20px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip']) {
+      min-width: 32px;
+      height: 16px;
+    }
+
+    :where(
+      [data-inkbrick-ui='table-controls'][data-inkbrick-part='row-insert'],
+      [data-inkbrick-ui='table-controls'][data-inkbrick-part='column-insert']
+    ) {
+      width: 18px;
+      height: 18px;
+      margin: -4px 0 0 -4px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
+      width: 14px;
+    }
+  }
+
+  /* Панель ширины столбца (телефон): снизу окна, чтобы таблица оставалась на виду, пока тянется ползунок. */
+  :where([data-inkbrick-ui='column-width-bar']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-menu);
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    display: grid;
+    gap: 8px;
+    box-sizing: border-box;
+    max-width: 480px;
+    margin-inline: auto;
+    padding: 10px 12px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-16);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    animation: inkbrick-menu-in-up var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] > [data-inkbrick-part='head']),
+  :where([data-inkbrick-ui='column-width-bar'] > [data-inkbrick-part='actions']) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='value']) {
+    font-variant-numeric: tabular-nums;
+    color: var(--inkbrick-fg-2);
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] > [data-inkbrick-part='track']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='slider']) {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    margin: 0;
+    accent-color: var(--inkbrick-brand-bg);
+    /* Ползунок ведут пальцем по горизонтали: страница при этом не прокручивается. */
+    touch-action: none;
+  }
+
+  :where(
+    [data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='nudge'],
+    [data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='auto'],
+    [data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='done']
+  ) {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='nudge']) {
+    padding: 0;
+    font-size: 20px;
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] [data-inkbrick-part='done']) {
+    border-color: var(--inkbrick-brand-bg);
+    background: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-on-brand);
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] button:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='column-width-bar'] :is(button, input):focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 2px;
+  }
+}

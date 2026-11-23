@@ -1,0 +1,290 @@
+/* Индикатор перетаскивания, панели toolbar и палитра цветов (одна для текста, выделения, фона блока и таблицы). Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='drop-indicator']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-drop);
+    height: 2px;
+    border-radius: 1px;
+    background: var(--inkbrick-brand-bg);
+    pointer-events: none;
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where(body[data-inkbrick-dragging], body[data-inkbrick-dragging] *) {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']) {
+    position: relative;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='indicator']) {
+    position: absolute;
+    right: 8px;
+    bottom: 3px;
+    left: 8px;
+    height: 3px;
+    border-radius: 1.5px;
+    background: color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='gray']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-gray);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='black']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-black);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='white']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-white);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='brown']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-brown);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='orange']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-orange);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='yellow']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-yellow);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='green']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-green);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='blue']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-blue);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='purple']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-purple);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='pink']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-pink);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='red']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-red);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='lime']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-lime);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='teal']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-teal);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='cyan']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-cyan);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='indigo']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-indigo);
+  }
+
+  :where(
+    [data-inkbrick-ui='toolbar']
+      [data-inkbrick-part='button'][data-current-color='magenta']
+      [data-inkbrick-part='indicator']
+  ) {
+    background: var(--inkbrick-color-magenta);
+  }
+
+  /*
+   * Палитра цветов — один вид во всём редакторе (панель форматирования, меню блока, фон ячеек и цвет границ таблицы):
+   * сетка скруглённых образцов, первый — «×» (снять цвет), последний — «Свой цвет…». Цвет образца приходит переменной
+   * `--inkbrick-swatch`; у цвета текста (`data-sample='text'`) это цвет буквы «A» на обычном фоне. Размер и число
+   * столбцов — `--inkbrick-swatch-size` и `--inkbrick-swatch-columns`.
+   */
+  :where([data-inkbrick-part='swatches']) {
+    --inkbrick-swatch-size: 28px;
+
+    display: grid;
+    grid-template-columns: repeat(var(--inkbrick-swatch-columns, 8), var(--inkbrick-swatch-size));
+    gap: 4px;
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    width: var(--inkbrick-swatch-size);
+    height: var(--inkbrick-swatch-size);
+    padding: 0;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-swatch, var(--inkbrick-bg-1));
+    color: var(--inkbrick-fg-2);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      border-color var(--inkbrick-duration-fast) var(--inkbrick-curve),
+      background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'] svg) {
+    width: 16px;
+    height: 16px;
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch']:hover) {
+    border-color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'][data-color='']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where(
+    [data-inkbrick-part='swatches']
+      [data-inkbrick-part='swatch']:is([data-pressed], [aria-checked='true'])
+  ) {
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  /* Цвет текста: буква «A» этого цвета на обычном фоне. Чёрная и белая — на серой плашке, иначе сливаются с фоном темы. */
+  :where(
+    [data-inkbrick-part='swatches'][data-sample='text'] [data-inkbrick-part='swatch'][data-color]
+  ) {
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-swatch, var(--inkbrick-fg-1));
+  }
+
+  :where(
+    [data-inkbrick-part='swatches'][data-sample='text']
+      [data-inkbrick-part='swatch'][data-color='black']
+  ) {
+    background: #d4d4d4;
+  }
+
+  :where(
+    [data-inkbrick-part='swatches'][data-sample='text']
+      [data-inkbrick-part='swatch'][data-color='white']
+  ) {
+    background: #3d3d3d;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatches']) {
+    padding: 4px 8px 8px;
+  }
+
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='swatches']) {
+    padding: 4px;
+  }
+
+  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). */
+  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'][data-color='custom']) {
+    background: var(
+      --inkbrick-custom-color,
+      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
+    );
+  }
+
+  :where([data-inkbrick-part='custom-color']) {
+    position: relative;
+    display: grid;
+  }
+
+  /* Выбор цвета раскрывается строкой под палитрой, во всю её ширину (палитры — сетки). */
+  :where([data-inkbrick-part='color-picker-panel']) {
+    grid-column: 1 / -1;
+    padding: 6px 2px 2px;
+  }
+
+  :where([data-inkbrick-part='color-picker-panel'] [data-inkbrick-ui='color-picker']) {
+    max-width: none;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] > [data-inkbrick-part='panel']) {
+    position: absolute;
+    left: 0;
+    padding: 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  /* Панель уходит от выделения: над toolbar, если он над текстом, и под ним, если под текстом */
+  :where([data-inkbrick-ui='toolbar'][data-placement='above'] > [data-inkbrick-part='panel']) {
+    bottom: calc(100% + 6px);
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='below'] > [data-inkbrick-part='panel']) {
+    top: calc(100% + 6px);
+  }
+}

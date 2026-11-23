@@ -1,0 +1,271 @@
+/* Окно формулы и список выбора (select). Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  :where([data-inkbrick-ui='formula-popover']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-source']) {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-bottom-color: var(--inkbrick-stroke-accessible);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font-family: var(--inkbrick-font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-source']:focus) {
+    outline: none;
+    border-bottom-color: var(--inkbrick-brand-bg);
+    box-shadow: 0 1px 0 var(--inkbrick-brand-bg);
+  }
+
+  :where(
+    [data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-source'][aria-invalid='true']
+  ) {
+    border-color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-preview']) {
+    min-height: 32px;
+    padding: 8px;
+    overflow-x: auto;
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-2);
+    text-align: center;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='formula-actions']) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] .formula-popover__spacer) {
+    flex: 1;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:active:not(:disabled)) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button'][data-primary]) {
+    border-color: var(--inkbrick-brand-bg);
+    background: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-on-brand);
+  }
+
+  :where(
+    [data-inkbrick-ui='formula-popover']
+      [data-inkbrick-part='button'][data-primary]:hover:not(:disabled)
+  ) {
+    border-color: var(--inkbrick-brand-bg-hover);
+    background: var(--inkbrick-brand-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button'][data-danger]) {
+    padding: 0 8px;
+    color: var(--inkbrick-status-danger-fg);
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:disabled) {
+    border-color: var(--inkbrick-stroke-2);
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='select']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    max-width: calc(100vw - 16px);
+    max-height: min(320px, 50vh);
+    padding: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    box-shadow: var(--inkbrick-shadow-16);
+    outline: none;
+    animation: inkbrick-popup-in var(--inkbrick-duration-normal) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='select'][data-side='top']) {
+    animation-name: inkbrick-popup-in-up;
+  }
+
+  :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option']) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 32px;
+    padding: 0 8px 0 12px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option'][data-active]) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option'][aria-selected='true']) {
+    background: var(--inkbrick-bg-selected);
+  }
+
+  :where(
+    [data-inkbrick-ui='select'] > [data-inkbrick-part='option'][aria-selected='true']
+  )::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--inkbrick-brand-bg);
+    transform: translateY(-50%);
+  }
+
+  :where([data-inkbrick-ui='select'] [data-inkbrick-part='option-check']) {
+    color: var(--inkbrick-brand-fg);
+  }
+
+  @keyframes inkbrick-popup-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes inkbrick-popup-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  @keyframes inkbrick-handle-in {
+    from {
+      opacity: 0;
+      transform: translateX(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes inkbrick-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes inkbrick-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-menu-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(var(--inkbrick-appear-shift));
+    }
+  }
+
+  @keyframes inkbrick-slide-down {
+    from {
+      transform: translateY(calc(-1 * var(--inkbrick-appear-shift)));
+    }
+  }
+
+  @keyframes inkbrick-toolbar-in {
+    from {
+      opacity: 0;
+      translate: 0 var(--inkbrick-appear-shift);
+    }
+  }
+
+  @keyframes inkbrick-toolbar-in-down {
+    from {
+      opacity: 0;
+      translate: 0 calc(-1 * var(--inkbrick-appear-shift));
+    }
+  }
+
+  @media (pointer: coarse) {
+    :where([data-inkbrick-ui='select'] > [data-inkbrick-part='option']) {
+      min-height: 40px;
+    }
+
+    :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']) {
+      min-width: 40px;
+      height: 40px;
+    }
+
+    /* Палитры под палец: образцы крупнее везде (панель форматирования, меню блока, меню таблицы). */
+    :where([data-inkbrick-part='swatches']) {
+      --inkbrick-swatch-size: 36px;
+    }
+
+    :where([data-inkbrick-part='formula-symbol']) {
+      height: 38px;
+    }
+  }
+}

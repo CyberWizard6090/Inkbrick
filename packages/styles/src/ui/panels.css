@@ -1,0 +1,382 @@
+/* Секции контекстного меню, рамка выбора блоков, палитра команд, поиск и замена, «Превратить в», оглавление, счётчик слов, теги. Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  /* Секция контекстного меню со своим содержимым: заголовок и содержимое. */
+  :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='label']) {
+    padding: 6px 12px 2px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  /* Рамка выбора блоков мышью с поля. */
+  :where([data-inkbrick-ui='marquee']) {
+    z-index: var(--inkbrick-z-popup);
+    border: 1px solid var(--inkbrick-brand-bg);
+    background: color-mix(in srgb, var(--inkbrick-brand-bg) 12%, transparent);
+  }
+
+  /* Палитра команд: окно по центру сверху над затемнением, список разделами. */
+  :where([data-inkbrick-ui='palette-backdrop']) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--inkbrick-z-popup);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 12vh;
+    background: rgba(0, 0, 0, 0.3);
+    /* Затемнение проявляется, а окно ниже только опускается: если бы оно ещё и проявлялось, прозрачности перемножились бы. */
+    animation: inkbrick-fade-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='palette']) {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: 60vh;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+    overflow: hidden;
+    animation: inkbrick-slide-down var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='query']) {
+    flex: none;
+    box-sizing: border-box;
+    height: 44px;
+    padding: 0 16px;
+    border: none;
+    border-bottom: 1px solid var(--inkbrick-stroke-2);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='list']) {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='group']) {
+    padding: 8px 12px 4px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='empty']) {
+    padding: 16px;
+    color: var(--inkbrick-fg-3);
+    text-align: center;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='option']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='option'][aria-selected='true']) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='title']) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='description']) {
+    margin-inline-start: 8px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  :where([data-inkbrick-ui='palette'] [data-inkbrick-part='shortcut']) {
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    font-size: var(--inkbrick-font-size-caption);
+  }
+
+  /* Поиск и замена: панель в правом верхнем углу окна и подсветка совпадений в документе. */
+  :where([data-inkbrick-ui='find']) {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: var(--inkbrick-z-popup);
+    /* Панель опускается из-за верхнего края, как меню от ручки. */
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    padding: 6px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='row']) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  :where([data-inkbrick-ui='find'] input) {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+  }
+
+  :where([data-inkbrick-ui='find'] button) {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border: none;
+    border-radius: var(--inkbrick-radius-control);
+    background: none;
+    color: var(--inkbrick-fg-2);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='find'] button:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-3);
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='find'] button:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='find'] button[data-active]) {
+    background: var(--inkbrick-bg-4);
+    color: var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='status']) {
+    min-width: 56px;
+    padding: 0 6px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='find'] [data-inkbrick-part='expand'][data-active]) {
+    transform: rotate(90deg);
+  }
+
+  :where(*)::highlight(inkbrick-find) {
+    background-color: rgba(255, 200, 0, 0.4);
+  }
+
+  :where(*)::highlight(inkbrick-find-current) {
+    background-color: rgba(255, 140, 0, 0.7);
+  }
+
+  /* Панель форматирования: «Превратить в» — кнопка с названием типа блока и список типов под панелью. */
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button'][data-format='turn-into']) {
+    flex: none;
+    grid-auto-flow: column;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    min-width: max-content;
+    padding: 0 10px;
+    font: inherit;
+    white-space: nowrap;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-menu']) {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    min-width: 200px;
+    max-height: min(320px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: var(--inkbrick-radius-control);
+    color: var(--inkbrick-fg-1);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option']:hover),
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option']:focus-visible) {
+    background: var(--inkbrick-bg-3);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='turn-option'][data-active]) {
+    color: var(--inkbrick-brand-bg);
+    font-weight: var(--inkbrick-font-weight-semibold);
+  }
+
+  /* Панель оглавления сбоку: висит у края окна, на узком окне скрыта. */
+  :where([data-inkbrick-ui='toc-panel']) {
+    position: fixed;
+    top: 96px;
+    /* Панель у края — ниже ручек и меню редактора и ниже боковых панелей приложения. */
+    z-index: var(--inkbrick-z-panel);
+    box-sizing: border-box;
+    width: 220px;
+    max-height: calc(100vh - 128px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 0;
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 18px;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'][data-side='right']) {
+    right: 16px;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'][data-side='left']) {
+    left: 16px;
+  }
+
+  @media (max-width: 1100px) {
+    :where([data-inkbrick-ui='toc-panel']) {
+      display: none;
+    }
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] ul) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] [data-inkbrick-part='link']) {
+    display: block;
+    width: 100%;
+    padding: 3px 8px;
+    border: none;
+    border-inline-start: 2px solid transparent;
+    background: none;
+    color: var(--inkbrick-fg-3);
+    font: inherit;
+    text-align: start;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] [data-inkbrick-part='link']:hover) {
+    color: var(--inkbrick-fg-1);
+  }
+
+  :where([data-inkbrick-ui='toc-panel'] [data-active] > [data-inkbrick-part='link']) {
+    border-inline-start-color: var(--inkbrick-brand-bg);
+    color: var(--inkbrick-fg-1);
+    font-weight: var(--inkbrick-font-weight-semibold);
+  }
+
+  /* Счётчик слов и символов: строка состояния рядом с документом. */
+  :where([data-inkbrick-ui='word-count']) {
+    display: inline-flex;
+    gap: 12px;
+    color: var(--inkbrick-fg-3);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :where([data-inkbrick-ui='word-count'][data-selection]) {
+    color: var(--inkbrick-fg-2);
+  }
+
+  /* Теги #tag: подсветка в тексте и подсказки при наборе. */
+  :where(*)::highlight(inkbrick-tag) {
+    color: var(--inkbrick-brand-fg);
+    background-color: color-mix(in srgb, var(--inkbrick-brand-bg) 14%, transparent);
+  }
+
+  :where([data-inkbrick-ui='tag-suggestions']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    min-width: 160px;
+    max-width: min(320px, calc(100vw - 16px));
+    max-height: min(240px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='tag-suggestions'] [data-inkbrick-part='item']) {
+    padding: 6px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    cursor: pointer;
+  }
+
+  :where([data-inkbrick-ui='tag-suggestions'] [data-inkbrick-part='item'][data-active]) {
+    background: var(--inkbrick-bg-3);
+    color: var(--inkbrick-brand-fg);
+  }
+
+  /*
+   * Плавное исчезновение. Когда окно закрывается, `Presence` не удаляет его сразу, а ставит обёртке `data-state="closed"`:
+   * то, что в ней лежит, гаснет, пока анимация не закончится, и тогда удаляется. Обёртка не влияет на раскладку. Правило
+   * стоит после всех правил появления: у них та же специфичность 0, и среди равных побеждает более позднее.
+   */
+  :where([data-inkbrick-presence]) {
+    display: contents;
+  }
+
+  :where([data-inkbrick-presence][data-state='closed'] > *) {
+    animation: inkbrick-fade-out var(--inkbrick-disappear-duration) var(--inkbrick-curve) forwards;
+    pointer-events: none;
+  }
+}

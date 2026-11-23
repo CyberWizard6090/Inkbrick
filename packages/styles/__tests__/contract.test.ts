@@ -7,6 +7,13 @@ import index from '../src/index.css?raw';
 import tokens from '../src/tokens.css?raw';
 import ui from '../src/ui.css?raw';
 
+/** Части `ui.css` (`src/ui/*.css`) по имени файла: `ui/menus.css`. */
+const UI_PARTS = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>('../src/ui/*.css', { query: '?raw', import: 'default', eager: true }),
+  ).map(([path, css]) => [path.replace('../src/', ''), css]),
+);
+
 const SOURCES: Record<string, string> = {
   'index.css': index,
   'tokens.css': tokens,
@@ -14,6 +21,7 @@ const SOURCES: Record<string, string> = {
   'blocks.css': blocks,
   'ui.css': ui,
   'image-tools.css': imageTools,
+  ...UI_PARTS,
 };
 
 const read = (file: string) => SOURCES[file].replace(/\/\*[\s\S]*?\*\//g, '');
@@ -88,13 +96,13 @@ function isWrappedInWhere(selector: string): boolean {
   return false;
 }
 
-const FILES = ['tokens.css', 'base.css', 'blocks.css', 'ui.css', 'image-tools.css'];
+const FILES = ['tokens.css', 'base.css', 'blocks.css', ...Object.keys(UI_PARTS), 'image-tools.css'];
 const LAYERS: Record<string, string> = {
   'tokens.css': 'inkbrick.tokens',
   'base.css': 'inkbrick.base',
   'blocks.css': 'inkbrick.blocks',
-  'ui.css': 'inkbrick.ui',
   'image-tools.css': 'inkbrick.ui',
+  ...Object.fromEntries(Object.keys(UI_PARTS).map((file) => [file, 'inkbrick.ui'])),
 };
 
 describe('@inkbrick/styles: стили не конкурируют со стилями приложения', () => {
@@ -103,6 +111,20 @@ describe('@inkbrick/styles: стили не конкурируют со стил
 
     expect(css.startsWith(`@layer ${LAYERS[file]} {`)).toBe(true);
     expect(css.endsWith('}')).toBe(true);
+  });
+
+  it('ui.css только подключает все части из ui/, и ничего больше', () => {
+    const imports = [...read('ui.css').matchAll(/@import '\.\/(ui\/[\w-]+\.css)';/g)].map(
+      (match) => match[1],
+    );
+
+    expect(
+      read('ui.css')
+        .replace(/@import '[^']+';/g, '')
+        .trim(),
+    ).toBe('');
+    expect([...imports].sort()).toEqual(Object.keys(UI_PARTS).sort());
+    expect(imports.length).toBeGreaterThan(5);
   });
 
   it('порядок слоёв объявлен в index.css до подключения файлов', () => {
@@ -118,7 +140,7 @@ describe('@inkbrick/styles: стили не конкурируют со стил
     const selectors = selectorsOf(read(file)).flatMap(splitSelectorList);
     const offenders = selectors.filter((selector) => !isWrappedInWhere(selector));
 
-    expect(selectors.length).toBeGreaterThan(3);
+    expect(selectors.length).toBeGreaterThan(0);
     expect(offenders).toEqual([]);
   });
 

@@ -1,0 +1,229 @@
+/* Общий вид всплывающих поверхностей (рамка, тень, шрифт), slash-меню, появление меню и плавающий toolbar. Часть ui.css: подключается из него, порядок частей важен. */
+@layer inkbrick.ui {
+  :where(
+    [data-inkbrick-ui='slash-menu'],
+    [data-inkbrick-ui='block-menu'],
+    [data-inkbrick-ui='context-menu'],
+    [data-inkbrick-ui='toolbar']
+  ) {
+    box-sizing: border-box;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font-family: var(--inkbrick-font-family);
+    font-size: var(--inkbrick-font-size-ui);
+    line-height: 20px;
+    box-shadow: var(--inkbrick-shadow-16);
+  }
+
+  :where([data-inkbrick-ui='slash-menu']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    width: 320px;
+    max-width: calc(100vw - 16px);
+    max-height: min(320px, 50vh);
+    padding: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Меню появляются плавно: проявляются и чуть выезжают от каретки или ручки (снизу, если открыты над ней). */
+  :where([data-inkbrick-ui='slash-menu']),
+  :where([data-inkbrick-ui='block-menu']),
+  :where([data-inkbrick-ui='context-menu']),
+  :where([data-inkbrick-ui='formula-popover']),
+  :where([data-inkbrick-ui='tag-suggestions']) {
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  /* Диалог свойств столбца появляется, как палитра: затемнение проявляется, окно опускается. */
+
+  :where([data-inkbrick-ui='slash-menu'][data-side='top']),
+  :where([data-inkbrick-ui='block-menu'][data-side='top']),
+  :where([data-inkbrick-ui='context-menu'][data-side='top']) {
+    animation-name: inkbrick-menu-in-up;
+  }
+
+  /*
+   * Плавающий toolbar: положение ему задаёт встроенный `transform`, поэтому выезд — через отдельное свойство `translate`
+   * (оно складывается с `transform`, а не заменяет его). Над выделением он поднимается снизу, под ним — опускается сверху.
+   * Toolbar внутри контекстного меню (`inline`) не анимируется: меню уже появляется целиком.
+   */
+  :where([data-inkbrick-ui='toolbar']:not([data-placement='inline'])) {
+    animation: inkbrick-toolbar-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'][data-placement='below']) {
+    animation-name: inkbrick-toolbar-in-down;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']) {
+    padding: 8px 8px 2px;
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    font-weight: var(--inkbrick-font-weight-semibold);
+    line-height: 16px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='group']:first-child) {
+    padding-top: 4px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item']) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 8px;
+    border-radius: var(--inkbrick-radius-control);
+    color: var(--inkbrick-fg-1);
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item']:hover) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item'][data-active]) {
+    background: var(--inkbrick-bg-selected);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='item'][data-active])::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--inkbrick-brand-bg);
+    transform: translateY(-50%);
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='icon']) {
+    flex: none;
+    display: inline-grid;
+    place-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-2);
+    color: var(--inkbrick-fg-2);
+    font-size: 16px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='body']) {
+    min-width: 0;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='title']) {
+    font-weight: 400;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='description']),
+  :where([data-inkbrick-ui='slash-menu'] [data-inkbrick-part='empty']) {
+    color: var(--inkbrick-fg-3);
+    font-size: var(--inkbrick-font-size-caption);
+    line-height: 16px;
+  }
+
+  :where([data-inkbrick-ui='slash-menu'] > [data-inkbrick-part='empty']) {
+    padding: 8px;
+  }
+
+  :where([data-inkbrick-ui='toolbar']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-toolbar);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    padding: 4px;
+    box-shadow: var(--inkbrick-shadow-8);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']) {
+    display: inline-grid;
+    place-content: center;
+    box-sizing: border-box;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--inkbrick-radius-control);
+    background: transparent;
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:hover:not(:disabled)) {
+    background: var(--inkbrick-bg-hover);
+  }
+
+  /* Недоступное оформление (например, жирный и цвет у inline-кода). */
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:disabled) {
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:active) {
+    background: var(--inkbrick-bg-pressed);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button'][data-pressed]) {
+    border-color: var(--inkbrick-stroke-2);
+    background: var(--inkbrick-bg-selected);
+    color: var(--inkbrick-brand-fg);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='separator']) {
+    align-self: stretch;
+    width: 1px;
+    margin: 4px 2px;
+    background: var(--inkbrick-stroke-2);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='link-form']) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='input']) {
+    box-sizing: border-box;
+    width: 240px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--inkbrick-stroke-1);
+    border-bottom-color: var(--inkbrick-stroke-accessible);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: inherit;
+    font: inherit;
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='input']:focus) {
+    outline: none;
+    border-bottom-color: var(--inkbrick-brand-bg);
+    box-shadow: 0 1px 0 var(--inkbrick-brand-bg);
+  }
+
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='input'][data-invalid]) {
+    border-color: var(--inkbrick-status-danger-fg);
+    box-shadow: 0 1px 0 var(--inkbrick-status-danger-fg);
+  }
+}
