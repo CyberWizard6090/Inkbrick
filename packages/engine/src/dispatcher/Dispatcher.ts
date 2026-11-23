@@ -1,8 +1,12 @@
 import type { Transaction } from '@inkbrick/store';
 
 import { collapseEmptyColumns } from '../columns/columnsCommands';
-import type { Engine } from '../editor/Engine';
 import type { AnyCommand } from '../commands/Command';
+import type { Engine } from '../editor/Engine';
+import { assertPinned, PinnedBlockError, type AfterCommand } from './afterCommand';
+import { CommandRegistry } from './CommandRegistry';
+import { DEFAULT_GUARDS, type CommandGuard } from './guards';
+import { caretBefore, hasExplicitMergeKey, isCaret, mergeKeyOf } from './history';
 import type {
   CaretResult,
   CommandName,
@@ -10,28 +14,8 @@ import type {
   CommandResult,
   EditorIntent,
 } from './Intents';
-import { isTextBlock } from '../utils';
-import { caretBefore, hasExplicitMergeKey, isCaret, mergeKeyOf, targetBlockIds } from './history';
 
-/** Команды над текстом: блоки без текста (разделитель, контейнеры) их не принимают. */
-const TEXT_COMMANDS = new Set([
-  'insertText',
-  'replaceText',
-  'deleteText',
-  'toggleFormat',
-  'splitBlock',
-  'pasteFragment',
-  'insertFormula',
-]);
-
-const ALLOWED_ON_UNKNOWN = new Set(['delete-block', 'delete-blocks']);
-
-/** Команда сняла бы закреплённый блок: транзакция откатывается, `dispatch` возвращает `undefined`. */
-export class PinnedBlockError extends Error {
-  constructor(id: string) {
-    super(`Block "${id}" is pinned and cannot be removed or moved`);
-  }
-}
+export { PinnedBlockError } from './afterCommand';
 
 interface BatchState {
   transaction: Transaction;
@@ -39,23 +23,44 @@ interface BatchState {
   after?: CaretResult;
 }
 
+/**
+ * Выполняет команды: находит команду в реестре, проверяет общие правила редактора (`CommandGuard`) и её собственное
+ * `canExecute`, выполняет в транзакции с записью в историю, затем — обработка после команды (`AfterCommand`). Сами
+ * правила живут отдельно (`guards.ts`, `afterCommand.ts`, сведения для истории — `history.ts`); диспетчер их
+ * координирует.
+ */
 export class Dispatcher {
-  private readonly commands = new Map<string, AnyCommand>();
+  private readonly registry = new CommandRegistry();
+
+  private readonly guards: CommandGuard[] = [...DEFAULT_GUARDS];
+
+  // Сначала порядок в структуре (опустевшие колонки), потом проверка закреплённого блока — уже на итоговом дереве.
+  private readonly afterCommand: AfterCommand[] = [collapseEmptyColumns, assertPinned];
 
   private batchState: BatchState | null = null;
 
   constructor(private readonly engine: Engine) {}
 
   register(command: AnyCommand): void {
-    this.commands.set(command.type, command);
+    this.registry.register(command);
   }
 
   unregister(type: string): void {
-    this.commands.delete(type);
+    this.registry.unregister(type);
   }
 
   has(type: string): boolean {
-    return this.commands.has(type);
+    return this.registry.has(type);
+  }
+
+  /** Добавляет общее правило перед каждой командой; возвращает функцию, которая его снимает. */
+  addGuard(guard: CommandGuard): () => void {
+    return addTo(this.guards, guard);
+  }
+
+  /** Добавляет обработку после каждой выполненной команды (перед проверкой закреплённого блока); снимается вызовом. */
+  addAfterCommand(hook: AfterCommand): () => void {
+    return addTo(this.afterCommand, hook, this.afterCommand.indexOf(assertPinned));
   }
 
   dispatch<I extends EditorIntent>(intent: I): CommandResult<I['type']> | undefined {
@@ -68,7 +73,7 @@ export class Dispatcher {
   /** Команда, которой нет в `CommandMap` (своя, не объявленная): данные и результат не проверяются. */
   execute<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): unknown;
   execute(type: string, payload?: unknown): unknown {
-    const command = this.commands.get(type);
+    const command = this.registry.get(type);
 
     if (!command) {
       throw new Error(`Unknown command "${type}"`);
@@ -114,7 +119,7 @@ export class Dispatcher {
   can<K extends CommandName>(type: K, payload: CommandPayload<K>): boolean;
   can<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): boolean;
   can(type: string, payload?: unknown): boolean {
-    const command = this.commands.get(type);
+    const command = this.registry.get(type);
 
     if (!command) return false;
 
@@ -160,22 +165,9 @@ export class Dispatcher {
 
     const result = command.execute({ engine: this.engine, transaction }, payload);
 
-    collapseEmptyColumns(this.engine, transaction);
-    this.assertPinned(transaction);
+    for (const hook of this.afterCommand) hook(this.engine, transaction);
 
     return result;
-  }
-
-  private assertPinned(transaction: Transaction): void {
-    const { pinned } = this.engine;
-
-    if (!pinned) return;
-
-    const block = transaction.getBlock(pinned.id);
-
-    if (!block || block.flavour !== pinned.flavour || block.parentId !== pinned.parentId) {
-      throw new PinnedBlockError(pinned.id);
-    }
   }
 
   private accepts(
@@ -184,34 +176,22 @@ export class Dispatcher {
     payload: unknown,
     transaction: Transaction,
   ): boolean {
-    const context = { engine: this.engine, transaction };
+    const { engine } = this;
 
-    if (this.engine.readOnly) return false;
-
-    /*
-     * Блок с незарегистрированным flavour можно только удалить: иначе команды
-     * (ввод, смена типа, форматирование) исказили бы данные, смысл которых редактору неизвестен.
-     */
-    if (
-      !ALLOWED_ON_UNKNOWN.has(type) &&
-      targetBlockIds(payload).some((id) => {
-        const block = transaction.getBlock(id);
-        return block !== undefined && !this.engine.schema.hasBlock(block.flavour);
-      })
-    ) {
-      return false;
-    }
-
-    if (
-      TEXT_COMMANDS.has(type) &&
-      targetBlockIds(payload).some((id) => {
-        const block = transaction.getBlock(id);
-        return block !== undefined && !isTextBlock(this.engine.schema, block);
-      })
-    ) {
-      return false;
-    }
-
-    return command.canExecute(context, payload);
+    return (
+      this.guards.every((guard) => guard({ engine, transaction, type, payload })) &&
+      command.canExecute({ engine, transaction }, payload)
+    );
   }
+}
+
+/** Кладёт `item` в список (на место `at`, иначе в конец) и возвращает функцию, которая его убирает. */
+function addTo<T>(list: T[], item: T, at = list.length): () => void {
+  list.splice(at === -1 ? list.length : at, 0, item);
+
+  return () => {
+    const index = list.indexOf(item);
+
+    if (index !== -1) list.splice(index, 1);
+  };
 }

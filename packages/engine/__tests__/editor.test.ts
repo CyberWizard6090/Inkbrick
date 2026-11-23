@@ -357,3 +357,50 @@ describe('delete-block and atomicity', () => {
     expect(note).toBe(0);
   });
 });
+
+describe('Dispatcher: guards and work after a command', () => {
+  const setup = () => {
+    const editor = new Editor();
+    const note = editor.document.getBlock(editor.document.rootId)!.children[0];
+    const first = editor.document.getBlock(note)!.children[0];
+    const type = (text: string) =>
+      editor.dispatch({ type: 'replaceText', payload: { blockId: first, from: 0, to: 0, text } });
+
+    return { editor, first, type };
+  };
+
+  it('a guard refuses commands before their own canExecute, and can be removed', () => {
+    const { editor, first, type } = setup();
+    const seen: string[] = [];
+    const remove = editor.dispatcher.addGuard(({ type: name }) => {
+      seen.push(name);
+      return name !== 'replaceText';
+    });
+
+    expect(type('a')).toBeUndefined();
+    expect(editor.can('replaceText', { blockId: first, from: 0, to: 0, text: 'a' })).toBe(false);
+    expect(seen).toEqual(['replaceText', 'replaceText']);
+
+    remove();
+    expect(type('a')).toEqual({ blockId: first, offset: 1 });
+  });
+
+  it('work after a command runs in the same transaction; its error rolls the command back', () => {
+    const { editor, first, type } = setup();
+    const changed: string[][] = [];
+    const remove = editor.dispatcher.addAfterCommand((_engine, transaction) => {
+      changed.push([...transaction.getChangedBlocks()]);
+    });
+
+    type('a');
+    expect(changed).toEqual([[first]]);
+    remove();
+
+    editor.dispatcher.addAfterCommand(() => {
+      throw new Error('invariant');
+    });
+
+    expect(() => type('b')).toThrow('invariant');
+    expect(editor.document.getBlock(first)!.content).toEqual([{ insert: 'a' }]);
+  });
+});

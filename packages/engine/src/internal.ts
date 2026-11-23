@@ -8,7 +8,17 @@
 export { Editor } from './editor';
 export type { EditorOptions, HistoryResult } from './editor';
 export { Engine } from './editor';
-export { Dispatcher, PinnedBlockError } from './dispatcher';
+export {
+  Dispatcher,
+  PinnedBlockError,
+  CommandRegistry,
+  DEFAULT_GUARDS,
+  readOnlyGuard,
+  textBlockGuard,
+  unknownBlockGuard,
+  assertPinned,
+} from './dispatcher';
+export type { AfterCommand, CommandGuard, GuardContext } from './dispatcher';
 export type {
   EditorIntent,
   CaretResult,

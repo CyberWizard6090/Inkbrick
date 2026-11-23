@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- The `Dispatcher` coordinates and no longer holds the editor's rules: commands live in a `CommandRegistry`; the general checks before every command (read-only, blocks of unknown type, text commands on blocks without text) are `CommandGuard` functions (`dispatcher/guards.ts`); the work after every command (removing emptied columns, the pinned-block check) is a list of `AfterCommand` hooks (`dispatcher/afterCommand.ts`); caret and merge data for the history are read in `dispatcher/history.ts`. `dispatcher.addGuard(guard)` and `dispatcher.addAfterCommand(hook)` add your own (each returns a function that removes it). Behaviour is unchanged.
+
 - Typed commands: `CommandMap` (exported from `@inkbrick/engine`) describes every built-in command by name — its payload and its result — and `EditorIntent` is derived from it. `editor.dispatch(intent)` returns the result type of that command instead of `unknown` (plus `undefined` when the command did not run); `editor.execute(type, payload)` and `editor.can(type, payload)` check the payload of a known command and type the result. A command of your own is added to the map with `declare module '@inkbrick/engine' { interface CommandMap { … } }`; an undeclared name keeps the untyped call. Helpers `CommandName`, `CommandPayload<K>`, `CommandResult<K>`.
 - No `any` in the public types of the packages (ESLint `no-explicit-any` is on for package sources). Lists of blocks with different props use named aliases: `AnyBlockDefinition`, `AnyBlockController`, `AnyBlockCommand`, `AnyCommand` (`@inkbrick/engine`) and `AnyReactBlockDefinition` (`@inkbrick/react`).
 
