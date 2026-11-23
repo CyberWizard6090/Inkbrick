@@ -71,6 +71,16 @@ export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
 
 // Подключаемые возможности: `new Editor({ features: [tableFeature, columnsFeature] })` (или их блоки в `blocks`).
 export { defineFeature } from './feature';
+export type { BlockPoint } from './utils';
+export type {
+  BlocksSelection,
+  CellsSelection,
+  SelectionListener,
+  SelectionManager,
+  SelectionOrigin,
+  SelectionState,
+  TextSelection,
+} from './selection';
 export type { DocumentNormalizer, NormalizeContext, NormalizeRule } from './normalizer';
 export type { EditorFeature } from './feature';
 export { tableBlocks, tableFeature } from './table';

@@ -47,6 +47,41 @@
   редактору неизвестен, не удаляются.
 - Курсор после удаления ставится в точку склейки.
 
+## Выделение как данные: `editor.selection`
+
+Что выделено, движок знает сам, без интерфейса: `editor.selection` (`SelectionManager` из `@inkbrick/engine`).
+
+```ts
+type SelectionState =
+  | { type: 'text'; anchor: BlockPoint; focus: BlockPoint } // каретка, если точки совпадают
+  | { type: 'blocks'; ids: readonly string[] } // блоки целиком, в порядке документа
+  | { type: 'cells'; tableId: string; anchor: TableCellRef; head: TableCellRef } // прямоугольник ячеек
+  | null; // выделения нет
+
+editor.selection.get(); // что выделено
+editor.selection.range(); // { from, to } в порядке документа (для текста), какой бы край ни был подвижным
+editor.selection.isCollapsed; // каретка
+editor.selection.caret({ blockId, offset });
+editor.selection.select(anchor, focus);
+editor.selection.selectBlocks([id1, id2]);
+editor.selection.selectCells(tableId, { row: 0, column: 0 }, { row: 1, column: 2 });
+editor.selection.clear();
+
+const stop = editor.selection.subscribe((selection, origin) => {
+  // origin: 'api' | 'view' | 'command' | 'history' | 'document'
+});
+```
+
+- **Откуда меняется.** `api` — код приложения; `view` — пользователь (интерфейс пишет сюда выделение текста с направлением,
+  выбранные блоки и ячейки); `command` — команда вернула каретку (`dispatch`, `execute`), выделение встаёт туда; `history` —
+  undo/redo; `document` — правка убрала то, на что указывало выделение.
+- **Проверка.** Точка в несуществующем блоке отклоняется (`set` и его сокращения возвращают `false`), смещение за концом текста
+  прижимается к концу. После каждой правки (своей, undo/redo, чужой) выделение проверяется снова: удалённые блоки выпадают,
+  прямоугольник ячеек прижимается к таблице.
+- **Интерфейс.** `@inkbrick/react` переносит на экран только выделение с источником `api` (каретку команд и undo он ставит
+  сам). Так приложение может выделить найденное, восстановить выделение после перезагрузки или вести курсор из кода.
+- **Без интерфейса** (сервер, тесты) модель работает так же: команды двигают каретку, undo возвращает её.
+
 ## Для разработчиков
 
 - Свой блок с текстом — это компонент с `<Editable>`; он автоматически участвует в выделении.

@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { LazyBlockHandles } from '../block-handle/LazyBlockHandles';
 import { useClipboard } from '../clipboard/useClipboard';
 import { ContextMenuHost, useContextMenu } from '../context-menu/ContextMenuHost';
+import { useSelectionSync } from '../editing/useSelectionSync';
 import { useEditorInput } from '../editing/useEditorInput';
 import { useMarginClick } from '../editing/useMarginClick';
 import { useSelectionState } from '../editing/useSelectionState';
@@ -52,6 +53,7 @@ export function DocumentView({ label, renderer }: DocumentViewProps = {}) {
   const t = useT();
 
   useEditorInput(ref, !readOnly);
+  useSelectionSync(ref);
   useMarginClick(ref, !readOnly);
   useContextMenu(ref, !readOnly && formatting !== 'toolbar' && slots.ContextMenu !== null);
   useSelectionState(ref);

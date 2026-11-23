@@ -31,6 +31,8 @@ import { getRangeFormats, type RangeFormats } from '../formats';
 import { orderRange } from '../utils';
 import { BlockControllers, isBlockDefinition } from '../controller';
 import type { AnyBlockController, AnyBlockDefinition } from '../controller/BlockController';
+import { isCaret } from '../dispatcher/history';
+import { SelectionManager } from '../selection';
 import { resolveFeatures, type EditorFeature } from '../feature';
 
 export interface EditorOptions {
@@ -68,6 +70,8 @@ export class Editor {
   readonly engine: Engine;
   readonly dispatcher: Dispatcher;
   readonly controllers: BlockControllers;
+  /** Выделение редактора как данные (текст, блоки, ячейки): см. `SelectionManager`. */
+  readonly selection: SelectionManager;
 
   constructor(options: EditorOptions = {}) {
     if (options.schema && options.blocks) {
@@ -92,6 +96,12 @@ export class Editor {
     });
     this.engine = createEngine({ store: this.store, schema: this.schema });
     this.dispatcher = new Dispatcher(this.engine);
+    this.selection = new SelectionManager({
+      rootId: this.document.rootId,
+      getBlock: (id) => this.store.getBlock(id),
+    });
+    // После каждой правки (в том числе undo/redo и чужой) выделение не указывает на то, чего уже нет.
+    this.store.subscribe(() => this.selection.revalidate());
 
     for (const command of builtinCommands) {
       this.dispatcher.register(command);
@@ -149,7 +159,14 @@ export class Editor {
    * команды; `undefined` — команда не выполнена.
    */
   dispatch<I extends EditorIntent>(intent: I): CommandResult<I['type']> | undefined {
-    return this.dispatcher.dispatch(intent);
+    return this.followCaret(this.dispatcher.dispatch(intent));
+  }
+
+  /** Команда вернула каретку — выделение встаёт туда (интерфейс ставит её на экране сам). */
+  private followCaret<T>(result: T): T {
+    if (isCaret(result)) this.selection.caret(result, 'command');
+
+    return result;
   }
 
   /**
@@ -242,16 +259,22 @@ export class Editor {
     if (this.engine.readOnly) return undefined;
 
     const step = this.store.undo();
+    const caret = step?.meta?.before as CaretResult | undefined;
 
-    return step && { caret: step.meta?.before as CaretResult | undefined };
+    if (caret) this.selection.caret(caret, 'history');
+
+    return step && { caret };
   }
 
   redo(): HistoryResult | undefined {
     if (this.engine.readOnly) return undefined;
 
     const step = this.store.redo();
+    const caret = step?.meta?.after as CaretResult | undefined;
 
-    return step && { caret: step.meta?.after as CaretResult | undefined };
+    if (caret) this.selection.caret(caret, 'history');
+
+    return step && { caret };
   }
 
   sealHistory(): void {
@@ -287,6 +310,6 @@ export class Editor {
   execute<K extends CommandName>(type: K, payload: CommandPayload<K>): CommandResult<K> | undefined;
   execute<T extends string>(type: T extends CommandName ? never : T, payload?: unknown): unknown;
   execute(type: string, payload?: unknown): unknown {
-    return this.dispatcher.execute(type as never, payload);
+    return this.followCaret(this.dispatcher.execute(type as never, payload));
   }
 }
