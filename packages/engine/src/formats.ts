@@ -1,7 +1,7 @@
 import { getBlockAlign, type Alignment } from '@inkbrick/document';
 
 import type { Editor } from './editor/Editor';
-import { orderRange, textSegments, type BlockPoint } from './utils';
+import { orderRange, formattableSegments, type BlockPoint } from './utils';
 
 export interface RangeFormats {
   readonly bold: boolean;
@@ -19,7 +19,7 @@ export interface RangeFormats {
 const FORMATS = ['bold', 'italic', 'underline', 'strike', 'code'] as const;
 
 export function getRangeFormats(editor: Editor, from: BlockPoint, to: BlockPoint): RangeFormats {
-  const segments = textSegments(
+  const segments = formattableSegments(
     editor.store.getBlock.bind(editor.store),
     editor.document.rootId,
     editor.schema,

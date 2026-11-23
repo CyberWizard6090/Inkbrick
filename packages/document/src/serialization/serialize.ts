@@ -344,7 +344,12 @@ export function deserializeDocument(
     if (options.schema.hasBlock(copy.flavour)) delete copy.version;
 
     // Документы, сохранённые до запрета оформлять код: снимаем с кода несовместимое с ним оформление.
-    copy.content = normalizeInlineNodes(copy.content);
+    // У блока с текстом без оформления (код) — без всякого оформления.
+    copy.content = normalizeInlineNodes(
+      options.schema.getBlockSchema(copy.flavour)?.plainText
+        ? copy.content.map(({ insert }) => ({ insert }))
+        : copy.content,
+    );
 
     document._setBlock(copy);
   }

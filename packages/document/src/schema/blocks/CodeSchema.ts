@@ -19,6 +19,8 @@ export const CodeSchema: BlockSchema<typeof codePropsSchema> = {
   allowedParents: ['role:hub'],
   allowedChildren: [],
   enter: { mode: 'newline' },
+  // Цвет и выделение кода даёт подсветка синтаксиса: своё оформление её перекрывало бы.
+  plainText: true,
 
   commands: [],
   shortcuts: [],

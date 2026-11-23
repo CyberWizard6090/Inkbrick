@@ -9,7 +9,7 @@ import {
 
 import type { Command } from './Command';
 import type { SetInlineAttributesPayload } from '../dispatcher/Intents';
-import { textSegments } from '../utils';
+import { formattableSegments } from '../utils';
 
 /**
  * Задаёт inline-атрибуты (ссылка, цвет…) на диапазон, в том числе из нескольких блоков.
@@ -29,7 +29,7 @@ export const SetInlineAttributesCommand: Command<SetInlineAttributesPayload, voi
       if (value !== undefined && !isColorName(value) && safeCssColor(value) === null) return false;
     }
 
-    const segments = textSegments(
+    const segments = formattableSegments(
       transaction.getBlock.bind(transaction),
       engine.store.document.rootId,
       engine.schema,
@@ -76,7 +76,7 @@ export const SetInlineAttributesCommand: Command<SetInlineAttributesPayload, voi
   },
 
   execute({ engine, transaction }, { from, to, attributes }) {
-    const segments = textSegments(
+    const segments = formattableSegments(
       transaction.getBlock.bind(transaction),
       engine.store.document.rootId,
       engine.schema,

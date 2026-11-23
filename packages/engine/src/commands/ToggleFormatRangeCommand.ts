@@ -1,13 +1,13 @@
 import type { Command } from './Command';
 import type { ToggleFormatRangePayload } from '../dispatcher/Intents';
-import { textSegments } from '../utils';
+import { formattableSegments } from '../utils';
 
 export const ToggleFormatRangeCommand: Command<ToggleFormatRangePayload, void> = {
   type: 'toggleFormatRange',
 
   canExecute({ engine, transaction }, { from, to }) {
     return (
-      textSegments(
+      formattableSegments(
         transaction.getBlock.bind(transaction),
         engine.store.document.rootId,
         engine.schema,
@@ -18,7 +18,7 @@ export const ToggleFormatRangeCommand: Command<ToggleFormatRangePayload, void> =
   },
 
   execute({ engine, transaction }, { from, to, format }) {
-    const segments = textSegments(
+    const segments = formattableSegments(
       transaction.getBlock.bind(transaction),
       engine.store.document.rootId,
       engine.schema,

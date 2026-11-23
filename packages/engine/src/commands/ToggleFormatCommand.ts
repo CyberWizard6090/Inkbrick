@@ -4,8 +4,13 @@ import type { ToggleFormatPayload } from '../dispatcher/Intents';
 export const ToggleFormatCommand: Command<ToggleFormatPayload, void> = {
   type: 'toggleFormat',
 
-  canExecute({ transaction }, { blockId, from, to }) {
-    return transaction.getBlock(blockId) !== undefined && from !== to;
+  canExecute({ engine, transaction }, { blockId, from, to }) {
+    const block = transaction.getBlock(blockId);
+
+    // Текст без оформления (код): Ctrl+B и другие форматы к нему не применяются.
+    return (
+      block !== undefined && from !== to && !engine.schema.getBlockSchema(block.flavour)?.plainText
+    );
   },
 
   execute({ engine, transaction }, { blockId, from, to, format }) {

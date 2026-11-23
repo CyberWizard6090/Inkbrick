@@ -236,3 +236,79 @@ describe('inline code takes no formatting except a link', () => {
     ]);
   });
 });
+
+describe('code blocks take no formatting (their colours come from syntax highlighting)', () => {
+  function withCode() {
+    const { editor, ids } = setup(['text']);
+    const code = (
+      editor.dispatch({
+        type: 'insertBlock',
+        payload: { flavour: 'block:code', afterId: ids[0] },
+      }) as CaretResult
+    ).blockId;
+
+    editor.dispatch({
+      type: 'replaceText',
+      payload: { blockId: code, from: 0, to: 0, text: 'let a' },
+    });
+
+    return { editor, text: ids[0], code };
+  }
+
+  it('select all + a colour or highlight changes the text, not the code', () => {
+    const { editor, text, code } = withCode();
+
+    editor.dispatch({
+      type: 'setInlineAttributes',
+      payload: {
+        from: p(text, 0),
+        to: p(code, 5),
+        attributes: { color: 'red', backgroundColor: 'yellow', link: 'https://x.org' },
+      },
+    });
+
+    expect(editor.document.getBlock(code)!.content).toEqual([{ insert: 'let a' }]);
+    expect(editor.document.getBlock(text)!.content[0].attributes).toMatchObject({ color: 'red' });
+  });
+
+  it('bold over text and code toggles on the text and back off', () => {
+    const { editor, text, code } = withCode();
+    const toggle = () =>
+      editor.dispatch({
+        type: 'toggleFormatRange',
+        payload: { from: p(text, 0), to: p(code, 5), format: 'bold' },
+      });
+
+    toggle();
+    expect(editor.formatsAt(p(text, 0), p(code, 5)).bold).toBe(true);
+    expect(editor.document.getBlock(code)!.content).toEqual([{ insert: 'let a' }]);
+
+    toggle();
+    expect(editor.document.getBlock(text)!.content).toEqual([{ insert: 'text' }]);
+  });
+
+  it('Ctrl+B inside a code block does nothing', () => {
+    const { editor, code } = withCode();
+
+    expect(editor.can('toggleFormat', { blockId: code, from: 0, to: 3, format: 'bold' })).toBe(
+      false,
+    );
+  });
+
+  it('turning formatted text into a code block drops the formatting', () => {
+    const { editor, text } = withCode();
+
+    editor.dispatch({
+      type: 'setInlineAttributes',
+      payload: { from: p(text, 0), to: p(text, 4), attributes: { color: 'red', bold: true } },
+    });
+    const caret = editor.dispatch({
+      type: 'convertBlock',
+      payload: { blockId: text, flavour: 'block:code' },
+    })!;
+    const converted = editor.document.getBlock(caret.blockId)!;
+
+    expect(converted.flavour).toBe('block:code');
+    expect(converted.content).toEqual([{ insert: 'text' }]);
+  });
+});

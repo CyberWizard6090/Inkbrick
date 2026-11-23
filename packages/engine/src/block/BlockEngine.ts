@@ -29,6 +29,18 @@ export interface CreateBlockOptions {
 export class BlockEngine {
   constructor(private readonly schema: SchemaRegistry) {}
 
+  /**
+   * Содержимое в каноническом виде (`normalizeInlineNodes`: у кода — без несовместимого оформления); у блока с текстом
+   * без оформления (`BlockSchema.plainText`, код) — без всякого оформления.
+   */
+  private contentFor(flavour: string, content: BaseBlock['content']): BaseBlock['content'] {
+    return normalizeInlineNodes(
+      this.schema.getBlockSchema(flavour)?.plainText
+        ? content.map(({ insert }) => ({ insert }))
+        : [...content],
+    );
+  }
+
   /** Создаёт (но не вставляет) блок; props дополняются значениями по умолчанию из схемы. */
   create(options: CreateBlockOptions): BaseBlock {
     return {
@@ -36,7 +48,7 @@ export class BlockEngine {
       flavour: options.flavour,
       parentId: options.parentId,
       children: [],
-      content: normalizeInlineNodes([...(options.content ?? [])]),
+      content: this.contentFor(options.flavour, options.content ?? []),
       props: this.schema.createProps(options.flavour, options.props),
     };
   }
@@ -53,7 +65,11 @@ export class BlockEngine {
     }
 
     tx.apply(
-      new SetBlockChange({ ...block, parentId, content: normalizeInlineNodes([...block.content]) }),
+      new SetBlockChange({
+        ...block,
+        parentId,
+        content: this.contentFor(block.flavour, block.content),
+      }),
     );
     tx.apply(new InsertChildChange(parentId, index, block.id));
   }
@@ -99,7 +115,7 @@ export class BlockEngine {
     const block = this.require(tx, id);
 
     // Любая правка текста проходит здесь: код не принимает оформление (`CODE_EXCLUDED_ATTRIBUTES`).
-    content = normalizeInlineNodes([...content]);
+    content = this.contentFor(block.flavour, content);
 
     if (sameValue(content, block.content)) return;
 
@@ -152,7 +168,16 @@ export class BlockEngine {
 
     if (flavour === block.flavour && sameValue(next, block.props)) return;
 
-    tx.apply(new UpdateBlockChange(id, { flavour, props: next }));
+    // Блок стал кодом (текст без оформления): оформление его текста снимается.
+    const content = this.contentFor(flavour, block.content);
+
+    tx.apply(
+      new UpdateBlockChange(id, {
+        flavour,
+        props: next,
+        ...(sameValue(content, block.content) ? {} : { content }),
+      }),
+    );
   }
 
   remove(tx: Transaction, id: BlockId): void {

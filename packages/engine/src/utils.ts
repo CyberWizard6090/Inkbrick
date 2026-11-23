@@ -78,6 +78,22 @@ export interface TextSegment {
   end: number;
 }
 
+/**
+ * Части выделения, к которым применяется оформление (жирный, цвет, ссылка…): как `textSegments`, но без блоков с
+ * текстом без оформления (`BlockSchema.plainText`, код).
+ */
+export function formattableSegments(
+  getBlock: GetBlock,
+  rootId: BlockId,
+  schema: SchemaRegistry,
+  from: BlockPoint,
+  to: BlockPoint,
+): TextSegment[] {
+  return textSegments(getBlock, rootId, schema, from, to).filter(
+    ({ block }) => !schema.getBlockSchema(block.flavour)?.plainText,
+  );
+}
+
 export function textSegments(
   getBlock: GetBlock,
   rootId: BlockId,
