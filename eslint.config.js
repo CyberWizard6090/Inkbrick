@@ -108,7 +108,11 @@ export default [
     // В коде пакетов `any` запрещён: он уходит в публичные типы. Где без него нельзя (списки блоков с разными props),
     // есть именованные алиасы `AnyBlockDefinition`, `AnyCommand` и т. п. с объяснением. Тестам и песочнице можно.
     files: ['packages/*/src/**/*.{ts,tsx}'],
-    rules: { '@typescript-eslint/no-explicit-any': 'error' },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      // Устаревшие глобальные функции: локальный помощник с тем же именем без импорта молча подменялся бы ими.
+      'no-restricted-globals': ['error', 'escape', 'unescape'],
+    },
   },
   // Слои пакетов: каждый импортирует только пакеты под собой (см. `LAYERS`), а React — только `react`.
   ...Object.entries(LAYERS).map(([name, allowed]) => ({
