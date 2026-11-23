@@ -2,7 +2,7 @@ import * as z from '../zod';
 
 import type { BaseBlock } from '../../model/BaseBlock';
 import type { BlockSchema, BlockTemplate } from '../BlockSchema';
-import { COLOR_NAMES } from '../../utils/colors';
+import { COLOR_NAMES, HEX_COLOR } from '../../utils/colors';
 import { blockBackgroundSchema } from './blockBackground';
 
 export const TABLE = 'block:table';
@@ -91,7 +91,8 @@ export type TableProps = z.infer<typeof tablePropsSchema>;
 export const tableRowPropsSchema = z.object({});
 
 const borderWidth = z.enum(TABLE_BORDER_WIDTHS).optional();
-const borderColor = z.enum(COLOR_NAMES).optional();
+/** Цвет линии: имя из палитры (оттенок задаёт тема) или свой цвет `#rrggbb` / `#rrggbbaa` из выбора цвета. */
+const borderColor = z.union([z.enum(COLOR_NAMES), z.string().regex(HEX_COLOR)]).optional();
 const borderLine = z.enum(TABLE_BORDER_STYLES).optional();
 
 export const tableCellPropsSchema = z.object({

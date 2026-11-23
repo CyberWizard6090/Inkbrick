@@ -11,6 +11,7 @@ import {
 import {
   getBlockAlign,
   isColorName,
+  isHexColor,
   normalizeMerges,
   TABLE_BORDER_WIDTHS,
   type BaseBlock,
@@ -261,6 +262,8 @@ function sideLook(block: BlockProps['block']): CSSProperties {
         color === 'black' || color === 'white'
           ? `var(--inkbrick-cell-line-${color})`
           : `var(--inkbrick-color-${color})`;
+    // Свой цвет из выбора цвета: схема пропускает только `#rrggbb` и `#rrggbbaa`.
+    else if (isHexColor(color)) style[`border${side}Color`] = color;
     if (line === 'dashed' || line === 'dotted') style[`border${side}Style`] = line;
   }
 
