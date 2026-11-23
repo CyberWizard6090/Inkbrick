@@ -41,7 +41,10 @@ export function createSandboxEditor(
     ),
   );
 
-  return new Editor({ schema, document, controllers });
+  // Со своим реестром схем возможности движка (перенос блока в колонки и т. п.) подключаются явно.
+  const features = customBlocks.flatMap((block) => (block.feature ? [block.feature] : []));
+
+  return new Editor({ schema, document, controllers, features });
 }
 
 export interface ParsedDocument {

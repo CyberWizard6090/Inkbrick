@@ -31,6 +31,7 @@ import { getRangeFormats, type RangeFormats } from '../formats';
 import { orderRange } from '../utils';
 import { BlockControllers, isBlockDefinition } from '../controller';
 import type { AnyBlockController, AnyBlockDefinition } from '../controller/BlockController';
+import { resolveFeatures, type EditorFeature } from '../feature';
 
 export interface EditorOptions {
   document?: Document;
@@ -40,6 +41,12 @@ export interface EditorOptions {
    * (например, из `defineBlock` в `@inkbrick/react`). Контроллер определения подключается к его flavour.
    */
   blocks?: readonly (BlockSchema | AnyBlockDefinition)[];
+  /**
+   * Подключаемые возможности (`tableFeature`, `columnsFeature`, …): их блоки, команды, правила и обработка после
+   * команд. Блоки возможностей добавляются к `blocks`; со `schema` их схемы уже должны быть в реестре, а возможности
+   * блоков сами не подключаются — передайте их здесь.
+   */
+  features?: readonly EditorFeature[];
   /**
    * Контроллеры по flavour — для блоков, схема которых задана иначе (через `schema` или встроенных).
    * Контроллер того же flavour в `blocks` и здесь — ошибка.
@@ -67,7 +74,10 @@ export class Editor {
       throw new Error('Editor: pass either "schema" or "blocks", not both');
     }
 
-    const definitions = options.blocks ?? [];
+    const { features, blocks: definitions } = resolveFeatures(
+      options.features ?? [],
+      options.blocks ?? [],
+    );
 
     this.schema =
       options.schema ??
@@ -87,18 +97,35 @@ export class Editor {
       this.dispatcher.register(command);
     }
 
+    for (const feature of features) {
+      for (const command of feature.commands ?? []) this.dispatcher.register(command);
+      for (const guard of feature.guards ?? []) this.dispatcher.addGuard(guard);
+      for (const hook of feature.afterCommand ?? []) this.dispatcher.addAfterCommand(hook);
+    }
+
     this.controllers = new BlockControllers(this);
 
+    const explicit = new Set(options.blocks ?? []);
+    const own = options.controllers ?? {};
+
     for (const item of definitions) {
-      if (isBlockDefinition(item) && item.controller) {
-        this.controllers.register(item.schema.flavour, item.controller);
-      }
+      if (!isBlockDefinition(item) || !item.controller) continue;
+
+      const { flavour } = item.schema;
+
+      // Со своим реестром схем (`schema`) контроллер подключается, только если реестр знает этот блок; контроллер из
+      // `controllers` главнее контроллера блока, пришедшего с возможностью.
+      if (!this.schema.hasBlock(flavour) || (!explicit.has(item) && flavour in own)) continue;
+
+      this.controllers.register(flavour, item.controller);
     }
     for (const [flavour, controller] of Object.entries(options.controllers ?? {})) {
       this.controllers.register(flavour, controller);
     }
 
     this.controllers.start();
+
+    for (const feature of features) feature.setup?.(this);
   }
 
   /**

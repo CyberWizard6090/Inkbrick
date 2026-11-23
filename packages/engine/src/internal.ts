@@ -54,3 +54,5 @@ export * from './toc';
 export * from './footnote';
 export * from './columns';
 export * from './toggle';
+export { defineFeature, resolveFeatures } from './feature';
+export type { EditorFeature } from './feature';

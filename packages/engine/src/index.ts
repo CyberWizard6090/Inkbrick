@@ -69,12 +69,14 @@ export type { Fragment, FragmentBlock } from './clipboard/types';
 export { sanitizeFragment } from './clipboard/sanitize';
 export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
 
-// Встроенные возможности, которые подключаются явно: `new Editor({ blocks: [...tableBlocks, ...tocBlocks] })`.
-export { tableBlocks } from './table';
-export { tocBlocks } from './toc';
-export { columnsBlocks } from './columns';
-export { toggleBlocks } from './toggle';
-export { footnoteBlocks } from './footnote';
+// Подключаемые возможности: `new Editor({ features: [tableFeature, columnsFeature] })` (или их блоки в `blocks`).
+export { defineFeature } from './feature';
+export type { EditorFeature } from './feature';
+export { tableBlocks, tableFeature } from './table';
+export { tocBlocks, tocFeature } from './toc';
+export { columnsBlocks, columnsFeature } from './columns';
+export { toggleBlocks, toggleFeature } from './toggle';
+export { footnoteBlocks, footnoteFeature } from './footnote';
 
 // Таблицы: правка из кода, чтение значений и диапазоны ячеек.
 export {

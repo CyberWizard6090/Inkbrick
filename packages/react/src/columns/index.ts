@@ -1,4 +1,5 @@
 import { ColumnSchema, ColumnsSchema, type ColumnsProps } from '@inkbrick/document';
+import { columnsFeature } from '@inkbrick/engine';
 import { columnsCommands } from '@inkbrick/engine/internal';
 
 import { defineBlock, type AnyReactBlockDefinition } from '../blocks/defineBlock';
@@ -26,6 +27,8 @@ export const columnsBlocks: readonly AnyReactBlockDefinition[] = [
   defineBlock<ColumnsProps>({
     schema: ColumnsSchema,
     component: view(ColumnsBlock),
+    // Перенос блока вбок и уборка опустевших колонок — в движке.
+    feature: columnsFeature,
     controller: {
       commands: columnsCommands,
       slashItems: [

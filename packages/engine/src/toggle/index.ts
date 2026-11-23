@@ -1,6 +1,7 @@
 import { ToggleSchema, type ToggleProps } from '@inkbrick/document';
 
 import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockController';
+import type { EditorFeature } from '../feature';
 
 /**
  * Переключатель для редактора: схема блока `block:toggle`. Во встроенный набор не входит — подключается явно:
@@ -15,3 +16,6 @@ import type { AnyBlockDefinition, BlockDefinition } from '../controller/BlockCon
 export const toggleBlocks: readonly AnyBlockDefinition[] = [
   { schema: ToggleSchema } as BlockDefinition<ToggleProps>,
 ];
+
+/** Сворачиваемые блоки: блок `toggle` (`new Editor({ features: [toggleFeature] })`). */
+export const toggleFeature: EditorFeature = { name: 'toggle', blocks: toggleBlocks };

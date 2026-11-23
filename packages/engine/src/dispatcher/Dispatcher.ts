@@ -1,6 +1,5 @@
 import type { Transaction } from '@inkbrick/store';
 
-import { collapseEmptyColumns } from '../columns/columnsCommands';
 import type { AnyCommand } from '../commands/Command';
 import type { Engine } from '../editor/Engine';
 import { assertPinned, PinnedBlockError, type AfterCommand } from './afterCommand';
@@ -34,8 +33,8 @@ export class Dispatcher {
 
   private readonly guards: CommandGuard[] = [...DEFAULT_GUARDS];
 
-  // Сначала порядок в структуре (опустевшие колонки), потом проверка закреплённого блока — уже на итоговом дереве.
-  private readonly afterCommand: AfterCommand[] = [collapseEmptyColumns, assertPinned];
+  // Проверка закреплённого блока — последней, на итоговом дереве: обработка возможностей встаёт перед ней.
+  private readonly afterCommand: AfterCommand[] = [assertPinned];
 
   private batchState: BatchState | null = null;
 

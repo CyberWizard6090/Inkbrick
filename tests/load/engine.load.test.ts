@@ -91,7 +91,10 @@ function editorOf(count: number, blocks = [...tableBlocks, ...columnsBlocks]) {
   const editor = new Editor({ blocks });
   const document = deserializeDocument(snapshotOf(count), { schema: editor.schema });
 
-  return new Editor({ schema: editor.schema, document });
+  // Со своим реестром схем возможности блоков (перенос в колонки) подключаются явно.
+  const features = blocks.flatMap((block) => (block.feature ? [block.feature] : []));
+
+  return new Editor({ schema: editor.schema, document, features });
 }
 
 const children = (editor: Editor) =>

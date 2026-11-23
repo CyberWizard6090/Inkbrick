@@ -111,6 +111,9 @@ const document = deserializeDocument(snapshot, { schema });
 const editor = new Editor({ schema, document });
 ```
 
+Возможности (таблицы, колонки…) со своим реестром передайте явно — их схемы должны быть в реестре:
+`new Editor({ schema, document, features: [tableFeature, columnsFeature] })`.
+
 ## 5. Сохранение и загрузка
 
 `editor.serialize()` (или `serializeDocument(document, schema)`) возвращает обычный JSON (`{ version, rootId, blocks, schemaVersions }`), `deserializeDocument`

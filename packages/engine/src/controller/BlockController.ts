@@ -1,3 +1,4 @@
+import type { EditorFeature } from '../feature';
 import type { BaseBlock, BlockId, BlockProps, BlockSchema } from '@inkbrick/document';
 import type { Transaction } from '@inkbrick/store';
 
@@ -117,6 +118,8 @@ export interface BlockController<TProps extends BlockProps = BlockProps> {
 export interface BlockDefinition<TProps extends BlockProps = BlockProps> {
   readonly schema: BlockSchema;
   readonly controller?: BlockController<TProps>;
+  /** Возможность движка, без которой блок не работает (колонкам — перенос блока вбок): подключается вместе с ним. */
+  readonly feature?: EditorFeature;
 }
 
 /*

@@ -41,7 +41,12 @@ const snapshot = editor.serialize(); // plain JSON, load it back with deserializ
   transaction: it applies completely or not at all.
 - **History:** `undo`, `redo`, `canUndo`, `canRedo`; typing is grouped into one step.
 - **Read-only:** `editor.setReadOnly(true)` rejects every change.
-- **Block sets:** `new Editor({ blocks })` adds schemas and controllers of optional or custom blocks.
+- **Features:** the base editor knows only text blocks. Tables, columns, the table of contents, toggles and footnotes
+  are features you plug in: `new Editor({ features: [tableFeature, columnsFeature] })`. A feature
+  (`defineFeature`) brings its blocks, commands, checks before commands, work after commands and a `setup(editor)`
+  hook. A block definition can name the feature it needs (`feature`), so `new Editor({ blocks: columnsBlocks })` works
+  too.
+- **Custom blocks:** `new Editor({ blocks })` adds schemas and controllers of your own blocks.
 
 ## Public API
 
