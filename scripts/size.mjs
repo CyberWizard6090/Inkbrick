@@ -35,7 +35,7 @@ const cases = [
   {
     // Всё, что получает приложение с редактором, вместе с zod: так виден и вес зависимостей.
     name: 'app: editor with zod',
-    budget: 94,
+    budget: 95.5, // +1,5 KB: Selection API (editor.selection и синхронизация с экраном)
     bundled: ['zod'],
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
@@ -53,7 +53,7 @@ const cases = [
   },
   {
     name: 'react: EditorProvider + DocumentView',
-    budget: 68,
+    budget: 69.5, // +1,5 KB: Selection API
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
 ];

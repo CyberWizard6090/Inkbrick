@@ -15,6 +15,7 @@ export { DocumentStore } from './document-store';
 export type { BlockMetaOptions } from './writer';
 export type {
   StoreListener,
+  ChangeInfo,
   ChangeListener,
   TransactOptions,
   HistoryStep,

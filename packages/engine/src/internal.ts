@@ -67,3 +67,5 @@ export type {
   SelectionState,
   TextSelection,
 } from './selection';
+export { PatchError, REMOTE_ORIGIN, applyPatch, onPatch } from './sync';
+export type { DocumentPatch, LocalPatch } from './sync';

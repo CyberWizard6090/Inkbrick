@@ -5,11 +5,17 @@ import type { DocumentWriter } from '../writer';
 export class SetBlockChange implements Change {
   private previous: BaseBlock | undefined;
 
-  constructor(readonly block: BaseBlock) {}
+  /** `stamp: false` — блок пишется как есть, без отметки `meta` (чужой блок из синхронизации со своей `meta`). */
+  constructor(
+    readonly block: BaseBlock,
+    private readonly options: { readonly stamp?: boolean } = {},
+  ) {}
 
   apply(writer: DocumentWriter): void {
     this.previous = writer.getBlock(this.block.id);
-    writer.setBlock(writer.stamp(this.block, this.previous));
+    writer.setBlock(
+      this.options.stamp === false ? this.block : writer.stamp(this.block, this.previous),
+    );
   }
 
   revert(writer: DocumentWriter): void {

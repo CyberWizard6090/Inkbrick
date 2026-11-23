@@ -71,6 +71,8 @@ export { fragmentToHtml, fragmentToPlainText } from './clipboard/serialize';
 
 // Подключаемые возможности: `new Editor({ features: [tableFeature, columnsFeature] })` (или их блоки в `blocks`).
 export { defineFeature } from './feature';
+export { PatchError, applyPatch, onPatch } from './sync';
+export type { DocumentPatch, LocalPatch } from './sync';
 export type { BlockPoint } from './utils';
 export type {
   BlocksSelection,

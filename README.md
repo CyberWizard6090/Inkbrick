@@ -96,7 +96,8 @@ const myDesignSystem = definePresentation({
 
 ## Documentation
 
-Guides (in Russian): [UI customization and custom blocks](docs/ui-customization.md) ·
+Guides (in Russian): [writing your own block](docs/custom-blocks.md) ·
+[UI customization and custom blocks](docs/ui-customization.md) · [collaboration patches](docs/collaboration.md) ·
 [undo/redo](docs/history.md) · [selection](docs/selection.md) · [slash menu](docs/slash-menu.md) ·
 [toolbar, block menu, drag and drop](docs/toolbar-and-blocks.md) · [read-only](docs/read-only.md) ·
 [clipboard](docs/clipboard.md) · [images and callouts](docs/images-and-callout.md) · [styling](docs/styling.md) ·

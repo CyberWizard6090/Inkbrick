@@ -6,7 +6,13 @@ import { Transaction } from '../transaction';
 
 export type StoreListener = () => void;
 
-export type ChangeListener = (blockIds: readonly BlockId[]) => void;
+/** Откуда изменение: правка (`edit`), отмена или повтор; `origin` — метка правки (`TransactOptions.origin`). */
+export interface ChangeInfo {
+  readonly source: 'edit' | 'undo' | 'redo';
+  readonly origin?: string;
+}
+
+export type ChangeListener = (blockIds: readonly BlockId[], info: ChangeInfo) => void;
 
 /**
  * Ошибка подписчика не должна ни прерывать уведомление остальных, ни превращать уже применённое изменение
@@ -38,6 +44,8 @@ export interface TransactOptions<TResult> {
   mergeWindowMs?: number;
   /** false — изменение не попадает в историю (программная инициализация, синхронизация). */
   history?: boolean;
+  /** Метка правки для подписчиков `subscribeChanges` (например, `remote` — пришла от другого участника). */
+  origin?: string;
   /** Данные шага (например, курсор до/после); вызывается после успешного выполнения. */
   describe?: (result: TResult) => HistoryMeta | undefined;
 }
@@ -143,6 +151,7 @@ export class DocumentStore {
       mergeWindowMs?: number;
       history?: boolean;
       meta?: HistoryMeta;
+      origin?: string;
     } = {},
   ): Transaction {
     return new Transaction(this.writer, (transaction) => this.commit(transaction, options));
@@ -162,10 +171,12 @@ export class DocumentStore {
       mergeWindowMs?: number;
       history?: boolean;
       meta?: HistoryMeta;
+      origin?: string;
     } = {
       mergeKey: options.mergeKey,
       mergeWindowMs: options.mergeWindowMs,
       history: options.history,
+      origin: options.origin,
     };
     const transaction = this.createTransaction(commitOptions);
     let result: T;
@@ -206,7 +217,7 @@ export class DocumentStore {
     const affected = this.replay(entry, 'undo');
     this.history.pushRedo(entry);
     this.touchHistory();
-    this.emitChanges(affected);
+    this.emitChanges(affected, { source: 'undo' });
 
     return { meta: entry.meta };
   }
@@ -219,7 +230,7 @@ export class DocumentStore {
     const affected = this.replay(entry, 'redo');
     this.history.pushUndo(entry);
     this.touchHistory();
-    this.emitChanges(affected);
+    this.emitChanges(affected, { source: 'redo' });
 
     return { meta: entry.meta };
   }
@@ -273,6 +284,7 @@ export class DocumentStore {
       mergeWindowMs?: number;
       history?: boolean;
       meta?: HistoryMeta;
+      origin?: string;
     },
   ): void {
     if (transaction.isEmpty) {
@@ -298,15 +310,20 @@ export class DocumentStore {
     }
 
     this.notify();
-    this.emitChanges(changed);
+    this.emitChanges(changed, { source: 'edit', origin: options.origin });
   }
 
-  private emitChanges(blockIds: readonly BlockId[]): void {
+  /** Затрагивает ли история отмены и повтора эти блоки. */
+  historyTouches(blockIds: readonly BlockId[]): boolean {
+    return this.history.touches(blockIds);
+  }
+
+  private emitChanges(blockIds: readonly BlockId[], info: ChangeInfo): void {
     if (this.changeListeners.size === 0 || blockIds.length === 0) return;
 
     for (const listener of [...this.changeListeners]) {
       try {
-        listener(blockIds);
+        listener(blockIds, info);
       } catch (error) {
         reportListenerError(error);
       }

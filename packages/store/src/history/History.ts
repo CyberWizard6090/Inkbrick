@@ -1,3 +1,4 @@
+import type { BlockId } from '@inkbrick/document';
 import type { Change } from '../changes';
 
 export interface HistoryMeta {
@@ -107,6 +108,15 @@ export class History {
 
   pushUndo(entry: HistoryEntry): void {
     this.undoStack.push(entry);
+  }
+
+  /** Есть ли в шагах отмены или повтора изменения этих блоков. */
+  touches(blockIds: readonly BlockId[]): boolean {
+    const ids = new Set(blockIds);
+
+    return [...this.undoStack, ...this.redoStack].some((entry) =>
+      entry.changes.some((change) => change.getAffectedBlocks().some((id) => ids.has(id))),
+    );
   }
 
   clear(): void {
