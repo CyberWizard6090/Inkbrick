@@ -239,6 +239,8 @@ export function DefaultToolbar({
               data-inkbrick-part="button"
               data-format={format}
               data-pressed={formats[format] || undefined}
+              // Код не оформляется: у выделения из одного кода доступны только сам код и ссылка.
+              disabled={formats.code && format !== 'code'}
               aria-label={t(`toolbar.${format}.label`)}
               aria-pressed={formats[format]}
               title={t(`toolbar.${format}.title`)}
@@ -299,6 +301,7 @@ export function DefaultToolbar({
                 data-format={name}
                 data-pressed={panel === name || undefined}
                 data-current-color={isColorName(current) ? current : undefined}
+                disabled={formats.code}
                 aria-label={t(`toolbar.${name}.label`)}
                 aria-haspopup="true"
                 aria-expanded={panel === name}

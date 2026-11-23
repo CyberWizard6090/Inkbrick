@@ -1,6 +1,7 @@
 import {
   createId,
   MAX_NESTING_DEPTH,
+  normalizeInlineNodes,
   type BaseBlock,
   type BlockId,
   type BlockProps,
@@ -35,7 +36,7 @@ export class BlockEngine {
       flavour: options.flavour,
       parentId: options.parentId,
       children: [],
-      content: options.content ?? [],
+      content: normalizeInlineNodes([...(options.content ?? [])]),
       props: this.schema.createProps(options.flavour, options.props),
     };
   }
@@ -51,7 +52,9 @@ export class BlockEngine {
       );
     }
 
-    tx.apply(new SetBlockChange({ ...block, parentId }));
+    tx.apply(
+      new SetBlockChange({ ...block, parentId, content: normalizeInlineNodes([...block.content]) }),
+    );
     tx.apply(new InsertChildChange(parentId, index, block.id));
   }
 
@@ -94,6 +97,9 @@ export class BlockEngine {
 
   updateContent(tx: Transaction, id: BlockId, content: BaseBlock['content']): void {
     const block = this.require(tx, id);
+
+    // Любая правка текста проходит здесь: код не принимает оформление (`CODE_EXCLUDED_ATTRIBUTES`).
+    content = normalizeInlineNodes([...content]);
 
     if (sameValue(content, block.content)) return;
 

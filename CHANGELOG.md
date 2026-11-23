@@ -5,6 +5,10 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ## Unreleased
 
+### Changed
+
+- Inline code takes no formatting except a link: text colour, highlight, bold, italic, underline and strike are no longer applied to inline code, neither to all of it nor to a part (a part of code cannot be written to Markdown and its colour was hidden by the code's own colour anyway). Turning text into code removes that formatting; a selection of code and text formats only the text; over code alone the toolbar disables those buttons. The rule lives in the model (`CODE_EXCLUDED_ATTRIBUTES`, `withoutCodeExcluded`, `normalizeInlineNodes` in `@inkbrick/document`; `BlockEngine` applies it to every content change), so it covers commands, shortcuts, HTML paste, Markdown import (`**`x`**` is plain code) and documents saved earlier (cleaned when opened).
+
 ### Removed
 
 - Column properties and table views are cut: the dialog «Column properties», the column types `checkbox`, `select`, `multiselect`, `url`, `email` and `phone` (the types `text`, `number` and `date` stay), keyboard control of checkbox and select cells, column filters, hidden columns and several views per table. The `columnTypes` of a table keep the three original types; documents that were saved with the removed types are not migrated.

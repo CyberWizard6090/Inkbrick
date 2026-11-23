@@ -141,3 +141,98 @@ describe('formatsAt', () => {
     expect(editor.formatsAt(p('nope', 0), p(ids[0], 1)).bold).toBe(false);
   });
 });
+
+describe('inline code takes no formatting except a link', () => {
+  const toggle = (
+    editor: Editor,
+    from: ReturnType<typeof p>,
+    to: ReturnType<typeof p>,
+    format: string,
+  ) => editor.dispatch({ type: 'toggleFormatRange', payload: { from, to, format } });
+
+  it('turning text into code drops its bold, italic, colour and background, keeps the link', () => {
+    const { editor, ids } = setup(['styled']);
+
+    editor.dispatch({
+      type: 'setInlineAttributes',
+      payload: {
+        from: p(ids[0], 0),
+        to: p(ids[0], 6),
+        attributes: {
+          bold: true,
+          italic: true,
+          underline: true,
+          strike: true,
+          color: 'red',
+          backgroundColor: '#ff000088',
+          link: 'https://x.org',
+        },
+      },
+    });
+    toggle(editor, p(ids[0], 0), p(ids[0], 6), 'code');
+
+    expect(editor.document.getBlock(ids[0])!.content).toEqual([
+      { insert: 'styled', attributes: { link: 'https://x.org', code: true } },
+    ]);
+  });
+
+  it('bold, colour and background are not applied to code, even to a part of it', () => {
+    const { editor, ids } = setup(['useState']);
+
+    toggle(editor, p(ids[0], 0), p(ids[0], 8), 'code');
+    toggle(editor, p(ids[0], 3), p(ids[0], 6), 'bold');
+    editor.dispatch({
+      type: 'setInlineAttributes',
+      payload: {
+        from: p(ids[0], 0),
+        to: p(ids[0], 8),
+        attributes: { color: 'green', backgroundColor: 'yellow' },
+      },
+    });
+
+    expect(editor.document.getBlock(ids[0])!.content).toEqual([
+      { insert: 'useState', attributes: { code: true } },
+    ]);
+    expect(editor.formatsAt(p(ids[0], 0), p(ids[0], 8))).toMatchObject({
+      code: true,
+      bold: false,
+    });
+  });
+
+  it('a range of code and text toggles bold on the text only, and back off', () => {
+    const { editor, ids } = setup(['call fn now']);
+
+    toggle(editor, p(ids[0], 5), p(ids[0], 7), 'code');
+    toggle(editor, p(ids[0], 0), p(ids[0], 11), 'bold');
+
+    expect(editor.document.getBlock(ids[0])!.content).toEqual([
+      { insert: 'call ', attributes: { bold: true } },
+      { insert: 'fn', attributes: { code: true } },
+      { insert: ' now', attributes: { bold: true } },
+    ]);
+    // Код не мешает считать жирный включённым — повторное нажатие снимает его.
+    expect(editor.formatsAt(p(ids[0], 0), p(ids[0], 11)).bold).toBe(true);
+
+    toggle(editor, p(ids[0], 0), p(ids[0], 11), 'bold');
+
+    expect(editor.document.getBlock(ids[0])!.content).toEqual([
+      { insert: 'call ' },
+      { insert: 'fn', attributes: { code: true } },
+      { insert: ' now' },
+    ]);
+  });
+
+  it('typing inside code stays plain code', () => {
+    const { editor, ids } = setup(['ab']);
+
+    toggle(editor, p(ids[0], 0), p(ids[0], 2), 'code');
+    editor.dispatch({
+      type: 'replaceText',
+      payload: { blockId: ids[0], from: 1, to: 1, text: 'x' },
+    });
+
+    expect(editor.document.getBlock(ids[0])!.content).toEqual([
+      { insert: 'axb', attributes: { code: true } },
+    ]);
+  });
+});

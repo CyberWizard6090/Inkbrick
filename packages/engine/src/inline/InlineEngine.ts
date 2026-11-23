@@ -1,4 +1,5 @@
 import {
+  CODE_EXCLUDED_ATTRIBUTES,
   normalizeInlineNodes,
   splitNodesAt,
   type InlineNode,
@@ -84,12 +85,15 @@ export class InlineEngine {
     const end = Math.max(from, to);
     let current = 0;
     let covered = false;
+    const excludedByCode = (CODE_EXCLUDED_ATTRIBUTES as readonly string[]).includes(key);
 
     for (const node of nodes) {
       const nodeStart = current;
       current += node.insert.length;
 
       if (current <= start || nodeStart >= end) continue;
+      // Код это оформление не принимает: он не мешает считать формат включённым у остального текста.
+      if (excludedByCode && node.attributes?.code) continue;
 
       covered = true;
       if (!node.attributes?.[key]) return false;

@@ -171,8 +171,14 @@
     transition: background-color var(--inkbrick-duration-fast) var(--inkbrick-curve);
   }
 
-  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:hover) {
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:hover:not(:disabled)) {
     background: var(--inkbrick-bg-hover);
+  }
+
+  /* Недоступное оформление (например, жирный и цвет у inline-кода). */
+  :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:disabled) {
+    color: var(--inkbrick-fg-disabled);
+    cursor: default;
   }
 
   :where([data-inkbrick-ui='toolbar'] [data-inkbrick-part='button']:active) {

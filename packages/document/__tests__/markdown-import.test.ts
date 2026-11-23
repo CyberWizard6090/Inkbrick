@@ -120,6 +120,16 @@ describe('fromMarkdown: round trip of every block', () => {
     );
   });
 
+  it('code takes no formatting: **`x`** is plain code', () => {
+    const [block] = parse('**`bold code`** and *`italic code`*');
+
+    expect(block.c).toEqual([
+      { insert: 'bold code', attributes: { code: true } },
+      { insert: ' and ' },
+      { insert: 'italic code', attributes: { code: true } },
+    ]);
+  });
+
   it('inline formatting', () => {
     expectRoundTrip([
       [
@@ -148,7 +158,7 @@ describe('fromMarkdown: round trip of every block', () => {
           { insert: ' ' },
           { insert: 'bold link', attributes: { bold: true, link: 'https://example.com' } },
           { insert: ' ' },
-          { insert: 'bold code', attributes: { bold: true, code: true } },
+          { insert: 'linked code', attributes: { code: true, link: 'https://example.com/' } },
           { insert: ' end' },
         ],
       ],

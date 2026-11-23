@@ -172,6 +172,24 @@ describe('formatting toolbar', () => {
   const button = (format: string) =>
     toolbar().querySelector<HTMLElement>(`[data-format="${format}"]`)!;
 
+  it('over inline code only code and link stay available: no bold, italic, colour or highlight', () => {
+    const { editor, ids, select } = mountEditor(['format me'], { formatting: 'toolbar' });
+
+    select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
+    fireEvent.click(button('code'));
+
+    for (const format of ['bold', 'italic', 'underline', 'strike', 'color', 'highlight'])
+      expect(button(format).hasAttribute('disabled'), format).toBe(true);
+    expect(button('code').hasAttribute('disabled')).toBe(false);
+    expect(button('link').hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(button('bold'));
+    expect(editor.document.getBlock(ids[0])!.content[0]).toEqual({
+      insert: 'format',
+      attributes: { code: true },
+    });
+  });
+
   it('appears over a selection and applies formats, colors and alignment', () => {
     const { editor, ids, select } = mountEditor(['format me'], { formatting: 'toolbar' });
     const block = () => editor.document.getBlock(ids[0])!;

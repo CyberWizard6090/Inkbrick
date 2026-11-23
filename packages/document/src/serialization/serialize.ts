@@ -1,6 +1,7 @@
 import { Document } from '../document';
 import { SNAPSHOT_VERSION, type BaseBlock, type DocumentSnapshot } from '../model';
 import type { SchemaRegistry } from '../schema';
+import { normalizeInlineNodes } from '../utils/InlineNodeUtils';
 
 /**
  * Снимок документа в виде обычного JSON: никаких компонентов, стилей и функций.
@@ -341,6 +342,9 @@ export function deserializeDocument(
     // Блок известного типа после миграции — текущей версии: в открытом документе версия не хранится (её ставит
     // `serializeDocument`). Неизвестный тип хранит свою, чтобы сохраниться с ней же.
     if (options.schema.hasBlock(copy.flavour)) delete copy.version;
+
+    // Документы, сохранённые до запрета оформлять код: снимаем с кода несовместимое с ним оформление.
+    copy.content = normalizeInlineNodes(copy.content);
 
     document._setBlock(copy);
   }

@@ -9,22 +9,51 @@ export function isEqualAttributes(a?: TextAttributes, b?: TextAttributes): boole
   return keysA.every((key) => a[key] === b[key]);
 }
 
+/**
+ * Атрибуты, несовместимые с inline-кодом. Код — дословный фрагмент программы: у него свой шрифт, цвет и фон, и
+ * оформлять его (целиком или частично) нельзя. С кодом остаётся только ссылка (и атрибуты расширений).
+ */
+export const CODE_EXCLUDED_ATTRIBUTES = [
+  'bold',
+  'italic',
+  'underline',
+  'strike',
+  'color',
+  'backgroundColor',
+] as const;
+
+/** Атрибуты без того, что несовместимо с кодом (`CODE_EXCLUDED_ATTRIBUTES`); у текста не-кода — как есть. */
+export function withoutCodeExcluded(attributes?: TextAttributes): TextAttributes | undefined {
+  if (!attributes?.code) return attributes;
+
+  const cleaned = { ...attributes };
+
+  for (const key of CODE_EXCLUDED_ATTRIBUTES) delete cleaned[key];
+
+  return cleaned;
+}
+
+/**
+ * Приводит содержимое к каноническому виду: пустые узлы убраны, соседние с одинаковыми атрибутами слиты, у кода снято
+ * несовместимое с ним оформление (`CODE_EXCLUDED_ATTRIBUTES`).
+ */
 export function normalizeInlineNodes(nodes: InlineNode[]): InlineNode[] {
   if (nodes.length === 0) return [];
 
   const result: InlineNode[] = [];
 
-  for (const current of nodes) {
-    if (current.insert.length === 0) continue;
+  for (const node of nodes) {
+    if (node.insert.length === 0) continue;
 
+    const attributes = withoutCodeExcluded(node.attributes);
     const last = result.at(-1);
 
-    if (last && isEqualAttributes(last.attributes, current.attributes)) {
-      last.insert += current.insert;
+    if (last && isEqualAttributes(last.attributes, attributes)) {
+      last.insert += node.insert;
     } else {
       result.push({
-        insert: current.insert,
-        ...(current.attributes ? { attributes: { ...current.attributes } } : {}),
+        insert: node.insert,
+        ...(attributes ? { attributes: { ...attributes } } : {}),
       });
     }
   }

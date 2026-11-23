@@ -878,11 +878,14 @@ function flatten(tokens: Token[]): InlineNode[] {
         part.attributes ?? {};
       const attributes: TextAttributes = {};
 
-      if (token.m & BOLD || bold) attributes.bold = true;
-      if (token.m & ITALIC || italic) attributes.italic = true;
-      if (token.m & STRIKE || strike) attributes.strike = true;
-      if (underline) attributes.underline = true;
+      // Код не оформляется (`CODE_EXCLUDED_ATTRIBUTES`): `**`x`**` — просто код.
       if (code) attributes.code = true;
+      else {
+        if (token.m & BOLD || bold) attributes.bold = true;
+        if (token.m & ITALIC || italic) attributes.italic = true;
+        if (token.m & STRIKE || strike) attributes.strike = true;
+        if (underline) attributes.underline = true;
+      }
       if (link !== undefined) attributes.link = link;
       if (formula !== undefined) attributes.formula = formula;
       if (footnote !== undefined) attributes.footnote = footnote;
