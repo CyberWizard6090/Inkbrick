@@ -5,8 +5,9 @@ export default defineConfig({
   entry: ['src/index.ts', 'src/color-picker/index.ts', 'src/image-tools/index.ts'],
   format: ['esm'],
   target: 'es2022',
-  dts: true,
-  sourcemap: true,
+  // Только типы: JavaScript собирается по модулю на файл (scripts/build-modules.mjs), чтобы приложение выбрасывало
+  // неиспользуемые модули целиком.
+  dts: { only: true },
   clean: true,
   tsconfig: '../../tsconfig.build.json',
 });

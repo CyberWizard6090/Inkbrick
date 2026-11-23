@@ -4,12 +4,9 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   target: 'es2022',
-  dts: true,
-  sourcemap: true,
+  // Только типы: JavaScript собирается по модулю на файл (scripts/build-modules.mjs), чтобы приложение выбрасывало
+  // неиспользуемые модули целиком.
+  dts: { only: true },
   clean: true,
   tsconfig: '../../tsconfig.build.json',
-  // Кириллица в словарях — как есть, без \uXXXX: строки короче, приложение легче.
-  esbuildOptions(options) {
-    options.charset = 'utf8';
-  },
 });

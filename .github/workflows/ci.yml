@@ -30,6 +30,7 @@ jobs:
       - run: pnpm test:coverage
       - run: pnpm size
       - run: pnpm build:packages
+      - run: pnpm size:dist
       - run: pnpm build
       - run: pnpm docs:api
       - uses: actions/upload-artifact@v4

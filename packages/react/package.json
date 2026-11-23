@@ -12,7 +12,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup"
+    "build": "tsup && node ../../scripts/build-modules.mjs"
   },
   "peerDependencies": {
     "react": ">=18",

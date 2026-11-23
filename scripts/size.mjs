@@ -1,22 +1,28 @@
 // Бюджет размера: сколько Inkbrick добавляет в бандл приложения (минификация + gzip, зависимости — внешние).
 // Запуск: pnpm size. Превышение бюджета — ошибка (CI падает), чтобы размер не рос незаметно.
+// `pnpm size:dist` (после `pnpm build:packages`) — то же по собранным `dist`, то есть по тому, что уходит в npm: сборка
+// пакета не должна мешать приложению выбрасывать неиспользуемое и грузить лениво то, что ленивое в исходниках.
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-const pkg = (name) => fileURLToPath(new URL(`../packages/${name}/src/index.ts`, import.meta.url));
+const dist = process.argv.includes('--dist');
+const dir = dist ? 'dist' : 'src';
+const ext = dist ? 'js' : 'ts';
+const pkg = (name) =>
+  fileURLToPath(new URL(`../packages/${name}/${dir}/index.${ext}`, import.meta.url));
 
 const alias = {
   '@inkbrick/document': pkg('document'),
   '@inkbrick/store': pkg('store'),
   '@inkbrick/engine/internal': fileURLToPath(
-    new URL('../packages/engine/src/internal.ts', import.meta.url),
+    new URL(`../packages/engine/${dir}/internal.${ext}`, import.meta.url),
   ),
   '@inkbrick/engine': pkg('engine'),
   // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
-  '@inkbrick/locales': fileURLToPath(new URL('../packages/locales/src', import.meta.url)),
+  '@inkbrick/locales': fileURLToPath(new URL(`../packages/locales/${dir}`, import.meta.url)),
   // Каталог: подпути (`@inkbrick/dom/color-picker`) разрешаются внутрь него.
-  '@inkbrick/dom': fileURLToPath(new URL('../packages/dom/src', import.meta.url)),
+  '@inkbrick/dom': fileURLToPath(new URL(`../packages/dom/${dir}`, import.meta.url)),
   '@inkbrick/react': pkg('react'),
 };
 const external = ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'temml', 'zod'];

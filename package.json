@@ -23,6 +23,7 @@
     "test:coverage": "vitest run --coverage",
     "docs:api": "typedoc",
     "size": "node scripts/size.mjs",
+    "size:dist": "node scripts/size.mjs --dist",
     "bench": "pnpm --filter @inkbrick/react exec vitest run --config bench/vitest.config.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

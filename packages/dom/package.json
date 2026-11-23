@@ -19,7 +19,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup"
+    "build": "tsup && node ../../scripts/build-modules.mjs"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
