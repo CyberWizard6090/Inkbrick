@@ -41,6 +41,8 @@ import {
   type RestoredEditor,
   startAutosave,
 } from './persistence';
+import { EditorWidthHandle } from './components/EditorWidthHandle';
+import { clampEditorWidth, initialEditorWidth, saveEditorWidth } from './editorWidth';
 import {
   createSandboxEditor,
   createSandboxSchema,
@@ -342,6 +344,10 @@ export function App({ initial }: { initial: RestoredEditor }) {
   );
   const fileInput = useRef<HTMLInputElement>(null);
   const [readOnly, setReadOnly] = useState(false);
+  // Ширина области редактора: тянется ручкой слева, запоминается в браузере (на узком окне ужимается до его ширины).
+  const [editorWidth, setEditorWidth] = useState(() => clampEditorWidth(initialEditorWidth()));
+
+  useEffect(() => saveEditorWidth(editorWidth), [editorWidth]);
   const [debug, setDebug] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
   const [locale, setLocale] = useState(initialLocale);
@@ -495,7 +501,8 @@ export function App({ initial }: { initial: RestoredEditor }) {
           onSpellcheckChange={setSpellcheck}
         />
         <div className="playground-root" data-inkbrick-surface="">
-          <div className="playground-editor">
+          <div className="playground-editor" style={{ maxWidth: editorWidth }}>
+            <EditorWidthHandle width={editorWidth} onChange={setEditorWidth} />
             <header className="playground-header">{t('app.title')}</header>
             <HistoryButtons />
             <div className="playground-content">

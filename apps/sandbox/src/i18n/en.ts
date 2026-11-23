@@ -10,6 +10,8 @@ export const en = {
   'nav.tools': 'Tools',
   'nav.settings': 'Settings',
   'app.title': 'Editor playground',
+  'editorWidth.label': 'Editor width',
+  'editorWidth.title': 'Drag to change the editor width; double-click to reset',
 
   'settings.theme': 'Theme',
   'settings.spellcheck': 'Spell check',

@@ -7,6 +7,8 @@ export const ru: Readonly<Record<SandboxKey, string>> = {
   'nav.tools': 'Инструменты',
   'nav.settings': 'Настройки',
   'app.title': 'Тестирование редактора',
+  'editorWidth.label': 'Ширина редактора',
+  'editorWidth.title': 'Потяните, чтобы изменить ширину редактора; двойной клик — по умолчанию',
 
   'settings.theme': 'Тема',
   'settings.spellcheck': 'Проверка орфографии',

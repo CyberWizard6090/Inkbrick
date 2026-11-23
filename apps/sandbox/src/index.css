@@ -24,10 +24,62 @@ body {
 
 /* Боковые отступы растут вместе с экраном. Ручка блока — внутри документа (--inkbrick-gutter), поля ей не нужны. */
 .playground-editor {
+  position: relative;
   max-width: 816px;
   margin: auto;
   padding: clamp(16px, 6vw, 48px) clamp(16px, 4vw, 48px) 48px;
   font-family: Inter, sans-serif;
+}
+
+/* Ручка ширины редактора: полоска на левом краю области, тянется в стороны. */
+.editor-width-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.editor-width-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 4px;
+  height: 48px;
+  border-radius: 2px;
+  background: var(--inkbrick-stroke-1);
+  transform: translateY(-50%);
+  transition: background-color 0.15s;
+}
+
+.editor-width-handle:hover::after,
+.editor-width-handle:focus-visible::after,
+.editor-width-handle[data-dragging]::after {
+  background: var(--inkbrick-brand-bg);
+}
+
+.editor-width-handle:focus-visible {
+  outline: none;
+}
+
+.editor-width-handle__value {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--inkbrick-bg-1);
+  color: var(--inkbrick-fg-1);
+  font:
+    12px Inter,
+    sans-serif;
+  white-space: nowrap;
+  box-shadow: var(--inkbrick-shadow-4, 0 1px 3px rgb(0 0 0 / 20%));
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .playground-content {
