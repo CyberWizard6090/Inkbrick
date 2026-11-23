@@ -240,6 +240,13 @@
     font-size: var(--inkbrick-font-size-caption);
   }
 
+  /* Сенсорный экран без мыши: клавиатуры обычно нет, подсказки Ctrl+X только занимают место. */
+  @media (hover: none) and (pointer: coarse) {
+    :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='shortcut']) {
+      display: none;
+    }
+  }
+
   /* Вложенные меню: шеврон у пункта, галочка у выбранного значения, открытый пункт подсвечен, панель справа от него. */
   :where(
     [data-inkbrick-ui='context-menu'] [data-inkbrick-part='check'],

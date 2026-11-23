@@ -150,6 +150,25 @@ test.describe('Touch drag and drop', () => {
     expect(await texts(page)).toEqual(['one', 'two', 'three', 'four']);
   });
 
+  test('the block menu stays open after the tap: the click that ends the tap does not close it', async ({
+    page,
+  }) => {
+    // Второй раз: чанк меню уже загружен, лист с затемнением появляется раньше, чем click касания.
+    for (const attempt of [1, 2]) {
+      await showHandle(page, attempt);
+
+      const at = await center(page, grip);
+
+      await page.touchscreen.tap(at.x, at.y);
+      await expect(page.locator(menu)).toBeVisible();
+      await page.waitForTimeout(400);
+      await expect(page.locator(menu), `attempt ${attempt}`).toBeVisible();
+
+      await page.keyboard.press('Escape');
+      await expect(page.locator(menu)).toHaveCount(0);
+    }
+  });
+
   test('a swipe on the grip without a long press does not move the block', async ({ page }) => {
     await showHandle(page, 0);
 

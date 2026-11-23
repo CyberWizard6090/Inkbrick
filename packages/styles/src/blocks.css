@@ -2125,6 +2125,10 @@
     padding: 2px;
   }
 
+  :where([data-inkbrick-part='formula-palette-grid'][data-words]) {
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  }
+
   :where([data-inkbrick-part='formula-symbol']) {
     min-width: 0;
     height: 30px;

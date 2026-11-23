@@ -53,6 +53,8 @@ export function FormulaPalette({ onInsert }: FormulaPaletteProps) {
       <div
         className="formula-palette__grid"
         data-inkbrick-part="formula-palette-grid"
+        // Названия (sin, cosh, log₍ₙ₎) не помещаются в клетку символа: клетки шире.
+        data-words={category.items.some((item) => [...item.label].length > 2) || undefined}
         role="tabpanel"
         aria-label={name(category.id)}
       >

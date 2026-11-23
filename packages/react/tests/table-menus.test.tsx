@@ -267,7 +267,13 @@ describe('menus as bottom sheets on a phone', () => {
       '[data-inkbrick-part="sheet-backdrop"]:not([data-nested])',
     )!;
 
+    // Касание, начатое на затемнении (click без своего нажатия — хвост касания, открывшего меню, — не закрывает).
     act(() => void fireEvent.click(backdrop));
+    expect(t.menu()?.closest('[data-state="open"]') ?? null).not.toBeNull();
+    act(() => {
+      fireEvent.pointerDown(backdrop);
+      fireEvent.click(backdrop);
+    });
     expect(t.menu()?.closest('[data-state="open"]') ?? null).toBeNull();
   });
 
@@ -534,9 +540,12 @@ describe('sheet geometry and closing', () => {
     const sheet = document.querySelector<HTMLElement>('[data-testid="block-menu"]')!;
 
     expect(sheet.hasAttribute('data-sheet')).toBe(true);
-    act(
-      () => void fireEvent.click(document.querySelector('[data-inkbrick-part="sheet-backdrop"]')!),
-    );
+    act(() => {
+      const backdrop = document.querySelector('[data-inkbrick-part="sheet-backdrop"]')!;
+
+      fireEvent.pointerDown(backdrop);
+      fireEvent.click(backdrop);
+    });
     expect(
       document.querySelector('[data-testid="block-menu"]')?.closest('[data-state="open"]') ?? null,
     ).toBeNull();

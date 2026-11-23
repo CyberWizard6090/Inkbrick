@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Mobile: a short tap on a block grip opened the block menu and closed it at once — the click that ends the tap landed on the sheet backdrop. The backdrop now closes only a press that started on it. Keyboard shortcut hints are hidden in menus on touch-only devices; table grips and insert markers have larger touch areas; function names fit the formula palette.
+
 - Guide for custom block authors (`docs/custom-blocks.md`): one block from schema to view — schema and props, controller and commands, command types, a normalization rule, a feature, the React view and tests; its engine code is checked by a test (`custom-block-guide.test.ts`).
 
 - Collaboration API (`docs/collaboration.md`): `onPatch(editor, listener)` reports every local edit, undo and redo as a `DocumentPatch` — the changed blocks whole, `null` for deleted — and `applyPatch(editor, patch)` applies a patch from another participant atomically, outside the local undo history, after checking block shape, tree integrity and props (`PatchError` otherwise, nothing changes) and then normalizing. Patches are plain JSON and idempotent; remote ones are not echoed to `onPatch`; a remote patch over blocks in the local history clears that history. The store reports `ChangeInfo` (`source`: edit / undo / redo, `origin`) to `subscribeChanges`, transactions take an `origin`, and `SetBlockChange` can write a block without stamping its `meta`.

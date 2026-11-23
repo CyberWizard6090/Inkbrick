@@ -194,6 +194,36 @@
     :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='resize']) {
       width: 14px;
     }
+
+    /*
+     * Зона касания шире видимой ручки (палец закрывает больше 16 px). Зоны соседей не пересекаются: ручка строки
+     * растёт на 6 px по вертикали, маркеры вставки на её границах — на 4 px.
+     */
+    :where(
+      [data-inkbrick-ui='table-controls']:is(
+        [data-inkbrick-part='row-grip'],
+        [data-inkbrick-part='column-grip'],
+        [data-inkbrick-part='row-insert'],
+        [data-inkbrick-part='column-insert'],
+        [data-inkbrick-part='cell-knob']
+      )
+    )::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='row-grip'])::before {
+      inset: -6px -10px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='column-grip'])::before {
+      inset: -10px -6px;
+    }
+
+    :where([data-inkbrick-ui='table-controls'][data-inkbrick-part='cell-knob'])::before {
+      inset: -8px;
+    }
   }
 
   /* Панель ширины столбца (телефон): снизу окна, чтобы таблица оставалась на виду, пока тянется ползунок. */
