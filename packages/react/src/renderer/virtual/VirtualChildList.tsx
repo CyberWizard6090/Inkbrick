@@ -167,19 +167,26 @@ export function VirtualChildList({
     };
   }, [view, windowed]);
 
+  // Прошлый расчёт: высоты по позициям в `ids`. Правка меняет обычно один-два блока, а не 50 000: общее начало и конец
+  // списка берутся отсюда, заново считаются только изменившаяся середина и перемеренные блоки.
+  const sizesCache = useRef<{
+    readonly ids: readonly BlockId[];
+    readonly foldVersion: number;
+    readonly sizes: Float64Array;
+  } | null>(null);
+  // Блоки, высоту которых перемерили после прошлого расчёта.
+  const remeasured = useRef(new Set<BlockId>());
+
   const offsets = useMemo(() => {
-    if (!windowed) return null;
+    if (!windowed) {
+      sizesCache.current = null;
+      return null;
+    }
 
-    const result = new Float64Array(ids.length + 1);
     const getBlock = (id: BlockId) => editor.store.getBlock(id);
-
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
-
-      if (view.folds.isHidden(id)) {
-        result[i + 1] = result[i];
-        continue;
-      }
+    const sizeOf = (id: BlockId) => {
+      // Свёрнутые заголовком блоки не занимают места.
+      if (view.folds.isHidden(id)) return 0;
 
       let height = heights.get(id) ?? estimates.get(id);
 
@@ -188,8 +195,39 @@ export function VirtualChildList({
         estimates.set(id, height);
       }
 
-      result[i + 1] = result[i] + height;
+      return height;
+    };
+    const sizes = new Float64Array(ids.length);
+    const previous = sizesCache.current;
+
+    if (previous && previous.foldVersion === foldVersion) {
+      const old = previous.ids;
+      const shared = Math.min(old.length, ids.length);
+      let start = 0;
+      let end = 0;
+
+      while (start < shared && old[start] === ids[start]) start++;
+      while (end < shared - start && old[old.length - 1 - end] === ids[ids.length - 1 - end]) end++;
+
+      sizes.set(previous.sizes.subarray(0, start), 0);
+      if (end > 0) sizes.set(previous.sizes.subarray(old.length - end), ids.length - end);
+      for (let i = start; i < ids.length - end; i++) sizes[i] = sizeOf(ids[i]);
+
+      for (const id of remeasured.current) {
+        const index = ids.indexOf(id);
+
+        if (index !== -1) sizes[index] = sizeOf(id);
+      }
+    } else {
+      for (let i = 0; i < ids.length; i++) sizes[i] = sizeOf(ids[i]);
     }
+
+    remeasured.current.clear();
+    sizesCache.current = { ids, foldVersion, sizes };
+
+    const result = new Float64Array(ids.length + 1);
+
+    for (let i = 0; i < ids.length; i++) result[i + 1] = result[i] + sizes[i];
 
     return result;
     // measured — версия изменяемой карты heights, foldVersion — набор свёрнутых блоков
@@ -260,6 +298,7 @@ export function VirtualChildList({
       // Элемент без раскладки (скрыт, jsdom) не измеряем: остаётся оценка.
       if (height > 0 && Math.abs((heights.get(previous.id) ?? -1) - height) > 0.5) {
         heights.set(previous.id, height);
+        remeasured.current.add(previous.id);
         changed = true;
       }
       previous = null;

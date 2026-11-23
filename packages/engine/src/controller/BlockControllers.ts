@@ -187,11 +187,10 @@ export class BlockControllers {
     this.processing = true;
 
     try {
-      while (this.pending.length > 0) {
-        const id = this.pending.shift()!;
-
-        this.diff(id);
-      }
+      // Индекс, а не `shift`: очередь при загрузке большого документа — десятки тысяч блоков, а `shift` сдвигает весь
+      // массив. Хук может дописать в очередь, пока она разбирается.
+      for (let index = 0; index < this.pending.length; index++) this.diff(this.pending[index]);
+      this.pending.length = 0;
     } finally {
       this.processing = false;
     }

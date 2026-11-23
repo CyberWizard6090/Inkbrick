@@ -70,18 +70,20 @@ export function countWords(text: string): number {
   return count + (clean.replace(UNSPACED, ' ').match(WORD)?.length ?? 0);
 }
 
-/** Число символов (кодовых точек), без формул. */
+const SURROGATE_PAIRS = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+const SPACES = /\s/gu;
+const OBJECTS = /\uFFFC/g;
+
+/**
+ * Число символов (кодовых точек), без формул. Считается выражениями по всей строке, а не по символу: большой документ
+ * пересчитывается целиком при загрузке.
+ */
 export function countCharacters(text: string, spaces = true): number {
-  let count = 0;
+  const pairs = text.match(SURROGATE_PAIRS)?.length ?? 0;
+  const objects = text.match(OBJECTS)?.length ?? 0;
+  const blank = spaces ? 0 : (text.match(SPACES)?.length ?? 0);
 
-  for (const char of text) {
-    if (char === OBJECT) continue;
-    if (!spaces && /\s/u.test(char)) continue;
-
-    count += 1;
-  }
-
-  return count;
+  return text.length - pairs - objects - blank;
 }
 
 export function statsOf(text: string): TextStats {
