@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { MAX_NESTING_DEPTH } from '@inkbrick/document';
 
-import { Editor } from '../src';
+import { Editor } from '../src/internal';
 
 function setup(options: ConstructorParameters<typeof Editor>[0] = {}) {
   const editor = new Editor(options);

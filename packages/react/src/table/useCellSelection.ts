@@ -6,9 +6,9 @@ import {
   fragmentToHtml,
   fragmentToPlainText,
   locateTableCell,
-  tableRangeFragment,
   tableSize,
   type TableCellRef,
+  tableRangeFragment,
 } from '@inkbrick/engine';
 
 import { useEditor } from '../hooks/useEditor';

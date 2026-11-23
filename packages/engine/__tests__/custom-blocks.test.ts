@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createSchemaRegistry, deserializeDocument, z, type BlockSchema } from '@inkbrick/document';
 
-import { Editor, type CaretResult } from '../src';
+import { Editor, type CaretResult } from '../src/internal';
 
 const WidgetSchema: BlockSchema = {
   flavour: 'block:widget',

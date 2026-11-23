@@ -1,5 +1,5 @@
 import { ColumnSchema, ColumnsSchema, type ColumnsProps } from '@inkbrick/document';
-import { columnsCommands } from '@inkbrick/engine';
+import { columnsCommands } from '@inkbrick/engine/internal';
 
 import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';

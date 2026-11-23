@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Editor } from '../src';
+import { Editor } from '../src/internal';
 
 describe('replaceText plain', () => {
   it('inserts text without the formatting of the character on the left', () => {

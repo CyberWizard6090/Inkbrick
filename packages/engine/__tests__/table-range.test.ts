@@ -8,7 +8,7 @@ import {
   tableRangeBetween,
   tableRangeCells,
   tableRangeFragment,
-} from '../src';
+} from '../src/internal';
 
 function setup() {
   const editor = createTableEditor({

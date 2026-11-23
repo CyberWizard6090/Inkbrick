@@ -13,11 +13,11 @@ import {
 import { fromMarkdown } from '@inkbrick/document/markdown';
 import {
   Editor,
-  columnsBlocks,
   locateTableCell,
-  tableBlocks,
   tableCellAt,
   type CaretResult,
+  columnsBlocks,
+  tableBlocks,
 } from '@inkbrick/engine';
 
 import { findMatches } from '../../packages/react/src/find/search';

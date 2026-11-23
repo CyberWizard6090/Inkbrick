@@ -8,7 +8,7 @@ import {
   fragmentToPlainText,
   sanitizeFragment,
   type CaretResult,
-} from '../src';
+} from '../src/internal';
 
 function setup(texts: string[], flavour = 'block:paragraph') {
   const editor = new Editor();

@@ -9,7 +9,7 @@ import {
   type DocumentSnapshot,
 } from '@inkbrick/document';
 
-import { Editor } from '../src';
+import { Editor } from '../src/internal';
 
 /*
  * Защита от квадратичных регрессий. Абсолютное время на CI нестабильно, поэтому сравниваем рост: документ

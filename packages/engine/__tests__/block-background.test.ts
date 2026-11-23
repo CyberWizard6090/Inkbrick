@@ -7,7 +7,7 @@ import {
   getBlockBackgroundColor,
 } from '@inkbrick/document';
 
-import { Editor, type CaretResult } from '../src';
+import { Editor, type CaretResult } from '../src/internal';
 
 function make(flavour = 'block:paragraph', props: Record<string, unknown> = {}) {
   const editor = new Editor();

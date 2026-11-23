@@ -7,7 +7,7 @@ import {
   toPlainText,
   validateSnapshot,
 } from '@inkbrick/document';
-import { Editor, columnsBlocks, type CaretResult } from '../src';
+import { Editor, columnsBlocks, type CaretResult } from '../src/internal';
 
 function setup() {
   const editor = new Editor({ blocks: columnsBlocks });

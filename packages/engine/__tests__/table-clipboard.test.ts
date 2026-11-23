@@ -18,7 +18,7 @@ import {
   type CaretResult,
   type Fragment,
   type FragmentBlock,
-} from '../src';
+} from '../src/internal';
 
 const block = (
   flavour: string,

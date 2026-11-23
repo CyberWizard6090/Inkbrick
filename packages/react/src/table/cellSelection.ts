@@ -1,17 +1,15 @@
 import type { BlockId } from '@inkbrick/document';
 import { normalizeMerges } from '@inkbrick/document';
 import {
-  clampTableRange,
-  expandRangeToMerges,
-  mergeAt,
   tableCellAt,
-  tableRangeBetween,
-  tableRangeCells,
   tableSize,
   type Editor,
   type TableCellRef,
+  tableRangeBetween,
+  tableRangeCells,
   type TableRange,
 } from '@inkbrick/engine';
+import { clampTableRange, expandRangeToMerges, mergeAt } from '@inkbrick/engine/internal';
 
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { EditorView } from '../editing/EditorView';

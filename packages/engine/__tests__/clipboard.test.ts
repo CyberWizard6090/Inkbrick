@@ -9,7 +9,7 @@ import {
   sanitizeFragment,
   type CaretResult,
   type Fragment,
-} from '../src';
+} from '../src/internal';
 
 const p = (blockId: BlockId, offset: number) => ({ blockId, offset });
 

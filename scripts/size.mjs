@@ -9,6 +9,9 @@ const pkg = (name) => fileURLToPath(new URL(`../packages/${name}/src/index.ts`, 
 const alias = {
   '@inkbrick/document': pkg('document'),
   '@inkbrick/store': pkg('store'),
+  '@inkbrick/engine/internal': fileURLToPath(
+    new URL('../packages/engine/src/internal.ts', import.meta.url),
+  ),
   '@inkbrick/engine': pkg('engine'),
   // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
   '@inkbrick/locales': fileURLToPath(new URL('../packages/locales/src', import.meta.url)),

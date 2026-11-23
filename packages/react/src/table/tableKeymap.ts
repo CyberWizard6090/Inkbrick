@@ -1,11 +1,6 @@
 import { normalizeMerges } from '@inkbrick/document';
-import {
-  locateTableCell,
-  mergeAt,
-  tableCellAt,
-  tableSize,
-  type CaretResult,
-} from '@inkbrick/engine';
+import { locateTableCell, tableCellAt, tableSize, type CaretResult } from '@inkbrick/engine';
+import { mergeAt } from '@inkbrick/engine/internal';
 
 import type { KeyBinding, KeymapContext } from '../keymap/types';
 

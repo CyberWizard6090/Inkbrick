@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { validateSnapshot } from '@inkbrick/document';
-import { Editor, columnsBlocks, type CaretResult } from '../src';
+import { Editor, columnsBlocks, type CaretResult } from '../src/internal';
 
 function setup(texts: string[]) {
   const editor = new Editor({ blocks: columnsBlocks });

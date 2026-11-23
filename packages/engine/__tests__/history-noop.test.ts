@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Editor, locateTableCell, tableBlocks, type CaretResult } from '../src';
+import { Editor, locateTableCell, tableBlocks, type CaretResult } from '../src/internal';
 
 /** Команда, которая ничего не меняет, не оставляет шага в истории: иначе Ctrl+Z «ничего не делает». */
 describe('a command that changes nothing leaves no undo step', () => {

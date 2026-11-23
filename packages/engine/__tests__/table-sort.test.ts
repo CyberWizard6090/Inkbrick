@@ -8,7 +8,7 @@ import {
   sortedOrder,
   tableIdOf,
   tableValue,
-} from '../src';
+} from '../src/internal';
 
 describe('parseNumber', () => {
   it('reads numbers the way they are written', () => {

@@ -15,7 +15,7 @@ import {
   tableCellAt,
   tableSize,
   type CaretResult,
-} from '../src';
+} from '../src/internal';
 
 function setup() {
   const editor = new Editor({ blocks: tableBlocks });

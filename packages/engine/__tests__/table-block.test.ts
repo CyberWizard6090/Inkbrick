@@ -10,7 +10,7 @@ import {
   tableCellAt,
   toggleBlocks,
   type CaretResult,
-} from '../src';
+} from '../src/internal';
 
 /** JSON с ключами по алфавиту: отмена и копирование могут вернуть те же props в другом порядке ключей. */
 function canonical(value: unknown): string {

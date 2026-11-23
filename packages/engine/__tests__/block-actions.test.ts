@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { BlockId } from '@inkbrick/document';
 
-import { Editor, type CaretResult } from '../src';
+import { Editor, type CaretResult } from '../src/internal';
 
 function setup(texts: string[]) {
   const editor = new Editor();

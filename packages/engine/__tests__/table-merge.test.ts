@@ -11,7 +11,7 @@ import {
   tableIdOf,
   tableRangeFragment,
   tableValue,
-} from '../src';
+} from '../src/internal';
 import { toHtml, toMarkdown } from '@inkbrick/document';
 
 const m = (row: number, column: number, rows: number, columns: number) => ({

@@ -17,6 +17,7 @@
       "@inkbrick/document/markdown": ["./packages/document/src/markdown.ts"],
       "@inkbrick/store": ["./packages/store/src/index.ts"],
       "@inkbrick/engine": ["./packages/engine/src/index.ts"],
+      "@inkbrick/engine/internal": ["./packages/engine/src/internal.ts"],
       "@inkbrick/dom": ["./packages/dom/src/index.ts"],
       "@inkbrick/dom/*": ["./packages/dom/src/*/index.ts"],
       "@inkbrick/locales": ["./packages/locales/src/index.ts"],

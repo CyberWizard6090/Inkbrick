@@ -7,7 +7,7 @@ import {
   type DocumentSnapshot,
 } from '@inkbrick/document';
 
-import { Editor, createTableEditor, tableBlocks, tableIdOf, tableValue } from '../src';
+import { Editor, createTableEditor, tableBlocks, tableIdOf, tableValue } from '../src/internal';
 
 describe('a document saved before per-side border colours', () => {
   /** Таблица 1×2: у первой ячейки толщина по сторонам, а цвет и начертание — одни на ячейку (как раньше). */

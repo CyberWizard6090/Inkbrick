@@ -8,7 +8,7 @@ import {
   defineBlockController,
   type BlockDefinition,
   type CaretResult,
-} from '../src';
+} from '../src/internal';
 
 type CounterProps = { count: number; step: number };
 

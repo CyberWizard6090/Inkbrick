@@ -7,13 +7,13 @@ import {
   type BlockId,
 } from '@inkbrick/document';
 import {
-  clampTableRange,
-  tableRangeCells,
   type Editor,
   type RangeFormats,
-  type TableRange,
   type TableTextFormat,
+  tableRangeCells,
+  type TableRange,
 } from '@inkbrick/engine';
+import { clampTableRange } from '@inkbrick/engine/internal';
 
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { ToolbarPanel, ToolbarProps } from '../toolbar/types';

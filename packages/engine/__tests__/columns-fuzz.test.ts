@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deserializeDocument, validateSnapshot } from '@inkbrick/document';
-import { Editor, columnsBlocks, type CaretResult } from '../src';
+import { Editor, columnsBlocks, type CaretResult } from '../src/internal';
 
 const COLUMNS = 'block:columns';
 const COLUMN = 'block:column';

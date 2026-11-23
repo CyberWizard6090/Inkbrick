@@ -7,6 +7,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- **Breaking:** `@inkbrick/engine` exports an explicit, smaller public API instead of everything (`export *`): the editor, intents and their results, custom blocks and commands, clipboard fragments, the optional block sets, and table reading, editing and ranges. Single command objects (`InsertTextCommand`, `tableCommands`, …), `builtinCommands`, merged-cell helpers (`mergeAt`, `mergesWithin`, `normalizeMerges`, …), sorting helpers, `clampTableRange`, `expandRangeToMerges`, `readTable`, `columnsCommands`, `collapseEmptyColumns` and the like moved to the new entry `@inkbrick/engine/internal`, which is not a public contract. `Engine`, `Dispatcher`, `BlockEngine` and `InlineEngine` are exported from the main entry as types only. The exported names of every package entry are now checked against a snapshot (`scripts/__tests__/public-api.test.ts`).
+
 - Store: every `Change.apply` is atomic. While a change is applied, the `DocumentWriter` remembers the previous version of each block it writes; if the change throws halfway (an invalid insertion, a `meta.user` / `meta.now` callback that fails after a structural write), those writes are undone and the document is exactly as before — before, such a half-applied change was not in the transaction yet, so its rollback could not undo it. `DocumentWriter.atomically(fn)` is the mechanism; the `Change` contract is documented.
 - Document tree invariants are enforced on write: `_insertChild` refuses an id that is not in the document (before, the dangling id was kept in `children` and hidden by `getChildren`), and `_deleteBlock` refuses the root block.
 

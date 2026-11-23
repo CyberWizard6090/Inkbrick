@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { isSafeImageUrl, normalizeLinkUrl, toHtml } from '@inkbrick/document';
 
-import { Editor, fragmentToHtml, fragmentToPlainText, type CaretResult } from '../src';
+import { Editor, fragmentToHtml, fragmentToPlainText, type CaretResult } from '../src/internal';
 
 /** Превращает первый абзац заметки в картинку. */
 function setupImage(editor: Editor) {

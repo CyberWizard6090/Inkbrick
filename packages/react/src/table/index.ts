@@ -1,5 +1,5 @@
 import { TableCellSchema, TableRowSchema, TableSchema, type TableProps } from '@inkbrick/document';
-import { tableCommands } from '@inkbrick/engine';
+import { tableCommands } from '@inkbrick/engine/internal';
 
 import { defineBlock, type ReactBlockDefinition } from '../blocks/defineBlock';
 import type { BlockComponent } from '../ui/types';

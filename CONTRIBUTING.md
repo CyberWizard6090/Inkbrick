@@ -57,6 +57,13 @@ ESLint rejects an import against the order, by name or by a path into another pa
 `scripts/__tests__/boundaries.test.ts` checks that every package with code is listed in `LAYERS` and that the order has
 no cycles.
 
+**Public API.** What a package's entry exports is its public contract. `scripts/__tests__/public-api.test.ts` keeps the
+list of exported names of every entry in a snapshot: a name that became public by accident (through `export *`) or
+disappeared fails the test. When the change is intended, update the snapshot (`pnpm vitest run scripts -u`) and note it
+in `CHANGELOG.md`. Prefer explicit named exports to `export *` in an entry. Mechanisms other packages need but
+applications should not rely on go to a separate `internal` entry (`@inkbrick/engine/internal`, used by
+`@inkbrick/react` only; the sandbox may not import it).
+
 A new **package** is worth it only when at least one of these is true:
 
 1. it is useful without the editor;

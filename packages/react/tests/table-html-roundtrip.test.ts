@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fragmentToHtml, readTable, tableFragment, type Fragment } from '@inkbrick/engine';
+import { fragmentToHtml, tableFragment, type Fragment } from '@inkbrick/engine';
+import { readTable } from '@inkbrick/engine/internal';
 
 import { htmlToFragment } from '../src';
 

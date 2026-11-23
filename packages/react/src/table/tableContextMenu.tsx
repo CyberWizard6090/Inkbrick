@@ -5,10 +5,10 @@ import {
   MAX_TABLE_CELLS,
   MAX_TABLE_COLUMNS,
   locateTableCell,
-  mergeAt,
   tableSize,
   type CaretResult,
 } from '@inkbrick/engine';
+import { mergeAt } from '@inkbrick/engine/internal';
 
 import type { BlockContextMenuContext } from '../blocks/defineBlock';
 import type { ContextMenuItem } from '../context-menu/types';

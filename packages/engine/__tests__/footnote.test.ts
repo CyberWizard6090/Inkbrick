@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FORMULA_CHAR } from '@inkbrick/document';
 
-import { Editor, footnoteBlocks } from '../src';
+import { Editor, footnoteBlocks } from '../src/internal';
 
 function make() {
   const editor = new Editor({ blocks: footnoteBlocks });

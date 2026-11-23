@@ -41,6 +41,17 @@ const snapshot = editor.serialize(); // plain JSON, load it back with deserializ
 - **Read-only:** `editor.setReadOnly(true)` rejects every change.
 - **Block sets:** `new Editor({ blocks })` adds schemas and controllers of optional or custom blocks.
 
+## Public API
+
+`@inkbrick/engine` exports the stable API: `Editor` and its options, intents and their results, your own blocks and
+commands (`defineBlockController`, `defineBlockCommand`), clipboard fragments, the optional block sets (`tableBlocks`,
+`tocBlocks`, `columnsBlocks`, `toggleBlocks`, `footnoteBlocks`) and reading and editing tables from code. It follows
+semantic versioning.
+
+`@inkbrick/engine/internal` holds the mechanisms behind it — single command objects, table and column helpers, merged
+cell ranges. `@inkbrick/react` uses them; they are **not** a public contract and may change in any release. If an
+application needs one of them, open an issue: that is a reason to widen the public entry.
+
 The React UI lives in [`@inkbrick/react`](https://www.npmjs.com/package/@inkbrick/react).
 
 ## License

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Editor, type CaretResult } from '../src';
+import { Editor, type CaretResult } from '../src/internal';
 
 function setup() {
   const editor = new Editor();

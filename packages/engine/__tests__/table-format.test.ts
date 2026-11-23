@@ -9,7 +9,7 @@ import {
   tableFragment,
   tableRangeFragment,
   type TableRange,
-} from '../src';
+} from '../src/internal';
 import {
   createSchemaRegistry,
   tableBlockSchemas,

@@ -18,7 +18,7 @@ import {
   tableCellAt,
   tableFragment,
   type CaretResult,
-} from '../src';
+} from '../src/internal';
 
 /** Детерминированный генератор (mulberry32): падение воспроизводится по зерну. */
 function random(seed: number) {

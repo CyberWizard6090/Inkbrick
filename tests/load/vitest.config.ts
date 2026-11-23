@@ -14,6 +14,7 @@ export default defineConfig({
       '@inkbrick/document/markdown': pkg('document', 'markdown.ts'),
       '@inkbrick/document': pkg('document'),
       '@inkbrick/store': pkg('store'),
+      '@inkbrick/engine/internal': pkg('engine', 'internal.ts'),
       '@inkbrick/engine': pkg('engine'),
       // Каталог: подпути (`@inkbrick/dom/image-tools`) разрешаются внутрь него.
       '@inkbrick/dom': fileURLToPath(new URL('../../packages/dom/src', import.meta.url)),

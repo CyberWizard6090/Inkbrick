@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { validateSnapshot } from '@inkbrick/document';
 
-import { createTableEditor, tableIdOf, tableValue, tableCellAt } from '../src';
+import { createTableEditor, tableIdOf, tableValue, tableCellAt } from '../src/internal';
 
 const get = (editor: ReturnType<typeof createTableEditor>) => (id: string) =>
   editor.document.getBlock(id);
