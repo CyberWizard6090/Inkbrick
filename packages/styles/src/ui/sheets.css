@@ -16,10 +16,38 @@
   ) {
     position: static;
     box-sizing: border-box;
+    /* После всего ряда кнопок: в разметке список «Превратить в» стоит сразу за своей кнопкой. */
+    order: 1;
     flex: 0 0 100%;
+    /*
+     * Ширину меню задаёт ряд кнопок. Меню подстраивается под содержимое, а ряд с переносом считает его так, будто все
+     * элементы стоят в одну строку: ширина панели прибавлялась к ряду, и меню раздувалось. `contain` убирает из расчёта
+     * содержимое, `min-width: 0` — нижнюю границу, отрицательный отступ справа — поля и рамку (ниже, у каждой панели).
+     * Панель всё равно занимает всю строку (`flex-basis: 100%`).
+     */
+    contain: inline-size;
+    min-width: 0;
     max-height: none;
     margin-top: 2px;
     box-shadow: none;
+  }
+
+  /* Поля 8 + рамка 1 с каждой стороны (см. панель toolbar). */
+  :where(
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-ui='toolbar'][data-placement='inline']
+      > [data-inkbrick-part='panel']
+  ) {
+    margin-inline-end: -18px;
+  }
+
+  /* Поля 4 + рамка 1 с каждой стороны (см. список «Превратить в»). */
+  :where(
+    [data-inkbrick-ui='context-menu']
+      [data-inkbrick-ui='toolbar'][data-placement='inline']
+      > [data-inkbrick-part='turn-menu']
+  ) {
+    margin-inline-end: -10px;
   }
 
   /*

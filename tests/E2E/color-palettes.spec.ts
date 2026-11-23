@@ -118,3 +118,42 @@ test('the palette inside the main context menu fits the menu: no horizontal scro
 
   expect(fits).toBe(true);
 });
+
+test('the main context menu keeps its width when the palette or «Turn into» opens; the list goes under the whole row', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/?lang=en');
+  await page.locator('.editable').first().click();
+  await page.keyboard.type('tint word');
+  await page.keyboard.press('Shift+Home');
+
+  const box = (await page.locator('.editable').first().boundingBox())!;
+
+  await page.mouse.click(box.x + 20, box.y + box.height / 2, { button: 'right' });
+
+  const menu = page.locator(contextMenu);
+  const width = () => menu.evaluate((node) => node.getBoundingClientRect().width);
+  const closed = await width();
+
+  await menu.locator('[data-format="color"]').click();
+  await expect(menu.locator('[data-inkbrick-part="swatches"]')).toBeVisible();
+  expect(Math.abs((await width()) - closed)).toBeLessThanOrEqual(4);
+
+  await menu.locator('[data-format="color"]').click();
+  await menu.locator('[data-format="turn-into"]').click();
+
+  const list = menu.locator('[data-inkbrick-part="turn-menu"]');
+
+  await expect(list).toBeVisible();
+  expect(Math.abs((await width()) - closed)).toBeLessThanOrEqual(4);
+
+  // Все кнопки форматирования — в одном ряду над списком, а не после него.
+  const listTop = (await list.boundingBox())!.y;
+  const rows = await menu
+    .locator('[data-inkbrick-ui="toolbar"] > button')
+    .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().top));
+
+  expect(new Set(rows.map(Math.round)).size).toBe(1);
+  expect(Math.max(...rows)).toBeLessThan(listTop);
+});
