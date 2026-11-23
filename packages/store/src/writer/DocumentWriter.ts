@@ -11,12 +11,53 @@ export interface BlockMetaOptions {
 /**
  * Единственная точка записи в Document. Используется Change-объектами
  * внутри транзакции; наружу (в UI) не экспортируется.
+ *
+ * Атомарность изменения: пока идёт `atomically(fn)`, writer запоминает прежнюю версию каждого блока, который
+ * записывает. Если `fn` бросает исключение на полпути (недопустимая вставка, ошибка колбэка `meta.user` / `meta.now`),
+ * все уже сделанные записи откатываются, и документ остаётся ровно таким, каким был до изменения.
  */
 export class DocumentWriter {
+  /** Прежние версии блоков, записанных текущим `atomically` (`undefined` — блока не было). */
+  private journal: Map<BlockId, BaseBlock | undefined> | null = null;
+
   constructor(
     private readonly document: Document,
     private readonly meta?: BlockMetaOptions,
   ) {}
+
+  /**
+   * Выполняет `fn` атомарно: либо все её записи остаются, либо (при исключении) ни одной — исключение пробрасывается
+   * дальше. Вложенный вызов входит во внешний.
+   */
+  atomically(fn: () => void): void {
+    if (this.journal) return fn();
+
+    const journal = new Map<BlockId, BaseBlock | undefined>();
+
+    this.journal = journal;
+
+    try {
+      fn();
+    } catch (error) {
+      for (const [id, previous] of [...journal].reverse()) {
+        if (previous) this.document._setBlock(previous);
+        else this.document._deleteBlock(id);
+      }
+
+      throw error;
+    } finally {
+      this.journal = null;
+    }
+  }
+
+  /** Запоминает блоки до первой записи в них (только внутри `atomically`). */
+  private remember(...ids: BlockId[]): void {
+    if (!this.journal) return;
+
+    for (const id of ids) {
+      if (!this.journal.has(id)) this.journal.set(id, this.document.getBlock(id));
+    }
+  }
 
   /**
    * Возвращает блок с обновлёнными `meta` (если опция включена): `createdAt/By` берутся у предыдущей версии
@@ -57,6 +98,7 @@ export class DocumentWriter {
       if (!block) continue;
 
       saved.set(id, block.meta);
+      this.remember(id);
       this.document._setBlock(this.stamp(block, block));
     }
 
@@ -73,6 +115,7 @@ export class DocumentWriter {
 
       const { meta: _current, ...rest } = block;
 
+      this.remember(id);
       this.document._setBlock(meta ? { ...rest, meta } : rest);
     }
   }
@@ -82,30 +125,37 @@ export class DocumentWriter {
   }
 
   setBlock(block: BaseBlock): void {
+    this.remember(block.id);
     this.document._setBlock(block);
   }
 
   deleteBlock(id: BlockId): void {
+    this.remember(id);
     this.document._deleteBlock(id);
   }
 
   insertChild(parentId: BlockId, index: number, childId: BlockId): void {
+    this.remember(parentId);
     this.document._insertChild(parentId, index, childId);
   }
 
   removeChild(parentId: BlockId, childId: BlockId): void {
+    this.remember(parentId);
     this.document._removeChild(parentId, childId);
   }
 
   removeChildren(parentId: BlockId, childIds: ReadonlySet<BlockId>): void {
+    this.remember(parentId);
     this.document._removeChildren(parentId, childIds);
   }
 
   restoreChildren(parentId: BlockId, children: readonly BlockId[]): void {
+    this.remember(parentId);
     this.document._restoreChildren(parentId, children);
   }
 
   moveChild(fromParent: BlockId, toParent: BlockId, childId: BlockId, index: number): void {
+    this.remember(fromParent, toParent, childId);
     this.document._moveChild(fromParent, toParent, childId, index);
   }
 }

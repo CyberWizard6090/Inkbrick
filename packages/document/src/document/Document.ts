@@ -61,12 +61,14 @@ export class Document {
   }
 
   _deleteBlock(id: BlockId): void {
+    if (id === this.rootId) throw new Error(`The root block "${id}" cannot be deleted`);
+
     this.blocks.delete(id);
   }
 
   /**
-   * Добавляет ссылку на потомка. Инварианты дерева: блок числится ровно в одном родителе, его `parentId`
-   * указывает на этого родителя, и блок не может стать потомком самого себя.
+   * Добавляет ссылку на потомка. Инварианты дерева: потомок существует, числится ровно в одном родителе, его
+   * `parentId` указывает на этого родителя, и блок не может стать потомком самого себя.
    */
   _insertChild(parentId: BlockId, index: number, childId: BlockId): void {
     const parent = this.requireBlock(parentId);
@@ -75,9 +77,10 @@ export class Document {
       throw new Error(`Block "${childId}" is already a child of "${parentId}"`);
     }
 
-    const child = this.blocks.get(childId);
+    // Ссылка только на существующий блок: сначала блок кладётся в документ (`_setBlock`), потом — в список детей.
+    const child = this.requireBlock(childId);
 
-    if (child && child.parentId !== parentId) {
+    if (child.parentId !== parentId) {
       throw new Error(
         `Block "${childId}" belongs to "${String(child.parentId)}", not "${parentId}": move it instead`,
       );

@@ -7,6 +7,9 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Changed
 
+- Store: every `Change.apply` is atomic. While a change is applied, the `DocumentWriter` remembers the previous version of each block it writes; if the change throws halfway (an invalid insertion, a `meta.user` / `meta.now` callback that fails after a structural write), those writes are undone and the document is exactly as before — before, such a half-applied change was not in the transaction yet, so its rollback could not undo it. `DocumentWriter.atomically(fn)` is the mechanism; the `Change` contract is documented.
+- Document tree invariants are enforced on write: `_insertChild` refuses an id that is not in the document (before, the dangling id was kept in `children` and hidden by `getChildren`), and `_deleteBlock` refuses the root block.
+
 - Inline code takes no formatting except a link: text colour, highlight, bold, italic, underline and strike are no longer applied to inline code, neither to all of it nor to a part (a part of code cannot be written to Markdown and its colour was hidden by the code's own colour anyway). Turning text into code removes that formatting; a selection of code and text formats only the text; over code alone the toolbar disables those buttons. The rule lives in the model (`CODE_EXCLUDED_ATTRIBUTES`, `withoutCodeExcluded`, `normalizeInlineNodes` in `@inkbrick/document`; `BlockEngine` applies it to every content change), so it covers commands, shortcuts, HTML paste, Markdown import (`**`x`**` is plain code) and documents saved earlier (cleaned when opened).
 
 ### Removed

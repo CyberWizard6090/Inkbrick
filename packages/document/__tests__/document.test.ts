@@ -34,12 +34,27 @@ describe('Document', () => {
     const doc = sample();
     const before = doc.getBlock('root')!;
 
+    doc._setBlock(block('x', 'root'));
     doc._insertChild('root', 1, 'x');
     const after = doc.getBlock('root')!;
 
     expect(after).not.toBe(before);
     expect(before.children).toEqual(['a', 'b', 'c']);
     expect(after.children).toEqual(['a', 'x', 'b', 'c']);
+  });
+
+  it('refuses to list a block that is not in the document', () => {
+    const doc = sample();
+
+    expect(() => doc._insertChild('root', 0, 'ghost')).toThrow('Block "ghost" not found');
+    expect(doc.getBlock('root')!.children).toEqual(['a', 'b', 'c']);
+  });
+
+  it('refuses to delete the root block', () => {
+    const doc = sample();
+
+    expect(() => doc._deleteBlock('root')).toThrow('cannot be deleted');
+    expect(doc.getBlock('root')).toBeDefined();
   });
 
   it('refuses to insert the same child twice', () => {

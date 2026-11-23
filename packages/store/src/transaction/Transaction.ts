@@ -24,7 +24,9 @@ export class Transaction {
   apply(change: Change): void {
     this.assertOpen('apply a change to');
 
-    change.apply(this.writer);
+    // Изменение, упавшее на полпути, откатывается целиком (см. `DocumentWriter.atomically`): в `changes` оно не
+    // попадает, и `rollback()` транзакции не должен ничего о нём знать.
+    this.writer.atomically(() => change.apply(this.writer));
 
     this.changes.push(change);
 

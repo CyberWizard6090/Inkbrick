@@ -207,4 +207,86 @@ describe('rollback of a partially executed transaction', () => {
 
     expect(document.dump()).toEqual(before);
   });
+
+  // Контракт атомарности Change.apply: изменение, которое успело записать в документ и затем упало, откатывается
+  // целиком, даже если транзакция о нём ещё не знает.
+  const failingMeta = () => {
+    let calls = 0;
+    let failAt = Infinity;
+
+    return {
+      meta: {
+        now: () => {
+          calls += 1;
+          if (calls >= failAt) throw new Error('clock failed');
+          return 1000 + calls;
+        },
+        user: () => 'ann',
+      },
+      failFrom: (call: number) => (failAt = calls + call),
+    };
+  };
+
+  it('restores the document when a structural change fails halfway (meta.now throws after the move)', () => {
+    const document = createDocument();
+    const { meta, failFrom } = failingMeta();
+    const store = createStore({ document, meta });
+    const noteId = document.getBlock(document.rootId)!.children[0];
+    const firstId = document.getBlock(noteId)!.children[0];
+
+    store.transact((tx) => {
+      tx.apply(new SetBlockChange(paragraph('second', noteId)));
+      tx.apply(new InsertChildChange(noteId, 1, 'second'));
+      tx.apply(new SetBlockChange(paragraph('box', noteId)));
+      tx.apply(new InsertChildChange(noteId, 2, 'box'));
+    });
+
+    const before = structuredClone(document.dump());
+
+    // Перенос уже записан, второй `touch` (новый родитель) падает.
+    failFrom(2);
+
+    expect(() =>
+      store.transact((tx) => tx.apply(new MoveChildChange(noteId, 'box', firstId, 0))),
+    ).toThrow('clock failed');
+    expect(document.dump()).toEqual(before);
+    expect(store.canUndo).toBe(true);
+  });
+
+  it('restores the document when a change fails halfway inside a transaction with earlier changes', () => {
+    const document = createDocument();
+    const { meta, failFrom } = failingMeta();
+    const store = createStore({ document, meta });
+    const noteId = document.getBlock(document.rootId)!.children[0];
+    const firstId = document.getBlock(noteId)!.children[0];
+    const before = structuredClone(document.dump());
+
+    expect(() =>
+      store.transact((tx) => {
+        tx.apply(new UpdateBlockChange(firstId, { content: [{ insert: 'changed' }] }));
+        tx.apply(new SetBlockChange(paragraph('new', noteId)));
+        // Вставка в список детей проходит, отметка времени родителя — нет.
+        failFrom(1);
+        tx.apply(new InsertChildChange(noteId, 1, 'new'));
+      }),
+    ).toThrow('clock failed');
+    expect(document.dump()).toEqual(before);
+  });
+
+  it('a failed change can be retried in a new transaction', () => {
+    const document = createDocument();
+    const { meta, failFrom } = failingMeta();
+    const store = createStore({ document, meta });
+    const noteId = document.getBlock(document.rootId)!.children[0];
+
+    store.transact((tx) => tx.apply(new SetBlockChange(paragraph('late', noteId))));
+    failFrom(1);
+    expect(() =>
+      store.transact((tx) => tx.apply(new InsertChildChange(noteId, 0, 'late'))),
+    ).toThrow('clock failed');
+    failFrom(Infinity);
+    store.transact((tx) => tx.apply(new InsertChildChange(noteId, 0, 'late')));
+
+    expect(document.getBlock(noteId)!.children[0]).toBe('late');
+  });
 });
