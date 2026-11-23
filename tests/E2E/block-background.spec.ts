@@ -100,7 +100,7 @@ test.describe('Block background', () => {
     for (const name of ['lime', 'teal', 'cyan', 'indigo', 'magenta'])
       await expect(page.locator(`${menu} [data-action="background-${name}"]`)).toBeVisible();
 
-    // «Без фона», 14 цветов и «Свой цвет…»: два ровных ряда по восемь.
+    // «Без фона» и 14 цветов (ряд по восемь и ряд из семи); «+ Свой цвет…» — кнопка под сеткой.
     const boxes = await page.locator(`${menu} [data-inkbrick-part="swatch"]`).evaluateAll((nodes) =>
       nodes.map((node) => {
         const { x, y } = node.getBoundingClientRect();
@@ -109,7 +109,7 @@ test.describe('Block background', () => {
       }),
     );
 
-    expect(boxes).toHaveLength(16);
+    expect(boxes).toHaveLength(15);
     expect(new Set(boxes.map((box) => box.y)).size).toBe(2);
     expect(new Set(boxes.map((box) => box.x)).size).toBe(8);
 

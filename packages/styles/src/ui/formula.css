@@ -87,9 +87,10 @@
     background: var(--inkbrick-bg-pressed);
   }
 
+  /* Белый текст на синем: более тёмный синий (`pressed`) держит контраст не ниже 4,5:1 (WCAG AA). */
   :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button'][data-primary]) {
-    border-color: var(--inkbrick-brand-bg);
-    background: var(--inkbrick-brand-bg);
+    border-color: var(--inkbrick-brand-bg-pressed);
+    background: var(--inkbrick-brand-bg-pressed);
     color: var(--inkbrick-fg-on-brand);
   }
 
@@ -97,8 +98,8 @@
     [data-inkbrick-ui='formula-popover']
       [data-inkbrick-part='button'][data-primary]:hover:not(:disabled)
   ) {
-    border-color: var(--inkbrick-brand-bg-hover);
-    background: var(--inkbrick-brand-bg-hover);
+    border-color: color-mix(in srgb, var(--inkbrick-brand-bg-pressed) 85%, #000000);
+    background: color-mix(in srgb, var(--inkbrick-brand-bg-pressed) 85%, #000000);
   }
 
   :where([data-inkbrick-ui='formula-popover'] [data-inkbrick-part='button'][data-danger]) {

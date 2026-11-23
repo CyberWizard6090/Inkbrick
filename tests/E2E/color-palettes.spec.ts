@@ -19,7 +19,16 @@ async function look(swatches: Locator) {
     return {
       first: items[0].getAttribute('data-color'),
       firstHasCross: items[0].querySelector('svg') !== null,
-      last: items.at(-1)!.getAttribute('data-color'),
+      // «+ Свой цвет…» — кнопка сразу под сеткой, во всю её ширину.
+      custom: (() => {
+        const button = grid.parentElement!.querySelector<HTMLElement>(
+          ':scope > [data-inkbrick-part="custom-color"]',
+        );
+
+        return button
+          ? Math.abs(button.getBoundingClientRect().width - grid.getBoundingClientRect().width) <= 1
+          : false;
+      })(),
       width: style.width,
       height: style.height,
       radius: style.borderTopLeftRadius,
@@ -67,7 +76,7 @@ async function tableFlyout(page: Page, path: readonly string[]) {
   return page.locator(`[data-flyout="${path.at(-1)}"] [data-inkbrick-part="swatches"]`);
 }
 
-test('every colour palette has the same look: × first, «Custom color…» last, same swatch size and corners', async ({
+test('every colour palette has the same look: × first, «+ Custom color…» under the grid, same swatch size and corners', async ({
   page,
 }) => {
   const palettes = {
@@ -83,7 +92,7 @@ test('every colour palette has the same look: × first, «Custom color…» last
     expect(palette, where).toEqual({
       first: '',
       firstHasCross: true,
-      last: 'custom',
+      custom: true,
       width: reference.width,
       height: reference.height,
       radius: reference.radius,
@@ -156,4 +165,42 @@ test('the main context menu keeps its width when the palette or «Turn into» op
 
   expect(new Set(rows.map(Math.round)).size).toBe(1);
   expect(Math.max(...rows)).toBeLessThan(listTop);
+});
+
+test('«+ Custom color…» opens the picker in a popover beside the menu; Escape or a click elsewhere closes only it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  const menu = page.getByTestId('block-menu');
+  const palette = await blockMenu(page);
+  const button = page.getByTestId('block-menu').locator('[data-inkbrick-part="custom-color"]');
+
+  await expect(palette).toBeVisible();
+  await button.click();
+
+  const popover = page.locator('[data-inkbrick-part="color-popover"]');
+
+  await expect(popover.locator('[data-inkbrick-part="color-area"]')).toBeFocused();
+
+  // Рядом с меню, а не поверх него.
+  const menuBox = (await menu.boundingBox())!;
+  const popoverBox = (await popover.boundingBox())!;
+
+  expect(
+    popoverBox.x >= menuBox.x + menuBox.width || popoverBox.x + popoverBox.width <= menuBox.x,
+  ).toBe(true);
+
+  await page.keyboard.press('Escape');
+  await expect(popover).toHaveCount(0);
+  await expect(menu).toBeVisible();
+  await expect(button).toBeFocused();
+
+  await button.click();
+  await expect(popover).toBeVisible();
+  // Клик по другому месту меню закрывает окошко, меню остаётся.
+  await menu.locator('[data-inkbrick-part="swatch"][data-color=""]').hover();
+  await page.mouse.down();
+  await expect(popover).toHaveCount(0);
+  await page.mouse.up();
 });

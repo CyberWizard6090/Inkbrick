@@ -189,13 +189,14 @@
     background: var(--inkbrick-bg-hover, #efeeec);
   }
 
+  /* Белый текст на синем: берём более тёмный синий (`pressed`), чтобы контраст был не ниже 4,5:1 (WCAG AA). */
   :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-apply']) {
     border-color: transparent;
-    background: var(--inkbrick-brand-bg, #2383e2);
+    background: var(--inkbrick-brand-bg-pressed, #0b6ec5);
     color: #ffffff;
   }
 
   :where([data-inkbrick-ui='color-picker'] [data-inkbrick-part='color-apply']:hover) {
-    background: var(--inkbrick-brand-bg-hover, #0077d4);
+    background: color-mix(in srgb, var(--inkbrick-brand-bg-pressed, #0b6ec5) 85%, #000000);
   }
 }

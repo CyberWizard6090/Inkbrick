@@ -6,7 +6,7 @@ import { createTableEditor, tableIdOf } from '@inkbrick/engine';
 import { TableEditor } from '../src';
 import { preloadContextMenu } from '../src/context-menu/ContextMenuHost';
 import { hideKeyboard } from '../src/hooks/useSheet';
-import { CustomColorSwatch } from '../src/ui/CustomColorSwatch';
+import { CustomColorButton } from '../src/ui/CustomColorSwatch';
 import './harness';
 import { pickCustomColor } from './pickCustomColor';
 
@@ -303,7 +303,7 @@ describe('custom colour swatch', () => {
     const onPick = vi.fn();
     const view = render(
       <div data-inkbrick-part="swatches">
-        <CustomColorSwatch
+        <CustomColorButton
           value={undefined}
           fallback="#ffe74a"
           label="Custom colour"
@@ -337,7 +337,7 @@ describe('custom colour swatch', () => {
   it('alphaHex="always" gives eight digits even for an opaque colour', async () => {
     const onPick = vi.fn();
     const view = render(
-      <CustomColorSwatch
+      <CustomColorButton
         value="#12ab34"
         fallback="#ffe74a"
         label="Custom colour"

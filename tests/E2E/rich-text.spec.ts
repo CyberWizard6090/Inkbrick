@@ -394,7 +394,7 @@ test.describe('Text color and highlight', () => {
     expect((await rows(page))[0].content).toEqual([{ insert: 'ab' }]);
   });
 
-  test('the grid holds the 16 named colors, "no color" and "Custom color…" in three even rows', async ({
+  test('the grid holds the 16 named colors and "no color" in three rows, "Custom color…" under it', async ({
     page,
   }) => {
     await typeLine(page, 'grid');
@@ -407,7 +407,8 @@ test.describe('Text color and highlight', () => {
         `${toolbar} [data-inkbrick-part="panel"][data-kind="${kind}"] [data-inkbrick-part="swatch"]`,
       );
 
-      await expect(swatches).toHaveCount(18);
+      // «Без цвета» и 16 имён; «+ Свой цвет…» — кнопка под сеткой.
+      await expect(swatches).toHaveCount(17);
 
       const boxes = await swatches.evaluateAll((nodes) =>
         nodes.map((node) => {
@@ -428,9 +429,13 @@ test.describe('Text color and highlight', () => {
       );
 
       expect(labels.every(Boolean)).toBe(true);
-      expect(new Set(labels).size).toBe(18);
+      expect(new Set(labels).size).toBe(17);
       expect(labels).toEqual(expect.arrayContaining(['Teal', 'Cyan', 'Lime', 'Indigo', 'Magenta']));
-      expect(labels.at(-1)).toBe('Custom color…');
+      await expect(
+        page.locator(
+          `${toolbar} [data-inkbrick-part="panel"][data-kind="${kind}"] [data-inkbrick-part="custom-color"]`,
+        ),
+      ).toHaveText('Custom color…');
 
       await page.locator(`${toolbar} [data-format="${kind}"]`).click();
     }
@@ -552,7 +557,10 @@ test.describe('Text color and highlight', () => {
     const custom = page.locator(`${toolbar} [data-kind="color"] [data-color="custom"]`);
 
     await expect(custom).toHaveAttribute('data-pressed', 'true');
-    await expect(custom).toHaveCSS('background-color', 'rgb(18, 171, 52)');
+    await expect(custom.locator('[data-inkbrick-part="custom-color-sample"]')).toHaveCSS(
+      'background-image',
+      /rgb\(18, 171, 52\)/,
+    );
     await expect(
       page.locator(`${toolbar} [data-format="color"] [data-inkbrick-part="indicator"]`),
     ).toHaveCSS('background-color', 'rgb(18, 171, 52)');

@@ -49,7 +49,7 @@ export function requireCdp(page: Page) {
  * нажимает «Применить».
  */
 export async function pickCustomColor(scope: Locator, hex: string) {
-  await scope.locator('[data-inkbrick-part="swatch"][data-color="custom"]').click();
+  await scope.locator('[data-inkbrick-part="custom-color"]').click();
 
   const field = scope.locator('[data-inkbrick-part="color-field"]');
 

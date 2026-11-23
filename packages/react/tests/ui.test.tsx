@@ -236,8 +236,11 @@ describe('formatting toolbar', () => {
       const panel = toolbar().querySelector(`[data-kind="${kind}"]`)!;
       const swatches = panel.querySelectorAll<HTMLElement>('[data-inkbrick-part="swatch"]');
 
-      // «Без цвета», 16 имён палитры и «Свой цвет…»: три ровных ряда по шесть.
-      expect(swatches).toHaveLength(18);
+      // «Без цвета» и 16 имён палитры; «+ Свой цвет…» — кнопка под сеткой.
+      expect(swatches).toHaveLength(17);
+      expect(panel.querySelector('[data-inkbrick-part="custom-color"]')!.textContent).toBe(
+        'Custom color…',
+      );
 
       for (const [name, label] of [
         ['lime', 'Lime'],
@@ -279,7 +282,7 @@ describe('formatting toolbar', () => {
     select({ blockId: ids[0], offset: 0 }, { blockId: ids[0], offset: 6 });
 
     fireEvent.click(button('color'));
-    expect(custom('color').getAttribute('aria-label')).toBe('Custom color…');
+    expect(custom('color').textContent).toBe('Custom color…');
     expect(custom('color').hasAttribute('data-pressed')).toBe(false);
     expect(custom('color').getAttribute('aria-expanded')).toBe('false');
 
@@ -309,7 +312,11 @@ describe('formatting toolbar', () => {
     // После выбора панель закрылась: открываем снова и видим свой цвет на образце.
     fireEvent.click(button('color'));
     expect(custom('color').hasAttribute('data-pressed')).toBe(true);
-    expect(custom('color').style.getPropertyValue('--inkbrick-custom-color')).toBe('#12ab34');
+    expect(
+      custom('color')
+        .querySelector<HTMLElement>('[data-inkbrick-part="custom-color-sample"]')!
+        .style.getPropertyValue('--inkbrick-custom-color'),
+    ).toBe('#12ab34');
     expect(
       button('color').querySelector<HTMLElement>('[data-inkbrick-part="indicator"]')!.style
         .background,

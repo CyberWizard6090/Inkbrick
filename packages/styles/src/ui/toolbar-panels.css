@@ -238,34 +238,102 @@
     background: #3d3d3d;
   }
 
-  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='swatches']) {
+  /* Палитра: сетка образцов, под ней кнопка «+ Свой цвет…» во всю ширину сетки. */
+  :where([data-inkbrick-part='palette']) {
+    display: grid;
+    justify-content: start;
+    gap: 6px;
+  }
+
+  :where([data-inkbrick-ui='block-menu'] [data-inkbrick-part='palette']) {
     padding: 4px 8px 8px;
   }
 
-  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='swatches']) {
+  :where([data-inkbrick-ui='context-menu'] [data-inkbrick-part='palette']) {
     padding: 4px;
   }
 
-  /* «Свой цвет…»: радужный образец, а выбранный свой цвет — его собственный (`--inkbrick-custom-color`). */
-  :where([data-inkbrick-part='swatches'] [data-inkbrick-part='swatch'][data-color='custom']) {
-    background: var(
-      --inkbrick-custom-color,
-      conic-gradient(#f2384b, #f2a900, #5fd45f, #2bc4d4, #4f6cf2, #c026d3, #f2384b)
-    );
+  :where([data-inkbrick-part='palette'] > [data-inkbrick-part='custom-color']) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-control);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    font: inherit;
+    font-size: var(--inkbrick-font-size-ui);
+    text-align: start;
+    cursor: pointer;
   }
 
-  :where([data-inkbrick-part='custom-color']) {
-    position: relative;
-    display: grid;
+  :where([data-inkbrick-part='palette'] > [data-inkbrick-part='custom-color'] svg) {
+    width: 16px;
+    height: 16px;
+    color: var(--inkbrick-fg-2);
   }
 
-  /* Выбор цвета раскрывается строкой под палитрой, во всю её ширину (палитры — сетки). */
-  :where([data-inkbrick-part='color-picker-panel']) {
-    grid-column: 1 / -1;
-    padding: 6px 2px 2px;
+  :where([data-inkbrick-part='palette'] > [data-inkbrick-part='custom-color']:hover) {
+    background: var(--inkbrick-bg-hover);
   }
 
-  :where([data-inkbrick-part='color-picker-panel'] [data-inkbrick-ui='color-picker']) {
+  :where(
+    [data-inkbrick-part='palette']
+      > [data-inkbrick-part='custom-color']:is([data-pressed], [aria-checked='true'])
+  ) {
+    outline: 2px solid var(--inkbrick-brand-bg);
+    outline-offset: 1px;
+  }
+
+  :where([data-inkbrick-part='palette'] > [data-inkbrick-part='custom-color']:focus-visible) {
+    outline: 2px solid var(--inkbrick-stroke-focus-2);
+    outline-offset: 1px;
+  }
+
+  /* Выбранный свой цвет — квадратик этого цвета (поверх шахматки: цвет бывает прозрачным). */
+  :where([data-inkbrick-part='custom-color-sample']) {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background:
+      linear-gradient(var(--inkbrick-custom-color), var(--inkbrick-custom-color)),
+      repeating-conic-gradient(#cfcfcf 0% 25%, #ffffff 0% 50%) 0 0 / 8px 8px;
+    box-shadow: inset 0 0 0 1px var(--inkbrick-stroke-2);
+  }
+
+  /* Окошко выбора своего цвета рядом с меню или панелью (место ставит сама кнопка). */
+  :where([data-inkbrick-part='color-popover']) {
+    position: fixed;
+    z-index: var(--inkbrick-z-popup);
+    box-sizing: border-box;
+    width: 260px;
+    padding: 10px;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-radius: var(--inkbrick-radius-surface);
+    background: var(--inkbrick-bg-1);
+    color: var(--inkbrick-fg-1);
+    box-shadow: var(--inkbrick-shadow-16);
+    animation: inkbrick-menu-in var(--inkbrick-appear-duration) var(--inkbrick-curve);
+  }
+
+  :where([data-inkbrick-part='color-popover'] [data-inkbrick-ui='color-picker']) {
+    max-width: none;
+  }
+
+  /* Узкий экран (меню листом): выбор раскрывается под палитрой, во всю её ширину. */
+  :where([data-inkbrick-part='palette'] > [data-inkbrick-part='color-picker-panel']) {
+    padding: 2px;
+  }
+
+  :where(
+    [data-inkbrick-part='palette']
+      > [data-inkbrick-part='color-picker-panel']
+      [data-inkbrick-ui='color-picker']
+  ) {
     max-width: none;
   }
 

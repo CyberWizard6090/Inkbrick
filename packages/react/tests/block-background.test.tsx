@@ -42,8 +42,8 @@ describe('block background in the block menu', () => {
 
     t.openMenu();
 
-    // «Без фона», 14 цветов палитры и «Свой цвет…».
-    expect(t.menu()!.querySelectorAll('[data-inkbrick-part="swatch"]')).toHaveLength(16);
+    // «Без фона» и цвета палитры; «+ Свой цвет…» — кнопка под сеткой.
+    expect(t.menu()!.querySelectorAll('[data-inkbrick-part="swatch"]')).toHaveLength(15);
     expect(t.swatch('none').getAttribute('aria-checked')).toBe('true');
     expect(t.swatch('yellow').getAttribute('aria-label')).toBe('Yellow');
 
@@ -51,7 +51,7 @@ describe('block background in the block menu', () => {
       expect(t.swatch(name).getAttribute('aria-label'), name).toBeTruthy();
 
     expect(t.swatch('teal').getAttribute('aria-label')).toBe('Teal');
-    expect(t.swatch('custom').getAttribute('aria-label')).toBe('Custom color…');
+    expect(t.swatch('custom').textContent).toBe('Custom color…');
   });
 
   it('"Custom color…" stores #rrggbbaa from the picker, draws it as chosen and checks the swatch', async () => {

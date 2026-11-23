@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { safeCssColor } from '@inkbrick/document';
 
 import { Icon } from '../icons/Icon';
-import { CustomColorSwatch } from './CustomColorSwatch';
+import { CustomColorButton } from './CustomColorSwatch';
 
 export interface ColorSwatchesProps {
   /** Подпись группы для программ чтения с экрана. */
@@ -41,8 +41,8 @@ export interface ColorSwatchesProps {
 }
 
 /**
- * Палитра цветов одного вида для всего редактора: сетка скруглённых образцов, первый — «×» (снять цвет), за ним цвета
- * палитры, последний — «Свой цвет…» (выбор цвета с прозрачностью раскрывается строкой под сеткой). Её используют панель
+ * Палитра цветов одного вида для всего редактора: сетка скруглённых образцов — первый «×» (снять цвет), за ним цвета
+ * палитры, — а под ней кнопка «+ Свой цвет…» (выбор цвета с прозрачностью открывается окошком рядом). Её используют панель
  * форматирования (цвет текста и выделение), меню блока (фон) и меню таблицы (фон ячеек и цвет границ).
  */
 export function ColorSwatches({
@@ -70,45 +70,45 @@ export function ColorSwatches({
       : undefined;
 
   return (
-    <div
-      data-inkbrick-part="swatches"
-      data-sample={sample}
-      role="group"
-      aria-label={label}
-      style={{ '--inkbrick-swatch-columns': columns } as CSSProperties}
-    >
-      <button
-        type="button"
-        role={role}
-        {...checked(current === null || current === undefined)}
-        data-inkbrick-part="swatch"
-        data-color=""
-        data-action={actions?.reset}
-        aria-label={resetLabel}
-        title={resetLabel}
-        onClick={() => onPick(null)}
+    <div data-inkbrick-part="palette" role="group" aria-label={label}>
+      <div
+        data-inkbrick-part="swatches"
+        data-sample={sample}
+        style={{ '--inkbrick-swatch-columns': columns } as CSSProperties}
       >
-        <Icon name="x" />
-      </button>
-      {names.map((name) => (
         <button
-          key={name}
           type="button"
           role={role}
-          {...checked(current === name)}
+          {...checked(current === null || current === undefined)}
           data-inkbrick-part="swatch"
-          data-color={name}
-          data-action={actions?.color(name)}
-          aria-label={nameOf(name)}
-          title={nameOf(name)}
-          style={{ '--inkbrick-swatch': colorOf(name) } as CSSProperties}
-          onClick={() => onPick(toggle && current === name ? null : name)}
+          data-color=""
+          data-action={actions?.reset}
+          aria-label={resetLabel}
+          title={resetLabel}
+          onClick={() => onPick(null)}
         >
-          {sample === 'text' ? 'A' : null}
+          <Icon name="x" />
         </button>
-      ))}
+        {names.map((name) => (
+          <button
+            key={name}
+            type="button"
+            role={role}
+            {...checked(current === name)}
+            data-inkbrick-part="swatch"
+            data-color={name}
+            data-action={actions?.color(name)}
+            aria-label={nameOf(name)}
+            title={nameOf(name)}
+            style={{ '--inkbrick-swatch': colorOf(name) } as CSSProperties}
+            onClick={() => onPick(toggle && current === name ? null : name)}
+          >
+            {sample === 'text' ? 'A' : null}
+          </button>
+        ))}
+      </div>
       {custom && customLabel && (
-        <CustomColorSwatch
+        <CustomColorButton
           role={role}
           action={actions?.custom}
           value={own}
