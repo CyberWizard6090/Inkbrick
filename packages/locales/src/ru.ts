@@ -276,6 +276,9 @@ export const ru: Messages = {
   'contextMenu.copy': 'Копировать',
   'contextMenu.paste': 'Вставить',
   'contextMenu.selectAll': 'Выделить всё',
+  'contextMenu.spelling.loading': 'Проверка орфографии…',
+  'contextMenu.spelling.none': 'Нет вариантов',
+  'contextMenu.spelling.add': 'Добавить в словарь',
 
   'history.undo': 'Отменить',
   'history.redo': 'Повторить',

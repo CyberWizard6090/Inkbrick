@@ -1,3 +1,4 @@
+import type { Spellchecker } from '../spellcheck/types';
 import type { ComponentType, ReactNode } from 'react';
 
 import type { BaseBlock } from '@inkbrick/document';
@@ -67,8 +68,11 @@ export interface EditorUIConfig {
   readonly highlighter: CodeHighlighter | null;
   readonly formulaRenderer: FormulaRenderer | null;
   readonly locale: string;
-  /** Проверка орфографии браузера включена; `lang` — язык документа для неё (по умолчанию язык интерфейса). */
-  readonly spellcheck: { readonly lang: string } | false;
+  /**
+   * Проверка орфографии браузера включена; `lang` — язык документа для неё (по умолчанию язык интерфейса), `checker` —
+   * источник вариантов исправления для контекстного меню.
+   */
+  readonly spellcheck: { readonly lang: string; readonly checker?: Spellchecker } | false;
   readonly t: TFunction;
   readonly keymap: readonly KeyBinding[];
   readonly images: ImageOptions;

@@ -42,6 +42,7 @@ import {
   startAutosave,
 } from './persistence';
 import { EditorWidthHandle } from './components/EditorWidthHandle';
+import { sandboxSpellchecker } from './spellchecker';
 import { clampEditorWidth, initialEditorWidth, saveEditorWidth } from './editorWidth';
 import {
   createSandboxEditor,
@@ -471,7 +472,7 @@ export function App({ initial }: { initial: RestoredEditor }) {
         formatting={formatting}
         components={folding.components}
         keymap={sandboxKeymap}
-        spellcheck={spellcheck}
+        spellcheck={spellcheck && { checker: sandboxSpellchecker }}
       >
         <DemoSwitch current="editor" />
         <FindReplacePanel />

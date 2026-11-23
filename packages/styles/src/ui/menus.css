@@ -160,6 +160,14 @@
     background: var(--inkbrick-bg-pressed);
   }
 
+  /* Варианты исправления слова — полужирные, как в меню браузера. */
+  :where(
+    [data-inkbrick-ui='context-menu']
+      > [data-inkbrick-part='item'][data-action^='spelling-']:not([data-action='spelling-add'])
+  ) {
+    font-weight: var(--inkbrick-font-weight-semibold);
+  }
+
   :where([data-inkbrick-ui='context-menu'] > [data-inkbrick-part='item'][data-disabled]) {
     color: var(--inkbrick-fg-disabled);
     cursor: default;

@@ -278,6 +278,9 @@ export const en = {
   'contextMenu.copy': 'Copy',
   'contextMenu.paste': 'Paste',
   'contextMenu.selectAll': 'Select all',
+  'contextMenu.spelling.loading': 'Checking spelling…',
+  'contextMenu.spelling.none': 'No suggestions',
+  'contextMenu.spelling.add': 'Add to dictionary',
 
   'history.undo': 'Undo',
   'history.redo': 'Redo',

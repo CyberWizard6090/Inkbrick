@@ -683,6 +683,7 @@ exports[`public API of the packages > @inkbrick/react 1`] = `
   "selectionStats",
   "type SlashMenuItem",
   "type SlashMenuProps",
+  "type Spellchecker",
   "statsOf",
   "type StatsOptions",
   "TableBlock",
@@ -734,6 +735,16 @@ exports[`public API of the packages > @inkbrick/react 1`] = `
   "type WordCountOptions",
   "type WordCountProps",
   "type WordCountState",
+]
+`;
+
+exports[`public API of the packages > @inkbrick/spellcheck 1`] = `
+[
+  "createSpellchecker",
+  "type Dictionary",
+  "scriptLanguage",
+  "type Spellchecker",
+  "type SpellcheckerOptions",
 ]
 `;
 

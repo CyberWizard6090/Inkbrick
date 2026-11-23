@@ -197,7 +197,8 @@ function endOf(element: HTMLElement): DomPoint {
   return findPoint(element, element.textContent?.length ?? 0) ?? startOf(element);
 }
 
-function caretFromPoint(x: number, y: number): DomPoint | null {
+/** Позиция каретки в DOM под точкой окна (`caretPositionFromPoint`, в WebKit — `caretRangeFromPoint`). */
+export function caretFromPoint(x: number, y: number): DomPoint | null {
   const doc = globalThis.document as Document & {
     caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
   };

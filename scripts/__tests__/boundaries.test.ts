@@ -59,6 +59,8 @@ describe('boundaries: the library and the sandbox', () => {
     const offenders = sandbox.flatMap((file) =>
       importsOf(file)
         .filter((source) => /packages\//.test(source) || /^@inkbrick\/[a-z]+\/.+/.test(source))
+        // Скрипт Web Worker проверки орфографии — публичный вход пакета.
+        .filter((source) => !source.startsWith('@inkbrick/spellcheck/worker'))
         .map((source) => `${relative(ROOT, file)} → ${source}`),
     );
 

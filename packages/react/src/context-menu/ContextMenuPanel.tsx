@@ -26,7 +26,7 @@ import type { ContextMenuItem } from './types';
 export function ContextMenuPanel() {
   const editor = useEditor();
   const view = useEditorView();
-  const { slots, t, contextMenu, slashItems } = useEditorUI();
+  const { slots, t, contextMenu, slashItems, spellcheck } = useEditorUI();
   const readOnly = useReadOnly();
   const menu = useSyncExternalStore(
     view.contextMenu.subscribe,
@@ -38,6 +38,9 @@ export function ContextMenuPanel() {
     view.toolbar.getState,
     view.toolbar.getState,
   );
+
+  const checker = spellcheck ? spellcheck.checker : undefined;
+  const spelling = useSpelling(checker, menu.word ?? null);
 
   // Панель цвета у кнопок форматирования выделенных ячеек: у текста её состояние хранит toolbar, а у ячеек его нет.
   const [cellPanel, setCellPanel] = useState<ToolbarPanel | null>(null);
@@ -85,9 +88,72 @@ export function ContextMenuPanel() {
     const picked = view.cells.get();
     const hasText = (!!selection && !selection.collapsed) || !!picked;
 
+    const word = menu.word ?? null;
+    const suggestions = spelling.state === 'wrong' ? spelling.suggestions : [];
+    // Варианты исправления слова под кликом — над остальными пунктами (как в меню браузера).
+    const corrections: ContextMenuItem[] =
+      !word || !checker || spelling.state === 'correct'
+        ? []
+        : spelling.state === 'loading'
+          ? [
+              {
+                id: 'spelling-loading',
+                icon: null,
+                title: t('contextMenu.spelling.loading'),
+                disabled: true,
+                run: () => {},
+              },
+            ]
+          : [
+              ...(suggestions.length === 0
+                ? [
+                    {
+                      id: 'spelling-none',
+                      icon: null,
+                      title: t('contextMenu.spelling.none'),
+                      disabled: true,
+                      run: () => {},
+                    },
+                  ]
+                : suggestions.map((suggestion, index) => ({
+                    id: `spelling-${index}`,
+                    title: suggestion,
+                    // Пустое место под значок: варианты стоят вровень с текстом остальных пунктов.
+                    icon: null,
+                    run: () => {
+                      close(false);
+                      editor.dispatch({
+                        type: 'replaceText',
+                        payload: {
+                          blockId: word.blockId,
+                          from: word.from,
+                          to: word.to,
+                          text: suggestion,
+                        },
+                      });
+                      view.placeCaret(word.blockId, word.from + suggestion.length);
+                    },
+                  }))),
+              ...(checker.add
+                ? [
+                    {
+                      id: 'spelling-add',
+                      title: t('contextMenu.spelling.add'),
+                      icon: <Icon name="plus" />,
+                      run: () => {
+                        close();
+                        checker.add!(word.word);
+                      },
+                    },
+                  ]
+                : []),
+            ];
+
     const items: ContextMenuItem[] = [
+      ...corrections,
       {
         id: 'cut',
+        separatorBefore: corrections.length > 0,
         title: t('contextMenu.cut'),
         icon: <Icon name="scissors" />,
         shortcut: shortcutLabel('X'),
@@ -184,4 +250,40 @@ export function ContextMenuPanel() {
 
   // Меню остаётся смонтированным и уходит плавно: условие показа — `open`, а то, что рисуется, — в `render`.
   return <PortalPresence open={open} render={render} />;
+}
+
+type Spelling =
+  | { readonly state: 'loading' | 'correct' }
+  | { readonly state: 'wrong'; readonly suggestions: readonly string[] };
+
+/** Варианты для слова под кликом: пока источник думает (грузит словарь) — `loading`. */
+function useSpelling(
+  checker: { suggest(word: string): Promise<readonly string[] | null> } | undefined,
+  word: { readonly word: string } | null,
+): Spelling {
+  const [result, setResult] = useState<{ word: string; spelling: Spelling } | null>(null);
+  const text = word?.word;
+
+  useEffect(() => {
+    if (!checker || !text) return;
+
+    let active = true;
+
+    checker.suggest(text).then(
+      (suggestions) => {
+        if (active)
+          setResult({
+            word: text,
+            spelling: suggestions ? { state: 'wrong', suggestions } : { state: 'correct' },
+          });
+      },
+      () => active && setResult({ word: text, spelling: { state: 'correct' } }),
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [checker, text]);
+
+  return result && result.word === text ? result.spelling : { state: 'loading' };
 }

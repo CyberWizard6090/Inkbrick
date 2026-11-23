@@ -9,6 +9,7 @@ import tseslint from 'typescript-eslint';
  *   document → store → engine ─┐
  *   locales ───────────────────┼→ react
  *   dom (без зависимостей) ────┘
+ *   spellcheck (без зависимостей, его подключает приложение)
  */
 export const LAYERS = {
   document: [],
@@ -16,6 +17,7 @@ export const LAYERS = {
   engine: ['document', 'store'],
   locales: [],
   dom: [],
+  spellcheck: [],
   react: ['document', 'store', 'engine', 'locales', 'dom'],
 };
 
@@ -129,7 +131,8 @@ export default [
         {
           patterns: [
             {
-              group: ['**/packages/**', '@inkbrick/*/*'],
+              // Скрипт Web Worker проверки орфографии — публичный вход, его запускает само приложение.
+              group: ['**/packages/**', '@inkbrick/*/*', '!@inkbrick/spellcheck/worker*'],
               message:
                 'The sandbox uses the public entry of a package only: import from "@inkbrick/react", not from its internals.',
             },

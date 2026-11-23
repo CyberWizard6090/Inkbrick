@@ -25,6 +25,7 @@ import type { FormattingMode } from '../context-menu/types';
 import { EditorContext, EditorViewContext } from './EditorContext';
 import { blockComponentsOf, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import { controllerKeymap, controllerSlashItems, mergeById } from '../controllers/adapters';
+import type { Spellchecker } from '../spellcheck/types';
 
 export interface EditorProviderProps {
   readonly editor: Editor;
@@ -103,7 +104,16 @@ export interface EditorProviderProps {
    * `{ lang }` — включить для другого языка текста, чем язык интерфейса (`locale`). Не проверяются код, формулы, ссылки
    * и ячейки таблицы с адресами, почтой и телефонами. В режиме чтения выключена. По умолчанию выключена.
    */
-  readonly spellcheck?: boolean | { readonly lang?: string };
+  readonly spellcheck?:
+    | boolean
+    | {
+        readonly lang?: string;
+        /**
+         * Варианты исправления в контекстном меню: над «Вырезать» — варианты для слова под правым кликом и «Добавить в
+         * словарь» (браузер свои подсказки страницам не отдаёт). Например, `createSpellchecker` из `@inkbrick/spellcheck`.
+         */
+        readonly checker?: Spellchecker;
+      };
 }
 
 export function EditorProvider({
@@ -197,7 +207,12 @@ export function EditorProvider({
       formulaRenderer: math === false ? null : (math ?? temmlRenderer),
       locale: locale ?? 'en',
       spellcheck: spellcheck
-        ? { lang: (typeof spellcheck === 'object' ? spellcheck.lang : undefined) ?? locale ?? 'en' }
+        ? {
+            lang: (typeof spellcheck === 'object' ? spellcheck.lang : undefined) ?? locale ?? 'en',
+            ...(typeof spellcheck === 'object' && spellcheck.checker
+              ? { checker: spellcheck.checker }
+              : {}),
+          }
         : (false as const),
       t,
       keymap: resolveKeymap(mergeById(controllerKeymap(editor), customKeys, 'preferred-first')),

@@ -1,3 +1,4 @@
+import type { SpellTarget } from '../spellcheck/types';
 import type { DocSelection } from '../editing/selection';
 
 export interface ContextMenuState {
@@ -5,6 +6,8 @@ export interface ContextMenuState {
   readonly position: { readonly x: number; readonly y: number } | null;
   /** Выделение документа в момент открытия: фокус может уйти в меню, а действия выполняются над ним. */
   readonly selection: DocSelection | null;
+  /** Слово под правым кликом (если задан источник вариантов исправления): для пунктов с вариантами. */
+  readonly word?: SpellTarget | null;
 }
 
 const CLOSED: ContextMenuState = Object.freeze({ position: null, selection: null });
@@ -24,8 +27,13 @@ export class ContextMenuController {
     };
   };
 
-  open(x: number, y: number, selection: DocSelection | null = null): void {
-    this.set({ position: { x, y }, selection });
+  open(
+    x: number,
+    y: number,
+    selection: DocSelection | null = null,
+    word: SpellTarget | null = null,
+  ): void {
+    this.set({ position: { x, y }, selection, word });
   }
 
   close(): void {

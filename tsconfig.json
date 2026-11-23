@@ -20,6 +20,8 @@
       "@inkbrick/engine/internal": ["./packages/engine/src/internal.ts"],
       "@inkbrick/dom": ["./packages/dom/src/index.ts"],
       "@inkbrick/dom/*": ["./packages/dom/src/*/index.ts"],
+      "@inkbrick/spellcheck": ["./packages/spellcheck/src/index.ts"],
+      "@inkbrick/spellcheck/worker": ["./packages/spellcheck/src/worker.ts"],
       "@inkbrick/locales": ["./packages/locales/src/index.ts"],
       "@inkbrick/locales/*": ["./packages/locales/src/*.ts"],
       "@inkbrick/react": ["./packages/react/src/index.ts"]

@@ -51,6 +51,7 @@ Each package imports only the packages below it. The order is `LAYERS` in `eslin
 
 - `document` → `store` → `engine` → `react`;
 - `locales` and `dom` depend on nothing, and only `react` uses them;
+- `spellcheck` depends on nothing in Inkbrick; the application plugs it into `react` (which knows only its interface);
 - only `react` imports React.
 
 ESLint rejects an import against the order, by name or by a path into another package's folder.

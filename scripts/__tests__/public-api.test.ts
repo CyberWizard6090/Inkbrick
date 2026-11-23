@@ -20,6 +20,7 @@ const ENTRIES = {
   '@inkbrick/engine': 'packages/engine/src/index.ts',
   '@inkbrick/engine/internal (not public)': 'packages/engine/src/internal.ts',
   '@inkbrick/dom': 'packages/dom/src/index.ts',
+  '@inkbrick/spellcheck': 'packages/spellcheck/src/index.ts',
   '@inkbrick/locales': 'packages/locales/src/index.ts',
   '@inkbrick/react': 'packages/react/src/index.ts',
 };

@@ -2,6 +2,7 @@ export * from './context/EditorContext';
 export * from './context/EditorProvider';
 export { definePresentation } from './ui/presentation';
 export type { EditorPresentation } from './ui/presentation';
+export type { Spellchecker } from './spellcheck/types';
 
 export * from './hooks/useEditor';
 export * from './hooks/useEditorView';

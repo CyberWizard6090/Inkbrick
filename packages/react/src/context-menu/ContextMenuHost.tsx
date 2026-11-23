@@ -1,12 +1,18 @@
 import {
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ComponentType,
   type RefObject,
 } from 'react';
 
-import { readDocSelection } from '../editing/selection';
+import type { Editor } from '@inkbrick/engine';
+
+import { getOffsetIn, readDocSelection } from '../editing/selection';
+import { caretFromPoint } from '../editing/useMarginClick';
+import { wordAt, type SpellTarget } from '../spellcheck/types';
+import { useEditorUI } from '../ui/EditorUIContext';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { syncToolbar } from '../toolbar/syncToolbar';
@@ -30,6 +36,11 @@ const NATIVE_MENU = [
 export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: boolean) {
   const editor = useEditor();
   const view = useEditorView();
+  // Настройки интерфейса (источник вариантов) — по ссылке: обработчик ставится один раз.
+  const config = useEditorUI();
+  const ui = useRef(config);
+
+  ui.current = config;
 
   useEffect(() => {
     const root = ref.current;
@@ -62,7 +73,15 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
       // Кнопкам форматирования нужно актуальное выделение (правый клик мог его поменять).
       view.pointerDown = false;
       syncToolbar(editor, view);
-      view.contextMenu.open(Math.round(x), Math.round(y), readDocSelection(root));
+      const selection = readDocSelection(root);
+      const { spellcheck } = ui.current;
+      // Слово под кликом — только без выделения (или с кареткой): у выделения в меню форматирование.
+      const word =
+        spellcheck && spellcheck.checker && (!selection || selection.collapsed)
+          ? spellTargetAt(editor, event.clientX, event.clientY)
+          : null;
+
+      view.contextMenu.open(Math.round(x), Math.round(y), selection, word);
     };
 
     const onUi = (event: Event) =>
@@ -112,6 +131,32 @@ export function useContextMenu(ref: RefObject<HTMLElement | null>, enabled: bool
       view.contextMenu.close();
     };
   }, [editor, view, ref, enabled]);
+}
+
+/**
+ * Слово документа под точкой окна: блок, границы и текст. Не проверяются блоки с текстом без оформления (код), inline-код,
+ * ссылки и формулы.
+ */
+export function spellTargetAt(editor: Editor, x: number, y: number): SpellTarget | null {
+  const point = caretFromPoint(x, y);
+  const element =
+    point &&
+    (point.node.nodeType === Node.ELEMENT_NODE
+      ? (point.node as Element)
+      : point.node.parentElement);
+  const editable = element?.closest<HTMLElement>('.editable[data-id]');
+
+  if (!point || !editable || element?.closest('code, a[href], [data-inkbrick-formula]'))
+    return null;
+
+  const block = editor.store.getBlock(editable.dataset.id!);
+
+  if (!block || editor.schema.getBlockSchema(block.flavour)?.plainText) return null;
+
+  const text = block.content.map((node) => node.insert).join('');
+  const found = wordAt(text, getOffsetIn(editable, point.node, point.offset));
+
+  return found ? { blockId: block.id, ...found } : null;
 }
 
 let loaded: ComponentType | undefined;

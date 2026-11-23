@@ -33,6 +33,8 @@ All notable changes to the `@inkbrick/*` packages. The format follows
 
 ### Added
 
+- Spelling suggestions in the context menu (`docs/spellcheck.md`): right-click a misspelled word and the menu offers up to five corrections above Cut and «Add to dictionary»; picking one replaces the word in one undo step. Browsers do not give their suggestions to pages, so they come from `spellcheck.checker` on `EditorProvider` (type `Spellchecker`). New package `@inkbrick/spellcheck`: `createSpellchecker` over Hunspell dictionaries (`nspell`) in a Web Worker (`@inkbrick/spellcheck/worker`), a dictionary per language loaded on its first word, a personal dictionary, ranked suggestions. The application brings the dictionaries; the sandbox uses Russian and English.
+
 - One colour palette everywhere: text colour, highlight, block background, table cell background and table border colour share the same component (`ColorSwatches`) and look — a grid of rounded square swatches, «×» first (removes the colour), the palette, «Custom color…» last. The table menus lose their round dots and the separate «Remove color» button. Swatches take their colour from `--inkbrick-swatch` instead of a CSS rule per colour; size and columns are `--inkbrick-swatch-size` and `--inkbrick-swatch-columns`.
 - Table borders can have a custom colour with transparency: `borderColor` and `border<Side>Color` accept `#rrggbb` / `#rrggbbaa` besides palette names (schema, `setTableCellsBorders`, rendering; HTML export writes it as is).
 
