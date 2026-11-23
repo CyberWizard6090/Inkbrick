@@ -7,7 +7,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
  */
 
 const toolbar = '[data-inkbrick-ui="toolbar"]';
-const contextMenu = '[data-testid="context-menu"]';
+const contextMenu = '[data-inkbrick-ui="context-menu"]';
 
 async function look(swatches: Locator) {
   await expect(swatches).toBeVisible();
@@ -95,4 +95,26 @@ test('every colour palette has the same look: × first, «Custom color…» last
   expect(reference.width).toBe(reference.height);
   expect(reference.radius).not.toBe('50%');
   expect(parseFloat(reference.radius)).toBeLessThan(parseFloat(reference.width) / 2);
+});
+
+test('the palette inside the main context menu fits the menu: no horizontal scrollbar', async ({
+  page,
+}) => {
+  await page.goto('/?lang=en');
+  await page.locator('.editable').first().click();
+  await page.keyboard.type('tint');
+  await page.keyboard.press('Shift+Home');
+
+  const box = (await page.locator('.editable').first().boundingBox())!;
+
+  await page.mouse.click(box.x + 40, box.y + box.height / 2, { button: 'right' });
+
+  const menu = page.locator(contextMenu);
+
+  await menu.locator('[data-format="color"]').click();
+  await expect(menu.locator('[data-inkbrick-part="swatches"]')).toBeVisible();
+
+  const fits = await menu.evaluate((node) => node.scrollWidth <= node.clientWidth);
+
+  expect(fits).toBe(true);
 });
