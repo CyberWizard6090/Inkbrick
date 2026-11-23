@@ -254,7 +254,7 @@ test.describe('Table style gallery and borders', () => {
     const dots = await openFlyout(page, 'table-cell-background');
     const dot = await dots
       .locator('[data-action="color-blue"]')
-      .evaluate((node) => getComputedStyle(node).getPropertyValue('--inkbrick-dot').trim());
+      .evaluate((node) => getComputedStyle(node).getPropertyValue('--inkbrick-swatch').trim());
 
     await dots.locator('[data-action="color-blue"]').click();
 

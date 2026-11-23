@@ -1,14 +1,11 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { isHexColor } from '@inkbrick/document';
-
 import { MenuSwitch, SheetBackdrop } from '../context-menu/DefaultContextMenu';
 import { hideKeyboard, useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
-import { Icon } from '../icons/Icon';
 import { useGrowth } from '../hooks/useGrowth';
-import { CustomColorSwatch } from '../ui/CustomColorSwatch';
+import { ColorSwatches } from '../ui/ColorSwatches';
 import type { BlockMenuAction, BlockMenuProps } from './types';
 
 export function DefaultBlockMenu({
@@ -176,47 +173,24 @@ export function DefaultBlockMenu({
             <div className="inkbrick-block-menu__label" data-inkbrick-part="label" role="separator">
               {t('menu.background')}
             </div>
-            <div data-inkbrick-part="swatches" role="group" aria-label={t('menu.background')}>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={background.current === undefined}
-                data-inkbrick-part="swatch"
-                data-color=""
-                data-action="background-none"
-                aria-label={t('menu.background.none')}
-                title={t('menu.background.none')}
-                onClick={() => background.onPick(null)}
-              >
-                <Icon name="x" />
-              </button>
-              {background.options.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={background.current === color}
-                  data-inkbrick-part="swatch"
-                  data-color={color}
-                  data-action={`background-${color}`}
-                  aria-label={t(`color.${color}` as MessageKey)}
-                  title={t(`color.${color}` as MessageKey)}
-                  onClick={() => background.onPick(color)}
-                />
-              ))}
-              <CustomColorSwatch
-                role="menuitemradio"
-                action="background-custom"
-                // Фон из выбора — с прозрачностью всегда: он рисуется ровно таким, как выбран.
-                alphaHex="always"
-                value={isHexColor(background.current) ? background.current : undefined}
-                // Фон начинается с 35 % (как заготовленные оттенки): текст на нём читается.
-                fallback="#94c8ff59"
-                label={t('color.custom')}
-                pressed={isHexColor(background.current)}
-                onPick={background.onPick}
-              />
-            </div>
+            <ColorSwatches
+              label={t('menu.background')}
+              names={background.options}
+              current={background.current}
+              colorOf={(color) => `var(--inkbrick-highlight-${color})`}
+              nameOf={(color) => t(`color.${color}` as MessageKey)}
+              resetLabel={t('menu.background.none')}
+              customLabel={t('color.custom')}
+              // Фон из выбора начинается с 35 % (как оттенки палитры) и всегда с прозрачностью: рисуется как выбран.
+              custom={{ fallback: '#94c8ff59', alphaHex: 'always' }}
+              role="menuitemradio"
+              actions={{
+                reset: 'background-none',
+                color: (color) => `background-${color}`,
+                custom: 'background-custom',
+              }}
+              onPick={background.onPick}
+            />
           </>
         )}
 

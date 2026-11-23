@@ -11,7 +11,8 @@ import {
 import { useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import { Icon, type IconName } from '../icons/Icon';
-import { CustomColorSwatch } from '../ui/CustomColorSwatch';
+import { ColorSwatches } from '../ui/ColorSwatches';
+import type { MessageKey } from '../i18n/en';
 import type { InlineFormat, ToolbarPanel, ToolbarProps } from './types';
 
 const BUTTONS: readonly { format: InlineFormat; icon: IconName }[] = [
@@ -95,11 +96,6 @@ export function DefaultToolbar({
 
   const colorKind = panel === 'highlight' ? 'backgroundColor' : 'color';
   const currentColor = panel === 'highlight' ? formats.backgroundColor : formats.color;
-  // Свой цвет: значение не из палитры, но безопасное для style (иначе образец «Свой цвет…» не подсвечивается).
-  const customColor =
-    currentColor !== undefined && !isColorName(currentColor)
-      ? (safeCssColor(currentColor) ?? undefined)
-      : undefined;
 
   return (
     <div
@@ -358,46 +354,28 @@ export function DefaultToolbar({
               className="inkbrick-toolbar__panel"
               data-inkbrick-part="panel"
               data-kind={panel}
-              role="group"
-              aria-label={t(`toolbar.${panel}.label`)}
             >
-              <button
-                type="button"
-                data-inkbrick-part="swatch"
-                data-color=""
-                data-pressed={currentColor === undefined || undefined}
-                aria-label={t(
+              <ColorSwatches
+                label={t(`toolbar.${panel}.label`)}
+                names={COLOR_NAMES}
+                current={currentColor}
+                colorOf={(name) =>
+                  `var(--inkbrick-${panel === 'color' ? 'color' : 'highlight'}-${name})`
+                }
+                nameOf={(name) => t(`color.${name}` as MessageKey)}
+                sample={panel === 'color' ? 'text' : 'fill'}
+                resetLabel={t(
                   panel === 'color' ? 'toolbar.color.default' : 'toolbar.highlight.none',
                 )}
-                title={t(panel === 'color' ? 'toolbar.color.default' : 'toolbar.highlight.none')}
-                onClick={() => onApplyColor(colorKind, null)}
-              >
-                <Icon name="x" />
-              </button>
-              {COLOR_NAMES.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  data-inkbrick-part="swatch"
-                  data-color={name}
-                  data-pressed={currentColor === name || undefined}
-                  aria-label={t(`color.${name}`)}
-                  title={t(`color.${name}`)}
-                  // Повторный клик по применённому цвету снимает его.
-                  onClick={() => onApplyColor(colorKind, currentColor === name ? null : name)}
-                >
-                  {panel === 'color' ? 'A' : null}
-                </button>
-              ))}
-              <CustomColorSwatch
-                value={customColor}
-                // Выделение начинается с 35 % (как заготовленные): текст под ним читается.
-                fallback={panel === 'color' ? '#1473e6' : '#ffe74a59'}
-                // Выделение из выбора — всегда с прозрачностью: рисуется ровно таким, как выбрано.
-                alphaHex={panel === 'highlight' ? 'always' : 'auto'}
-                label={t('color.custom')}
-                pressed={customColor !== undefined}
-                onPick={(hex) => onApplyColor(colorKind, hex)}
+                customLabel={t('color.custom')}
+                custom={{
+                  // Выделение начинается с 35 % (как заготовленные) и всегда с прозрачностью: рисуется как выбрано.
+                  fallback: panel === 'color' ? '#1473e6' : '#ffe74a59',
+                  alphaHex: panel === 'highlight' ? 'always' : 'auto',
+                }}
+                toggle
+                columns={6}
+                onPick={(color) => onApplyColor(colorKind, color)}
               />
             </div>
           )}

@@ -85,8 +85,8 @@ describe('cell menu: background, borders and style', () => {
       .flyout('table-cell-background')!
       .querySelector<HTMLElement>('[data-action="color-green"]')!;
 
-    // Кружок показывает тот же насыщенный цвет, что ляжет на ячейку.
-    expect(dot.style.getPropertyValue('--inkbrick-dot')).toBe('var(--inkbrick-cell-green)');
+    // Образец показывает тот же насыщенный цвет, что ляжет на ячейку.
+    expect(dot.style.getPropertyValue('--inkbrick-swatch')).toBe('var(--inkbrick-cell-green)');
 
     act(() => void fireEvent.click(dot));
     expect(t.cellBlock(1, 1).props.background).toBe('green');
@@ -121,6 +121,28 @@ describe('cell menu: background, borders and style', () => {
     expect(t.td(1, 1).style.getPropertyValue('--inkbrick-cell-text')).toBe('');
   });
 
+  it('a custom border colour with transparency from the picker goes on the lines and is drawn as chosen', async () => {
+    pointer(false);
+    const t = mount();
+
+    t.openMenu();
+    t.open('table-cell-borders');
+    t.open('table-border-colorMenu');
+    await pickCustomColor(t.flyout('table-border-colorMenu')!, 'ff000080');
+
+    expect(t.cellBlock(1, 1).props.borderRightColor).toBe('#ff000080');
+    expect(t.td(1, 1).style.borderRightColor).toBe('rgba(255, 0, 0, 0.5)');
+    // Схема и движок принимают только имя палитры или #rrggbb[aa].
+    expect(
+      t.editor.can('setTableCellsBorders', {
+        blockId: tableIdOf(t.editor)!,
+        range: { top: 1, left: 1, bottom: 1, right: 1 },
+        mode: 'keep',
+        color: 'url(x)',
+      } as never),
+    ).toBe(false);
+  });
+
   it('line width, style and colour change the existing lines; placements draw new ones', () => {
     pointer(false);
     const t = mount();
@@ -148,8 +170,8 @@ describe('cell menu: background, borders and style', () => {
       .flyout('table-border-colorMenu')!
       .querySelector<HTMLElement>('[data-action="color-red"]')!;
 
-    // Кружок цвета границы — цвет самой линии.
-    expect(red.style.getPropertyValue('--inkbrick-dot')).toBe('var(--inkbrick-color-red)');
+    // Образец цвета границы — цвет самой линии.
+    expect(red.style.getPropertyValue('--inkbrick-swatch')).toBe('var(--inkbrick-color-red)');
     act(() => void fireEvent.click(red));
     expect(t.cellBlock(1, 1).props.borderRightColor).toBe('red');
     expect(t.cellBlock(1, 2).props.borderLeftColor).toBe('red');
