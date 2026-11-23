@@ -11,7 +11,7 @@ export const tocPropsSchema = z.object({
     .default(6),
 });
 
-export type TocProps = z.infer<typeof tocPropsSchema>;
+export type TocProps = z.output<typeof tocPropsSchema>;
 
 /**
  * Оглавление: список заголовков документа со ссылками на них. В документе хранятся только настройки, сам список

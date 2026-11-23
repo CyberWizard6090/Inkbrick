@@ -13,7 +13,7 @@ export const calloutPropsSchema = z.object({
   background: blockBackgroundSchema.optional(),
 });
 
-export type CalloutProps = z.infer<typeof calloutPropsSchema>;
+export type CalloutProps = z.output<typeof calloutPropsSchema>;
 
 export const CalloutSchema: BlockSchema<typeof calloutPropsSchema> = {
   flavour: 'block:callout',

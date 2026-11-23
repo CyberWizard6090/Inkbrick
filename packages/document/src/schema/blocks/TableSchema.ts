@@ -58,7 +58,7 @@ export const tableMergeSchema = z.object({
   columns: z.number().int().min(1),
 });
 
-export type TableMerge = z.infer<typeof tableMergeSchema>;
+export type TableMerge = z.output<typeof tableMergeSchema>;
 
 export const tablePropsSchema = z.object({
   /** Первая строка — заголовок. */
@@ -86,7 +86,7 @@ export const tablePropsSchema = z.object({
   merges: z.array(tableMergeSchema).optional(),
 });
 
-export type TableProps = z.infer<typeof tablePropsSchema>;
+export type TableProps = z.output<typeof tablePropsSchema>;
 
 export const tableRowPropsSchema = z.object({});
 

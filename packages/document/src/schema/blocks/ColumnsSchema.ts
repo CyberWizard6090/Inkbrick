@@ -17,7 +17,7 @@ export const columnsPropsSchema = z.object({
   ratios: z.array(z.number().positive()).optional(),
 });
 
-export type ColumnsProps = z.infer<typeof columnsPropsSchema>;
+export type ColumnsProps = z.output<typeof columnsPropsSchema>;
 
 export const columnPropsSchema = z.object({});
 

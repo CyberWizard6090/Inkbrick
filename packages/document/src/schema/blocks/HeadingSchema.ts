@@ -14,7 +14,7 @@ export const headingPropsSchema = z.object({
   collapsed: z.boolean().optional(),
 });
 
-export type HeadingProps = z.infer<typeof headingPropsSchema>;
+export type HeadingProps = z.output<typeof headingPropsSchema>;
 
 export const HeadingSchema: BlockSchema = {
   flavour: 'block:heading',

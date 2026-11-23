@@ -8,7 +8,7 @@ export const codePropsSchema = z.object({
   caption: z.string().max(2000).optional(),
 });
 
-export type CodeProps = z.infer<typeof codePropsSchema>;
+export type CodeProps = z.output<typeof codePropsSchema>;
 
 export const CodeSchema: BlockSchema<typeof codePropsSchema> = {
   flavour: 'block:code',

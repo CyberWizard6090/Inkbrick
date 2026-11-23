@@ -4,4 +4,6 @@
  * Публичный `z` для своих блоков по-прежнему экспортируется из `@inkbrick/document`.
  */
 export { object, string, number, boolean, array, literal, union, enum } from 'zod';
-export type { infer } from 'zod';
+// `output` — то же, что `z.infer`: сборщик типов (rollup-plugin-dts) превращает `z.infer` в `infer<…>`, а это ключевое
+// слово — опубликованный .d.ts не читался бы.
+export type { output } from 'zod';

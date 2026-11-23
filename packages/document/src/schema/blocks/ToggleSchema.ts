@@ -13,7 +13,7 @@ export const togglePropsSchema = z.object({
   background: blockBackgroundSchema.optional(),
 });
 
-export type ToggleProps = z.infer<typeof togglePropsSchema>;
+export type ToggleProps = z.output<typeof togglePropsSchema>;
 
 /** Блоки, которые можно вложить в toggle: обычное содержимое, но не контейнеры документа и не части составных блоков. */
 const NESTED = new Set([

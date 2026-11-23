@@ -77,7 +77,7 @@ export const imagePropsSchema = z.object({
   cropHeight: percent(100),
 });
 
-export type ImageProps = z.infer<typeof imagePropsSchema>;
+export type ImageProps = z.output<typeof imagePropsSchema>;
 
 export const ImageSchema: BlockSchema<typeof imagePropsSchema> = {
   flavour: 'block:image',

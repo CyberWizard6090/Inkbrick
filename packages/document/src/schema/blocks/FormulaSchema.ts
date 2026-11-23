@@ -7,7 +7,7 @@ export const formulaPropsSchema = z.object({
   latex: z.string().max(MAX_FORMULA_LENGTH).default(''),
 });
 
-export type FormulaProps = z.infer<typeof formulaPropsSchema>;
+export type FormulaProps = z.output<typeof formulaPropsSchema>;
 
 export const FormulaSchema: BlockSchema<typeof formulaPropsSchema> = {
   flavour: 'block:formula',

@@ -9,7 +9,7 @@ export const footnotePropsSchema = z.object({
   id: z.string().regex(/^[\w-]{1,64}$/),
 });
 
-export type FootnoteProps = z.infer<typeof footnotePropsSchema>;
+export type FootnoteProps = z.output<typeof footnotePropsSchema>;
 
 /**
  * Текст сноски: обычный текстовый блок в конце заметки. Во встроенный набор не входит — подключается явно:

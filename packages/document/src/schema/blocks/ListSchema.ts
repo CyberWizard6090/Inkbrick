@@ -13,7 +13,7 @@ export const listPropsSchema = z.object({
   background: blockBackgroundSchema.optional(),
 });
 
-export type ListProps = z.infer<typeof listPropsSchema>;
+export type ListProps = z.output<typeof listPropsSchema>;
 
 export const ListSchema: BlockSchema<typeof listPropsSchema> = {
   flavour: 'block:list',
