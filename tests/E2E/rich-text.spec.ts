@@ -419,7 +419,8 @@ test.describe('Text color and highlight', () => {
 
       expect(new Set(boxes.map((box) => box.y)).size).toBe(3);
       expect(new Set(boxes.map((box) => box.x)).size).toBe(6);
-      for (const box of boxes) expect(box.width).toBeGreaterThanOrEqual(32);
+      // Размер образца — общий для всех палитр редактора (см. color-palettes.spec.ts).
+      for (const box of boxes) expect(box.width).toBeGreaterThanOrEqual(28);
 
       // Каждый образец назван и доступен: у всех своя подпись, а новые цвета — со своими именами.
       const labels = await swatches.evaluateAll((nodes) =>
