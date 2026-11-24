@@ -89,3 +89,11 @@ export type {
 } from './commands/BlockGroupCommands';
 
 export { EMPTY_STATS } from './stats';
+
+export { MAX_MATCHES, textBlocks } from './find';
+export { matchInlineMarkdown } from './markdown';
+export type { InlineMarkdownMatch } from './markdown';
+
+export { FootnoteIndex, documentBlocks, getFootnoteIndex } from './footnote/FootnoteIndex';
+export type { FootnoteLabel, FootnoteReference } from './footnote/FootnoteIndex';
+export { cellOfRange, visibleCell } from './table/tableQueries';

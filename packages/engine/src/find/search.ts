@@ -1,4 +1,4 @@
-import type { Editor } from '@inkbrick/engine';
+import type { Editor } from '../editor/Editor';
 
 export interface FindOptions {
   /** Учитывать регистр. По умолчанию нет. */

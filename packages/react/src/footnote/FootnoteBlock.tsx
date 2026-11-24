@@ -6,7 +6,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import { Editable } from '../blocks/Editable';
 import type { BlockProps } from '../blocks/BlockProps';
 import { goToReference } from './actions';
-import { getFootnoteIndex } from './FootnoteIndex';
+import { getFootnoteIndex } from '@inkbrick/engine/internal';
 
 /**
  * Текст сноски внизу заметки: номер, текст и кнопка возврата к ссылке. Номер берётся из индекса сносок (порядок ссылок в

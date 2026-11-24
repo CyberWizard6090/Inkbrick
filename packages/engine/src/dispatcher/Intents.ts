@@ -147,6 +147,7 @@ export interface CommandMap {
   insertText: { payload: InsertTextPayload; result: CaretResult };
   deleteText: { payload: DeleteTextPayload; result: CaretResult };
   deleteBackward: { payload: DeleteBackwardPayload; result: CaretResult | undefined };
+  deleteForward: { payload: BlockTargetPayload; result: CaretResult | undefined };
   splitBlock: { payload: SplitBlockPayload; result: CaretResult };
   morphBlock: { payload: MorphBlockPayload; result: CaretResult };
   replaceText: { payload: ReplaceTextPayload; result: CaretResult };

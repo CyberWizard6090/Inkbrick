@@ -7,7 +7,7 @@ import {
   type TextAttributes,
 } from '@inkbrick/document';
 
-import type { FootnoteIndex } from '../footnote/FootnoteIndex';
+import type { FootnoteIndex } from '@inkbrick/engine/internal';
 import { ensureMathStyles, mountFormula, type FormulaRenderer } from '../math/renderer';
 
 export interface RenderInlineOptions {

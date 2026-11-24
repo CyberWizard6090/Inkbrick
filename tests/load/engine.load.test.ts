@@ -18,9 +18,8 @@ import {
   type CaretResult,
   columnsBlocks,
   tableBlocks,
+  findMatches,
 } from '@inkbrick/engine';
-
-import { findMatches } from '../../packages/react/src/find/search';
 
 /**
  * Нагрузочные тесты движка. Пороги — с запасом в несколько раз от замеров на обычной машине разработчика: тест падает,

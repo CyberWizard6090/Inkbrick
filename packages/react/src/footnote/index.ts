@@ -7,8 +7,8 @@ import { canInsertFootnote, createFootnote } from './actions';
 import { FootnoteBlock } from './FootnoteBlock';
 
 export { FootnoteBlock } from './FootnoteBlock';
-export { FootnoteIndex, getFootnoteIndex, documentBlocks } from './FootnoteIndex';
-export type { FootnoteReference } from './FootnoteIndex';
+export { FootnoteIndex, getFootnoteIndex, documentBlocks } from '@inkbrick/engine/internal';
+export type { FootnoteReference } from '@inkbrick/engine/internal';
 export {
   insertFootnote,
   createFootnote,

@@ -5,7 +5,7 @@ import type { Editor } from '@inkbrick/engine';
 import type { EditorView } from '../editing/EditorView';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { computeFolds } from './computeFolds';
+import { computeFolds } from '@inkbrick/engine';
 
 const tracked = new WeakMap<EditorView, { count: number; stop: () => void }>();
 

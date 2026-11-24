@@ -9,8 +9,8 @@ import { getFindController, type FindController, type FindState } from './FindCo
 export { FindReplacePanel } from './FindReplacePanel';
 export { FindController } from './FindController';
 export type { FindState } from './FindController';
-export { findMatches, replaceMatches, searchPattern } from './search';
-export type { FindMatch, FindOptions } from './search';
+export { findMatches, replaceMatches, searchPattern } from '@inkbrick/engine';
+export type { FindMatch, FindOptions } from '@inkbrick/engine';
 
 /** Выделенный в одном блоке текст: им заполняется строка запроса при открытии поиска. */
 const selectedText = ({

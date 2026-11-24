@@ -22,6 +22,7 @@ import { SetInlineAttributesCommand } from './SetInlineAttributesCommand';
 import { IndentBlockCommand, OutdentBlockCommand } from './IndentCommands';
 import { InsertFormulaCommand } from './InsertFormulaCommand';
 import { SetAlignCommand } from './SetAlignCommand';
+import { DeleteForwardCommand } from './DeleteForwardCommand';
 import {
   ConvertBlocksCommand,
   DuplicateBlocksCommand,
@@ -35,6 +36,7 @@ export {
   InsertTextCommand,
   DeleteTextCommand,
   DeleteBackwardCommand,
+  DeleteForwardCommand,
   SplitBlockCommand,
   MorphBlockCommand,
   InsertParagraphCommand,
@@ -66,6 +68,7 @@ export const builtinCommands: readonly AnyCommand[] = [
   InsertTextCommand,
   DeleteTextCommand,
   DeleteBackwardCommand,
+  DeleteForwardCommand,
   SplitBlockCommand,
   MorphBlockCommand,
   InsertParagraphCommand,

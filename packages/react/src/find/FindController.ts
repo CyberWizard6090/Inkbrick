@@ -3,7 +3,7 @@ import type { Editor } from '@inkbrick/engine';
 import type { EditorView } from '../editing/EditorView';
 import { findPoint } from '../editing/selection';
 import { highlightsSupported, setHighlight } from '../editing/highlights';
-import { findMatches, replaceMatches, type FindMatch } from './search';
+import { findMatches, replaceMatches, type FindMatch } from '@inkbrick/engine';
 
 export interface FindState {
   readonly open: boolean;

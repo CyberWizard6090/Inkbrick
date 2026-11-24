@@ -10,7 +10,7 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
 import { isDefaultHighlighterLoaded, subscribeDefaultHighlighter } from '../code/lazyHighlight';
-import { getFootnoteIndex } from '../footnote/FootnoteIndex';
+import { getFootnoteIndex } from '@inkbrick/engine/internal';
 import { useEditorUI } from '../ui/EditorUIContext';
 
 export interface EditableProps {

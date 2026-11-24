@@ -4,7 +4,7 @@ import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
 import { matchInlineFormula } from '../formula/actions';
 import { deleteForwardAtEnd, unfoldNeighbour } from './deleteAtBoundary';
-import { matchInlineMarkdown } from './markdownInline';
+import { matchInlineMarkdown } from '@inkbrick/engine/internal';
 import type { EditorView } from './EditorView';
 import type { InputActions } from './inputActions';
 import { readDocSelection } from './selection';

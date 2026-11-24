@@ -9,7 +9,6 @@ import {
   pickableBlock,
   runBetween,
   siblingsOf,
-  topBlock,
 } from '@inkbrick/engine/internal';
 
 import type { EditorView } from '../editing/EditorView';

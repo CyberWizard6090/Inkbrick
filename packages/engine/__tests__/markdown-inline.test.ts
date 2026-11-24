@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchInlineMarkdown } from '../src/editing/markdownInline';
+import { matchInlineMarkdown } from '../src/internal';
 
 const attributesOf = (text: string, typed: string) => matchInlineMarkdown(text, typed)?.attributes;
 

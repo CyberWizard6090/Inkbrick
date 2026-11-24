@@ -150,6 +150,19 @@ export const ClearTableCellsFormatCommand = defineBlockCommand<TableProps, { ran
   },
 });
 
+/** Стирает текст ячеек прямоугольника (Delete над выделенными ячейками, вырезание); ячейки и их оформление остаются. */
+export const ClearTableCellsTextCommand = defineBlockCommand<TableProps, { range: TableRange }>({
+  type: 'clearTableCellsText',
+
+  canExecute: (context, { range }) => filledCells(context, range).length > 0,
+
+  execute(context, { range }) {
+    for (const id of filledCells(context, range)) {
+      context.engine.block.update(context.transaction, id, (cell) => ({ ...cell, content: [] }));
+    }
+  },
+});
+
 /** Выравнивание текста всех ячеек прямоугольника по горизонтали. Один шаг undo. */
 export const AlignTableCellsCommand = defineBlockCommand<
   TableProps,
@@ -393,6 +406,7 @@ export const tableFormatCommands = [
   FormatTableCellsCommand,
   SetTableCellsColorCommand,
   ClearTableCellsFormatCommand,
+  ClearTableCellsTextCommand,
   AlignTableCellsCommand,
   SetTableCellsBackgroundCommand,
   SetTableCellsBordersCommand,

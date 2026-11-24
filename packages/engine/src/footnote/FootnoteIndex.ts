@@ -1,5 +1,5 @@
 import type { BaseBlock } from '@inkbrick/document';
-import type { Editor } from '@inkbrick/engine';
+import type { Editor } from '../editor/Editor';
 
 /** Блоки документа в порядке чтения (обход в глубину), без корня. */
 export function* documentBlocks(editor: Editor): Generator<BaseBlock> {
@@ -15,9 +15,18 @@ export function* documentBlocks(editor: Editor): Generator<BaseBlock> {
   }
 }
 
+/**
+ * Где показан номер ссылки: элемент DOM подходит как есть, но индексу DOM не нужен — он только пишет цифру в `textContent`
+ * и забывает метку, когда она отключена (`isConnected`).
+ */
+export interface FootnoteLabel {
+  textContent: string | null;
+  readonly isConnected: boolean;
+}
+
 interface Label {
   readonly id: string;
-  readonly element: HTMLElement;
+  readonly element: FootnoteLabel;
 }
 
 /** Где в документе ссылка на сноску: блок и смещение символа-объекта. */
@@ -288,7 +297,7 @@ export class FootnoteIndex {
   };
 
   /** Метка ссылки в тексте: её цифра обновляется вместе с номерами. */
-  addLabel(element: HTMLElement, id: string): void {
+  addLabel(element: FootnoteLabel, id: string): void {
     this.labels.add({ id, element });
     this.watch();
     element.textContent = String(this.numberOf(id) ?? '?');

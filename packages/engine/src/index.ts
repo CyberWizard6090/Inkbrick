@@ -134,3 +134,9 @@ export { countCharacters, countWords, documentStats, selectionStats, statsOf } f
 export type { StatsOptions, StatsRange, TextStats } from './stats';
 export { blockTags, collectTags, findTags } from './tags';
 export type { TagCount, TagMatch } from './tags';
+
+// Поиск и замена по документу, разделы под свёрнутыми заголовками: без интерфейса; `@inkbrick/react` строит на них панель
+// поиска и сворачивание.
+export { findMatches, replaceMatches, searchPattern } from './find';
+export type { FindMatch, FindOptions } from './find';
+export { computeFolds } from './fold';

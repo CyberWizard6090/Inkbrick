@@ -267,7 +267,7 @@ export function useCellSelection(
         place(selection.head.row, selection.head.column);
       } else if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault();
-        flushSync(() => clearTableCells(editor, selection.ids));
+        flushSync(() => clearTableCells(editor, selection));
       } else if (mod && !editor.readOnly && cellShortcut(editor, selection, event)) {
         event.preventDefault();
         event.stopPropagation();
@@ -332,7 +332,7 @@ export function useCellSelection(
       event.preventDefault();
       event.stopPropagation();
 
-      if (cut && !editor.readOnly) flushSync(() => clearTableCells(editor, selection.ids));
+      if (cut && !editor.readOnly) flushSync(() => clearTableCells(editor, selection));
     };
 
     const onCopy = (event: ClipboardEvent) => write(event, false);

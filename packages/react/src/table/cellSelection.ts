@@ -1,7 +1,5 @@
-import type { BlockId } from '@inkbrick/document';
-import { normalizeMerges } from '@inkbrick/document';
+import { normalizeMerges, type BlockId } from '@inkbrick/document';
 import {
-  tableCellAt,
   tableSize,
   type Editor,
   type TableCellRef,
@@ -9,7 +7,7 @@ import {
   tableRangeCells,
   type TableRange,
 } from '@inkbrick/engine';
-import { clampTableRange, expandRangeToMerges, mergeAt } from '@inkbrick/engine/internal';
+import { clampTableRange, expandRangeToMerges } from '@inkbrick/engine/internal';
 
 import type { CellSelection } from '../editing/CellSelectionController';
 import type { EditorView } from '../editing/EditorView';
@@ -81,51 +79,14 @@ export function selectTableLine(
   view.getRoot()?.focus({ preventScroll: true });
 }
 
-/** Очищает текст выделенных ячеек одним шагом undo; таблица и ячейки остаются. */
-export function clearTableCells(editor: Editor, ids: Iterable<BlockId>): void {
+/** Очищает текст выделенных ячеек одним шагом undo (команда таблицы `clearTableCellsText`); ячейки остаются. */
+export function clearTableCells(
+  editor: Editor,
+  selection: { readonly tableId: BlockId; readonly range: TableRange },
+): void {
   editor.sealHistory();
-  editor.batch(() => {
-    for (const id of ids) {
-      const length = editor.engine.inline.length(editor.store.getBlock(id)?.content ?? []);
-
-      if (length > 0) {
-        editor.dispatch({ type: 'deleteText', payload: { blockId: id, from: 0, to: length } });
-      }
-    }
-  });
+  editor.execute('clearTableCellsText', { blockId: selection.tableId, range: selection.range });
 }
 
-/** Ячейка выделения в точке: для курсора после выхода из выделения. */
-export function cellOfRange(
-  editor: Editor,
-  tableId: BlockId,
-  range: TableRange,
-  corner: 'start' | 'end',
-): BlockId | undefined {
-  return tableCellAt(
-    (id) => editor.store.getBlock(id),
-    tableId,
-    corner === 'start' ? range.top : range.bottom,
-    corner === 'start' ? range.left : range.right,
-  );
-}
-
-/** Ячейка, в которую можно поставить курсор: у перекрытой объединением — её верхняя левая. */
-export function visibleCell(
-  editor: Editor,
-  tableId: BlockId,
-  row: number,
-  column: number,
-): { row: number; column: number; id: BlockId | undefined } {
-  const getBlock = (id: BlockId) => editor.store.getBlock(id);
-  const size = tableSize(getBlock, tableId);
-  const merges = normalizeMerges(
-    getBlock(tableId)?.props.merges,
-    size?.rows ?? 0,
-    size?.columns ?? 0,
-  );
-  const found = mergeAt(merges, row, column);
-  const target = found ? { row: found.merge.row, column: found.merge.column } : { row, column };
-
-  return { ...target, id: tableCellAt(getBlock, tableId, target.row, target.column) };
-}
+// Запросы к таблице без интерфейса — в движке.
+export { cellOfRange, visibleCell } from '@inkbrick/engine/internal';

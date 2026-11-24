@@ -1,5 +1,5 @@
 import type { BlockId } from '@inkbrick/document';
-import type { Editor } from '@inkbrick/engine';
+import type { Editor } from '../editor/Editor';
 
 function levelOf(level: unknown): number {
   return typeof level === 'number' && level >= 1 && level <= 6 ? Math.trunc(level) : 1;

@@ -5,7 +5,7 @@ import { FoldableListBlock } from './FoldableListBlock';
 
 export { FoldableHeadingBlock } from './FoldableHeadingBlock';
 export { FoldableListBlock } from './FoldableListBlock';
-export { computeFolds } from './computeFolds';
+export { computeFolds } from '@inkbrick/engine';
 export { useFoldTracking } from './useFoldTracking';
 
 /** Enter в конце свёрнутого заголовка сначала разворачивает его: иначе новый блок появился бы скрытым. */
