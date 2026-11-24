@@ -15,7 +15,7 @@ import {
 import { availableSlashItems, visibleSlashItems } from '../src/slash/items';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
 import { SlashMenuController } from '../src/slash/SlashMenuController';
-import { createTranslator, resolveMessages } from '../src/i18n/translate';
+import { createTranslator, resolveMessages } from '@inkbrick/locales';
 
 const titles = (items: readonly SlashMenuItem[]) => items.map((i) => i.id);
 

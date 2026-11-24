@@ -1,6 +1,7 @@
 import { type InlineNode, TABLE_CELL_COLORS, isAlignment } from '@inkbrick/document';
-import type { FragmentBlock } from '@inkbrick/engine';
-import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from '@inkbrick/engine';
+
+import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from '../../table/tableFragment';
+import type { FragmentBlock } from '../types';
 import { cleanInline, inlineOf } from './inline';
 import { styleOf } from './style';
 import type { Style } from './tags';

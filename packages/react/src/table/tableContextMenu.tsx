@@ -13,7 +13,7 @@ import { mergeAt } from '@inkbrick/engine/internal';
 import type { BlockContextMenuContext } from '../blocks/defineBlock';
 import type { ContextMenuItem } from '../context-menu/types';
 import type { CellSelection } from '../editing/CellSelectionController';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import { Icon } from '../icons/Icon';
 import type { MessageKey } from '../i18n/en';
 import { visibleCell } from './cellSelection';

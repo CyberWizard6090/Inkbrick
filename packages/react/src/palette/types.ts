@@ -4,7 +4,7 @@ import type { Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
 import type { DocSelection } from '../editing/selection';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 
 /** Что видит команда: редактор, текущее выделение (запомнено в момент открытия палитры) и перевод. */
 export interface PaletteContext {

@@ -140,3 +140,6 @@ export type { TagCount, TagMatch } from './tags';
 export { findMatches, replaceMatches, searchPattern } from './find';
 export type { FindMatch, FindOptions } from './find';
 export { computeFolds } from './fold';
+
+// HTML из буфера обмена (Google Docs, Word, браузеры) → фрагмент: обратное `fragmentToHtml`. В браузере — `DOMParser`,
+// на сервере — свой парсер (`{ parser }`).

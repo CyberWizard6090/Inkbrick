@@ -10,12 +10,14 @@ npm install @inkbrick/dom @inkbrick/styles
 
 Each part has its own entry, so a bundle gets only what it imports:
 
-| Entry                        | What                                                                   | Styles                              |
-| ---------------------------- | ---------------------------------------------------------------------- | ----------------------------------- |
-| `@inkbrick/dom/color-picker` | Colour picker with an alpha channel                                    | `@inkbrick/styles/color-picker.css` |
-| `@inkbrick/dom/image-tools`  | Image crop window, full-screen image viewer, crop and download helpers | `@inkbrick/styles/image-tools.css`  |
+| Entry                          | What                                                                          | Styles                              |
+| ------------------------------ | ----------------------------------------------------------------------------- | ----------------------------------- |
+| `@inkbrick/dom/color-picker`   | Colour picker with an alpha channel                                           | `@inkbrick/styles/color-picker.css` |
+| `@inkbrick/dom/image-tools`    | Image crop window, full-screen image viewer, crop and download helpers        | `@inkbrick/styles/image-tools.css`  |
+| `@inkbrick/dom/code-highlight` | Code syntax highlighting into token ranges (no DOM needed, works on a server) | `--inkbrick-syntax-*` tokens        |
+| `@inkbrick/dom/keys`           | Matching a keyboard event against a shortcut like `Mod-Shift-z`               | —                                   |
 
-`@inkbrick/dom` itself re-exports both. The styles need the tokens:
+`@inkbrick/dom` itself re-exports all of them. The styles need the tokens:
 
 ```ts
 import '@inkbrick/styles/tokens.css';
@@ -154,6 +156,30 @@ Labels are English by default; pass `labels` to translate them.
 
 Geometry of the frame (`resizeRect`, `moveRect`, `fitRatio`, `relativeRatio`, `oriented`, …), the canvas (`cropImage`,
 `loadImage`, `blobToDataUrl`) and downloads (`downloadImage`, `downloadBlob`, `fileNameFor`).
+
+## Code highlighting — `@inkbrick/dom/code-highlight`
+
+```ts
+import { highlightCode, normalizeLanguage } from '@inkbrick/dom/code-highlight';
+
+const tokens = highlightCode('const a = 1;', normalizeLanguage('ts'));
+// [{ from: 0, to: 5, type: 'keyword' }, { from: 10, to: 11, type: 'number' }, …]
+```
+
+Tokens are plain ranges: wrap them in any framework or into HTML on a server. Text longer than `HIGHLIGHT_LIMIT` is not
+highlighted.
+
+## Shortcuts — `@inkbrick/dom/keys`
+
+```ts
+import { matchesShortcut } from '@inkbrick/dom/keys';
+
+element.addEventListener('keydown', (event) => {
+  if (matchesShortcut(event, 'Mod-Shift-z')) redo();
+});
+```
+
+`Mod` is `Cmd` on macOS and `Ctrl` elsewhere; modifiers are `Mod`, `Ctrl`, `Meta`/`Cmd`, `Alt`/`Option`, `Shift`.
 
 ### License
 

@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import type { CaretResult, Editor } from '@inkbrick/engine';
 
 import type { EditorView } from '../editing/EditorView';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import { Icon } from '../icons/Icon';
 import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';

@@ -18,6 +18,9 @@ const alias = {
   '@inkbrick/engine/internal': fileURLToPath(
     new URL(`../packages/engine/${dir}/internal.${ext}`, import.meta.url),
   ),
+  '@inkbrick/engine/html': fileURLToPath(
+    new URL(`../packages/engine/${dir}/html.${ext}`, import.meta.url),
+  ),
   '@inkbrick/engine': pkg('engine'),
   // Каталог, а не файл: подпуть `@inkbrick/locales/ru` (ленивый язык) разрешается внутрь него.
   '@inkbrick/locales': fileURLToPath(new URL(`../packages/locales/${dir}`, import.meta.url)),
@@ -41,7 +44,7 @@ const cases = [
   {
     // Всё, что получает приложение с редактором, вместе с zod: так виден и вес зависимостей.
     name: 'app: editor with zod',
-    budget: 96, // +1,5 KB: Selection API; +0,5 KB: групповые команды движка (duplicateBlocks, moveBlocks, …)
+    budget: 96.5, // +1,5 KB: Selection API; +0,5 KB: групповые команды движка (duplicateBlocks, moveBlocks, …); +0,5 KB: части в @inkbrick/dom и @inkbrick/locales — лишние границы чанков
     bundled: ['zod'],
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
@@ -59,7 +62,7 @@ const cases = [
   },
   {
     name: 'react: EditorProvider + DocumentView',
-    budget: 70, // +1,5 KB: Selection API; +0,5 KB: групповые команды движка
+    budget: 70.5, // +1,5 KB: Selection API; +0,5 KB: групповые команды движка; +0,5 KB: части в dom и locales
     code: "import { EditorProvider, DocumentView } from '@inkbrick/react'; import { Editor } from '@inkbrick/engine'; console.log(EditorProvider, DocumentView, Editor);",
   },
 ];

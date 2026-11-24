@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/internal.ts'],
+  entry: ['src/index.ts', 'src/internal.ts', 'src/html.ts'],
   format: ['esm'],
   target: 'es2022',
   // Только типы: JavaScript собирается по модулю на файл (scripts/build-modules.mjs), чтобы приложение выбрасывало

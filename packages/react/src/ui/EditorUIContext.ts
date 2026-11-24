@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 import { lazyHighlightCode } from '../code/lazyHighlight';
 import { temmlRenderer } from '../math/renderer';
-import { defaultT } from '../i18n/translate';
+import { defaultT } from '@inkbrick/locales';
 import { defaultKeymap } from '../keymap/defaultKeymap';
 import { defaultSlashItems } from '../slash/defaultSlashItems';
 import type { EditorUIConfig } from './types';

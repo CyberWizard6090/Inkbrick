@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { tabularText } from '../src/clipboard/tabularText';
+import { tabularText } from '../src/internal';
 
 describe('tabularText', () => {
   it('two rows with tabs are a table, one row is text outside a table', () => {

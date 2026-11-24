@@ -6,7 +6,7 @@ import { isFormattable, toggleFormatInSelection } from '../toolbar/formatting';
 import { availableSlashItems } from '../slash/items';
 import { convertBlocks, convertibleIn } from '../pick/actions';
 import type { SlashMenuItem } from '../slash/types';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import {
   cellFormatCommands,
   formatPickedCells,

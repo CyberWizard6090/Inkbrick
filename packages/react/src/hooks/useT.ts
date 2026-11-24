@@ -1,4 +1,4 @@
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import { useEditorUI } from '../ui/EditorUIContext';
 
 export function useT(): TFunction {

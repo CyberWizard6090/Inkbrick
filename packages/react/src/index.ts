@@ -72,7 +72,7 @@ export type {
   ReactBlockDefinition,
   CustomBlockViewProps,
 } from './blocks/defineBlock';
-export { htmlToFragment, embeddedFragment } from './clipboard/htmlToFragment';
+export { htmlToFragment, embeddedFragment } from '@inkbrick/engine/html';
 export type { ImageOptions } from './images/types';
 export { uploadImage, normalizeImageUrl } from './images/upload';
 
@@ -125,8 +125,12 @@ export { preloadEditorUI } from './ui/lazy';
 export { defaultBlockComponents } from './registry/defaultBlockComponents';
 export { resolveBlockComponent } from './registry/resolveBlockComponent';
 
-export { highlightCode, normalizeLanguage, HIGHLIGHT_LIMIT } from './code/highlight';
-export type { CodeHighlighter, HighlightToken, HighlightTokenType } from './code/types';
+export { highlightCode, normalizeLanguage, HIGHLIGHT_LIMIT } from '@inkbrick/dom/code-highlight';
+export type {
+  CodeHighlighter,
+  HighlightToken,
+  HighlightTokenType,
+} from '@inkbrick/dom/code-highlight';
 
 export { temmlRenderer, mountFormula, ensureMathStyles } from './math/renderer';
 export type { FormulaRenderer, FormulaRenderOptions, FormulaState } from './math/renderer';
@@ -140,11 +144,11 @@ export {
   createTranslator,
   preloadLocale,
   isLocaleLoaded,
-} from './i18n/translate';
-export type { TFunction, MessageParams } from './i18n/translate';
+} from '@inkbrick/locales';
+export type { TFunction, MessageParams } from '@inkbrick/locales';
 export { en } from './i18n/en';
 export type { MessageKey, Messages, PartialMessages } from './i18n/en';
-export type { AppMessages } from './i18n/translate';
+export type { AppMessages } from '@inkbrick/locales';
 // Русский словарь в бандл не попадает, пока им не пользуются: провайдер грузит его по требованию (`preloadLocale`).
 export { ru } from '@inkbrick/locales/ru';
 
@@ -154,7 +158,7 @@ export type { IconName, IconProps } from './icons/Icon';
 export type { KeyBinding, KeymapContext } from './keymap/types';
 export { defaultKeymap } from './keymap/defaultKeymap';
 export { resolveKeymap, unbind } from './keymap/keymap';
-export { matchesShortcut } from './keymap/shortcut';
+export { matchesShortcut } from '@inkbrick/dom/keys';
 
 export type { SlashMenuItem, SlashMenuProps } from './slash/types';
 export { defaultSlashItems } from './slash/defaultSlashItems';

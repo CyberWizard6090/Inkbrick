@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./internal": "./src/internal.ts",
+    "./html": "./src/html.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -36,6 +37,10 @@
         "types": "./dist/internal.d.ts",
         "import": "./dist/internal.js"
       },
+      "./html": {
+        "types": "./dist/html.d.ts",
+        "import": "./dist/html.js"
+      },
       "./package.json": "./package.json"
     }
   },
@@ -44,5 +49,9 @@
     "type": "git",
     "url": "https://github.com/CyberWizard6090/Inkbrick.git",
     "directory": "packages/engine"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^30.0.0",
+    "jsdom": "^29.1.1"
   }
 }

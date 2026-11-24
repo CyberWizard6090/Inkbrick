@@ -15,7 +15,7 @@ afterEach(() => {
 const fresh = () => {
   vi.resetModules();
 
-  return import('../src/i18n/translate');
+  return import('@inkbrick/locales');
 };
 
 describe('languages that load on demand', () => {

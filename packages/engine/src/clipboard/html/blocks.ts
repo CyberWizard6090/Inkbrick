@@ -1,9 +1,18 @@
 import { type InlineNode, isSafeImageUrl, normalizeInlineNodes } from '@inkbrick/document';
-import type { FragmentBlock } from '@inkbrick/engine';
+
+import type { FragmentBlock } from '../types';
 import { cleanInline, inlineOf } from './inline';
 import { isHidden, styleOf } from './style';
 import { importTable } from './table';
-import { BLOCK_TAGS, MAX_DEPTH, SKIP_TAGS, type Style, tagOf } from './tags';
+import {
+  BLOCK_TAGS,
+  ELEMENT_NODE,
+  MAX_DEPTH,
+  SKIP_TAGS,
+  TEXT_NODE,
+  type Style,
+  tagOf,
+} from './tags';
 
 interface Item {
   block: FragmentBlock;
@@ -110,7 +119,7 @@ function listItems(
     const todo = !!checkbox || /task-list-item/.test(child.className);
 
     child.childNodes.forEach((node) => {
-      if (node.nodeType === Node.ELEMENT_NODE) {
+      if (node.nodeType === ELEMENT_NODE) {
         const element = node as HTMLElement;
 
         if (tagOf(element) === 'UL' || tagOf(element) === 'OL') {
@@ -169,12 +178,12 @@ export function collect(container: Node, style: Style, out: FragmentBlock[], dep
   };
 
   container.childNodes.forEach((node) => {
-    if (node.nodeType === Node.TEXT_NODE) {
+    if (node.nodeType === TEXT_NODE) {
       inlineOf(node, style, run, depth + 1);
       return;
     }
 
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (node.nodeType !== ELEMENT_NODE) return;
 
     const element = node as HTMLElement;
 

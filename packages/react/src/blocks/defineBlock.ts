@@ -9,7 +9,7 @@ import type { ContextMenuItem } from '../context-menu/types';
 import type { DocPoint } from '../editing/selection';
 import type { KeyBinding } from '../keymap/types';
 import type { SlashMenuItem } from '../slash/types';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import type { BlockComponent, BlockComponentRegistry, BlockViewProps } from '../ui/types';
 
 export type CustomBlockViewProps<TProps extends DocumentBlockProps = DocumentBlockProps> =

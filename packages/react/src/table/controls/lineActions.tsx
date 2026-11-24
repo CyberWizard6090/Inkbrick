@@ -4,7 +4,7 @@ import type { CaretResult, Editor } from '@inkbrick/engine';
 import type { BlockMenuAction } from '../../block-handle/types';
 import type { EditorView } from '../../editing/EditorView';
 import { Icon } from '../../icons/Icon';
-import type { TFunction } from '../../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import { selectTableLine } from '../cellSelection';
 import type { Position } from './geometry';
 

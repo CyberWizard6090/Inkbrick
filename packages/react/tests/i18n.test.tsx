@@ -17,7 +17,7 @@ import {
   ru,
 } from '../src';
 import { formatImageError, ImageError } from '../src/images/ImageError';
-import { interpolate, type TFunction } from '../src/i18n/translate';
+import { interpolate, type TFunction } from '@inkbrick/locales';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
 
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();

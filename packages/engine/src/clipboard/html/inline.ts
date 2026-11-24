@@ -1,6 +1,15 @@
 import { type InlineNode, normalizeInlineNodes } from '@inkbrick/document';
+
 import { attributesOf, isHidden, styleOf } from './style';
-import { BLOCK_TAGS, MAX_DEPTH, SKIP_TAGS, type Style, tagOf } from './tags';
+import {
+  BLOCK_TAGS,
+  ELEMENT_NODE,
+  MAX_DEPTH,
+  SKIP_TAGS,
+  TEXT_NODE,
+  type Style,
+  tagOf,
+} from './tags';
 
 /** Приводит к виду, который показал бы браузер: сворачивает пробелы между узлами, обрезает края. */
 export function cleanInline(nodes: InlineNode[], preserve = false): InlineNode[] {
@@ -57,7 +66,7 @@ export function inlineOf(
 ): void {
   if (depth > MAX_DEPTH) return;
 
-  if (node.nodeType === Node.TEXT_NODE) {
+  if (node.nodeType === TEXT_NODE) {
     const raw = node.textContent ?? '';
     const text = preserve ? raw : raw.replace(/[\t\n\r\f ]+/g, ' ');
     const attributes = attributesOf(style);
@@ -66,7 +75,7 @@ export function inlineOf(
     return;
   }
 
-  if (node.nodeType !== Node.ELEMENT_NODE) return;
+  if (node.nodeType !== ELEMENT_NODE) return;
 
   const element = node as HTMLElement;
 

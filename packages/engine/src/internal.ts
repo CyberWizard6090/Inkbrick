@@ -97,3 +97,4 @@ export type { InlineMarkdownMatch } from './markdown';
 export { FootnoteIndex, documentBlocks, getFootnoteIndex } from './footnote/FootnoteIndex';
 export type { FootnoteLabel, FootnoteReference } from './footnote/FootnoteIndex';
 export { cellOfRange, visibleCell } from './table/tableQueries';
+export { tabularText } from './clipboard/tabularText';

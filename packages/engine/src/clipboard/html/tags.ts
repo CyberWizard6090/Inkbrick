@@ -1,3 +1,7 @@
+/** Типы узлов DOM (`Node.ELEMENT_NODE`, `Node.TEXT_NODE`): числа, а не глобальный `Node`, — разбору не нужен браузер. */
+export const ELEMENT_NODE = 1;
+export const TEXT_NODE = 3;
+
 export const MAX_DEPTH = 60;
 
 export const SKIP_TAGS = new Set([

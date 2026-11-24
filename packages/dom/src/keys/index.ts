@@ -1,0 +1,1 @@
+export { matchesShortcut } from './shortcut';

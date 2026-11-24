@@ -23,7 +23,7 @@ import {
 } from '../src';
 import { buildBlockActions } from '../src/block-handle/actions';
 import { handleKeyDown } from '../src/keymap/keymap';
-import { createTranslator, resolveMessages } from '../src/i18n/translate';
+import { createTranslator, resolveMessages } from '@inkbrick/locales';
 
 type PollProps = { votes: number };
 

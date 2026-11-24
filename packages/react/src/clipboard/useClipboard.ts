@@ -24,7 +24,7 @@ import { isAcceptedImage } from '../images/upload';
 import { setLinkInSelection } from '../toolbar/formatting';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { lazyModule } from '../ui/lazy';
-import { tabularText } from './tabularText';
+import { tabularText } from '@inkbrick/engine/internal';
 
 /** Перетаскивание картинок снаружи: место вставки и разбор картинок с сайтов — отдельный чанк (грузится при первом переносе). */
 const externalDrop = lazyModule(() => import('../images/externalDrop'));
@@ -34,7 +34,7 @@ const externalDrop = lazyModule(() => import('../images/externalDrop'));
  * подгружается сразу после монтирования редактора, поэтому к первой вставке он обычно готов и вставка остаётся
  * синхронной; если нет, вставка ждёт его и ложится на то же место.
  */
-const htmlParser = lazyModule(() => import('./htmlToFragment'), { soon: true });
+const htmlParser = lazyModule(() => import('./htmlParser'), { soon: true });
 
 const URL_ONLY = /^(https?:\/\/|mailto:)\S+$/i;
 
@@ -206,12 +206,12 @@ export function useClipboard(ref: RefObject<HTMLElement | null>, readOnly: boole
       if (text) pastePlain(text, target);
     };
 
-    const parseHtml = (parser: typeof import('./htmlToFragment'), html: string): Fragment | null =>
+    const parseHtml = (parser: typeof import('./htmlParser'), html: string): Fragment | null =>
       parser.embeddedFragment(html) ?? parser.htmlToFragment(html);
 
     /** Вставка разобранного HTML, когда чанк с разбором пришёл позже самого события: те же правила, что и в обычном пути. */
     const pasteParsed = (
-      parser: typeof import('./htmlToFragment'),
+      parser: typeof import('./htmlParser'),
       html: string,
       text: string,
       target: DocSelection,

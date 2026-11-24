@@ -1,5 +1,5 @@
 import type { MessageKey } from '../i18n/en';
-import type { MessageParams, TFunction } from '../i18n/translate';
+import type { MessageParams, TFunction } from '@inkbrick/locales';
 
 export type ImageErrorCode = 'type' | 'size' | 'uploadAddress' | 'read';
 

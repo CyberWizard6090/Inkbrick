@@ -18,6 +18,7 @@ const ENTRIES = {
   '@inkbrick/document/markdown': 'packages/document/src/markdown.ts',
   '@inkbrick/store': 'packages/store/src/index.ts',
   '@inkbrick/engine': 'packages/engine/src/index.ts',
+  '@inkbrick/engine/html': 'packages/engine/src/html.ts',
   '@inkbrick/engine/internal (not public)': 'packages/engine/src/internal.ts',
   '@inkbrick/dom': 'packages/dom/src/index.ts',
   '@inkbrick/spellcheck': 'packages/spellcheck/src/index.ts',

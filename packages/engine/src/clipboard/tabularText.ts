@@ -1,5 +1,6 @@
 import { parseDelimited } from '@inkbrick/document';
-import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from '@inkbrick/engine';
+
+import { MAX_TABLE_CELLS, MAX_TABLE_COLUMNS } from '../table/tableFragment';
 
 /**
  * Обычный текст с табуляциями (Excel, Google Sheets, терминал, CSV с табуляцией) → строки ячеек, если это

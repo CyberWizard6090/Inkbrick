@@ -55,6 +55,10 @@ commands (`defineBlockController`, `defineBlockCommand`), clipboard fragments, t
 `tocBlocks`, `columnsBlocks`, `toggleBlocks`, `footnoteBlocks`) and reading and editing tables from code. It follows
 semantic versioning.
 
+`@inkbrick/engine/html` turns HTML (a paste, an import) into a fragment: `htmlToFragment(html)` in a browser, or
+`htmlToFragment(html, { parser })` on a server, where `parser` is any object with `parseFromString` (for example
+`new (new JSDOM('').window.DOMParser)()` from jsdom, or linkedom's `DOMParser`). It is a separate entry so that an editor can load it lazily.
+
 `@inkbrick/engine/internal` holds the mechanisms behind it — single command objects, table and column helpers, merged
 cell ranges. `@inkbrick/react` uses them; they are **not** a public contract and may change in any release. If an
 application needs one of them, open an issue: that is a reason to widen the public entry.

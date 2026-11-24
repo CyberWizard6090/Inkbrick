@@ -4,15 +4,15 @@ import type { Editor } from '@inkbrick/engine';
 
 import { EditorView } from '../editing/EditorView';
 import { lazyHighlightCode } from '../code/lazyHighlight';
-import type { CodeHighlighter } from '../code/types';
+import type { CodeHighlighter } from '@inkbrick/dom/code-highlight';
 import {
   createTranslator,
   isLocaleLoaded,
   preloadLocale,
   resolveMessages,
-} from '../i18n/translate';
+} from '@inkbrick/locales';
 import { temmlRenderer, type FormulaRenderer } from '../math/renderer';
-import type { AppMessages } from '../i18n/translate';
+import type { AppMessages } from '@inkbrick/locales';
 import { resolveKeymap } from '../keymap/keymap';
 import type { KeyBinding } from '../keymap/types';
 import { resolveSlashItems } from '../slash/defaultSlashItems';

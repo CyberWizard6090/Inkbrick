@@ -1,5 +1,5 @@
 import { Icon } from '../icons/Icon';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import { en, type MessageKey } from '../i18n/en';
 import type { SlashMenuItem } from './types';
 

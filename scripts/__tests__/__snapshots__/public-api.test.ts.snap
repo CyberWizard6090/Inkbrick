@@ -183,6 +183,7 @@ exports[`public API of the packages > @inkbrick/dom 1`] = `
   "aspectRatio",
   "blobToDataUrl",
   "clampRect",
+  "type CodeHighlighter",
   "type ColorFormat",
   "type ColorPickerHandle",
   "type ColorPickerLabels",
@@ -211,6 +212,10 @@ exports[`public API of the packages > @inkbrick/dom 1`] = `
   "fitRatio",
   "formatHex",
   "FULL_RECT",
+  "HIGHLIGHT_LIMIT",
+  "highlightCode",
+  "type HighlightToken",
+  "type HighlightTokenType",
   "type Hsva",
   "hsvToRgb",
   "isCropAspect",
@@ -218,9 +223,11 @@ exports[`public API of the packages > @inkbrick/dom 1`] = `
   "isPortrait",
   "landscapeOf",
   "loadImage",
+  "matchesShortcut",
   "mimeOf",
   "type MinSize",
   "moveRect",
+  "normalizeLanguage",
   "openCropper",
   "openViewer",
   "oriented",
@@ -377,6 +384,15 @@ exports[`public API of the packages > @inkbrick/engine 1`] = `
   "type ToggleFormatPayload",
   "type ToggleFormatRangePayload",
   "type TypedBlock",
+]
+`;
+
+exports[`public API of the packages > @inkbrick/engine/html 1`] = `
+[
+  "embeddedFragment",
+  "type HtmlParser",
+  "htmlToFragment",
+  "type HtmlToFragmentOptions",
 ]
 `;
 
@@ -584,6 +600,7 @@ exports[`public API of the packages > @inkbrick/engine/internal (not public) 1`]
   "type TableTextFormat",
   "tableValue",
   "type TableValue",
+  "tabularText",
   "textBlockGuard",
   "textBlocks",
   "type TextSelection",
@@ -607,11 +624,23 @@ exports[`public API of the packages > @inkbrick/engine/internal (not public) 1`]
 
 exports[`public API of the packages > @inkbrick/locales 1`] = `
 [
+  "type AppMessages",
+  "createTranslator",
+  "defaultT",
   "en",
+  "getLocales",
+  "interpolate",
+  "isLocaleLoaded",
   "localeLoaders",
   "type MessageKey",
+  "type MessageParams",
   "type Messages",
   "type PartialMessages",
+  "preloadLocale",
+  "registerLocale",
+  "resolveMessages",
+  "type ResolveMessagesOptions",
+  "type TFunction",
 ]
 `;
 

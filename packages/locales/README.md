@@ -18,8 +18,25 @@ const ru: PartialMessages = await localeLoaders.ru(); // a separate chunk
 ```
 
 Each language is also available as its own entry: `import { ru } from '@inkbrick/locales/ru'`. Keys that a language
-does not translate fall back to English. Your own language goes through `registerLocale` or the `locales` prop of
-`EditorProvider` in `@inkbrick/react`.
+does not translate fall back to English.
+
+The translation runtime lives here too, without React, so it works on a server and in other frameworks:
+
+```ts
+import {
+  createTranslator,
+  preloadLocale,
+  registerLocale,
+  resolveMessages,
+} from '@inkbrick/locales';
+
+registerLocale('de', { 'menu.delete': 'Löschen' }); // your own language, may be partial
+await preloadLocale('ru'); // loads a built-in language on demand
+const t = createTranslator(resolveMessages({ locale: 'ru' }));
+t('menu.delete');
+```
+
+`@inkbrick/react` re-exports these functions; the `locales` prop of `EditorProvider` is another way to add a language.
 
 ## License
 

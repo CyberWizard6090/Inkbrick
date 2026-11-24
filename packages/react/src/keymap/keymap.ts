@@ -1,5 +1,5 @@
 import { defaultKeymap } from './defaultKeymap';
-import { matchesShortcut } from './shortcut';
+import { matchesShortcut } from '@inkbrick/dom/keys';
 import type { KeyBinding, KeymapContext } from './types';
 
 /**

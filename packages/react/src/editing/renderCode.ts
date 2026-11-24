@@ -1,4 +1,4 @@
-import type { HighlightToken } from '../code/types';
+import type { HighlightToken } from '@inkbrick/dom/code-highlight';
 
 const TOKEN_TYPE = /^[a-z][a-z0-9-]{0,31}$/;
 

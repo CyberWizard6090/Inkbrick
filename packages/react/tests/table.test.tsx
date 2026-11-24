@@ -7,7 +7,7 @@ import { locateTableCell, tableCellAt, tableSize, type CaretResult } from '@inkb
 import { tableBlocks } from '../src';
 import { hasHandle } from '../src/block-handle/geometry';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
-import { createTranslator, resolveMessages } from '../src/i18n/translate';
+import { createTranslator, resolveMessages } from '@inkbrick/locales';
 import { controllerSlashItems } from '../src/controllers/adapters';
 import { mountEditor } from './harness';
 

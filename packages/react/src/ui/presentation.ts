@@ -1,4 +1,4 @@
-import type { CodeHighlighter } from '../code/types';
+import type { CodeHighlighter } from '@inkbrick/dom/code-highlight';
 import type { FormulaRenderer } from '../math/renderer';
 import type { SlashMenuItem } from '../slash/types';
 import type { BlockComponentRegistry, EditorSlots } from './types';

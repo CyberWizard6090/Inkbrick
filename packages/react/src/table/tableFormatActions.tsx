@@ -3,7 +3,7 @@ import { tableSize, type Editor, tableRangeCells } from '@inkbrick/engine';
 
 import type { BlockMenuAction } from '../block-handle/types';
 import type { CellSelection } from '../editing/CellSelectionController';
-import type { TFunction } from '../i18n/translate';
+import type { TFunction } from '@inkbrick/locales';
 import { Icon } from '../icons/Icon';
 
 /** Свойство таблицы, которое переключает пункт меню. */

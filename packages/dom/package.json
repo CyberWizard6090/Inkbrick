@@ -1,7 +1,7 @@
 {
   "name": "@inkbrick/dom",
   "version": "0.1.0-alpha.0",
-  "description": "Inkbrick UI parts in plain DOM, usable without the editor and with any framework (React, Vue, Svelte or none): a colour picker with an alpha channel, an image crop window and a full-screen image viewer.",
+  "description": "Inkbrick UI parts in plain DOM, usable without the editor and with any framework (React, Vue, Svelte or none): a colour picker with an alpha channel, code syntax highlighting, an image crop window, a full-screen image viewer and keyboard shortcut matching.",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -9,6 +9,8 @@
     ".": "./src/index.ts",
     "./color-picker": "./src/color-picker/index.ts",
     "./image-tools": "./src/image-tools/index.ts",
+    "./code-highlight": "./src/code-highlight/index.ts",
+    "./keys": "./src/keys/index.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -42,6 +44,14 @@
       "./image-tools": {
         "types": "./dist/image-tools/index.d.ts",
         "import": "./dist/image-tools/index.js"
+      },
+      "./code-highlight": {
+        "types": "./dist/code-highlight/index.d.ts",
+        "import": "./dist/code-highlight/index.js"
+      },
+      "./keys": {
+        "types": "./dist/keys/index.d.ts",
+        "import": "./dist/keys/index.js"
       },
       "./package.json": "./package.json"
     }

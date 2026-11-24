@@ -1,4 +1,4 @@
-import type { CodeHighlighter } from './types';
+import type { CodeHighlighter } from '@inkbrick/dom/code-highlight';
 
 let loaded: CodeHighlighter | undefined;
 let loading: Promise<CodeHighlighter> | undefined;
@@ -7,7 +7,7 @@ const listeners = new Set<() => void>();
 
 /** Загружает встроенный подсветчик (отдельный чанк). Повторный вызов возвращает тот же промис. */
 export function loadDefaultHighlighter(): Promise<CodeHighlighter> {
-  return (loading ??= import('./highlight').then((module) => {
+  return (loading ??= import('@inkbrick/dom/code-highlight').then((module) => {
     loaded = module.highlightCode;
 
     for (const listener of [...listeners]) listener();

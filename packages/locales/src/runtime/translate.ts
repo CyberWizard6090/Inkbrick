@@ -1,10 +1,6 @@
-import {
-  en,
-  localeLoaders,
-  type MessageKey,
-  type Messages,
-  type PartialMessages,
-} from '@inkbrick/locales';
+import { en, type MessageKey, type Messages, type PartialMessages } from '../en';
+
+import { localeLoaders } from './loaders';
 
 export type MessageParams = Readonly<Record<string, string | number>>;
 

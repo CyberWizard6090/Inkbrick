@@ -5,7 +5,7 @@ import { validateSnapshot } from '@inkbrick/document';
 import { locateTableCell, tableCellAt, tableSize, type CaretResult } from '@inkbrick/engine';
 
 import { tableBlocks } from '../src';
-import { tabularText } from '../src/clipboard/tabularText';
+import { tabularText } from '@inkbrick/engine/internal';
 import { mountEditor } from './harness';
 
 afterEach(cleanup);
