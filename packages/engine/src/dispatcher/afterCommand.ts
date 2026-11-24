@@ -4,9 +4,11 @@ import type { Engine } from '../editor/Engine';
 
 /**
  * Обработка после каждой выполненной команды, в той же транзакции: привести структуру в порядок (убрать опустевшие
- * колонки) или проверить инвариант (закреплённый блок на месте). Исключение откатывает всю команду.
+ * колонки) или проверить инвариант (закреплённый блок на месте). Исключение откатывает всю команду. `since` — номер
+ * первого изменения этой команды в транзакции (внутри `batch` транзакция общая): изменения самой команды —
+ * `transaction.getChangedBlocksSince(since)`.
  */
-export type AfterCommand = (engine: Engine, transaction: Transaction) => void;
+export type AfterCommand = (engine: Engine, transaction: Transaction, since: number) => void;
 
 /** Команда сняла бы закреплённый блок: транзакция откатывается, `dispatch` возвращает `undefined`. */
 export class PinnedBlockError extends Error {

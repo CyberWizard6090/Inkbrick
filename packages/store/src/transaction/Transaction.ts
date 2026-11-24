@@ -47,6 +47,22 @@ export class Transaction {
     return [...this.changedBlocks];
   }
 
+  /**
+   * Блоки, затронутые изменениями начиная с `mark` (номер изменения, `getChanges().length` в нужный момент). Так шаг
+   * внутри большой транзакции (одна команда пакета) узнаёт только свои изменения, не перебирая все предыдущие.
+   */
+  getChangedBlocksSince(mark: number): readonly BlockId[] {
+    if (mark <= 0) return this.getChangedBlocks();
+
+    const ids = new Set<BlockId>();
+
+    for (let i = mark; i < this.changes.length; i++) {
+      for (const id of this.changes[i].getAffectedBlocks()) ids.add(id);
+    }
+
+    return [...ids];
+  }
+
   get isEmpty(): boolean {
     return this.changes.length === 0;
   }

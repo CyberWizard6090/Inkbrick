@@ -50,6 +50,33 @@ describe('DocumentNormalizer', () => {
     expect(editor.document.getBlock(first)!.content).toEqual([]);
   });
 
+  it('in a batch, each command checks only its own blocks, not every block of the batch', () => {
+    let checks = 0;
+    const rule: NormalizeRule = {
+      name: 'count',
+      normalize() {
+        checks++;
+      },
+    };
+    const editor = new Editor({
+      features: [defineFeature({ name: 'count', normalizers: [rule] })],
+    });
+    let last = childrenOf(editor, noteOf(editor))[0];
+
+    editor.batch(() => {
+      for (let i = 0; i < 500; i++) {
+        last = editor.dispatch({
+          type: 'insertBlock',
+          payload: { flavour: 'block:paragraph', afterId: last },
+        })!.blockId;
+      }
+    });
+
+    expect(childrenOf(editor, noteOf(editor))).toHaveLength(501);
+    // Каждая вставка трогает новый блок и заметку: проверок порядка 2 × 500, а не 500² / 2.
+    expect(checks).toBeLessThan(5 * 500);
+  });
+
   it('rules that keep changing each other are an error, and the command is rolled back', () => {
     let flip = 0;
     const rule: NormalizeRule = {

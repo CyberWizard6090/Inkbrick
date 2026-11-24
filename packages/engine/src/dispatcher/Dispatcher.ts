@@ -36,7 +36,7 @@ export class Dispatcher {
   // Сначала нормализация документа (правила возможностей и общие), затем обработка возможностей, последней — проверка
   // закреплённого блока на итоговом дереве.
   private readonly afterCommand: AfterCommand[] = [
-    (engine, transaction) => engine.normalizer.normalizeChanged(engine, transaction),
+    (engine, transaction, since) => engine.normalizer.normalizeChanged(engine, transaction, since),
     assertPinned,
   ];
 
@@ -166,9 +166,10 @@ export class Dispatcher {
   private run(command: AnyCommand, type: string, payload: unknown, transaction: Transaction) {
     if (!this.accepts(command, type, payload, transaction)) return undefined;
 
+    const since = transaction.getChanges().length;
     const result = command.execute({ engine: this.engine, transaction }, payload);
 
-    for (const hook of this.afterCommand) hook(this.engine, transaction);
+    for (const hook of this.afterCommand) hook(this.engine, transaction, since);
 
     return result;
   }

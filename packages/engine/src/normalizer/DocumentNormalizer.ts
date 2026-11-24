@@ -50,9 +50,12 @@ export class DocumentNormalizer {
     };
   }
 
-  /** Нормализует блоки, изменённые в транзакции. */
-  normalizeChanged(engine: Engine, transaction: Transaction): void {
-    this.run(engine, transaction, transaction.getChangedBlocks());
+  /**
+   * Нормализует блоки, изменённые в транзакции — начиная с изменения `since` (по умолчанию все). Внутри `batch` каждая
+   * команда передаёт начало своих изменений: иначе пакет из тысяч команд проверял бы после каждой все блоки пакета.
+   */
+  normalizeChanged(engine: Engine, transaction: Transaction, since = 0): void {
+    this.run(engine, transaction, transaction.getChangedBlocksSince(since));
   }
 
   /** Нормализует указанные блоки (например, изменённые предыдущей правкой). */
@@ -83,10 +86,9 @@ export class DocumentNormalizer {
         );
       }
 
-      // Блоки неизменяемы: другой объект — значит, блок изменён в этом проходе и проверяется снова.
-      const before = new Map(
-        transaction.getChangedBlocks().map((id) => [id, transaction.getBlock(id)] as const),
-      );
+      // Блоки, которые правила изменили в этом проходе, проверяются снова. Смотрим только изменения прохода, а не всей
+      // транзакции: в большой транзакции (пакет команд) их тысячи.
+      const mark = transaction.getChanges().length;
 
       for (const rule of ordered) {
         for (const id of candidates) {
@@ -98,9 +100,8 @@ export class DocumentNormalizer {
         }
       }
 
-      candidates = transaction
-        .getChangedBlocks()
-        .filter((id) => transaction.getBlock(id) !== before.get(id));
+      candidates =
+        mark === transaction.getChanges().length ? [] : transaction.getChangedBlocksSince(mark);
     }
   }
 }
