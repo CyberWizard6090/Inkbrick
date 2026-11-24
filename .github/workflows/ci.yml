@@ -90,12 +90,21 @@ jobs:
       - run: pnpm test:load:e2e
 
   e2e:
-    name: E2E (${{ matrix.browser }})
+    name: E2E (${{ matrix.browser }} ${{ matrix.shard }}/${{ matrix.total }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Набор тестов делится на части, которые идут параллельно: Firefox и WebKit целиком шли бы 17–22 минуты.
       matrix:
-        browser: [chromium, firefox, webkit]
+        include:
+          - { browser: chromium, shard: 1, total: 2 }
+          - { browser: chromium, shard: 2, total: 2 }
+          - { browser: firefox, shard: 1, total: 3 }
+          - { browser: firefox, shard: 2, total: 3 }
+          - { browser: firefox, shard: 3, total: 3 }
+          - { browser: webkit, shard: 1, total: 3 }
+          - { browser: webkit, shard: 2, total: 3 }
+          - { browser: webkit, shard: 3, total: 3 }
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -105,10 +114,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
-      - run: pnpm test:e2e --project=${{ matrix.browser }}
+      - run: pnpm test:e2e --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/${{ matrix.total }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report-${{ matrix.browser }}
+          name: playwright-report-${{ matrix.browser }}-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7
