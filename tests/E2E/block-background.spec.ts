@@ -192,13 +192,25 @@ test.describe('Block background', () => {
     await page.mouse.click(hue.x + hue.width / 3, hue.y + hue.height / 2);
     await page.mouse.click(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2);
 
-    await expect(part('color-field')).toHaveValue('00FF00');
+    // Чистый зелёный с точностью до пикселя полосы: в Firefox и WebKit окошко стоит на дробных координатах, и треть
+    // полосы — это 118–122°, а не ровно 120° (`05FF00`). Проверяется, что перетаскивания сработали, а не попадание в пиксель.
+    await expect
+      .poll(async () => {
+        const [r, g, b] = ((await part('color-field').inputValue()).match(/../g) ?? []).map((x) =>
+          parseInt(x, 16),
+        );
+
+        return g === 255 && r <= 16 && b <= 16;
+      })
+      .toBe(true);
     await expect(part('color-opacity')).toHaveValue('50%');
     await expect(page.locator(menu)).toBeVisible();
 
     // Формат RGB: три поля; щелчок ставит в поле курсор (меню не отменяет нажатие мыши по полю).
     await part('color-format').selectOption('rgb');
     await expect(part('color-field')).toHaveCount(3);
+    await part('color-field').nth(0).fill('0');
+    await part('color-field').nth(0).press('Tab');
     await part('color-field').nth(2).click();
     await expect(part('color-field').nth(2)).toBeFocused();
     await page.keyboard.press(`${modifier}+a`);
