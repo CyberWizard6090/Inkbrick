@@ -34,10 +34,13 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:load": "vitest run --config tests/load/vitest.config.ts",
-    "test:load:e2e": "playwright test --config tests/load/playwright.config.ts"
+    "test:load:e2e": "playwright test --config tests/load/playwright.config.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",
+    "@changesets/cli": "2.29.7",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^20",

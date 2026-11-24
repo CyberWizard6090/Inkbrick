@@ -1,0 +1,15 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "@inkbrick/document": "0.1.0-alpha.0",
+    "@inkbrick/dom": "0.1.0-alpha.0",
+    "@inkbrick/engine": "0.1.0-alpha.0",
+    "@inkbrick/locales": "0.1.0-alpha.0",
+    "@inkbrick/react": "0.1.0-alpha.0",
+    "@inkbrick/spellcheck": "0.1.0-alpha.0",
+    "@inkbrick/store": "0.1.0-alpha.0",
+    "@inkbrick/styles": "0.1.0-alpha.0"
+  },
+  "changesets": []
+}

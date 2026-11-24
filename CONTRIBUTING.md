@@ -135,8 +135,9 @@ Work is accumulated in `develop` and released to `master` in one go:
   `develop` gets one commit per task (the squash commit message follows the commit format below).
 - Delete the branch after merging.
 - A release is one pull request `develop` → `master`, merged with a **merge commit** (not squash), so that `master`
-  keeps the commit of every task. In it, `Unreleased` in `CHANGELOG.md` becomes the version with a date. The release is
-  tagged `vX.Y.Z` on `master` (the tag starts `release.yml`), then `develop` is brought up to date with `master`.
+  keeps the commit of every task. In it, `pnpm version-packages` turns the collected changesets into the new version and
+  the packages' `CHANGELOG.md` (see _Versions and releases_). The release is tagged `vX.Y.Z` on `master` (the tag starts
+  `release.yml`), then `develop` is brought up to date with `master`.
 - Urgent fixes of a released version are cut from `master`, merged into `master`, and then merged back into `develop`.
 - A `release/x.y` branch is created only when an older major version has to be maintained next to the current one;
   fixes are cherry-picked into it.
@@ -180,8 +181,25 @@ The `commit-msg` hook (`.husky/commit-msg`) rejects messages that do not match.
 - No vague messages such as `fix`, `update`, `final` or `changes`.
 - Each commit should be understandable when reviewed on its own.
 
+## Versions and releases
+
+Versions and changelogs are managed with [Changesets](https://github.com/changesets/changesets) (`.changeset/`):
+
+- **Every user-visible change** of a package comes with a changeset: run `pnpm changeset`, pick the packages and the kind
+  of change (`patch` — a fix, `minor` — a new feature, `major` — a breaking change) and write one or two sentences for the
+  changelog. The file goes into the same pull request. CI (`Changeset` job) fails a pull request that changes a package
+  without one; docs, tests and the sandbox need none.
+- **All `@inkbrick/*` packages share one version** (`fixed` in `.changeset/config.json`): they are released together and
+  depend on each other.
+- **Pre-release.** The packages are in `alpha` pre-release mode (`.changeset/pre.json`): versions come out as
+  `0.1.0-alpha.N`. Before 1.0, `pnpm changeset pre exit` leaves it.
+- **Release.** In the release pull request `develop` → `master`, run `pnpm version-packages`: it raises the versions and
+  writes `CHANGELOG.md` in every package from the collected changesets (and deletes them). After merging, tag `vX.Y.Z` on
+  `master`; the tag publishes the packages (`release.yml`, `NPM_TOKEN` secret), alpha versions under the `alpha` dist-tag.
+- The root `CHANGELOG.md` keeps the history up to the introduction of changesets.
+
 ## Pull requests
 
 - Keep a pull request focused on one task or a closely related set of changes; its title follows the same format.
-- Update `CHANGELOG.md` (section _Unreleased_) for user-visible changes.
+- Add a changeset for user-visible changes of the packages: `pnpm changeset` (CI checks it, see _Versions and releases_).
 - A pull request needs green CI.

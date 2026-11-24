@@ -1,12 +1,17 @@
 # Changelog
 
-All notable changes to the `@inkbrick/*` packages. The format follows
+All notable changes to the `@inkbrick/*` packages up to the introduction of [Changesets](https://github.com/changesets/changesets).
+From then on every package has its own `CHANGELOG.md`, written by `pnpm version-packages` (see `CONTRIBUTING.md`,
+_Versions and releases_).
+
+The older history follows. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
 ### Changed
 
+- Versioning with Changesets: `pnpm changeset` records a change, `pnpm version-packages` raises the shared version of all `@inkbrick/*` packages (alpha pre-release mode) and writes their changelogs; CI asks pull requests that change a package for a changeset.
 - Logic moved out of `@inkbrick/react` into the engine, so it works without a UI (on a server, in tests, through patches). Actions on a group of blocks are engine commands, each one edit and one undo step: `duplicateBlocks`, `moveBlocks`, `convertBlocks`, `setBlockBackgrounds`; `delete-blocks` now returns where the caret goes. The tree queries behind block picking and the word count and tag functions (`countWords`, `documentStats`, `collectTags`, `findTags`, …) live in `@inkbrick/engine`; `@inkbrick/react` re-exports them as before. Column alignment from the table menu is one `alignTableCells` command. Command guards now also check blocks listed in `ids`. Size budgets: app 96, react 70 KB gzip.
 - Phones (touch, up to 720 px wide): every floating window is now a bottom sheet, like the context and block menus already were. The slash menu, tag suggestions, the formula editor, find and replace and the command palette slide up full-width above the on-screen keyboard, so typing goes on; selects (code language) open over a backdrop that closes them. Hover tooltips are off on touch-only screens. Desktop placement is unchanged.
 - Large documents (50 000 blocks, CPU slowed down 4× as on a mid-range phone, production build): typing 24.7 → 10.9 ms per key, Enter 70.7 → 36 ms, loading 2.3 → 1.4 s. `useHeadings` (outline, TOC panel) walks the document again only when an edit can change it — a heading, a block on the path to one moved, or the order of such blocks — instead of on every keystroke; the virtual renderer reuses the heights of the unchanged start and end of the list; the word count counts characters with whole-string expressions; the block lifecycle queue no longer shifts a 50 000-item array.
