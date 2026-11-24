@@ -679,6 +679,7 @@ describe('fromMarkdown: limits', () => {
     const inputs = [
       '['.repeat(100_000),
       '[a]('.repeat(50_000),
+      '[a](<'.repeat(50_000),
       '*_'.repeat(100_000),
       '`'.repeat(100_000),
       '<u>'.repeat(50_000),

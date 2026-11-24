@@ -37,6 +37,26 @@ export function flanking(ch: string, prev: string | undefined, next: string | un
 }
 
 /** Адрес ссылки в `(...)` начиная с `from`: сам адрес и позиция после `)`; `null` — это не ссылка. */
+/** Строка, для которой посчитаны `stops`, и для каждой позиции — первый пробельный символ или `)` не раньше неё. */
+let stopsOf: string | undefined;
+let stops: Int32Array | undefined;
+
+/**
+ * Конец адреса без угловых скобок, начатого в `start`: первый пробел или `)`, но не дальше `MAX_DESTINATION`. Позиции
+ * считаются один раз на строку: иначе абзац из тысяч `[a](` без закрывающей скобки просматривался бы заново от каждой
+ * (по `MAX_DESTINATION` символов на скобку).
+ */
+function bareDestinationEnd(s: string, start: number): number {
+  if (stopsOf !== s || !stops) {
+    stops = new Int32Array(s.length + 1);
+    stops[s.length] = s.length;
+    for (let i = s.length - 1; i >= 0; i--) stops[i] = /[\s)]/.test(s[i]) ? i : stops[i + 1];
+    stopsOf = s;
+  }
+
+  return Math.min(stops[start], start + MAX_DESTINATION + 1, s.length);
+}
+
 export function destination(s: string, from: number): { url: string; end: number } | null {
   let p = from;
 
@@ -54,8 +74,7 @@ export function destination(s: string, from: number): { url: string; end: number
   } else {
     const start = p;
 
-    while (p < s.length && p - start <= MAX_DESTINATION && !/[\s)]/.test(s[p])) p++;
-
+    p = bareDestinationEnd(s, start);
     url = s.slice(start, p);
   }
 
