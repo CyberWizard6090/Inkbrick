@@ -7,7 +7,7 @@ export const SLASH_GROUPS: readonly string[] = ['basic', 'media', 'advanced'];
  * Пункты по группам: сначала `basic`, `media`, `advanced`, затем свои группы, затем без группы. Порядок внутри группы
  * сохраняется.
  */
-export function orderByGroup(items: readonly SlashMenuItem[]): SlashMenuItem[] {
+export function orderByGroup<T extends SlashMenuItem>(items: readonly T[]): T[] {
   const custom: string[] = [];
 
   for (const { group } of items) {

@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
 import { Editor } from '@inkbrick/engine';
+import { BlockSelectionController } from '@inkbrick/view';
 
 import { DocumentView, EditorProvider, type BlockViewProps } from '../src';
-import { BlockSelectionController } from '../src/editing/BlockSelectionController';
 
 describe('BlockSelectionController', () => {
   it('notifies only when the set of selected blocks changes', () => {

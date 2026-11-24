@@ -1,5 +1,3 @@
-import { flushSync } from 'react-dom';
-
 import { FORMULA_CHAR, MAX_FORMULA_LENGTH } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
@@ -98,7 +96,7 @@ export function applyInlineFormula(
 
   if (state.mode === 'insert' && code === '') return false;
 
-  flushSync(() => {
+  view.commit(() => {
     if (state.mode === 'insert') {
       editor.dispatch({ type: 'insertFormula', payload: { blockId, from, to, latex: code } });
     } else if (code === '') {

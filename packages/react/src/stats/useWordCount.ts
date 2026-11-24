@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import { readDocSelection } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { readDocSelection } from '../editing/selection';
 import { documentStats, selectionStats, type StatsOptions, type TextStats } from '@inkbrick/engine';
 import { EMPTY_STATS } from '@inkbrick/engine/internal';
 

@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
+import { temmlRenderer } from '@inkbrick/view';
 
 import { lazyHighlightCode } from '../code/lazyHighlight';
-import { temmlRenderer } from '../math/renderer';
 import { defaultT } from '@inkbrick/locales';
 import { defaultKeymap } from '../keymap/defaultKeymap';
 import { defaultSlashItems } from '../slash/defaultSlashItems';

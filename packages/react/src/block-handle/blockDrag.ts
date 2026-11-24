@@ -2,9 +2,14 @@ import { flushSync } from 'react-dom';
 
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import { readDocSelection } from '../editing/selection';
-import type { DragState, DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
+import { readDocSelection } from '@inkbrick/view';
+import type {
+  EditorView,
+  DragState,
+  DropIndicatorRect,
+  DropPosition,
+  DropSide,
+} from '@inkbrick/view';
 import { pickedOwner, targetsOf } from '../pick/actions';
 import { blockAtPoint, blockElement, probePoint, rowRect } from './geometry';
 

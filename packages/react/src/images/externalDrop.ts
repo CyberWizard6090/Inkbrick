@@ -6,8 +6,7 @@
  */
 import type { Editor } from '@inkbrick/engine';
 
-import type { DropPosition } from '../block-handle/BlockHandleController';
-import type { EditorView } from '../editing/EditorView';
+import type { DropPosition, EditorView } from '@inkbrick/view';
 import type { ImageOptions } from './types';
 
 /** Что редактор передаёт модулю. */

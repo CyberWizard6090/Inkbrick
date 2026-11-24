@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
-import type { EditorView } from '../src/editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 import { useEditorView } from '../src/hooks/useEditorView';
 import { startMarquee } from '../src/pick/marquee';
 import { mountEditor } from './harness';

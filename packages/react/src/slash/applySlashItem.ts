@@ -3,8 +3,8 @@ import { flushSync } from 'react-dom';
 import type { BlockProps } from '@inkbrick/document';
 import type { CaretResult, Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import { readDocSelection } from '../editing/selection';
+import { readDocSelection } from '@inkbrick/view';
+import type { EditorView } from '@inkbrick/view';
 import type { SlashMenuItem } from './types';
 
 /**

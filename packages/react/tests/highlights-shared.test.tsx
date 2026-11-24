@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
+import { setHighlight } from '@inkbrick/view';
+import type { FindController } from '@inkbrick/view';
 
 import { FindReplacePanel, TagHighlights, useFind } from '../src';
-import type { FindController } from '../src/find/FindController';
-import { setHighlight } from '../src/editing/highlights';
 import { mountEditor } from './harness';
 
 /** Подмена CSS Custom Highlight API: в jsdom его нет. */

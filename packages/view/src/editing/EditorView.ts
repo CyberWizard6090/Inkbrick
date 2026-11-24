@@ -18,8 +18,27 @@ import { setDomSelection, type DocPoint } from './selection';
  * Связь модели с DOM: корневой редактируемый элемент и элементы текстовых блоков.
  * Нужна, чтобы после изменения модели вернуть курсор/выделение на место.
  */
+export interface EditorViewOptions {
+  /**
+   * Выполняет правку так, чтобы интерфейс отрисовал её до возврата: после неё view ставит каретку в уже обновлённый DOM.
+   * React передаёт `flushSync`; интерфейс, который рисует синхронно, может его не задавать.
+   */
+  readonly commit?: (update: () => void) => void;
+}
+
 export class EditorView {
   private readonly elements = new Map<BlockId, HTMLElement>();
+
+  private readonly commitUpdate: (update: () => void) => void;
+
+  constructor(options: EditorViewOptions = {}) {
+    this.commitUpdate = options.commit ?? ((update) => update());
+  }
+
+  /** Правка модели, после которой нужен уже обновлённый DOM (поставить каретку, выделение). */
+  commit(update: () => void): void {
+    this.commitUpdate(update);
+  }
 
   private root: HTMLElement | null = null;
 

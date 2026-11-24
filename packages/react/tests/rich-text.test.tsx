@@ -3,11 +3,9 @@ import { fireEvent, render, waitFor } from '@testing-library/react';
 
 import { FORMULA_CHAR } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
+import { matchInlineFormula, renderInline, readDocSelection } from '@inkbrick/view';
 
 import { DocumentView, EditorProvider, mountFormula, type FormulaRenderer } from '../src';
-import { matchInlineFormula } from '../src/formula/actions';
-import { renderInline } from '../src/editing/renderInline';
-import { readDocSelection } from '../src/editing/selection';
 
 const text = (insert: string, attributes?: Record<string, string | boolean>) =>
   attributes ? { insert, attributes } : { insert };

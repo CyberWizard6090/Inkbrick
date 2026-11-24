@@ -11,17 +11,20 @@ import {
   type CaretResult,
   type Fragment,
 } from '@inkbrick/engine';
+import {
+  createInputActions,
+  readDocSelection,
+  type DocSelection,
+  setLinkInSelection,
+} from '@inkbrick/view';
 
 import { blockAtPoint, blockElement, probePoint, rowRect } from '../block-handle/geometry';
-import { createInputActions } from '../editing/inputActions';
 import { deleteBlocks, pickedFragment } from '../pick/actions';
-import { readDocSelection, type DocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { hasExternalImages, isExternalImageUrl, rehostExternalImages } from '../images/external';
 import { insertImageFiles, topLevelBlockId } from '../images/insertImages';
 import { isAcceptedImage } from '../images/upload';
-import { setLinkInSelection } from '../toolbar/formatting';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { lazyModule } from '../ui/lazy';
 import { tabularText } from '@inkbrick/engine/internal';

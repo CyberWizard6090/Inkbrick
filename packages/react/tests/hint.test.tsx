@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
 import { Editor } from '@inkbrick/engine';
+import { CaretController } from '@inkbrick/view';
 
 import { DocumentView, EditorProvider } from '../src';
-import { CaretController } from '../src/editing/CaretController';
 
 const render = (props: Record<string, unknown> = {}, editor = new Editor()) =>
   renderToString(

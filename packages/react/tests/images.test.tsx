@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
 import { Editor, type CaretResult } from '@inkbrick/engine';
+import { UploadTracker } from '@inkbrick/view';
 
 import { DocumentView, EditorProvider, normalizeImageUrl, uploadImage } from '../src';
-import { UploadTracker } from '../src/images/UploadTracker';
 
 const PNG =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';

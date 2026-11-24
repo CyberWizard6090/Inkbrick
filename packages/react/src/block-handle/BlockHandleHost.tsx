@@ -1,4 +1,5 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { readDocSelection } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -6,7 +7,6 @@ import { useReadOnly } from '../hooks/useReadOnly';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
 import { pickRangeTo, togglePick } from '../pick/actions';
-import { readDocSelection } from '../editing/selection';
 import { addBlockBelow, buildBlockActions } from './actions';
 import { DefaultBlockHandle } from './DefaultBlockHandle';
 import { DefaultBlockMenu } from './DefaultBlockMenu';

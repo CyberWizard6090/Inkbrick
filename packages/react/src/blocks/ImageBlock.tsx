@@ -11,12 +11,12 @@ import { flushSync } from 'react-dom';
 
 import { isSafeImageUrl } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
+import { formatImageError } from '@inkbrick/view';
 
 import { useEditorView } from '../hooks/useEditorView';
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
 import { Icon } from '../icons/Icon';
-import { formatImageError } from '../images/ImageError';
 import { fillImageBlock } from '../images/insertImages';
 import { normalizeImageUrl } from '../images/upload';
 import { DEFAULT_IMAGE_TYPES } from '../images/types';

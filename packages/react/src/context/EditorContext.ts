@@ -2,7 +2,7 @@ import { createContext } from 'react';
 
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 
 export const EditorContext = createContext<Editor | null>(null);
 

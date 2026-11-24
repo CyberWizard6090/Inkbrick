@@ -1,5 +1,10 @@
 // @vitest-environment node
-import { orderByGroup } from '../src/slash/groups';
+import {
+  orderByGroup,
+  availableSlashItems,
+  visibleSlashItems,
+  SlashMenuController,
+} from '@inkbrick/view';
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
@@ -12,9 +17,7 @@ import {
   filterSlashItems,
   type SlashMenuItem,
 } from '../src';
-import { availableSlashItems, visibleSlashItems } from '../src/slash/items';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
-import { SlashMenuController } from '../src/slash/SlashMenuController';
 import { createTranslator, resolveMessages } from '@inkbrick/locales';
 
 const titles = (items: readonly SlashMenuItem[]) => items.map((i) => i.id);

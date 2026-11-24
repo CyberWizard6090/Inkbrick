@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
 import { Editor } from '@inkbrick/engine';
+import { BlockHandleController, ToolbarController } from '@inkbrick/view';
 
 import { DocumentView, EditorProvider } from '../src';
-import { BlockHandleController } from '../src/block-handle/BlockHandleController';
-import { ToolbarController } from '../src/toolbar/ToolbarController';
 
 const range = {
   from: { blockId: 'a', offset: 0 },

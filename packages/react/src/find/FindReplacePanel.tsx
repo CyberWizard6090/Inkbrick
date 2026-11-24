@@ -5,6 +5,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from 'react';
+import { getFindController } from '@inkbrick/view';
 
 import { useSheet } from '../hooks/useSheet';
 import { useEditor } from '../hooks/useEditor';
@@ -12,7 +13,6 @@ import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { PortalPresence } from '../ui/Presence';
 import { useT } from '../hooks/useT';
-import { getFindController } from './FindController';
 
 /**
  * Панель поиска и замены. Кладётся в `<EditorProvider>` рядом с документом; открывают её Ctrl/Cmd+F (поиск) и

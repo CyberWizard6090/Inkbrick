@@ -7,6 +7,7 @@ import {
   type DocumentSnapshot,
 } from '@inkbrick/document';
 import { Editor } from '@inkbrick/engine';
+import { readDocSelection, selectAllText, ViewportController } from '@inkbrick/view';
 
 import {
   DocumentView,
@@ -16,8 +17,6 @@ import {
   type DocumentViewProps,
 } from '../src';
 import { EditorViewContext } from '../src/context/EditorContext';
-import { readDocSelection, selectAllText } from '../src/editing/selection';
-import { ViewportController } from '../src/editing/ViewportController';
 
 const schema = createSchemaRegistry();
 

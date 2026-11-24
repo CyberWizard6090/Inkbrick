@@ -1,8 +1,8 @@
 import type { BaseBlock, TableProps } from '@inkbrick/document';
 import { tableSize, type Editor, tableRangeCells } from '@inkbrick/engine';
+import type { CellSelection } from '@inkbrick/view';
 
 import type { BlockMenuAction } from '../block-handle/types';
-import type { CellSelection } from '../editing/CellSelectionController';
 import type { TFunction } from '@inkbrick/locales';
 import { Icon } from '../icons/Icon';
 

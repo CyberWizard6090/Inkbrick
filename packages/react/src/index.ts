@@ -2,7 +2,7 @@ export * from './context/EditorContext';
 export * from './context/EditorProvider';
 export { definePresentation } from './ui/presentation';
 export type { EditorPresentation } from './ui/presentation';
-export type { Spellchecker } from './spellcheck/types';
+export type { Spellchecker } from '@inkbrick/view';
 
 export * from './hooks/useEditor';
 export * from './hooks/useEditorView';
@@ -110,7 +110,7 @@ export type { VirtualRendererOptions } from './renderer/virtual/virtualRenderer'
 export { estimateBlockHeight } from './renderer/virtual/estimate';
 export type { BlockHeightEstimate } from './renderer/virtual/estimate';
 
-export { EditorView } from './editing/EditorView';
+export { EditorView } from '@inkbrick/view';
 
 export type {
   BlockViewProps,
@@ -132,8 +132,8 @@ export type {
   HighlightTokenType,
 } from '@inkbrick/dom/code-highlight';
 
-export { temmlRenderer, mountFormula, ensureMathStyles } from './math/renderer';
-export type { FormulaRenderer, FormulaRenderOptions, FormulaState } from './math/renderer';
+export { temmlRenderer, mountFormula, ensureMathStyles } from '@inkbrick/view';
+export type { FormulaRenderer, FormulaRenderOptions, FormulaState } from '@inkbrick/view';
 export { FormulaView } from './math/FormulaView';
 
 export { useT, useLocale } from './hooks/useT';
@@ -162,7 +162,7 @@ export { matchesShortcut } from '@inkbrick/dom/keys';
 
 export type { SlashMenuItem, SlashMenuProps } from './slash/types';
 export { defaultSlashItems } from './slash/defaultSlashItems';
-export { filterSlashItems } from './slash/filter';
+export { filterSlashItems } from '@inkbrick/view';
 export { DefaultSlashMenu } from './slash/DefaultSlashMenu';
 export type { ToolbarProps, InlineFormat } from './toolbar/types';
 export { DefaultToolbar } from './toolbar/DefaultToolbar';
@@ -185,5 +185,5 @@ export type {
   DropIndicatorRect,
   DropPosition,
   DropSide,
-} from './block-handle/BlockHandleController';
+} from '@inkbrick/view';
 export { DefaultBlockMenu } from './block-handle/DefaultBlockMenu';

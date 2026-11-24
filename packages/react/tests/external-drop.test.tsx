@@ -3,8 +3,8 @@ import { act, cleanup } from '@testing-library/react';
 
 import { Editor } from '@inkbrick/engine';
 
-import { BlockHandleController } from '../src/block-handle/BlockHandleController';
-import type { EditorView } from '../src/editing/EditorView';
+import { BlockHandleController } from '@inkbrick/view';
+import type { EditorView } from '@inkbrick/view';
 import {
   EXTERNAL_DRAG,
   drop,

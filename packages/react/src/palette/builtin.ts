@@ -2,8 +2,7 @@ import { flushSync } from 'react-dom';
 
 import type { CaretResult } from '@inkbrick/engine';
 
-import { isFormattable, toggleFormatInSelection } from '../toolbar/formatting';
-import { availableSlashItems } from '../slash/items';
+import { isFormattable, toggleFormatInSelection, availableSlashItems } from '@inkbrick/view';
 import { convertBlocks, convertibleIn } from '../pick/actions';
 import type { SlashMenuItem } from '../slash/types';
 import type { TFunction } from '@inkbrick/locales';

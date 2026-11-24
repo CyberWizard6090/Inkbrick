@@ -1,8 +1,7 @@
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import { readDocSelection } from '../editing/selection';
-import { isFormattable } from './formatting';
+import { readDocSelection, isFormattable } from '@inkbrick/view';
+import type { EditorView } from '@inkbrick/view';
 
 export function syncToolbar(editor: Editor, view: EditorView): void {
   const state = view.toolbar.getState();

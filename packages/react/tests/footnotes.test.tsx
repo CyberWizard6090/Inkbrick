@@ -3,12 +3,12 @@ import { act, cleanup, fireEvent, waitFor } from '@testing-library/react';
 
 import { toHtml, toMarkdown, toPlainText, footnoteNumbers } from '@inkbrick/document';
 import { sanitizeFragment } from '@inkbrick/engine';
+import { availableSlashItems } from '@inkbrick/view';
+import type { EditorView } from '@inkbrick/view';
 
 import { footnoteBlocks, getFootnoteIndex, insertFootnote, goToFootnote } from '../src';
 import { applySlashItem } from '../src/slash/applySlashItem';
-import { availableSlashItems } from '../src/slash/items';
 import { useEditorView } from '../src/hooks/useEditorView';
-import type { EditorView } from '../src/editing/EditorView';
 import { mountEditor } from './harness';
 
 beforeEach(() => {

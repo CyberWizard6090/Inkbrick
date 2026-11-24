@@ -1,9 +1,7 @@
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import type { DocSelection } from '../editing/selection';
-import { openInlineFormula } from '../formula/actions';
-import { setLinkInSelection, toggleFormatInSelection } from './formatting';
+import { openInlineFormula, setLinkInSelection, toggleFormatInSelection } from '@inkbrick/view';
+import type { EditorView, DocSelection } from '@inkbrick/view';
 import { setAlignInSelection, setColorInSelection } from './rich';
 import { syncToolbar } from './syncToolbar';
 import type { ToolbarProps } from './types';

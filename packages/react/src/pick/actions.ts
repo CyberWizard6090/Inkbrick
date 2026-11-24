@@ -11,7 +11,7 @@ import {
   siblingsOf,
 } from '@inkbrick/engine/internal';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 
 // Запросы к дереву живут в движке: там же их используют команды и код без интерфейса.
 export { pickableBlock, runBetween, topBlock } from '@inkbrick/engine/internal';

@@ -3,7 +3,7 @@ import { act, cleanup } from '@testing-library/react';
 
 import { FRAGMENT_MIME } from '@inkbrick/engine';
 
-import type { EditorView } from '../src/editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 import { useEditorView } from '../src/hooks/useEditorView';
 import { pickRangeTo, togglePick } from '../src/pick/actions';
 import { mountEditor } from './harness';

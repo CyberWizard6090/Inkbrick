@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { FORMULA_CHAR, footnoteNumbers } from '@inkbrick/document';
 import type { CaretResult, Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 import { documentBlocks, getFootnoteIndex } from '@inkbrick/engine/internal';
 
 let counter = 0;

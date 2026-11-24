@@ -7,8 +7,10 @@
     "packages/document/src/markdown.ts",
     "packages/store/src/index.ts",
     "packages/engine/src/index.ts",
+    "packages/engine/src/html.ts",
     "packages/dom/src/index.ts",
     "packages/locales/src/index.ts",
+    "packages/view/src/index.ts",
     "packages/react/src/index.ts"
   ],
   "tsconfig": "tsconfig.json",

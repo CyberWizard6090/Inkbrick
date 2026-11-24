@@ -2,9 +2,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 
 import type { BaseBlock } from '@inkbrick/document';
 
-import { renderCode } from '../editing/renderCode';
-import { renderInline } from '../editing/renderInline';
-import { readDocSelection } from '../editing/selection';
+import { renderCode, renderInline, readDocSelection } from '@inkbrick/view';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';

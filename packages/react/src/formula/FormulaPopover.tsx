@@ -10,7 +10,8 @@ import {
 
 import { MAX_FORMULA_LENGTH } from '@inkbrick/document';
 
-import type { EditorView } from '../editing/EditorView';
+import { applyInlineFormula } from '@inkbrick/view';
+import type { EditorView, FormulaEditorState } from '@inkbrick/view';
 import { useSheet } from '../hooks/useSheet';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -18,11 +19,9 @@ import { useReadOnly } from '../hooks/useReadOnly';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';
 import { FormulaView } from '../math/FormulaView';
-import { applyInlineFormula } from './actions';
 import { PortalPresence } from '../ui/Presence';
 import { LazyFormulaPalette } from './LazyFormulaPalette';
 import { useSnippetInsert } from './snippet';
-import type { FormulaEditorState } from './FormulaController';
 
 const WIDTH = 340;
 

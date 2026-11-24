@@ -9,9 +9,8 @@ import {
 
 import type { Editor } from '@inkbrick/engine';
 
-import { getOffsetIn, readDocSelection } from '../editing/selection';
+import { getOffsetIn, readDocSelection, wordAt, type SpellTarget } from '@inkbrick/view';
 import { caretFromPoint } from '../editing/useMarginClick';
-import { wordAt, type SpellTarget } from '../spellcheck/types';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';

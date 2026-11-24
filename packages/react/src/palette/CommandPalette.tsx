@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from 'react';
+import { getPaletteController } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -18,7 +19,6 @@ import { useT } from '../hooks/useT';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { builtinCommands, formatShortcut } from './builtin';
 import { filterCommands, groupCommands } from './filter';
-import { getPaletteController } from './PaletteController';
 import {
   resolveCommand,
   type PaletteCommand,

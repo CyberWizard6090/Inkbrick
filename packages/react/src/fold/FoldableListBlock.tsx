@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
+import { readDocSelection } from '@inkbrick/view';
 
 import { ListItem } from '../blocks/ListBlock';
 import type { BlockProps } from '../blocks/BlockProps';
-import { readDocSelection } from '../editing/selection';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useT } from '../hooks/useT';

@@ -2,12 +2,11 @@ import { flushSync } from 'react-dom';
 
 import type { CaretResult, Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import { availableSlashItems, syncSlashMenu } from '@inkbrick/view';
+import type { EditorView } from '@inkbrick/view';
 import type { TFunction } from '@inkbrick/locales';
 import { Icon } from '../icons/Icon';
-import { availableSlashItems } from '../slash/items';
 import type { SlashMenuItem } from '../slash/types';
-import { syncSlashMenu } from '../slash/syncSlashMenu';
 import { iconByName } from '../controllers/adapters';
 import { BLOCK_BACKGROUNDS } from '@inkbrick/document';
 

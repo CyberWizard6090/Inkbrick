@@ -1,10 +1,10 @@
 import { useEffect, type RefObject } from 'react';
+import { findPoint } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import type { Marquee } from '../pick/marquee';
 import { lazyModule } from '../ui/lazy';
-import { findPoint } from './selection';
 
 const EDITABLE = '.editable[data-id]';
 

@@ -1,18 +1,20 @@
 import { useEffect, type RefObject } from 'react';
 
 import type { CaretResult } from '@inkbrick/engine';
+import {
+  openFormulaAt,
+  applyBeforeInput,
+  createInputActions,
+  readDocSelection,
+} from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { syncToolbar } from '../toolbar/syncToolbar';
-import { openFormulaAt } from '../formula/actions';
 import { handleKeyDown } from '../keymap/keymap';
 import { useEditorUI } from '../ui/EditorUIContext';
 import { goToFootnote } from '../footnote/actions';
-import { applyBeforeInput } from './beforeInput';
-import { createInputActions } from './inputActions';
 import { pickRangeTo } from '../pick/actions';
-import { readDocSelection } from './selection';
 
 const NAVIGATION_KEYS = new Set([
   'ArrowLeft',

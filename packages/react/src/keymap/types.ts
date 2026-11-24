@@ -1,7 +1,6 @@
 import type { CaretResult, Editor, EditorIntent } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import type { DocSelection } from '../editing/selection';
+import type { EditorView, DocSelection } from '@inkbrick/view';
 import type { SlashMenuItem } from '../slash/types';
 
 export interface KeymapContext {

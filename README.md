@@ -84,15 +84,16 @@ const myDesignSystem = definePresentation({
 
 ## Packages
 
-| Package              | Purpose                                                                                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@inkbrick/document` | Model, block schemas (zod), validation, serialization, migrations, export. No React, no DOM.                                                                                          |
-| `@inkbrick/store`    | Transactions with rollback, history (undo/redo), subscriptions.                                                                                                                       |
-| `@inkbrick/engine`   | `Editor`, commands, block controllers. Headless — usable on a server.                                                                                                                 |
-| `@inkbrick/locales`  | UI dictionaries: English, and languages that load on demand (Russian).                                                                                                                |
-| `@inkbrick/react`    | `EditorProvider`, `DocumentView`, default UI, input and clipboard handling.                                                                                                           |
-| `@inkbrick/dom`      | Interface parts in plain DOM, usable without the editor and with any framework: colour picker with an alpha channel (`/color-picker`), image crop window and viewer (`/image-tools`). |
-| `@inkbrick/styles`   | Default styles: design tokens, themes, `@layer` + `:where()` over `data-inkbrick-*` attributes.                                                                                       |
+| Package              | Purpose                                                                                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@inkbrick/document` | Model, block schemas (zod), validation, serialization, migrations, export. No React, no DOM.                                                                                                                                                      |
+| `@inkbrick/store`    | Transactions with rollback, history (undo/redo), subscriptions.                                                                                                                                                                                   |
+| `@inkbrick/engine`   | `Editor`, commands, block controllers. Headless — usable on a server.                                                                                                                                                                             |
+| `@inkbrick/locales`  | UI dictionaries: English, and languages that load on demand (Russian).                                                                                                                                                                            |
+| `@inkbrick/view`     | Framework-agnostic UI core: model ⇄ DOM bridge (`EditorView`), selection, `beforeinput`, inline rendering, UI state controllers.                                                                                                                  |
+| `@inkbrick/react`    | `EditorProvider`, `DocumentView`, default UI, input and clipboard handling.                                                                                                                                                                       |
+| `@inkbrick/dom`      | Interface parts in plain DOM, usable without the editor and with any framework: colour picker with an alpha channel (`/color-picker`), image crop window and viewer (`/image-tools`), code highlighting (`/code-highlight`), shortcuts (`/keys`). |
+| `@inkbrick/styles`   | Default styles: design tokens, themes, `@layer` + `:where()` over `data-inkbrick-*` attributes.                                                                                                                                                   |
 
 ## Documentation
 

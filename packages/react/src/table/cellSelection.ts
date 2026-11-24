@@ -9,8 +9,7 @@ import {
 } from '@inkbrick/engine';
 import { clampTableRange, expandRangeToMerges } from '@inkbrick/engine/internal';
 
-import type { CellSelection } from '../editing/CellSelectionController';
-import type { EditorView } from '../editing/EditorView';
+import type { CellSelection, EditorView } from '@inkbrick/view';
 
 /** Выделяет прямоугольник между двумя ячейками; пустой после обрезки — снимает выделение. */
 export function selectTableCells(

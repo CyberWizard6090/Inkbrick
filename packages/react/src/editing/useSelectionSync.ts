@@ -1,11 +1,11 @@
 import { useEffect, type RefObject } from 'react';
 
 import type { SelectionState } from '@inkbrick/engine';
+import { readDocSelection } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { selectTableCells } from '../table/cellSelection';
-import { readDocSelection } from './selection';
 
 /** Выделение браузера направлено назад (подвижный край — в начале): тянули справа налево или Shift+←. */
 function isBackward(): boolean {

@@ -2,10 +2,9 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 
 import { Editor } from '@inkbrick/engine';
+import { readDocSelection, normalizeTokens, renderCode } from '@inkbrick/view';
 
 import { DocumentView, EditorProvider, type CodeHighlighter } from '../src';
-import { readDocSelection } from '../src/editing/selection';
-import { normalizeTokens, renderCode } from '../src/editing/renderCode';
 import { loadDefaultHighlighter } from '../src/code/lazyHighlight';
 
 // Встроенный подсветчик — отдельный чанк; здесь он загружен заранее, ленивая загрузка проверяется в lazy-highlight.test.

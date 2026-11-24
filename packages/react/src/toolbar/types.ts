@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import type { Alignment } from '@inkbrick/document';
 import type { RangeFormats } from '@inkbrick/engine';
 
-export type InlineFormat = 'bold' | 'italic' | 'underline' | 'strike' | 'code';
+import type { InlineFormat, ToolbarPanel } from '@inkbrick/view';
 
-export type ToolbarPanel = 'color' | 'highlight';
+export type { InlineFormat, ToolbarPanel } from '@inkbrick/view';
 
 /** Пункт списка «Превратить в» в toolbar. */
 export interface ToolbarTurnOption {

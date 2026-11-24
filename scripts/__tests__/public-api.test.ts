@@ -23,6 +23,7 @@ const ENTRIES = {
   '@inkbrick/dom': 'packages/dom/src/index.ts',
   '@inkbrick/spellcheck': 'packages/spellcheck/src/index.ts',
   '@inkbrick/locales': 'packages/locales/src/index.ts',
+  '@inkbrick/view': 'packages/view/src/index.ts',
   '@inkbrick/react': 'packages/react/src/index.ts',
 };
 

@@ -1,14 +1,14 @@
 import { useSyncExternalStore } from 'react';
+import { getFindController, type FindController, type FindState } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import type { KeyBinding } from '../keymap/types';
 import type { PaletteCommand } from '../palette/types';
-import { getFindController, type FindController, type FindState } from './FindController';
 
 export { FindReplacePanel } from './FindReplacePanel';
-export { FindController } from './FindController';
-export type { FindState } from './FindController';
+export { FindController } from '@inkbrick/view';
+export type { FindState } from '@inkbrick/view';
 export { findMatches, replaceMatches, searchPattern } from '@inkbrick/engine';
 export type { FindMatch, FindOptions } from '@inkbrick/engine';
 

@@ -26,6 +26,7 @@ const alias = {
   '@inkbrick/locales': fileURLToPath(new URL(`../packages/locales/${dir}`, import.meta.url)),
   // Каталог: подпути (`@inkbrick/dom/color-picker`) разрешаются внутрь него.
   '@inkbrick/dom': fileURLToPath(new URL(`../packages/dom/${dir}`, import.meta.url)),
+  '@inkbrick/view': pkg('view'),
   '@inkbrick/react': pkg('react'),
 };
 const external = ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', 'temml', 'zod'];

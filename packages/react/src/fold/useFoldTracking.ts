@@ -2,7 +2,7 @@ import { useLayoutEffect } from 'react';
 
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { computeFolds } from '@inkbrick/engine';

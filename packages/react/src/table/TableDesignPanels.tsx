@@ -13,9 +13,9 @@ import {
   type TableStyle,
 } from '@inkbrick/document';
 import { TABLE_BORDER_MODES, type Editor, type TableBorderMode } from '@inkbrick/engine';
+import type { CellSelection } from '@inkbrick/view';
 
 import type { ContextMenuItem } from '../context-menu/types';
-import type { CellSelection } from '../editing/CellSelectionController';
 import type { TFunction } from '@inkbrick/locales';
 import { useT } from '../hooks/useT';
 import { Icon } from '../icons/Icon';

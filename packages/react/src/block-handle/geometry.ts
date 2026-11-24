@@ -1,7 +1,7 @@
 import { COLUMNS } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 
 /**
  * Запас слева от документа, в котором блок под указателем ещё находится. Полоса для ручки обычно внутри

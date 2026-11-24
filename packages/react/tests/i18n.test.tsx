@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 
 import { Editor } from '@inkbrick/engine';
+import { formatImageError, ImageError } from '@inkbrick/view';
 
 import {
   DocumentView,
@@ -16,7 +17,6 @@ import {
   resolveMessages,
   ru,
 } from '../src';
-import { formatImageError, ImageError } from '../src/images/ImageError';
 import { interpolate, type TFunction } from '@inkbrick/locales';
 import { resolveSlashItems } from '../src/slash/defaultSlashItems';
 

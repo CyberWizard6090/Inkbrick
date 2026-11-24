@@ -15,7 +15,7 @@ import {
 } from '@inkbrick/engine';
 import { clampTableRange } from '@inkbrick/engine/internal';
 
-import type { CellSelection } from '../editing/CellSelectionController';
+import type { CellSelection } from '@inkbrick/view';
 import type { ToolbarPanel, ToolbarProps } from '../toolbar/types';
 
 /**

@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
  * интерфейсе, а части на чистом DOM — ни о редакторе, ни о React. Новый пакет добавьте сюда.
  *
  *   document → store → engine ─┐
- *   locales ───────────────────┼→ react
+ *   locales ───────────────────┼→ view → react
  *   dom (без зависимостей) ────┘
  *   spellcheck (без зависимостей, его подключает приложение)
  */
@@ -18,7 +18,8 @@ export const LAYERS = {
   locales: [],
   dom: [],
   spellcheck: [],
-  react: ['document', 'store', 'engine', 'locales', 'dom'],
+  view: ['document', 'store', 'engine', 'locales', 'dom'],
+  react: ['document', 'store', 'engine', 'locales', 'dom', 'view'],
 };
 
 const PACKAGES = Object.keys(LAYERS);

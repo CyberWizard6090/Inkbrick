@@ -2,8 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import type { DocSelection } from '../editing/selection';
+import type { EditorView, DocSelection } from '@inkbrick/view';
 import type { TFunction } from '@inkbrick/locales';
 
 /** Что видит команда: редактор, текущее выделение (запомнено в момент открытия палитры) и перевод. */

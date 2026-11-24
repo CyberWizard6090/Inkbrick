@@ -1,4 +1,4 @@
-import type { Spellchecker } from '../spellcheck/types';
+import type { Spellchecker, FormulaRenderer } from '@inkbrick/view';
 import type { ComponentType, ReactNode } from 'react';
 
 import type { BaseBlock } from '@inkbrick/document';
@@ -8,7 +8,6 @@ import type { ImageOptions } from '../images/types';
 import type { SlashMenuItem, SlashMenuProps } from '../slash/types';
 import type { BlockHandleProps, BlockMenuProps, DropIndicatorProps } from '../block-handle/types';
 import type { CodeHighlighter } from '@inkbrick/dom/code-highlight';
-import type { FormulaRenderer } from '../math/renderer';
 import type { TFunction } from '@inkbrick/locales';
 import type { KeyBinding } from '../keymap/types';
 import type { ToolbarProps } from '../toolbar/types';

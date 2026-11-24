@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent } from '@testing-library/react';
+import type { EditorView } from '@inkbrick/view';
 
 import { useEditorView } from '../src/hooks/useEditorView';
-import type { EditorView } from '../src/editing/EditorView';
 import { mountEditor } from './harness';
 import { pickCustomColor } from './pickCustomColor';
 

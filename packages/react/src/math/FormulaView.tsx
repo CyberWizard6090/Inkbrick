@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ElementType } from 'react';
+import { ensureMathStyles, mountFormula } from '@inkbrick/view';
 
 import { useEditorUI } from '../ui/EditorUIContext';
-import { ensureMathStyles, mountFormula } from './renderer';
 
 export interface FormulaViewProps {
   readonly latex: string;

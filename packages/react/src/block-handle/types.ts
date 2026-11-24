@@ -7,7 +7,7 @@ import type {
 
 import type { BaseBlock } from '@inkbrick/document';
 
-import type { DropIndicatorRect, DropPosition, DropSide } from './BlockHandleController';
+import type { DropIndicatorRect, DropPosition, DropSide } from '@inkbrick/view';
 
 /**
  * Props встроенного жеста для элемента-«хваталки»: клик открывает меню, протягивание мышью

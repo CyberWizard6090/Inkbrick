@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
+import type { DragState } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import type { DragState } from './BlockHandleController';
 import { getBlockDrag, type BlockDragApi } from './blockDrag';
 
 /**

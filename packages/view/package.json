@@ -1,0 +1,49 @@
+{
+  "name": "@inkbrick/view",
+  "version": "0.1.0-alpha.0",
+  "description": "Framework-agnostic core of the Inkbrick editor UI: the model ⇄ DOM bridge (EditorView), selection, beforeinput handling, inline rendering and the UI state controllers. @inkbrick/react wraps it.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup && node ../../scripts/build-modules.mjs"
+  },
+  "dependencies": {
+    "@inkbrick/document": "workspace:*",
+    "@inkbrick/dom": "workspace:*",
+    "@inkbrick/engine": "workspace:*",
+    "@inkbrick/locales": "workspace:*",
+    "temml": "^0.14.0"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CyberWizard6090/Inkbrick.git",
+    "directory": "packages/view"
+  }
+}

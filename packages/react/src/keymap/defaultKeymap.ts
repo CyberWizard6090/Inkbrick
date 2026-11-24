@@ -1,15 +1,18 @@
 import type { CaretResult } from '@inkbrick/engine';
 import type { Alignment } from '@inkbrick/document';
+import {
+  visibleSlashItems,
+  isFormattable,
+  selectAllText,
+  openInlineFormula,
+  deleteForwardAtEnd,
+  unfoldNeighbour,
+} from '@inkbrick/view';
 
 import { applySlashItem } from '../slash/applySlashItem';
 import { pickKeymap } from '../pick/keymap';
-import { visibleSlashItems } from '../slash/items';
-import { isFormattable } from '../toolbar/formatting';
 import { syncToolbar } from '../toolbar/syncToolbar';
-import { selectAllText } from '../editing/selection';
-import { openInlineFormula } from '../formula/actions';
 import { setAlignInSelection } from '../toolbar/rich';
-import { deleteForwardAtEnd, unfoldNeighbour } from '../editing/deleteAtBoundary';
 import type { KeyBinding, KeymapContext } from './types';
 
 const caretAtEdge =

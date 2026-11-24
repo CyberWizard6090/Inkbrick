@@ -2,9 +2,8 @@ import { flushSync } from 'react-dom';
 
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import type { DocSelection } from '../editing/selection';
-import { availableSlashItems } from '../slash/items';
+import { availableSlashItems } from '@inkbrick/view';
+import type { EditorView, DocSelection } from '@inkbrick/view';
 import type { SlashMenuItem } from '../slash/types';
 import type { ToolbarTurnInto } from './types';
 

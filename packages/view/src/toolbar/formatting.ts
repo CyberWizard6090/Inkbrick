@@ -1,5 +1,3 @@
-import { flushSync } from 'react-dom';
-
 import { normalizeLinkUrl } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
@@ -29,7 +27,7 @@ export function toggleFormatInSelection(
 ): void {
   if (selection.collapsed || !isFormattable(editor, selection)) return;
 
-  flushSync(() => {
+  view.commit(() => {
     if (isSingleBlock(selection)) {
       editor.dispatch({
         type: 'toggleFormat',
@@ -68,7 +66,7 @@ export function setLinkInSelection(
 
   if (link === null) return false;
 
-  flushSync(() => {
+  view.commit(() => {
     editor.dispatch({
       type: 'setInlineAttributes',
       payload: { from: selection.from, to: selection.to, attributes: { link } },

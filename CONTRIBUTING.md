@@ -40,8 +40,9 @@ packages/document  model, schemas, serialization, export   — no React, no DOM
 packages/store     transactions, history, subscriptions       — no React
 packages/locales   UI dictionaries: English and on-demand languages — no React, no dependencies
 packages/engine    Editor, commands, controllers               — no React
-packages/dom       UI parts in plain DOM (color-picker, image-tools) — no React, no editor, usable on its own
-packages/react     EditorProvider, DocumentView, UI            — React, loads parts of dom lazily
+packages/dom       UI parts in plain DOM (color-picker, image-tools, code-highlight, keys) — no React, no editor
+packages/view      EditorView, selection, beforeinput, inline rendering, UI controllers — no React
+packages/react     EditorProvider, DocumentView, UI            — React components over view, loads parts of dom lazily
 packages/styles    CSS: tokens, layers, data-attribute contract
 ```
 
@@ -49,8 +50,9 @@ packages/styles    CSS: tokens, layers, data-attribute contract
 
 Each package imports only the packages below it. The order is `LAYERS` in `eslint.config.js`:
 
-- `document` → `store` → `engine` → `react`;
-- `locales` and `dom` depend on nothing, and only `react` uses them;
+- `document` → `store` → `engine` → `view` → `react`;
+- `locales` and `dom` depend on nothing; `view` and `react` use them;
+- `view` holds everything of the UI that needs the DOM but not a framework; `react` adds the components;
 - `spellcheck` depends on nothing in Inkbrick; the application plugs it into `react` (which knows only its interface);
 - only `react` imports React.
 

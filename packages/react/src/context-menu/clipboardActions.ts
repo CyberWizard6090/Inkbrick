@@ -1,4 +1,4 @@
-import { selectAllText } from '../editing/selection';
+import { selectAllText } from '@inkbrick/view';
 
 const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 

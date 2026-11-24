@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { visibleSlashItems } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -7,7 +8,6 @@ import { useEditorUI } from '../ui/EditorUIContext';
 import { PortalPresence } from '../ui/Presence';
 import { applySlashItem } from './applySlashItem';
 import { lazyModule, useLazy } from '../ui/lazy';
-import { visibleSlashItems } from './items';
 
 const defaultSlashMenu = lazyModule(() =>
   import('./DefaultSlashMenu').then((module) => module.DefaultSlashMenu),

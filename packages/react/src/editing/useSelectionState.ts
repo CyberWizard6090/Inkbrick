@@ -1,8 +1,8 @@
 import { useEffect, type RefObject } from 'react';
+import { readDocSelection } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
-import { readDocSelection } from './selection';
 
 /** Блоки на краях текущего выделения в DOM: каретка — один блок, выделение — начало и конец. */
 export function selectionEdges(root: HTMLElement): readonly string[] {

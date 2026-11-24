@@ -1,5 +1,3 @@
-import { flushSync } from 'react-dom';
-
 import type { CaretResult, Editor, EditorIntent } from '@inkbrick/engine';
 
 import { syncSlashMenu } from '../slash/syncSlashMenu';
@@ -32,7 +30,7 @@ export function createInputActions(
   const run = (action: () => CaretResult | undefined) => {
     let caret: CaretResult | undefined;
 
-    flushSync(() => {
+    view.commit(() => {
       caret = action();
     });
 

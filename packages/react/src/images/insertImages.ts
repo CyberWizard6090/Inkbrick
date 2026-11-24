@@ -3,8 +3,8 @@ import { flushSync } from 'react-dom';
 import { createId } from '@inkbrick/document';
 import type { CaretResult, Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import { toImageErrorInfo } from './ImageError';
+import { toImageErrorInfo } from '@inkbrick/view';
+import type { EditorView } from '@inkbrick/view';
 import type { ImageOptions } from './types';
 import { isAcceptedImage, uploadImage } from './upload';
 

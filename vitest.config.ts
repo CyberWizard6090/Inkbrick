@@ -10,7 +10,7 @@ export default defineConfig({
         '**/index.ts',
         'packages/react/src/icons/lucide.ts',
         'packages/react/src/icons/lucideExtra.ts',
-        'packages/react/src/math/mathCss.ts',
+        'packages/view/src/math/mathCss.ts',
       ],
       reporter: ['text-summary', 'html', 'lcov'],
       thresholds: { lines: 92, statements: 90, functions: 90, branches: 80 },

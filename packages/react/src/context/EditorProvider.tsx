@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 
 import type { Editor } from '@inkbrick/engine';
 
-import { EditorView } from '../editing/EditorView';
+import { EditorView, temmlRenderer, type FormulaRenderer } from '@inkbrick/view';
+import type { Spellchecker } from '@inkbrick/view';
 import { lazyHighlightCode } from '../code/lazyHighlight';
 import type { CodeHighlighter } from '@inkbrick/dom/code-highlight';
 import {
@@ -11,7 +13,6 @@ import {
   preloadLocale,
   resolveMessages,
 } from '@inkbrick/locales';
-import { temmlRenderer, type FormulaRenderer } from '../math/renderer';
 import type { AppMessages } from '@inkbrick/locales';
 import { resolveKeymap } from '../keymap/keymap';
 import type { KeyBinding } from '../keymap/types';
@@ -25,7 +26,6 @@ import type { FormattingMode } from '../context-menu/types';
 import { EditorContext, EditorViewContext } from './EditorContext';
 import { blockComponentsOf, type AnyReactBlockDefinition } from '../blocks/defineBlock';
 import { controllerKeymap, controllerSlashItems, mergeById } from '../controllers/adapters';
-import type { Spellchecker } from '../spellcheck/types';
 
 export interface EditorProviderProps {
   readonly editor: Editor;
@@ -135,7 +135,8 @@ export function EditorProvider({
   formatting,
   spellcheck,
 }: EditorProviderProps) {
-  const view = useMemo(() => new EditorView(), [editor]);
+  // Правка через `view.commit` отрисовывается сразу: каретка ставится в уже обновлённый DOM.
+  const view = useMemo(() => new EditorView({ commit: flushSync }), [editor]);
 
   useLayoutEffect(() => {
     if (readOnly === undefined) return;

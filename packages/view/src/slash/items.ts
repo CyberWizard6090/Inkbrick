@@ -4,11 +4,11 @@ import { filterSlashItems } from './filter';
 import { orderByGroup } from './groups';
 import type { SlashMenuItem } from './types';
 
-export function availableSlashItems(
+export function availableSlashItems<T extends SlashMenuItem>(
   editor: Editor,
-  items: readonly SlashMenuItem[],
+  items: readonly T[],
   blockId: string,
-): SlashMenuItem[] {
+): T[] {
   const block = editor.store.getBlock(blockId);
   const parent = block?.parentId ? editor.store.getBlock(block.parentId) : undefined;
 
@@ -26,11 +26,11 @@ export function availableSlashItems(
   );
 }
 
-export function visibleSlashItems(
+export function visibleSlashItems<T extends SlashMenuItem>(
   editor: Editor,
-  items: readonly SlashMenuItem[],
+  items: readonly T[],
   blockId: string,
   query: string,
-): SlashMenuItem[] {
+): T[] {
   return filterSlashItems(availableSlashItems(editor, items, blockId), query);
 }

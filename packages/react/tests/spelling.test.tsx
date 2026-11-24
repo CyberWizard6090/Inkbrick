@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, waitFor } from '@testing-library/react';
 
-import { wordAt } from '../src/spellcheck/types';
+import { wordAt } from '@inkbrick/view';
 import { mountEditor } from './harness';
 
 describe('wordAt', () => {

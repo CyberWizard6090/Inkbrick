@@ -1,6 +1,6 @@
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView } from '@inkbrick/view';
 
 /**
  * Модуль грузится отдельным чанком (сразу после отрисовки редактора) и ничего не импортирует во время выполнения:

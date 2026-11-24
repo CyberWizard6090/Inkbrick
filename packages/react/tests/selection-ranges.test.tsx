@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
-import { readDocSelection } from '../src/editing/selection';
+import { readDocSelection } from '@inkbrick/view';
 import { mountEditor } from './harness';
 
 const native = globalThis.getSelection;

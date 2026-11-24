@@ -3,9 +3,8 @@ import { flushSync } from 'react-dom';
 import type { Alignment } from '@inkbrick/document';
 import type { Editor } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
-import type { DocSelection } from '../editing/selection';
-import { isFormattable } from './formatting';
+import { isFormattable } from '@inkbrick/view';
+import type { EditorView, DocSelection } from '@inkbrick/view';
 
 /**
  * Ставит или снимает цвет текста (`color`) или подсветки (`backgroundColor`) на выделении. Значение — имя цвета

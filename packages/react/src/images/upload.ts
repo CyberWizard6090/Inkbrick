@@ -1,6 +1,6 @@
 import { isSafeImageUrl } from '@inkbrick/document';
 
-import { ImageError } from './ImageError';
+import { ImageError } from '@inkbrick/view';
 import {
   DEFAULT_IMAGE_TYPES,
   DEFAULT_MAX_INLINE_BYTES,

@@ -1,17 +1,13 @@
 import { useSyncExternalStore } from 'react';
+import { getPaletteController, type PaletteController, type PaletteState } from '@inkbrick/view';
 
 import { useEditorView } from '../hooks/useEditorView';
 import type { KeyBinding } from '../keymap/types';
-import {
-  getPaletteController,
-  type PaletteController,
-  type PaletteState,
-} from './PaletteController';
 
 export { CommandPalette } from './CommandPalette';
 export type { CommandPaletteProps } from './CommandPalette';
-export { PaletteController } from './PaletteController';
-export type { PaletteState } from './PaletteController';
+export { PaletteController } from '@inkbrick/view';
+export type { PaletteState } from '@inkbrick/view';
 export type { PaletteCommand, PaletteContext, PaletteText } from './types';
 
 /**

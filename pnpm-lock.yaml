@@ -180,9 +180,9 @@ importers:
       '@inkbrick/locales':
         specifier: workspace:*
         version: link:../locales
-      temml:
-        specifier: ^0.14.0
-        version: 0.14.0
+      '@inkbrick/view':
+        specifier: workspace:*
+        version: link:../view
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.1
@@ -199,6 +199,9 @@ importers:
       react-dom:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
+      temml:
+        specifier: ^0.14.0
+        version: 0.14.0
 
   packages/spellcheck:
     dependencies:
@@ -220,6 +223,28 @@ importers:
         version: link:../document
 
   packages/styles: {}
+
+  packages/view:
+    dependencies:
+      '@inkbrick/document':
+        specifier: workspace:*
+        version: link:../document
+      '@inkbrick/dom':
+        specifier: workspace:*
+        version: link:../dom
+      '@inkbrick/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@inkbrick/locales':
+        specifier: workspace:*
+        version: link:../locales
+      temml:
+        specifier: ^0.14.0
+        version: 0.14.0
+    devDependencies:
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
 
 packages:
 

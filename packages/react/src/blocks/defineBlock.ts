@@ -3,10 +3,9 @@ import type { ComponentType } from 'react';
 import type { BlockProps as DocumentBlockProps } from '@inkbrick/document';
 import type { BlockController, BlockDefinition, Editor, TypedBlock } from '@inkbrick/engine';
 
-import type { EditorView } from '../editing/EditorView';
+import type { EditorView, DocPoint } from '@inkbrick/view';
 
 import type { ContextMenuItem } from '../context-menu/types';
-import type { DocPoint } from '../editing/selection';
 import type { KeyBinding } from '../keymap/types';
 import type { SlashMenuItem } from '../slash/types';
 import type { TFunction } from '@inkbrick/locales';

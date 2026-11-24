@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent } from '@testing-library/react';
 
 import { FRAGMENT_MIME } from '@inkbrick/engine';
+import type { EditorView } from '@inkbrick/view';
 
 import { CommandPalette, FindReplacePanel, commandPalette, tableBlocks, useFind } from '../src';
-import type { EditorView } from '../src/editing/EditorView';
 import { useEditorView } from '../src/hooks/useEditorView';
 import { mountEditor } from './harness';
 

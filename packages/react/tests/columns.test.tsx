@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent } from '@testing-library/react';
 
 import type { CaretResult } from '@inkbrick/engine';
+import type { EditorView } from '@inkbrick/view';
 
 import { columnsBlocks } from '../src';
 import { getBlockDrag } from '../src/block-handle/blockDrag';
-import type { EditorView } from '../src/editing/EditorView';
 import { useEditorView } from '../src/hooks/useEditorView';
 import { mountEditor } from './harness';
 

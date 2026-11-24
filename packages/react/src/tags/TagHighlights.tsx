@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { highlightsSupported, setHighlight, findPoint, readDocSelection } from '@inkbrick/view';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
@@ -6,8 +7,6 @@ import { useReadOnly } from '../hooks/useReadOnly';
 import { useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import { PortalPresence } from '../ui/Presence';
-import { highlightsSupported, setHighlight } from '../editing/highlights';
-import { findPoint, readDocSelection } from '../editing/selection';
 import { blockTags, collectTags } from '@inkbrick/engine';
 
 export interface TagHighlightsProps {

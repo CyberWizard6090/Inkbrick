@@ -16,7 +16,7 @@ function score(item: SlashMenuItem, query: string): number {
   return 0;
 }
 
-export function filterSlashItems(items: readonly SlashMenuItem[], query: string): SlashMenuItem[] {
+export function filterSlashItems<T extends SlashMenuItem>(items: readonly T[], query: string): T[] {
   const q = query.trim().toLowerCase();
 
   if (q === '') return [...items];
