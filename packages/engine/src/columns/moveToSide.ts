@@ -65,7 +65,6 @@ export const MoveBlockToSideCommand: Command<MoveBlockToSidePayload, CaretResult
     const { engine, transaction: tx } = context;
     const { blockId, targetId, side } = payload;
     const { columnsId, parentId } = plan(context, payload)!;
-    const sourceId = tx.getBlock(blockId)!.parentId!;
     const make = (flavour: string, owner: string, index: number) => {
       const created = engine.block.create({ flavour, parentId: owner });
 

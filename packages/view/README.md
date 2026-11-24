@@ -43,4 +43,4 @@ The API follows the editor's alpha: it may change between releases until 1.0.
 
 ## License
 
-MIT
+MIT. The formula stylesheet embeds Temml's CSS (MIT), see `THIRD_PARTY_NOTICES.md`.

@@ -10,6 +10,10 @@ npm install @inkbrick/react @inkbrick/engine @inkbrick/document @inkbrick/styles
 
 React 18 or 19. The package is ESM with type definitions.
 
+The React components sit on [`@inkbrick/view`](https://www.npmjs.com/package/@inkbrick/view), the framework-agnostic
+core of the UI (the model ⇄ DOM bridge, selection, input handling, UI state). It is installed as a dependency;
+`EditorView` is re-exported here, the rest of the core is imported from `@inkbrick/view`.
+
 ## Quick start
 
 ```tsx
