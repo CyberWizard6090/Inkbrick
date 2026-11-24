@@ -105,6 +105,8 @@ export function targetBlockIds(payload: unknown): string[] {
     field(field(payload, 'from'), 'blockId'),
     field(field(payload, 'to'), 'blockId'),
     field(field(payload, 'at'), 'blockId'),
+    // Группа блоков (`delete-blocks`, `duplicateBlocks` и другие): проверки перед командой видят каждый.
+    ...(Array.isArray(field(payload, 'ids')) ? (field(payload, 'ids') as unknown[]) : []),
   ].filter((id): id is string => typeof id === 'string');
 }
 

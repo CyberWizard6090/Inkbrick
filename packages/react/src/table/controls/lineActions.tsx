@@ -136,16 +136,14 @@ export function rowActions(context: LineActionsContext, { row }: Position): Bloc
   return actions;
 }
 
+/** Выравнивает весь столбец одной командой движка (`alignTableCells` по диапазону столбца). */
 function alignColumn(context: LineActionsContext, column: number, align: Alignment) {
-  const { editor, size, active, perform, cellAt } = context;
+  const { size, active, perform, run, cellAt } = context;
 
   perform(() => {
-    editor.batch(() => {
-      for (let row = 0; row < size.rows; row++) {
-        const point = { blockId: cellAt(row, column).blockId, offset: 0 };
-
-        editor.dispatch({ type: 'setAlign', payload: { from: point, to: point, align } });
-      }
+    run('alignTableCells', {
+      range: { top: 0, left: column, bottom: size.rows - 1, right: column },
+      align,
     });
 
     return cellAt(active.row, column);

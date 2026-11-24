@@ -1,5 +1,6 @@
 import type { BlockId } from '@inkbrick/document';
 
+import type { CaretResult } from '../dispatcher/Intents';
 import type { Command, CommandContext } from './Command';
 import { DeleteBlockCommand } from './DeleteBlockCommand';
 
@@ -26,8 +27,11 @@ function deletableOf(context: CommandContext, ids: readonly BlockId[]): BlockId[
  * Удаляет сразу несколько блоков с потомками — например, все выбранные блоки. То же, что `delete-block` для каждого
  * (блоки, которые удалить нельзя, пропускаются; в опустевшем контейнере появляется пустой абзац), но соседи одного
  * родителя убираются одним изменением: удаление и отмена тысяч блоков не растут квадратично.
+ *
+ * Результат — куда поставить каретку: в начало ближайшего оставшегося блока после удалённых, иначе в конец ближайшего
+ * перед ними, а если родитель опустел — в блок, который в нём появился.
  */
-export const DeleteBlocksCommand: Command<{ ids: readonly BlockId[] }, void> = {
+export const DeleteBlocksCommand: Command<{ ids: readonly BlockId[] }, CaretResult | undefined> = {
   type: 'delete-blocks',
 
   canExecute(context, { ids }) {
@@ -38,6 +42,16 @@ export const DeleteBlocksCommand: Command<{ ids: readonly BlockId[] }, void> = {
     const { engine, transaction } = context;
     const deletable = deletableOf(context, ids);
     const parents = new Set(deletable.map((id) => transaction.getBlock(id)?.parentId));
+    // Соседи до и после удаляемых — у родителя последнего из них.
+    const last = deletable.at(-1)!;
+    const parent = transaction.getBlock(last)?.parentId;
+    const siblings = parent ? (transaction.getBlock(parent)?.children ?? []) : [];
+    const removing = new Set(deletable);
+    const after = siblings.slice(siblings.indexOf(last) + 1).find((id) => !removing.has(id));
+    const before = siblings
+      .slice(0, Math.max(0, siblings.indexOf(deletable[0])))
+      .reverse()
+      .find((id) => !removing.has(id));
 
     engine.block.removeMany(transaction, deletable);
 
@@ -54,5 +68,13 @@ export const DeleteBlocksCommand: Command<{ ids: readonly BlockId[] }, void> = {
         );
       }
     }
+
+    const target =
+      after ?? before ?? (parent ? transaction.getBlock(parent)?.children[0] : undefined) ?? parent;
+    const block = target ? transaction.getBlock(target) : undefined;
+
+    if (!block) return undefined;
+
+    return { blockId: block.id, offset: after ? 0 : engine.inline.length(block.content) };
   },
 };

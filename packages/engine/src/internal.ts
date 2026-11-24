@@ -69,3 +69,23 @@ export type {
 } from './selection';
 export { PatchError, REMOTE_ORIGIN, applyPatch, onPatch } from './sync';
 export type { DocumentPatch, LocalPatch } from './sync';
+
+export {
+  backgroundTargets,
+  blocksFragment,
+  commonBackground,
+  convertibleIn,
+  pickableBlock,
+  runBetween,
+  siblingsOf,
+  topBlock,
+} from './editor/blockGroups';
+export type {
+  BlockGroupPayload,
+  BlockGroupResult,
+  ConvertBlocksPayload,
+  MoveBlocksPayload,
+  SetBlockBackgroundsPayload,
+} from './commands/BlockGroupCommands';
+
+export { EMPTY_STATS } from './stats';

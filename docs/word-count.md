@@ -45,7 +45,7 @@ import {
   documentStats,
   selectionStats,
   useWordCount,
-} from '@inkbrick/react';
+} from '@inkbrick/react'; // подсчёт есть и в @inkbrick/engine — без интерфейса
 
 documentStats(editor); // { words, characters, charactersNoSpaces }
 documentStats(editor, { code: false }); // без блоков кода

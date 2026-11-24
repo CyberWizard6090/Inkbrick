@@ -3,13 +3,8 @@ import { useEffect, useState } from 'react';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { readDocSelection } from '../editing/selection';
-import {
-  documentStats,
-  EMPTY_STATS,
-  selectionStats,
-  type StatsOptions,
-  type TextStats,
-} from './count';
+import { documentStats, selectionStats, type StatsOptions, type TextStats } from '@inkbrick/engine';
+import { EMPTY_STATS } from '@inkbrick/engine/internal';
 
 export interface WordCountOptions extends StatsOptions {
   /** Пауза после правки или выделения перед пересчётом, мс. На огромных документах не даёт считать на каждую букву. */

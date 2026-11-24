@@ -22,6 +22,12 @@ import { SetInlineAttributesCommand } from './SetInlineAttributesCommand';
 import { IndentBlockCommand, OutdentBlockCommand } from './IndentCommands';
 import { InsertFormulaCommand } from './InsertFormulaCommand';
 import { SetAlignCommand } from './SetAlignCommand';
+import {
+  ConvertBlocksCommand,
+  DuplicateBlocksCommand,
+  MoveBlocksCommand,
+  SetBlockBackgroundsCommand,
+} from './BlockGroupCommands';
 
 export type { AnyCommand, Command, CommandContext } from './Command';
 
@@ -50,6 +56,10 @@ export {
   OutdentBlockCommand,
   InsertFormulaCommand,
   SetAlignCommand,
+  DuplicateBlocksCommand,
+  MoveBlocksCommand,
+  ConvertBlocksCommand,
+  SetBlockBackgroundsCommand,
 };
 
 export const builtinCommands: readonly AnyCommand[] = [
@@ -77,4 +87,8 @@ export const builtinCommands: readonly AnyCommand[] = [
   OutdentBlockCommand,
   InsertFormulaCommand,
   SetAlignCommand,
+  DuplicateBlocksCommand,
+  MoveBlocksCommand,
+  ConvertBlocksCommand,
+  SetBlockBackgroundsCommand,
 ];

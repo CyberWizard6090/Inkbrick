@@ -1,6 +1,13 @@
-import type { Editor } from '@inkbrick/engine';
+import type { BlockId } from '@inkbrick/document';
 
-import type { DocSelection } from '../editing/selection';
+import type { Editor } from '../editor/Editor';
+
+/** Выделение текста для подсчёта: от `from` до `to` в порядке документа; `collapsed` — это каретка. */
+export interface StatsRange {
+  readonly from: { readonly blockId: BlockId; readonly offset: number };
+  readonly to: { readonly blockId: BlockId; readonly offset: number };
+  readonly collapsed: boolean;
+}
 
 /** Что считает счётчик. */
 export interface StatsOptions {
@@ -140,7 +147,7 @@ export function documentStats(editor: Editor, options: StatsOptions = {}): TextS
 /** Слова и символы в выделении (в одном блоке или между блоками); `null`, если выделение свёрнуто. */
 export function selectionStats(
   editor: Editor,
-  selection: DocSelection | null,
+  selection: StatsRange | null,
   options: StatsOptions = {},
 ): TextStats | null {
   if (!selection || selection.collapsed) return null;

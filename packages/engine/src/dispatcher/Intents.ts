@@ -7,6 +7,13 @@ import type {
 } from '@inkbrick/document';
 
 import type { Fragment } from '../clipboard/types';
+import type {
+  BlockGroupPayload,
+  BlockGroupResult,
+  ConvertBlocksPayload,
+  MoveBlocksPayload,
+  SetBlockBackgroundsPayload,
+} from '../commands/BlockGroupCommands';
 
 export interface InsertTextPayload {
   text: string;
@@ -160,7 +167,11 @@ export interface CommandMap {
   outdentBlock: { payload: BlockTargetPayload; result: void };
   'insert-paragraph': { payload: { targetId: BlockId }; result: BlockId };
   'delete-block': { payload: { id: BlockId }; result: void };
-  'delete-blocks': { payload: { ids: readonly BlockId[] }; result: void };
+  'delete-blocks': { payload: { ids: readonly BlockId[] }; result: CaretResult | undefined };
+  duplicateBlocks: { payload: BlockGroupPayload; result: BlockGroupResult };
+  moveBlocks: { payload: MoveBlocksPayload; result: void };
+  convertBlocks: { payload: ConvertBlocksPayload; result: BlockGroupResult };
+  setBlockBackgrounds: { payload: SetBlockBackgroundsPayload; result: BlockGroupResult };
   'toggle-heading': { payload: { id: BlockId; level?: 1 | 2 | 3 | 4 | 5 | 6 }; result: void };
 }
 

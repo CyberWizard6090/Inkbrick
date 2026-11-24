@@ -8,8 +8,7 @@ import { useT } from '../hooks/useT';
 import { PortalPresence } from '../ui/Presence';
 import { highlightsSupported, setHighlight } from '../editing/highlights';
 import { findPoint, readDocSelection } from '../editing/selection';
-import { collectTags } from './collect';
-import { blockTags } from './parse';
+import { blockTags, collectTags } from '@inkbrick/engine';
 
 export interface TagHighlightsProps {
   /** Ctrl/Cmd+клик по тегу: приложение открывает список заметок с этим тегом и т. п. Без него клик ничего не делает. */

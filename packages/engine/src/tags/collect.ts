@@ -1,4 +1,4 @@
-import type { Editor } from '@inkbrick/engine';
+import type { Editor } from '../editor/Editor';
 
 import { blockTags } from './parse';
 

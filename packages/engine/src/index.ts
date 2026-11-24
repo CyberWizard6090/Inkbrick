@@ -42,6 +42,13 @@ export type {
   SetInlineAttributesPayload,
   BlockTargetPayload,
 } from './dispatcher';
+export type {
+  BlockGroupPayload,
+  BlockGroupResult,
+  ConvertBlocksPayload,
+  MoveBlocksPayload,
+  SetBlockBackgroundsPayload,
+} from './commands/BlockGroupCommands';
 
 // Свои команды и блоки.
 export type { AnyCommand, Command, CommandContext } from './commands';
@@ -120,3 +127,10 @@ export type {
   TableTextFormat,
   TableValue,
 } from './table';
+
+// Подсчёт слов и символов и теги `#тег`: без интерфейса (лимиты, поиск по тегам на сервере); `@inkbrick/react` строит на них
+// счётчик и подсветку.
+export { countCharacters, countWords, documentStats, selectionStats, statsOf } from './stats';
+export type { StatsOptions, StatsRange, TextStats } from './stats';
+export { blockTags, collectTags, findTags } from './tags';
+export type { TagCount, TagMatch } from './tags';

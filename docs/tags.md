@@ -47,7 +47,7 @@ import { EditorProvider, DocumentView, TagHighlights } from '@inkbrick/react';
 ## Для кода
 
 ```ts
-import { collectTags, findTags, blockTags } from '@inkbrick/react';
+import { collectTags, findTags, blockTags } from '@inkbrick/react'; // или из @inkbrick/engine — без интерфейса
 
 collectTags(editor); // [{ tag: 'idea', count: 3 }, …] по убыванию числа упоминаний, затем по алфавиту
 findTags('a #idea b'); // [{ tag: 'idea', from: 2, to: 7 }] — смещения в тексте
