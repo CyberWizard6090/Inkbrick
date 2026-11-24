@@ -47,11 +47,15 @@ test('the handle on the left resizes the editor, the width survives a reload, do
 
 test('the width handle does not cover the block handles in the gutter', async ({ page }) => {
   await page.goto('/?lang=en');
-  await page.locator('.editable').first().hover();
 
   const grip = page.locator('[data-testid="block-handle"] [data-action="grip"]');
 
-  await expect(grip).toBeVisible();
+  // Ручка блока — ленивый чанк: наведение до его загрузки ничего не показывает, наводим снова.
+  await expect(async () => {
+    await page.mouse.move(0, 0);
+    await page.locator('.editable').first().hover();
+    await expect(grip).toBeVisible({ timeout: 1000 });
+  }).toPass();
 
   const handle = (await page.getByRole('separator', { name: 'Editor width' }).boundingBox())!;
   const gripBox = (await grip.boundingBox())!;
