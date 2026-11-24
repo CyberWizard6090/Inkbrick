@@ -1,5 +1,12 @@
-import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useSyncExternalStore,
+  type CSSProperties,
+} from 'react';
 
+import { useSheet } from '../hooks/useSheet';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
@@ -16,6 +23,8 @@ export function FindReplacePanel() {
   const editor = useEditor();
   const view = useEditorView();
   const t = useT();
+  // Телефон: панель поиска — полоса над экранной клавиатурой во всю ширину.
+  const { sheet, inset } = useSheet();
   const readOnly = useReadOnly();
   const controller = getFindController(editor, view);
   const state = useSyncExternalStore(
@@ -98,6 +107,12 @@ export function FindReplacePanel() {
           className="inkbrick-find"
           data-inkbrick-ui="find"
           data-testid="find-panel"
+          data-sheet={sheet || undefined}
+          style={
+            sheet
+              ? ({ bottom: inset, '--inkbrick-keyboard': `${inset}px` } as CSSProperties)
+              : undefined
+          }
           role="search"
           aria-label={t('find.label')}
         >

@@ -1,6 +1,7 @@
-import { Fragment, useId, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { useEditorView } from '../hooks/useEditorView';
+import { useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import type { MessageKey } from '../i18n/en';
 import type { SlashMenuProps } from './types';
@@ -33,6 +34,8 @@ export function DefaultSlashMenu({
   const view = useEditorView();
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
+  // Телефон: меню — лист над экранной клавиатурой во всю ширину, а не окошко у каретки. Фокус остаётся в тексте.
+  const { sheet, inset } = useSheet();
   const menuId = useId();
   const optionId = (index: number) => `${menuId}-option-${index}`;
 
@@ -79,6 +82,7 @@ export function DefaultSlashMenu({
       data-inkbrick-ui="slash-menu"
       // С какой стороны от каретки открыто меню: от этого зависит, откуда оно выезжает при появлении.
       data-side={flip ? 'top' : 'bottom'}
+      data-sheet={sheet || undefined}
       /*
        * Прокручиваемая область должна быть доступна с клавиатуры. До меню фокус Tab-ом не доходит: в открытом
        * меню Tab выбирает пункт (его перехватывает редактор), а клик по меню не уводит фокус из текста.
@@ -87,13 +91,19 @@ export function DefaultSlashMenu({
       role="listbox"
       aria-label={t('slash.label')}
       data-testid="slash-menu"
-      style={{
-        left: Math.max(
-          8,
-          Math.min(position.x, window.innerWidth - (ref.current?.offsetWidth ?? 320) - 8),
-        ),
-        top: flip ? position.y - (ref.current?.offsetHeight ?? 0) - ESTIMATED_LINE : position.y + 4,
-      }}
+      style={
+        sheet
+          ? ({ bottom: inset, '--inkbrick-keyboard': `${inset}px` } as CSSProperties)
+          : {
+              left: Math.max(
+                8,
+                Math.min(position.x, window.innerWidth - (ref.current?.offsetWidth ?? 320) - 8),
+              ),
+              top: flip
+                ? position.y - (ref.current?.offsetHeight ?? 0) - ESTIMATED_LINE
+                : position.y + 4,
+            }
+      }
       onMouseDown={(event) => event.preventDefault()}
     >
       {items.length === 0 && (

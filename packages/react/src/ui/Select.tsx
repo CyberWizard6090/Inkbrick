@@ -6,10 +6,13 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type SyntheticEvent,
+  type CSSProperties,
 } from 'react';
 
 import { Icon } from '../icons/Icon';
+import { useSheet } from '../hooks/useSheet';
 import { PortalPresence } from './Presence';
+import { SheetBackdrop } from './SheetBackdrop';
 
 export interface SelectOption {
   readonly value: string;
@@ -53,6 +56,8 @@ export function Select({
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [active, setActive] = useState(0);
   const open = placement !== null;
+  // Телефон: список — лист снизу экрана с затемнением, а не окошко у кнопки.
+  const { sheet, inset } = useSheet();
   const selectedIndex = options.findIndex((option) => option.value === value);
   const current = options[selectedIndex];
 
@@ -100,16 +105,23 @@ export function Select({
 
     list.current?.focus({ preventScroll: true });
 
+    // Затемнение листа закрывает список само, по своему касанию: иначе касание закрыло бы список на нажатии, а его click
+    // прошёл бы сквозь гаснущее затемнение в документ.
     const inside = (target: EventTarget | null) =>
       target instanceof Node &&
-      (list.current?.contains(target) || trigger.current?.contains(target));
+      (list.current?.contains(target) ||
+        trigger.current?.contains(target) ||
+        (target instanceof Element && target.matches('[data-inkbrick-part="sheet-backdrop"]')));
     const onPointerDown = (event: PointerEvent) => {
       if (!inside(event.target)) close(false);
     };
     const onScroll = (event: Event) => {
       if (!inside(event.target)) close(false);
     };
-    const onResize = () => close(false);
+    // На телефоне окно меняет размер, когда прячется экранная клавиатура: лист от этого не закрывается.
+    const onResize = () => {
+      if (!sheet) close(false);
+    };
 
     document.addEventListener('pointerdown', onPointerDown, true);
     document.addEventListener('scroll', onScroll, true);
@@ -120,7 +132,7 @@ export function Select({
       document.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
     };
-  }, [open]);
+  }, [open, sheet]);
 
   useEffect(() => {
     const element = list.current;
@@ -219,40 +231,48 @@ export function Select({
           const place = placement!;
 
           return (
-            <div
-              ref={list}
-              id={`${id}-list`}
-              role="listbox"
-              tabIndex={-1}
-              aria-label={label}
-              aria-activedescendant={`${id}-${active}`}
-              data-inkbrick-ui="select"
-              data-side={place.side}
-              style={{ top: place.top, left: place.left, minWidth: place.minWidth }}
-              onKeyDown={onListKeyDown}
-              onPointerDown={stop}
-              onMouseDown={stop}
-              onClick={stop}
-            >
-              {options.map((option, index) => (
-                <div
-                  key={option.value}
-                  id={`${id}-${index}`}
-                  role="option"
-                  aria-selected={option.value === value}
-                  data-inkbrick-part="option"
-                  data-value={option.value}
-                  data-active={index === active || undefined}
-                  onPointerMove={() => setActive(index)}
-                  onClick={() => choose(index)}
-                >
-                  <span data-inkbrick-part="option-label">{option.label}</span>
-                  {option.value === value && (
-                    <Icon name="check" data-inkbrick-part="option-check" />
-                  )}
-                </div>
-              ))}
-            </div>
+            <>
+              {sheet && <SheetBackdrop nested onClose={() => close(false)} />}
+              <div
+                ref={list}
+                id={`${id}-list`}
+                role="listbox"
+                tabIndex={-1}
+                aria-label={label}
+                aria-activedescendant={`${id}-${active}`}
+                data-inkbrick-ui="select"
+                data-side={place.side}
+                data-sheet={sheet || undefined}
+                style={
+                  sheet
+                    ? ({ bottom: inset, '--inkbrick-keyboard': `${inset}px` } as CSSProperties)
+                    : { top: place.top, left: place.left, minWidth: place.minWidth }
+                }
+                onKeyDown={onListKeyDown}
+                onPointerDown={stop}
+                onMouseDown={stop}
+                onClick={stop}
+              >
+                {options.map((option, index) => (
+                  <div
+                    key={option.value}
+                    id={`${id}-${index}`}
+                    role="option"
+                    aria-selected={option.value === value}
+                    data-inkbrick-part="option"
+                    data-value={option.value}
+                    data-active={index === active || undefined}
+                    onPointerMove={() => setActive(index)}
+                    onClick={() => choose(index)}
+                  >
+                    <span data-inkbrick-part="option-label">{option.label}</span>
+                    {option.value === value && (
+                      <Icon name="check" data-inkbrick-part="option-check" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           );
         }}
       />

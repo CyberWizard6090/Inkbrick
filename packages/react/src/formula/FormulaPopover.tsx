@@ -5,11 +5,13 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
 } from 'react';
 
 import { MAX_FORMULA_LENGTH } from '@inkbrick/document';
 
 import type { EditorView } from '../editing/EditorView';
+import { useSheet } from '../hooks/useSheet';
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
@@ -36,6 +38,8 @@ function Body({ state }: { state: FormulaEditorState }) {
   const editor = useEditor();
   const view = useEditorView();
   const t = useT();
+  // Телефон: редактор формулы — лист над экранной клавиатурой во всю ширину.
+  const { sheet, inset } = useSheet();
   const [draft, setDraft] = useState(state.latex);
   const [error, setError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -90,11 +94,19 @@ function Body({ state }: { state: FormulaEditorState }) {
       data-testid="formula-popover"
       role="dialog"
       aria-label={t('formula.inline.title')}
-      style={{
-        left: Math.max(8, Math.min(state.position.x - width / 2, window.innerWidth - width - 8)),
-        top: top ?? state.position.y + 8,
-        width,
-      }}
+      data-sheet={sheet || undefined}
+      style={
+        sheet
+          ? ({ bottom: inset, '--inkbrick-keyboard': `${inset}px` } as CSSProperties)
+          : {
+              left: Math.max(
+                8,
+                Math.min(state.position.x - width / 2, window.innerWidth - width - 8),
+              ),
+              top: top ?? state.position.y + 8,
+              width,
+            }
+      }
       onMouseDown={(event) => {
         if (!(event.target instanceof HTMLTextAreaElement)) event.preventDefault();
       }}

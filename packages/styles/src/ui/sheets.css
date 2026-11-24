@@ -184,6 +184,91 @@
   }
 
   /*
+   * Телефон: остальные всплывающие окна — тоже листы снизу во всю ширину, а не окошки у каретки или кнопки. Slash-меню,
+   * подсказки тегов, редактор формулы, поиск и палитра команд стоят над экранной клавиатурой (`bottom` ставят сами
+   * компоненты, `--inkbrick-keyboard` — её высота): через них продолжают печатать. Выпадающий список — над своим
+   * затемнением, поверх листа меню, из которого его открыли.
+   */
+  :where(
+    [data-inkbrick-ui='slash-menu'][data-sheet],
+    [data-inkbrick-ui='tag-suggestions'][data-sheet],
+    [data-inkbrick-ui='select'][data-sheet],
+    [data-inkbrick-ui='formula-popover'][data-sheet],
+    [data-inkbrick-ui='find'][data-sheet],
+    [data-inkbrick-ui='palette'][data-sheet]
+  ) {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: var(--inkbrick-z-menu);
+    box-sizing: border-box;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    max-height: min(50dvh, calc(100dvh - var(--inkbrick-keyboard, 0px) - 72px), 480px);
+    margin: 0;
+    padding: 8px 8px max(10px, env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--inkbrick-stroke-2);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 32px rgb(0 0 0 / 22%);
+    transform: none;
+    translate: none;
+    animation: inkbrick-sheet-in var(--inkbrick-sheet-duration) var(--inkbrick-curve);
+  }
+
+  /* Полоска-захват у листов-списков. */
+  :where(
+    [data-inkbrick-ui='slash-menu'][data-sheet],
+    [data-inkbrick-ui='select'][data-sheet]
+  )::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 2px auto 8px;
+    border-radius: 2px;
+    background: var(--inkbrick-stroke-2);
+  }
+
+  /* Пункты листа — под палец. */
+  :where(
+    [data-inkbrick-ui='select'][data-sheet] > [data-inkbrick-part='option'],
+    [data-inkbrick-ui='tag-suggestions'][data-sheet] > [data-inkbrick-part='item']
+  ) {
+    min-height: 44px;
+  }
+
+  /* Выпадающий список открывают и из листа меню (тип столбца таблицы): он лежит выше этого листа и своего затемнения. */
+  :where([data-inkbrick-ui='select'][data-sheet]) {
+    z-index: calc(var(--inkbrick-z-menu) + 3);
+  }
+
+  /* Редактор формулы: поле, предпросмотр, символы и кнопки — выше, чтобы «Применить» было видно без прокрутки. */
+  :where([data-inkbrick-ui='formula-popover'][data-sheet]) {
+    max-height: min(88dvh, calc(100dvh - var(--inkbrick-keyboard, 0px) - 24px));
+  }
+
+  :where([data-inkbrick-ui='tag-suggestions'][data-sheet] > [data-inkbrick-part='item']) {
+    display: flex;
+    align-items: center;
+  }
+
+  :where([data-inkbrick-ui='palette'][data-sheet]) {
+    max-height: min(70dvh, calc(100dvh - var(--inkbrick-keyboard, 0px) - 48px));
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Подсказки при наведении на сенсорном экране не нужны: наведения нет, а касание их только закрывает. */
+  @media (hover: none) and (pointer: coarse) {
+    :where([data-inkbrick-ui='tooltip']) {
+      display: none;
+    }
+  }
+
+  /*
    * Лист закрывается: съезжает вниз, затемнение гаснет. Правила стоят после правил появления листа и затемнения (у всех
    * специфичность 0, побеждает более позднее), иначе у закрытого листа осталась бы анимация появления и он пропадал бы
    * рывком. `Presence` ждёт конца этой анимации и потом убирает лист.

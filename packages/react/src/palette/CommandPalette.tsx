@@ -6,10 +6,12 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
 } from 'react';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
+import { useSheet } from '../hooks/useSheet';
 import { useReadOnly } from '../hooks/useReadOnly';
 import { PortalPresence } from '../ui/Presence';
 import { useT } from '../hooks/useT';
@@ -39,6 +41,8 @@ export function CommandPalette({ commands = [], builtin = true }: CommandPalette
   const editor = useEditor();
   const view = useEditorView();
   const t = useT();
+  // Телефон: палитра — лист снизу над экранной клавиатурой.
+  const { sheet, inset } = useSheet();
   const readOnly = useReadOnly();
   const { slashItems } = useEditorUI();
   const controller = getPaletteController(view);
@@ -125,6 +129,12 @@ export function CommandPalette({ commands = [], builtin = true }: CommandPalette
           <div
             data-inkbrick-ui="palette"
             data-testid="command-palette"
+            data-sheet={sheet || undefined}
+            style={
+              sheet
+                ? ({ bottom: inset, '--inkbrick-keyboard': `${inset}px` } as CSSProperties)
+                : undefined
+            }
             role="dialog"
             aria-modal="true"
             aria-label={t('palette.label')}

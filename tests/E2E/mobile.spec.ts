@@ -183,3 +183,79 @@ test('the tools menu opens inside the screen', async ({ page }) => {
   expect(menu.left).toBeGreaterThanOrEqual(0);
   expect(menu.right).toBeLessThanOrEqual(375);
 });
+
+test.describe('Phone: floating windows are bottom sheets', () => {
+  const sheet = async (page: Page, selector: string) => {
+    const element = page.locator(selector);
+
+    await expect(element).toHaveAttribute('data-sheet', 'true');
+
+    // Лист выезжает снизу: мерить, когда анимация кончилась.
+    return element.evaluate(async (el) => {
+      await Promise.all(el.getAnimations().map((animation) => animation.finished));
+      const r = el.getBoundingClientRect();
+      return {
+        left: r.left,
+        right: r.right,
+        bottom: r.bottom,
+        width: innerWidth,
+        height: innerHeight,
+      };
+    });
+  };
+  const atBottom = (box: {
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  }) => {
+    expect(box.left).toBeLessThanOrEqual(1);
+    expect(box.right).toBeGreaterThanOrEqual(box.width - 1);
+    expect(Math.abs(box.bottom - box.height)).toBeLessThanOrEqual(1);
+  };
+
+  test('the slash menu is a sheet; picking an item still converts the block', async ({ page }) => {
+    await page.goto('/?lang=en');
+    await page.locator('.editable').first().tap();
+    await page.keyboard.type('/');
+    atBottom(await sheet(page, '[data-testid="slash-menu"]'));
+
+    await page.locator('[data-testid="slash-menu"] [data-slash-item]').nth(1).tap();
+    await expect(page.locator('[data-testid="slash-menu"]')).toHaveCount(0);
+    await expect(page.locator('[data-inkbrick-block="heading"]')).toHaveCount(1);
+  });
+
+  test('a select is a sheet over a backdrop: an option applies, the backdrop closes', async ({
+    page,
+  }) => {
+    await page.goto('/?lang=en');
+    await useTool(page, 'load-sample');
+
+    const trigger = page.locator('[data-inkbrick-block="code"] [aria-haspopup="listbox"]').first();
+
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.tap();
+    atBottom(await sheet(page, '[data-inkbrick-ui="select"]'));
+    await page.locator('[data-inkbrick-ui="select"] [data-value="json"]').tap();
+    await expect(trigger).toContainText('JSON');
+
+    await trigger.tap();
+    await expect(page.locator('[data-inkbrick-ui="select"]')).toHaveAttribute('data-sheet', 'true');
+    await page.mouse.click(200, 80);
+    await expect(page.locator('[data-inkbrick-ui="select"]')).toHaveCount(0);
+    await expect(trigger).toContainText('JSON');
+  });
+
+  test('find and the command palette open as sheets at the bottom', async ({ page }) => {
+    await page.goto('/?lang=en');
+    await page.locator('.editable').first().tap();
+    await page.keyboard.press('Control+f');
+    atBottom(await sheet(page, '[data-testid="find-panel"]'));
+    await page.keyboard.press('Escape');
+
+    await page.locator('.editable').first().tap();
+    await page.keyboard.press('Control+Shift+p');
+    atBottom(await sheet(page, '[data-testid="command-palette"]'));
+  });
+});

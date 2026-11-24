@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { useEditor } from '../hooks/useEditor';
 import { useEditorView } from '../hooks/useEditorView';
 import { useReadOnly } from '../hooks/useReadOnly';
+import { useSheet } from '../hooks/useSheet';
 import { useT } from '../hooks/useT';
 import { PortalPresence } from '../ui/Presence';
 import { highlightsSupported, setHighlight } from '../editing/highlights';
@@ -56,6 +57,8 @@ export function TagHighlights({
   const editor = useEditor();
   const view = useEditorView();
   const t = useT();
+  // Телефон: подсказки — лист над экранной клавиатурой, а не окошко у каретки.
+  const { sheet, inset } = useSheet();
   const readOnly = useReadOnly();
   const [open, setOpen] = useState<Suggestion | null>(null);
   const dismissed = useRef<string | null>(null);
@@ -289,7 +292,12 @@ export function TagHighlights({
             data-testid="tag-suggestions"
             role="listbox"
             aria-label={t('tags.suggestions')}
-            style={{ left: shown.x, top: shown.y + 4 }}
+            data-sheet={sheet || undefined}
+            style={
+              sheet
+                ? ({ bottom: inset, '--inkbrick-keyboard': `${inset}px` } as CSSProperties)
+                : { left: shown.x, top: shown.y + 4 }
+            }
             onMouseDown={(event) => event.preventDefault()}
           >
             {shown.items.map((tag, index) => (
