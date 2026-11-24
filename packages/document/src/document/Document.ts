@@ -96,23 +96,27 @@ export class Document {
      * Новый объект: React/useSyncExternalStore сравнивает ссылки, поэтому
      * мутировать массив children на месте нельзя.
      */
-    this._replaceBlock({
-      ...parent,
-      children: [
-        ...parent.children.slice(0, safeIndex),
-        childId,
-        ...parent.children.slice(safeIndex),
-      ],
-    });
+    const children = parent.children.slice();
+
+    children.splice(safeIndex, 0, childId);
+    this._replaceBlock({ ...parent, children });
   }
 
   _removeChild(parentId: BlockId, childId: BlockId): void {
     const parent = this.requireBlock(parentId);
+    const index = parent.children.indexOf(childId);
 
-    this._replaceBlock({
-      ...parent,
-      children: parent.children.filter((id) => id !== childId),
-    });
+    if (index === -1) {
+      this._replaceBlock({ ...parent, children: parent.children.slice() });
+
+      return;
+    }
+
+    // Одно копирование списка (длинная заметка — десятки тысяч id), без прохода с замыканием.
+    const children = parent.children.slice();
+
+    children.splice(index, 1);
+    this._replaceBlock({ ...parent, children });
   }
 
   /**

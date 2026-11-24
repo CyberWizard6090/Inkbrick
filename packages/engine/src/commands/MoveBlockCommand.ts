@@ -57,8 +57,14 @@ function plan(
 
   if (!engine.block.fitsDepth(transaction, parent.id, blockId)) return undefined;
 
-  const siblings = parent.children.filter((id) => id !== blockId);
-  const at = siblings.indexOf(targetId);
+  // Место цели среди соседей без самого блока (он уйдёт со своего места): без копии списка детей.
+  let at = parent.children.indexOf(targetId);
+
+  if (block.parentId === parent.id) {
+    const own = parent.children.indexOf(blockId);
+
+    if (own !== -1 && own < at) at -= 1;
+  }
 
   return { parentId: parent.id, index: position === 'before' ? at : at + 1 };
 }
