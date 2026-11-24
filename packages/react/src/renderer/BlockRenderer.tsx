@@ -80,15 +80,27 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
     started.current = true;
     wasFolded.current = folded;
 
-    const element = view
-      .getRoot()
-      ?.querySelector<HTMLElement>(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`);
+    // Элемент и его место на экране нужны только для анимации сворачивания: при обычном монтировании их не трогаем —
+    // чтение геометрии у каждого из тысяч новых блоков (таблица, вставка) заставляло браузер пересчитывать раскладку.
+    const elementOf = () =>
+      view
+        .getRoot()
+        ?.querySelector<HTMLElement>(`[data-block-id="${id.replace(/["\\]/g, '\\$&')}"]`) ??
+      undefined;
     // Раздел из сотен блоков двигать нельзя: каждый анимировался бы сам. Он сворачивается сразу. В разделе поменьше плавно
     // двигаются только блоки у экрана.
-    const animated = !!element && view.folds.canAnimate(MAX_ANIMATED_FOLD) && nearViewport(element);
+    const animatable = () => {
+      if (!view.folds.canAnimate(MAX_ANIMATED_FOLD)) return undefined;
+
+      const element = elementOf();
+
+      return element && nearViewport(element) ? element : undefined;
+    };
 
     const appear = () => {
-      if (!animated) return;
+      const element = animatable();
+
+      if (!element) return;
 
       view.folds.setMoving(id, false);
 
@@ -112,8 +124,9 @@ export const BlockRenderer = memo(function BlockRenderer({ id }: BlockRendererPr
       return;
     }
 
+    const element = animatable();
     const leaving =
-      animated &&
+      !!element &&
       animateCollapse(element, 'closed', () => {
         view.folds.setMoving(id, null);
         setGone(true);
