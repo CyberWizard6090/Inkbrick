@@ -1,16 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// HOST=0.0.0.0 нужен внутри Docker; allowedHosts — имя сервиса compose, по которому e2e-контейнер ходит на dev-сервер.
+// Только локально; с телефона в той же сети — `pnpm dev:phone` (он передаёт --host 0.0.0.0).
 export default defineConfig({
   server: {
-    host: process.env.HOST ?? '127.0.0.1',
+    host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['dev'],
   },
   preview: {
-    host: process.env.HOST ?? '127.0.0.1',
+    host: '127.0.0.1',
     port: 4173,
   },
   resolve: {

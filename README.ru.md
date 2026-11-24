@@ -78,9 +78,8 @@ PW_HEADED=1 pnpm test:e2e   # с видимым браузером
 ## Смотреть с телефона
 
 1. Телефон и компьютер — в одной Wi-Fi сети.
-2. `pnpm dev:phone` (или Docker: `docker compose up --watch` — порт уже открыт для сети).
+2. `pnpm dev:phone`.
 3. Открыть на телефоне адрес из строки `Network:` в выводе Vite, например `http://192.168.0.17:5173`.
-   Для Docker адрес тот же, IP — компьютера (`ipconfig` → IPv4).
 
 Hot reload работает и на телефоне. Если страница не открывается — Windows спросит разрешение для Node.js
 в брандмауэре при первом запуске: нужно разрешить для «частных сетей» (и сеть Wi-Fi должна быть частной).
@@ -99,17 +98,6 @@ pnpm -r --filter "@inkbrick/*" publish --access public
 (указывают на `dist`), а `workspace:*` заменяется на версию пакета. Установленный из npm Inkbrick импортируется
 как обычная ESM-библиотека, без настройки Vite: `import { Editor } from '@inkbrick/engine'`. `@inkbrick/styles`
 публикуется как CSS без сборки. У каждого пакета свой `README.md` на английском — его показывает страница пакета на npm.
-
-## Docker
-
-```bash
-docker compose up --watch                          # dev-сервер с hot reload (+ пересборка при смене зависимостей) → http://localhost:5173
-docker compose --profile test run --rm test        # unit-тесты
-docker compose --profile e2e run --rm e2e          # e2e в Chromium против контейнера dev
-```
-
-Образ собирается из `Dockerfile` (цели `dev`, `test`, `e2e`, `prod`). Установка зависимостей идёт с `--frozen-lockfile`:
-если меняете `package.json`, сначала выполните `pnpm install` локально и закоммитьте `pnpm-lock.yaml`.
 
 ## Известные ограничения
 

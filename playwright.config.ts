@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E_BASE_URL задан — тесты идут по уже запущенному приложению (Docker, CI), dev-сервер не стартует.
+// E2E_BASE_URL задан — тесты идут по уже запущенному приложению (например, по preview-сборке), dev-сервер не стартует.
 const externalUrl = process.env.E2E_BASE_URL;
 const baseURL = externalUrl ?? 'http://127.0.0.1:5173';
 
