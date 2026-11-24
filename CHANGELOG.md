@@ -9,94 +9,198 @@ The older history follows. The format follows
 
 ## Unreleased
 
-### Changed
+What `develop` adds to `master`, as it stands now: a feature that was added and changed several times in `develop` is
+described once, in its final form; work that was added and removed again in `develop` (table column properties, filters
+and views) is not listed. The entries `master` already has follow under _Already in `master`_.
 
-- Versioning with Changesets: `pnpm changeset` records a change, `pnpm version-packages` raises the shared version of all `@inkbrick/*` packages (alpha pre-release mode) and writes their changelogs; CI asks pull requests that change a package for a changeset.
-- Logic moved out of `@inkbrick/react` into the engine, so it works without a UI (on a server, in tests, through patches). Actions on a group of blocks are engine commands, each one edit and one undo step: `duplicateBlocks`, `moveBlocks`, `convertBlocks`, `setBlockBackgrounds`; `delete-blocks` now returns where the caret goes. The tree queries behind block picking and the word count and tag functions (`countWords`, `documentStats`, `collectTags`, `findTags`, …) live in `@inkbrick/engine`; `@inkbrick/react` re-exports them as before. Column alignment from the table menu is one `alignTableCells` command. Command guards now also check blocks listed in `ids`. Size budgets: app 96, react 70 KB gzip.
-- Phones (touch, up to 720 px wide): every floating window is now a bottom sheet, like the context and block menus already were. The slash menu, tag suggestions, the formula editor, find and replace and the command palette slide up full-width above the on-screen keyboard, so typing goes on; selects (code language) open over a backdrop that closes them. Hover tooltips are off on touch-only screens. Desktop placement is unchanged.
-- Large documents (50 000 blocks, CPU slowed down 4× as on a mid-range phone, production build): typing 24.7 → 10.9 ms per key, Enter 70.7 → 36 ms, loading 2.3 → 1.4 s. `useHeadings` (outline, TOC panel) walks the document again only when an edit can change it — a heading, a block on the path to one moved, or the order of such blocks — instead of on every keystroke; the virtual renderer reuses the heights of the unchanged start and end of the list; the word count counts characters with whole-string expressions; the block lifecycle queue no longer shifts a 50 000-item array.
-- Published packages load as lazily as the sources: `@inkbrick/document`, `store`, `engine`, `dom` and `react` are built one module per file (`scripts/build-modules.mjs`; tsup builds only the types) instead of one bundled file. From a bundled file an application bundler cannot drop unused code with top-level calls, so an app built from the npm packages loaded 154.6 KB gzip up front instead of 95.2 KB (the Russian dictionary and several lazy UI chunks became eager). `pnpm size:dist` checks the budgets against the built `dist` in CI; source maps point to the shipped `src` instead of embedding it.
-- Published types of `@inkbrick/document` did not parse: the type bundler turned the internal `z.infer<…>` into `infer<…>`, a keyword, so TypeScript projects using the package from npm failed on its `.d.ts`. The block schemas now use `z.output<…>` (the same type). Found by installing the packed tarballs into a fresh project.
-- Concurrent editing: `applyPatch` merges what the patch author did not see — blocks added to the same parent at the same time both stay (the unseen one next to its sibling), references to blocks gone here drop out, a block moved here and by the patch ends up in exactly one place, deleting a block takes children added to it concurrently, and children that no longer fit a converted parent move up next to it. Before, such a patch left blocks unreachable from the root. `applyPatch` now returns the changed blocks (`DocumentPatch`), which a server broadcasts to everyone; normalization after a patch is a separate local edit, so its repairs reach `onPatch` and the server. A seeded test runs three editors and a server with random edits and delivery order and checks that all documents converge (`concurrent-fuzz.test.ts`).
-- Normalization: a new built-in rule repairs a subtree that fails its schema check (`BlockSchema.validate` / `repair`): a table without rows gets one, short rows get cells, also when only a row or a cell changed. Blocks created by normalization rules get ids from their parent and position, so the same repair on two replicas creates the same block.
-- Mobile: a short tap on a block grip opened the block menu and closed it at once — the click that ends the tap landed on the sheet backdrop. The backdrop now closes only a press that started on it. Keyboard shortcut hints are hidden in menus on touch-only devices; table grips and insert markers have larger touch areas; function names fit the formula palette.
+### Breaking changes
 
-- Guide for custom block authors (`docs/custom-blocks.md`): one block from schema to view — schema and props, controller and commands, command types, a normalization rule, a feature, the React view and tests; its engine code is checked by a test (`custom-block-guide.test.ts`).
-
-- Collaboration API (`docs/collaboration.md`): `onPatch(editor, listener)` reports every local edit, undo and redo as a `DocumentPatch` — the changed blocks whole, `null` for deleted — and `applyPatch(editor, patch)` applies a patch from another participant atomically, outside the local undo history, after checking block shape, tree integrity and props (`PatchError` otherwise, nothing changes) and then normalizing. Patches are plain JSON and idempotent; remote ones are not echoed to `onPatch`; a remote patch over blocks in the local history clears that history. The store reports `ChangeInfo` (`source`: edit / undo / redo, `origin`) to `subscribeChanges`, transactions take an `origin`, and `SetBlockChange` can write a block without stamping its `meta`.
-
-- Selection API (`docs/selection.md`): `editor.selection` (`SelectionManager`) is the selection as data, with or without a UI — text with direction (a caret when collapsed), whole blocks, or a rectangle of table cells. `get`, `range` (document order), `isCollapsed`, `set` / `caret` / `select` / `selectBlocks` / `selectCells` / `clear` and `subscribe(listener(selection, origin))` with the origin `api`, `view`, `command`, `history` or `document`. Points in missing blocks are refused and offsets clamped; after every edit the selection is checked again. Commands move the caret to the point they return, undo and redo to the point they restore. `@inkbrick/react` writes the user's selection there and puts a selection set by code on screen.
-
-- Document normalizer (`docs/schema-rules.md`): invariants of the tree that depend on neighbours are rules (`NormalizeRule`) run after every command on the blocks it changed, in the same transaction and undo step, until the document settles (rules that never settle fail the command with their names). Built in: an empty container with `fillWhenEmpty` gets a block whatever emptied it (before, only the delete commands filled it); `columnsFeature` brings `collapseEmptyColumns` (was an `afterCommand` hook) and `tableFeature` `normalizeTableMerges`. Features add rules with `normalizers`; `editor.normalize()` checks the whole document outside the undo history, for documents from outside.
-
-- «Custom color…» is a full-width «+ Custom color…» button under the palette (with a sample of the chosen custom colour) instead of a rainbow swatch at the end of the grid, and the picker opens in a popover beside the menu or panel (`color-popover`) instead of unfolding inside it, where it looked lost in a wide menu. The popover stays a DOM child of its menu (placed with `position: fixed`), so menus treat it as their own and stay open; Escape, Cancel or a press outside it close only the popover. On a narrow screen, where menus are bottom sheets, the picker still unfolds under the palette. The palette and the button sit in a `palette` wrapper (`role="group"`). The Apply button of the colour picker and of the formula window use the darker brand blue so that white text keeps 4.5:1 contrast.
-
-- Code blocks take no formatting: select all and a text colour, highlight, bold or link no longer lands on code blocks, where it covered the syntax highlighting. A block schema can say so with `plainText: true` (set on `block:code`): formatting commands skip such blocks (`formattableSegments`), the toolbar state ignores them, `toggleFormat` inside them is refused, and formatting is dropped when a block becomes code, on every edit and when an older document is opened.
-
-- Large files split along their parts, behaviour unchanged: `ui.css` (2386 lines) now imports ten parts from `src/ui/` in cascade order (surfaces, block handle, table controls, menus, toolbar panels and palette, formula, table menu, panels, motion, sheets) — the public entry `@inkbrick/styles/ui.css` is the same and the built CSS has the same rules in the same order; `TableControls` (1388 lines) is split into geometry, hovered table, column width math (now unit tested) and the row and column menus; the Markdown parser `fromMarkdown` (993 lines) into context, block and inline parts.
-
-- Pluggable features: `new Editor({ features: [tableFeature, columnsFeature, tocFeature, toggleFeature, footnoteFeature] })`. An `EditorFeature` (`defineFeature`) brings its blocks, commands, `guards`, `afterCommand` hooks and a `setup(editor)` hook; a feature with the same name is installed once. A block definition can name the feature it needs (`BlockDefinition.feature`), so `new Editor({ blocks: columnsBlocks })` — and the block sets of `@inkbrick/react` — keep working unchanged. Columns left the core: `moveBlockToSide` and the removal of emptied columns now come with `columnsFeature` (before, every editor registered them). **Breaking** for an editor built from its own registry (`new Editor({ schema, controllers })` without `blocks`): pass the features too (`features: [columnsFeature]`, or `blocks.flatMap((b) => (b.feature ? [b.feature] : []))`), otherwise moving a block to the side is not available. Tables still share code with the core clipboard (pasting a fragment with a table, sanitizing it), since a fragment is a format of its own.
-
-- The `Dispatcher` coordinates and no longer holds the editor's rules: commands live in a `CommandRegistry`; the general checks before every command (read-only, blocks of unknown type, text commands on blocks without text) are `CommandGuard` functions (`dispatcher/guards.ts`); the work after every command (removing emptied columns, the pinned-block check) is a list of `AfterCommand` hooks (`dispatcher/afterCommand.ts`); caret and merge data for the history are read in `dispatcher/history.ts`. `dispatcher.addGuard(guard)` and `dispatcher.addAfterCommand(hook)` add your own (each returns a function that removes it). Behaviour is unchanged.
-
-- Typed commands: `CommandMap` (exported from `@inkbrick/engine`) describes every built-in command by name — its payload and its result — and `EditorIntent` is derived from it. `editor.dispatch(intent)` returns the result type of that command instead of `unknown` (plus `undefined` when the command did not run); `editor.execute(type, payload)` and `editor.can(type, payload)` check the payload of a known command and type the result. A command of your own is added to the map with `declare module '@inkbrick/engine' { interface CommandMap { … } }`; an undeclared name keeps the untyped call. Helpers `CommandName`, `CommandPayload<K>`, `CommandResult<K>`.
-- No `any` in the public types of the packages (ESLint `no-explicit-any` is on for package sources). Lists of blocks with different props use named aliases: `AnyBlockDefinition`, `AnyBlockController`, `AnyBlockCommand`, `AnyCommand` (`@inkbrick/engine`) and `AnyReactBlockDefinition` (`@inkbrick/react`).
-
-- **Breaking:** `@inkbrick/engine` exports an explicit, smaller public API instead of everything (`export *`): the editor, intents and their results, custom blocks and commands, clipboard fragments, the optional block sets, and table reading, editing and ranges. Single command objects (`InsertTextCommand`, `tableCommands`, …), `builtinCommands`, merged-cell helpers (`mergeAt`, `mergesWithin`, `normalizeMerges`, …), sorting helpers, `clampTableRange`, `expandRangeToMerges`, `readTable`, `columnsCommands`, `collapseEmptyColumns` and the like moved to the new entry `@inkbrick/engine/internal`, which is not a public contract. `Engine`, `Dispatcher`, `BlockEngine` and `InlineEngine` are exported from the main entry as types only. The exported names of every package entry are now checked against a snapshot (`scripts/__tests__/public-api.test.ts`).
-
-- Store: every `Change.apply` is atomic. While a change is applied, the `DocumentWriter` remembers the previous version of each block it writes; if the change throws halfway (an invalid insertion, a `meta.user` / `meta.now` callback that fails after a structural write), those writes are undone and the document is exactly as before — before, such a half-applied change was not in the transaction yet, so its rollback could not undo it. `DocumentWriter.atomically(fn)` is the mechanism; the `Change` contract is documented.
-- Document tree invariants are enforced on write: `_insertChild` refuses an id that is not in the document (before, the dangling id was kept in `children` and hidden by `getChildren`), and `_deleteBlock` refuses the root block.
-
-- Inline code takes no formatting except a link: text colour, highlight, bold, italic, underline and strike are no longer applied to inline code, neither to all of it nor to a part (a part of code cannot be written to Markdown and its colour was hidden by the code's own colour anyway). Turning text into code removes that formatting; a selection of code and text formats only the text; over code alone the toolbar disables those buttons. The rule lives in the model (`CODE_EXCLUDED_ATTRIBUTES`, `withoutCodeExcluded`, `normalizeInlineNodes` in `@inkbrick/document`; `BlockEngine` applies it to every content change), so it covers commands, shortcuts, HTML paste, Markdown import (`**`x`**` is plain code) and documents saved earlier (cleaned when opened).
-
-### Removed
-
-- Column properties and table views are cut: the dialog «Column properties», the column types `checkbox`, `select`, `multiselect`, `url`, `email` and `phone` (the types `text`, `number` and `date` stay), keyboard control of checkbox and select cells, column filters, hidden columns and several views per table. The `columnTypes` of a table keep the three original types; documents that were saved with the removed types are not migrated.
+- **`@inkbrick/engine` exports an explicit, smaller API** instead of everything (`export *`): the editor, intents and their
+  results, custom blocks and commands, clipboard fragments, the optional block sets and the table API. Single command
+  objects (`InsertTextCommand`, `tableCommands`, …), `builtinCommands`, merged-cell and sorting helpers, `clampTableRange`,
+  `readTable`, `columnsCommands`, `collapseEmptyColumns` and the like moved to `@inkbrick/engine/internal`, which is not a
+  public contract. `Engine`, `Dispatcher`, `BlockEngine` and `InlineEngine` are exported as types only. The exported names of
+  every package entry are checked against a snapshot (`scripts/__tests__/public-api.test.ts`).
+- **Pluggable features; columns left the core.** `new Editor({ features: [tableFeature, columnsFeature, …] })`;
+  `moveBlockToSide` and the removal of emptied columns come with `columnsFeature`. An editor built from its own registry
+  (`new Editor({ schema, controllers })` without `blocks`) has to pass the features (`features: [columnsFeature]`), otherwise
+  moving a block to the side is not available. With `blocks` (and the block sets of `@inkbrick/react`) nothing changes.
+- **`BlockSchema.version` is required** — an integer from 1; `registerBlock` and `replaceBlock` throw without it. Every
+  built-in block declares `version: 1`; add it to your own schemas.
+- **New default colours** in `@inkbrick/styles` (light and dark): text, backgrounds, strokes, status colours, the text and
+  highlight palette, inline code (`--inkbrick-inline-code-fg|bg`, no border) and the text selection
+  (`--inkbrick-selection-bg`). Only colours change; an application without its own tokens looks different. Text keeps at
+  least 4.5:1 contrast.
 
 ### Added
 
-- Spelling suggestions in the context menu (`docs/spellcheck.md`): right-click a misspelled word and the menu offers up to five corrections above Cut and «Add to dictionary»; picking one replaces the word in one undo step. Browsers do not give their suggestions to pages, so they come from `spellcheck.checker` on `EditorProvider` (type `Spellchecker`). New package `@inkbrick/spellcheck`: `createSpellchecker` over Hunspell dictionaries (`nspell`) in a Web Worker (`@inkbrick/spellcheck/worker`), a dictionary per language loaded on its first word, a personal dictionary, ranked suggestions. The application brings the dictionaries; the sandbox uses Russian and English.
+#### Engine
 
-- One colour palette everywhere: text colour, highlight, block background, table cell background and table border colour share the same component (`ColorSwatches`) and look — a grid of rounded square swatches, «×» first (removes the colour), the palette, «Custom color…» last. The table menus lose their round dots and the separate «Remove color» button. Swatches take their colour from `--inkbrick-swatch` instead of a CSS rule per colour; size and columns are `--inkbrick-swatch-size` and `--inkbrick-swatch-columns`.
-- Table borders can have a custom colour with transparency: `borderColor` and `border<Side>Color` accept `#rrggbb` / `#rrggbbaa` besides palette names (schema, `setTableCellsBorders`, rendering; HTML export writes it as is).
+- **Selection API** (`docs/selection.md`): `editor.selection` is the selection as data, with or without a UI — text with
+  direction, whole blocks or a rectangle of table cells; `get`, `range`, `isCollapsed`, `set`, `caret`, `select`,
+  `selectBlocks`, `selectCells`, `clear`, `subscribe(listener(selection, origin))`. Points in missing blocks are refused,
+  offsets clamped, and the selection is checked after every edit; commands, undo and redo move the caret to the point they
+  return. `@inkbrick/react` keeps it in sync with the screen.
+- **Document normalizer** (`docs/schema-rules.md`): invariants that depend on neighbours are `NormalizeRule`s run after
+  every command on the changed blocks, in the same undo step, until the document settles. Built in: an emptied container
+  with `fillWhenEmpty` gets a block, a subtree that fails its schema check is repaired (`BlockSchema.validate` / `repair`:
+  a table without rows, short rows). Features add rules (`normalizers`); `editor.normalize()` checks a document from outside.
+- **Collaboration** (`docs/collaboration.md`): `onPatch(editor, listener)` reports local edits, undo and redo as patches
+  (the changed blocks whole, `null` for deleted); `applyPatch(editor, patch)` applies a remote one outside the local undo
+  history, checks shape, tree and props (`PatchError`), merges what the author did not see (concurrent inserts into one
+  parent, moves, deletions, children that no longer fit) and returns the result for a server to broadcast. A seeded test
+  runs three editors and a server with random edits and delivery order and checks that all documents converge. The store
+  reports `ChangeInfo` (`source`, `origin`) to `subscribeChanges`.
+- **Typed commands**: `CommandMap` describes every built-in command (payload and result); `dispatch`, `execute` and `can`
+  are typed by it, and your own commands join it with `declare module`. No `any` in the public types.
+- **Commands over a group of blocks**, each one edit and one undo step: `delete-blocks` (returns where the caret goes),
+  `duplicateBlocks`, `moveBlocks`, `convertBlocks`, `setBlockBackgrounds`. Table commands for cell ranges:
+  `formatTableCells`, `setTableCellsColor`, `clearTableCellsFormat`, `alignTableCells`, `setTableCellsBackground`,
+  `setTableCellsBorders`, `resetTableColumnWidths`.
+- **Extension points**: `EditorFeature` (`defineFeature`) with blocks, commands, guards, `afterCommand` hooks, normalizers
+  and `setup`; `dispatcher.addGuard` and `addAfterCommand`.
+- Word count and tags without a UI: `countWords`, `countCharacters`, `documentStats`, `selectionStats`, `statsOf`,
+  `collectTags`, `findTags`, `blockTags` in `@inkbrick/engine` (also re-exported by `@inkbrick/react`).
+- **Markdown import**: `fromMarkdown(text, { schema })` in `@inkbrick/document/markdown` — the inverse of `toMarkdown`,
+  with size limits, safe links and images and no raw HTML.
 
-- Colour picker with an alpha channel: «Custom color…» (text colour, highlight, block background, table cell background) no longer opens the browser's system dialog but a picker under the palette — a saturation and brightness area, hue and opacity sliders, a preview, HEX / RGB / HSB fields and an opacity field in percent, **Cancel** and **Apply** (one undo step); mouse, touch and keyboard (arrows, Shift for bigger steps, Enter applies, Escape cancels). Menus and the formatting toolbar stay open while it is used and are moved back inside the window when it grows. Lives in `@inkbrick/dom/color-picker` (plain DOM, React, Vue or no framework), loaded as a separate chunk; styles in `@inkbrick/styles/color-picker.css`.
-- Colours with transparency: a custom colour is stored as `#rrggbbaa` when its opacity is below 100 % (`isHexColor` and `blockBackgroundSchema` accept `#rrggbb` and `#rrggbbaa`). A highlight and a block background from the picker are always `#rrggbbaa`, start at 35 % like the palette shades and are drawn exactly as chosen (`data-inkbrick-bg="custom-alpha"`, `data-background="custom-alpha"`); older `#rrggbb` values are still drawn diluted. HTML export writes `#rrggbbaa` as is; a cell with a background more than half transparent keeps the theme's text colour.
+#### Editing
 
-- Tooltips of the editor's buttons (table markers, block handle, code, headings, menus, panels) are one styled bubble in the theme's colours instead of the browser's native `title` box: it appears after a short delay on hover and at once on keyboard focus, hides on leave, press, Escape and scroll, and keeps the button's accessible name. Colours: `--inkbrick-tooltip-bg`, `--inkbrick-tooltip-fg`. The bubble is a lazy chunk loaded right after the editor renders.
+- **Block picking** (`docs/block-picking.md`): Esc picks the block under the caret, Shift+↑/↓ extends, a frame in the
+  margin picks the blocks it crosses (with autoscroll), Shift+click picks a range, Ctrl/Cmd+click adds or removes a block,
+  Ctrl/Cmd+A picks the text of the block, then all blocks. On the picked blocks: Delete, Ctrl/Cmd+D duplicate,
+  Ctrl/Cmd+Shift+↑/↓ move, copy and cut, drag by any handle, «Turn into» and «Background» from the block menu and the
+  palette — each one undo step. `view.picked`, `pickKeymap`, `data-picked`, token `--inkbrick-picked-bg`.
+- **Block background** (`docs/block-background.md`): a palette name or a custom colour on paragraphs, headings, quotes,
+  list items, callouts and toggles; kept when the block changes type, exported to HTML.
+- **Footnotes** (`docs/footnotes.md`): `footnoteBlocks`, a reference in the text and a footnote block at the end;
+  numbers follow the order of the references; exported to HTML, Markdown and text.
+- **Tags** (`docs/tags.md`): `<TagHighlights />` highlights `#tag`, suggests tags while typing and reports Ctrl/Cmd+click.
+- **Word and character counter** (`docs/word-count.md`): `<WordCount />`, `useWordCount`.
+- **Command palette** (`docs/command-palette.md`): `<CommandPalette />`, Ctrl/Cmd+Shift+P, built-in and your own commands.
+- **List item folding** (`docs/list-folding.md`): an arrow or Ctrl/Cmd+Enter hides nested blocks; `collapsed` is stored.
+- **Spell check** (`docs/spellcheck.md`): the `spellcheck` option turns the browser's checker on; with
+  `spellcheck.checker` the context menu offers up to five corrections and «Add to dictionary». New package
+  `@inkbrick/spellcheck`: Hunspell dictionaries (`nspell`) in a Web Worker, loaded per language, a personal dictionary.
+- **Slash menu**: items that run an action (`SlashMenuItem.run` / `canRun`, `ReactBlockDefinition.slashActions`) and items
+  translated from the app dictionary (`titleKey`, `descriptionKey`, `keywordsKey`, typed `AppMessages`).
 
-- Image block (`docs/images-and-callout.md`): a new toolbar — alignment (menu), caption (shown or removed with its text, `showCaption`), crop, view full size, download and «⋯» (alt text, replace, reset crop, download the original); the width is changed by side handles on the picture (mouse, touch, or the arrow keys on them) instead of the 25/50/75/100 % list, one undo step per drag.
-- Image cropping in a full-screen window: a frame moved and resized by its edges and corners, shapes (freeform, circle, square, 5:4, 4:3, 7:5, 3:2, 5:3, 16:9, each in portrait or landscape), Cancel and Save. Saving makes a file of the crop on a canvas (a circle is a WebP with clear corners — PNG where the browser cannot write WebP — so a photo stays small), uploads it like any image (`images.upload` or a `data:` address) and keeps the original: `src` is the crop, `originalSrc` the original, `cropX`, `cropY`, `cropWidth`, `cropHeight` the frame in percent and `aspect` the shape — one undo step; cropping again starts from the original. When no file can be made (a server without CORS) the block crops the original with CSS. It opens right after an image is added from the picker (file or link; `images.cropOnAdd: false` turns that off) and from the «Crop image» button.
-- Full-screen image viewer: previous and next image of the document, zoom (buttons, wheel, pinch, double click), panning, download and close; keys arrows, `+`, `-`, `0`, Escape.
-- New package `@inkbrick/dom`: parts of the interface in plain DOM with no framework inside (React, Vue, Svelte or none), each with its own entry. `@inkbrick/dom/image-tools`: the crop window (`openCropper`, or `cropDialog` as a promise), the viewer (`openViewer`), the frame geometry, `cropImage` and download helpers, usable without the editor; its styles are `@inkbrick/styles/image-tools.css` (part of the default `@inkbrick/styles`). The editor loads it as a separate chunk when an image is cropped, viewed or downloaded.
-- The image picker has «Upload» and «Link» tabs (arrows switch them); an image from a website dropped on the picker is embedded by its address.
-- Dragging an image into the editor from outside (a file or a picture from a website) shows the same insertion line as moving a block: the image lands before the block under the pointer (upper half of its line) or after it. A picture from a website is inserted by its address, through `images.rehost` when it is set.
-- Table styles and cell borders (`docs/tables.md`): the table menu has a gallery of eight ready styles (none, grid, horizontal lines, blue, green, orange, purple, dark) with a live preview — hovering a style shows it on the table without writing to the document, a click applies it (`tableStyle`, one undo step) — and a borders section: all, outside, inside, inside horizontal, inside vertical, top, bottom, left, right and none, with a line weight (thin, medium, thick) and a color from the palette. Borders apply to the selected cells, or to the whole table without a selection (command `setTableCellsBorders`, cell props `borderTop|Right|Bottom|Left` and `borderColor`); a line between two cells is written to both, so a neighbour outside the selection does not override it. Borders travel with a copied range and are exported to HTML. The same sections are in the context menu of a cell. The block menu gets a generic `panels` prop (`BlockMenuPanel`), and a context menu item can carry its own `content` (a section with a title); `BlockContextMenuContext` has `close()`.
-- Table formatting (`docs/tables.md`, «Форматирование»): with a rectangle of cells selected, the right-click menu and the command palette format **all** the cells in one undo step — bold, italic, underline, strike, code (toggle: off when every cell already has it; Ctrl/Cmd+B, I, U, E, Shift+X work on the selection), text colour and highlight, left/centre/right/justify alignment per cell, clear formatting. Commands `formatTableCells`, `setTableCellsColor`, `clearTableCellsFormat`, `alignTableCells`, `setTableCellsBackground`, `resetTableColumnWidths`. Table properties `headerColumn`, `striped` (alternating rows) and `borders`, cell `background` (`BLOCK_BACKGROUNDS`, `data-background`), a «Table» grip menu in the table corner (header row and column, stripes, borders, freeze, reset widths, cell background for the selected cells or the whole table) with the same items in the cell context menu and the palette. Properties and cell backgrounds are validated by the schema, travel with copied tables, and `toHtml` writes cell background, alignment, `<th scope="row">`, stripes and borderless tables; Markdown is unchanged. `ToolbarProps.scope: 'cells'` and `onClearFormat` for custom toolbars. The resize handles got `aria-valuenow`.
-- More colours (`docs/text-style.md`, `docs/block-background.md`, `docs/styling.md`): five new palette names — `lime`, `teal`, `cyan`, `indigo`, `magenta` — for text colour, highlight and block background (`COLOR_NAMES`, `BLOCK_BACKGROUNDS`, `COLOR_HEX`), with light and dark shades in the `--inkbrick-color-<name>` and `--inkbrick-highlight-<name>` tokens (text and the default text over highlight keep WCAG AA contrast, 4.5:1) and English and Russian labels; and «Custom color…» in the colour, highlight and block-background panels, a native colour picker that stores `#rrggbb`. The block `background` prop now accepts a palette name or `#rrggbb` (`blockBackgroundSchema`, `getBlockBackgroundColor`, `isHexColor`); anything else is still rejected by the schema and repaired by `repairSnapshot`. Existing documents are read as before; HTML export knows the new names and custom colours. The colour grid is three rows of six, the background grid two rows of eight.
-- New default colors: the tokens of `@inkbrick/styles` have new values in the light and dark themes: text, backgrounds, strokes, status colors, the palette of text and highlight colors, inline code (a new color and background without a border, tokens `--inkbrick-inline-code-fg` and `--inkbrick-inline-code-bg`) and text selection (token `--inkbrick-selection-bg`). Only colors change; sizes, spacing and shapes stay. The default look of an application that does not set its own tokens changes. Text colors are at least 4.5:1 on the page and the highlights keep the axe contrast.
-- Выбор блоков по аналогии с привычными редакторами (`docs/block-picking.md`): выбранный блок — сплошная полупрозрачная голубая заливка на всю ширину со скруглением, без рамки и теней (`rgba(35, 131, 227, 0.14)`, переопределяется токеном `--inkbrick-picked-bg`, поверх собственного фона блока); рамка мышью из поля слева или справа автопрокручивает документ у края окна и выбирает блоки по мере протяжки; Shift+клик по блоку или ручке расширяет выбор диапазоном от якоря (или от блока под кареткой), Ctrl/Cmd+клик по ручке добавляет блок в выбор или убирает его — выбор может быть несвязным (удаление, дублирование, сдвиг, копирование, перенос работают блок за блоком); Ctrl/Cmd+A выделяет сначала весь текст блока, затем все блоки документа (верхнего уровня; выбор внутри toggle или колонки растёт уровень за уровнем); клик вне редактора снимает выбор. `togglePick`, `pickRangeTo`, `pickAll` в `pick/actions`, привязка `pick.selectAll`.
+#### Tables
 
-- «Turn into» and «Background» for picked blocks (`docs/block-picking.md`): the block menu opened on a block of a picked run turns the whole run into the chosen type or paints it in one undo step, skipping the blocks the action does not apply to (no item or colour row when it fits none); the command palette's «Turn into …» commands act on the picked run too. Types without text (divider, table) stay single-block. `convertBlocks`, `convertibleIn`, `setBackgrounds`, `backgroundTargets` in `pick/actions`.
-- Markdown import (`docs/export.md`): `fromMarkdown(text, { schema })` from `@inkbrick/document/markdown` parses Markdown back into a `Document` — the inverse of `toMarkdown` (paragraphs, headings, bullet, ordered and todo lists with nesting, quotes, `> [!NOTE]` callouts, fenced code with a language, `---`, images, GFM tables, `$$…$$` and `$…$` formulas, footnotes, `<details>` toggles; bold, italic, strikethrough, code, links, `<u>`). A separate entry point, so the main bundle does not grow. Unknown syntax stays plain text, raw HTML is never inserted, links and images go through `isSafeUrl`/`isSafeImageUrl`, nesting stops at `MAX_NESTING_DEPTH`, and `maxLength`/`maxBlocks` reject oversized input. Options `title`, `titleFromHeading`, `rootId`.
+- **Formatting of selected cells** in one undo step: bold, italic, underline, strike, code (and their shortcuts), text
+  colour and highlight, alignment, clear formatting.
+- **Table design**: a gallery of eight styles with a live preview (`tableStyle`); header column, striped rows, borders on
+  or off; cell backgrounds in a saturated palette with readable text; borders per side — placement, width, style (solid,
+  dashed, dotted) and colour, also with transparency. All of it travels with copied tables and is exported to HTML.
+- **Menus**: the cell menu has groups («Rows», «Columns», «Table», «Design») and nested panels («Cell background», «Cell
+  borders», «Table style»); table properties are switches; with several cells selected, row and column items act on all
+  of them; «Column wider» / «Column narrower» change the width from the keyboard.
+- **Handles**: pills on the row and column under the pointer and round markers on the boundaries that insert a row or a
+  column there; they follow a table that scrolls inside its block.
 
-- Block background (`docs/block-background.md`): `background` on paragraphs, headings, quotes, list items, callouts and toggles (`BLOCK_BACKGROUNDS`, `getBlockBackground`), a row of colours in the block menu (`props.background` of `slots.BlockMenu`), kept when the block is turned into another text type, exported to HTML as an inline style. Pale shades of the theme highlight colours keep the text readable in light and dark themes; the text stays where it was. `setBlockProps` with `undefined` now removes the property.
+#### Images
 
-- Command palette (`docs/command-palette.md`): `<CommandPalette commands={…} />` and `commandPalette.keymap` (Ctrl/Cmd+Shift+P; Ctrl+P is the browser's print). Built-in commands: undo and redo, formatting of the selection, «Turn into» and «Insert» for every slash-menu item that fits the current block. The app adds its own (`PaletteCommand`: `id`, `title`, `group`, `keywords`, `shortcut`, `when`, `run`), `findReplace.commands` adds Find and Replace; `useCommandPalette()` opens it from code. The selection at opening is restored before a command runs. Combobox ARIA, English and Russian.
+- **Image block toolbar**: alignment, caption on or off, crop, view full size, download, alt text, replace, reset crop;
+  the width is changed with handles on the picture's sides (mouse, touch or arrows).
+- **Cropping** in a full-screen window with shapes (free, circle, square, common ratios): the crop is saved as a file and
+  the original is kept (`originalSrc`, `crop*`, `aspect`); it opens right after an image is added (`images.cropOnAdd`).
+- **Viewer**: previous and next image, zoom, panning, download.
+- The picker has «Upload» and «Link» tabs; an image dragged in from outside shows the insertion line.
+- New package **`@inkbrick/dom`** — UI parts in plain DOM, without a framework: `@inkbrick/dom/image-tools` (crop window,
+  viewer, geometry) and `@inkbrick/dom/color-picker`.
 
-- Tags (`docs/tags.md`): `<TagHighlights onTagClick suggestions suggest />` highlights `#tag` (letters of any alphabet, digits, `_`, `-`, nested
-  `#a/b`; not `#123`, not inside code, links or formulas) with the CSS Custom Highlight API, offers the tags of the document and of the
-  application while `#` is typed (arrows, Enter or Tab, Esc) and reports Ctrl/Cmd+click to the application. A tag stays plain text, so the
-  document model, export and paste do not change; opt-in and outside the core bundle. `collectTags`, `findTags`, `blockTags`.
-- List item folding (`docs/list-folding.md`): an arrow on a list item with nested blocks hides and shows them, Ctrl/Cmd+Enter does the same;
-  `collapsed` is stored in the document and is undoable. Opt-in: `<EditorProvider {...listFolding}>` (or `{...folding}` for headings and list
-  items); `FoldableListBlock`, `ListBlock` gets the `ListItem` view with an optional `fold`. A caret inside the hidden blocks moves to the item,
-  Tab into a collapsed item expands it first, readers can fold in read-only mode without changing the document.
-- Word and character counter (`docs/word-count.md`): `<WordCount />` shows words and characters of the document and, with a selection,
-  of the selection against the whole («Words: 12 of 120»); the tooltip has the characters without spaces. Opt-in, `code` leaves code
-  blocks out, `delay` debounces the recount. `documentStats`, `selectionStats`, `countWords`, `countCharacters`, `useWordCount`. Words are
-  letters and digits (`don't`, `stop-gap`, `3.14` are one word), `Intl.Segmenter` finds them in Chinese, Japanese and Thai; formulas are
-  not counted. The sandbox shows the counter on both pages.
+#### Colours
+
+- **One palette** for text colour, highlight, block background, cell background and border colour (`ColorSwatches`):
+  «×» first, then the palette, then a «+ Custom color…» button.
+- **Custom colours with transparency**: a picker with a saturation area, hue and opacity sliders and HEX / RGB / HSB
+  fields opens beside the menu (inside it on a phone); colours are stored as `#rrggbb` or `#rrggbbaa`.
+- Five new palette names: `lime`, `teal`, `cyan`, `indigo`, `magenta`.
+
+#### Phones
+
+- **Every floating window is a bottom sheet** on a touch screen up to 720 px wide: context and block menus (with nested
+  sheets), the slash menu, tag suggestions, the formula editor, find and replace, the command palette, selects. Sheets stand
+  above the on-screen keyboard; the formatting toolbar is docked at the bottom.
+- **Tables by touch**: a long press selects a cell, dragging or the corner knob extends the selection, a long hold opens
+  the cell menu; «Column width…» opens a slider at the bottom of the screen. Touch targets are at least 44 px.
+
+#### Interface
+
+- **Animations**: menus, the handle and popups appear and disappear smoothly (`Presence`), toggles, list items and folded
+  sections collapse with an animation; tokens `--inkbrick-appear-duration`, `--inkbrick-disappear-duration`,
+  `--inkbrick-collapse-duration`, `--inkbrick-sheet-duration`; off with `prefers-reduced-motion`.
+- **Tooltips**: one styled bubble in the theme's colours for every button of the editor instead of the browser's `title`.
+- **Layers**: tokens `--inkbrick-z-panel`, `--inkbrick-z-dialog`, `--inkbrick-z-tooltip`.
+
+#### Packages and tooling
+
+- **`@inkbrick/locales`**: the dictionaries in their own package; English is bundled, Russian loads on demand
+  (`preloadLocale`, `isLocaleLoaded`); a language is one file.
+- **Versioning with Changesets** (`CONTRIBUTING.md`, _Versions and releases_): `pnpm changeset`, `pnpm version-packages`,
+  one shared version for all `@inkbrick/*` packages in `alpha` pre-release mode.
+- A guide for custom blocks (`docs/custom-blocks.md`), checked by a test; a README for every package.
+- Repository checks: `pnpm check:i18n`, the library/sandbox boundary, `pnpm size:dist` (budgets measured on the built
+  packages), fuzz tests of undo/redo and of concurrent editing, load tests.
+
+### Changed
+
+- **Published packages are built one module per file** (`scripts/build-modules.mjs`), so an application drops unused code
+  as it does from the sources; an app built from npm loads 95 KB gzip up front instead of 155 KB.
+- **Lazy chunks**: the block handle and menu, the pasted-HTML parser, the code block toolbar and highlighter, the Russian
+  dictionary, the image tools and the colour picker load separately. Size budgets: engine 22, app 96, react 70 KB gzip.
+- **Large documents** (50 000 blocks, CPU slowed 4×): typing 25 → 11 ms per key, Enter 71 → 36 ms, loading 2.3 → 1.4 s;
+  footnotes, the outline and the picking frame no longer walk the whole document on every key or move.
+- **Inline code takes no formatting except a link**, and **code blocks take no formatting** (`plainText` on a schema):
+  formatting is dropped from them, also in documents opened from before.
+- **Escape picks the block** under the caret when nothing else uses the key.
+- **Blocks share one look**: the same text edges, margins and radius for tables, code, callouts, images and coloured
+  blocks; a table is no longer indented. Columns are 72 px apart so the next column's handle fits between them.
+- **Tables fit the page**: column widths wider than the page are shown scaled; resizing never leaves a scrollbar.
+- `setBlockProps` with `undefined` removes the property.
+- A dictionary passed to the provider adds to the connected language instead of replacing it.
+- **Store**: every change is atomic — a change that throws halfway leaves the document as it was; `Document` refuses a
+  dangling child id and deleting the root.
+- **Process**: work goes into `develop` by pull requests and reaches `master` in one release pull request.
+
+### Fixed
+
+- **Published packages**: the type declarations of `@inkbrick/document` did not parse (`infer<…>`), so TypeScript projects
+  using the package from npm failed.
+- **Performance**: deleting thousands of blocks (a range or a selection) and undoing it is no longer quadratic (2–3 s →
+  ~40 ms for 20 000 blocks); typing in a large table no longer restyles every cell (~180 ms → a few ms per key); hundreds
+  of images no longer stop rendering with «Maximum update depth exceeded».
+- **Tables**: Tab, Shift+Tab and the arrows from a selected range; arrows in multi-line and merged cells; a click in the
+  empty part of a merged cell; text of a merge lost when its row or column was deleted; pasting into a hidden cell of a
+  merge or a table into a merged range; TSV paste larger than the limits; a `rowspan` across `thead` and `tbody` in HTML;
+  sorting dates and numbers with their own separators; the header role for screen readers; handles near the top edge of
+  the window and next to merged cells; the caret after undoing a row added with Tab; menus that stayed open on scroll.
+- **Folding**: Backspace or Delete next to a folded section unfolds it instead of merging into hidden text; the nested
+  blocks of a closed toggle no longer take room in the virtual renderer.
+- **Columns**: the handle of the second and later columns can be grabbed; a block moved out of a column by any move closes
+  the gap.
+- **Editing**: dragging a block keeps the caret where it was; a command that changes nothing leaves no empty undo step;
+  the caret in a code block no longer jumps when the highlighter arrives; two editors on one page keep their own find and
+  tag highlights.
+- **Menus**: a menu scrolled to its end keeps the wheel; the block menu stays inside the window; the context menu keeps
+  its width when a panel opens; the block handle stays with its block while the pointer travels to it.
+- **Styles**: rules with a pseudo-element inside `:where()` were dropped by browsers (the column resize line, the divider
+  between columns).
+- **Security**: addresses starting with `/\` are rejected for links and images; a block id `__proto__` in a snapshot no
+  longer replaces the prototype of the block map.
+
+### Removed
+
+- The «+» buttons on the right and at the bottom of a table: rows and columns are inserted with the markers on the
+  boundaries (and from the menus).
+- The image width list (25/50/75/100 %): the width is changed with the side handles.
+
+### Already in `master`
+
+The changes since `0.1.0-alpha.0` that `master` already has.
+
+#### Added
+
 - Block groups in the slash menu (`docs/slash-menu.md`): items stand under the headings «Basic blocks», «Media» and «Advanced» while
   the query is empty (the table is a basic block). `SlashMenuItem.group` / `BlockSlashItem.group` take `basic`, `media`,
   `advanced` or your own name (title from `slash.group.<name>`); items without a group come last under «Other». The turn-into list of
@@ -200,156 +304,8 @@ The older history follows. The format follows
   Custom view — `slots.ContextMenu`; `null` keeps the browser menu.
 - `EditorProvider` `formatting` option: `'context-menu'` (default), `'toolbar'` or `'both'`.
 
-- Spell check (`docs/spellcheck.md`): `EditorProvider` option `spellcheck` (`true` or `{ lang }`, off by default) turns on the browser's spell checker for the document; the root gets `lang` (the interface language unless another is given). Code blocks, formulas, code spans, links and the cells of url, email and phone columns are excluded; off in read-only mode. The sandbox turns it on (`?spellcheck=off`, a switch in Settings). The root had `spellcheck="false"` before; that is still what you get without the option.
+#### Changed
 
-- Picking and moving several blocks (`docs/block-picking.md`): `Esc` picks the block under the caret (a text range picks all its blocks), `Shift+↑/↓` extends, a frame dragged in the gutter beside the document picks the blocks it touches. On the picked run: `Delete` removes, `Ctrl/Cmd+D` duplicates, `Ctrl/Cmd+Shift+↑/↓` moves (also for the block under the caret), `Ctrl/Cmd+C/X` copy and cut whole blocks, dragging a handle moves the whole run in one gesture, and the block menu's Duplicate, Up, Down and Delete act on the run. Every action is one undo step. New: `view.picked`, `pickKeymap`, the `data-picked` and `data-picking` attributes. The `Esc` key now picks the block when nothing else uses it (menus, panels and table cell selection keep theirs).
-- The engine size budget is 22 KB (was 19).
-
-- Footnotes (`docs/footnotes.md`): `footnoteBlocks` (opt-in, like the table of contents) with a reference object in the text (`footnote` inline attribute) and a `block:footnote` text block at the end of the note. `/footnote`, the command palette or `insertFootnote()` add both in one undo step; numbers are computed from the order of the references, so they never go stale; click the number to jump to the text, «↩» to jump back; a footnote without a reference shows «?». Exported to HTML (`<sup>`, `<aside id="fn-…">`), Markdown (`[^1]`, `[^1]: …`) and plain text. New: `SlashMenuItem.run`/`canRun` (an item that runs an action instead of turning the block) and `ReactBlockDefinition.slashActions`. A block that ends with an object (formula or footnote) now gets a trailing `<br>` so the caret can be placed after it.
-
-- Slash items of your own blocks follow the language: `titleKey`, `descriptionKey` and `keywordsKey` on an item (`BlockSlashItem`, `SlashMenuItem`) take the text from the app dictionary, `title`, `description` and `keywords` stay as the fallback. Dictionaries are typed `AppMessages` (editor keys plus your own), a key found nowhere comes back as itself, and the dictionary passed to the provider (`locales`) now adds to the connected language instead of replacing it (missing keys come from `en`/`ru` rather than only from English). `docs/i18n.md`.
-- Every package has a `README.md` for its npm page: what it does, how to install it, a short example. The root
-  README lists the optional blocks and tools, `@inkbrick/locales` and all the guides; the size of the React editor
-  there is up to date (~61 KB gzip).
-- Smooth appearance: the block handle fades in and slides in a few pixels from the left, the slash menu, the
-  block menu and the context menu fade in and slide in from the caret, the handle or the click point (from below when a menu opens
-  above it; `data-side="top|bottom"` on the menu), the floating toolbar rises over the selection or drops under it through the
-  `translate` property, so its own `transform` positioning is not touched (`inkbrick-toolbar-in`, `inkbrick-toolbar-in-down`), the command palette dims the page and drops its window in (`inkbrick-slide-down`), the find panel drops in from the top edge, the formula popover, the option list of a table cell and the tag suggestions fade in like menus and the column properties dialog like the palette, the drop line fades in while a block is dragged, and the dragged block dims instead of blinking. Pure CSS (`@keyframes inkbrick-handle-in`,
-  `inkbrick-fade-in`, `inkbrick-menu-in`, `inkbrick-menu-in-up`), on by default, off under `prefers-reduced-motion: reduce`. Tokens `--inkbrick-appear-duration` (100ms,
-  `0ms` turns it off) and `--inkbrick-appear-shift` (4px). Moving the pointer from block to block does not replay it: the
-  handle is the same node.
-- Smooth disappearance: every popup above fades out (`@keyframes inkbrick-fade-out`, token `--inkbrick-disappear-duration`, 100ms,
-  `0ms` turns it off) instead of vanishing. The new `Presence` component (`data-inkbrick-presence`, `display: contents`, `data-state="open|closed"`,
-  `aria-hidden` and `pointer-events: none` while it leaves) keeps a closing popup in the DOM until its exit animation ends. Without an
-  animation (`prefers-reduced-motion`, `0ms`, no package styles, a custom slot component whose root has none) it removes the popup at once, as
-  before. A popup that is opened again while it is leaving is created anew (so its mount effects run again); the block handle and the drop
-  line keep the same node. A custom slot component gets the exit with one rule on `[data-inkbrick-presence][data-state='closed'] > .your-root`.
-- Smooth collapsing: toggles, foldable list items and headings with a folded section shrink and grow with an animation
-  (`--inkbrick-collapse-duration`, 220ms, `0ms` or `prefers-reduced-motion` turn it off) instead of jumping: height, opacity and vertical
-  margins go from where the element is now to zero or back, the arrow turns smoothly, and a second click in the middle of the animation
-  turns around from where it is. The nested blocks of a toggle or a list item stay in the tree until the animation ends; the blocks of a folded
-  section shrink each in place, and with the full renderer a section of more than 40 blocks collapses at once (the virtual renderer animates the blocks on screen, at most 40 at a time, and removes the rest at once). A collapsed block holds its final state until it is removed and its `min-height` and the `gap` between blocks collapse with it, so nothing jumps or flickers at the end. Built on the Web Animations API (`animateCollapse`,
-  `useCollapse`), so no wrapper elements are added; the code block collapse uses the same token. Only the fold and unfold are animated: the first
-  nested block of a toggle, and blocks drawn for the first time, appear at once.
-
-- Tables on a phone (`docs/tables.md`, «На телефоне»): a long press (0.45 s) on a cell selects it with a short vibration and holds the page still, dragging the finger extends the selection to a rectangle, and releasing keeps the selection so it can be adjusted; a second long hold on a selected cell opens the cell menu (formatting, cut/copy/paste, rows, columns, width, borders, background), while a quick tap on it drops the selection. The table items are in the cell menu opened by the long press. The column menu has «Column width…», a bar at the bottom of the window with a slider that resizes the column live (one undo step when the finger is lifted), −/+ buttons for one pixel and «Fit content». The browser's own long-press menu and the synthetic mouse events that follow are suppressed while a cell is held.
-- Menus as bottom sheets on a phone (a coarse pointer and a window up to 720 px wide): the context menu (cell menu) and the block menu (row, column, block) open as a sheet at the bottom of the window — full width, rounded top, a grab bar, a dim backdrop whose tap closes the menu without reaching the document — instead of a small window over the table. A nested panel («Cell borders») is a second sheet with a header and a back arrow. The sheet stands above the on-screen keyboard (`visualViewport`). The attribute `data-sheet` and the hook `useSheet` are the switch; on a larger window or with a mouse the menus are the same as before.
-- Tables on a phone, selection frame: a tap in a cell shows a blue frame around it (or around the selected cells) with a knob on its bottom right corner, as in Notion. Dragging the knob extends the selection to the cell under the finger (the page does not scroll); releasing it keeps the selection, the menu comes from a long hold on a selected cell. It adds to the long press, which stays.
-
-### Fixed
-
-- A block picked as a whole (for example a columns block picked by a frame across its columns) moves whole when it is dragged by the handle of a block inside it; before, only that inner block moved (the first picture of the left column). The block menu opened there also acts on the picked block.
-- Deleting thousands of blocks is no longer quadratic: deleting a range across 20 000 blocks, deleting the picked blocks and undoing either took 2–3 s, now about 40 ms (50 000 blocks: ~0.1 s). New command `delete-blocks` (`{ ids }`, one undo step, skips what cannot be deleted) and store change `RemoveChildrenChange`.
-- Hundreds of images in one document no longer blank the page: before they load, image blocks are far shorter than estimated, and the virtual renderer remeasured block by block until React aborted with «Maximum update depth exceeded». After a few synchronous passes the next remeasure waits for a frame.
-- Typing in a large table is fast again: a `:has()` rule for the cell selection made the browser restyle every cell on each key (~180 ms per character in a 100 × 20 table, now a few ms). The table carries `data-cells-selected` itself.
-- The image viewer and crop window keep the keyboard focus when the focused button becomes disabled (Next on the last picture, Zoom in at 400 %, Save while saving): Escape and the arrow keys kept working only until then.
-- The crop window no longer calls `onCancel`/`onError` for a picture that fails after the window was closed, and Escape does not cancel while the crop is being saved (Cancel is locked then too). The viewer's wheel no longer zooms the page behind it (a trackpad pinch is Ctrl+wheel).
-- Picked blocks are not moved into a column that lies inside one of them: the move was done halfway (the first block went, the rest stayed).
-- The selection frame picks a block only when it crosses it (a frame on the page margin picks nothing until it reaches the text); a frame inside one column picks that column's blocks instead of the whole columns block, so dragging any of them moves all of them. A picked run dropped at the edge of a block goes into the new column together.
-- A menu scrolled to its end keeps the wheel (`overscroll-behavior: contain` on the slash, block and context menus, select lists, the command palette, the outline panel, tag suggestions and the formula palette): the page no longer scrolls and the context menu no longer closes.
-- One order of layers: new tokens `--inkbrick-z-panel`, `--inkbrick-z-dialog`, `--inkbrick-z-tooltip`; the outline panel no longer covers application panels, tooltips show above the crop and viewer windows, an open image tools menu lies over the blocks below.
-- Addresses starting with `/\` are rejected for links and images (browsers read them as `//host`); a block id `__proto__` in a loaded snapshot no longer replaces the prototype of the block map; a failed load of the formula chunk is retried by the next formula.
-
-- A command that changes nothing (a background removed from cells that have none, an alignment the cells already have, props set to their own values) no longer leaves an empty undo step, after which Ctrl+Z seemed to do nothing.
-- Blocks look the same: a table, a code block, a callout, an image and a coloured block share the left and right edges of the text column, the vertical margin (4 px) and the card radius. A table is no longer indented by 28 px: its row and column handles (now 10 px thick, 16 px under a finger) lie on its left and top border, and its block handle stands where every block's does. A coloured block no longer sticks out of the column; its text is inset by 8 px instead.
-- The top left corner of a table has two separate insert markers instead of one that looked shared: «row above» on the left border just below the corner, «column left» on the top border just right of it.
-- Columns are 72 px apart (was 32): the divider sits next to the left column, and the full block handle («+» and the grip) of the next column fits between the divider and the column, covering neither.
-- The block handle stays with its block while the pointer travels to it, also across a neighbouring table, the gap of columns or the margin: a table inside columns could not be grabbed because its handle jumped away on the way.
-- Folding a heading with a long section animates again: only the blocks near the screen move, the rest go at once; whole sections fold without an animation only above 200 blocks (was 40).
-- Table cells coloured lime, teal, cyan, indigo or magenta showed the pale block background instead of the saturated cell colour: five block rules came after the cell rules and won.
-- Every cell colour now keeps AA contrast with its text: the dark text of coloured cells is `#111111` (was `#1a1a1a`, 4.4:1 on purple), and indigo is a little darker (`#5e61ef`) with white text.
-- A table copied to Google Docs, Word or mail keeps its merged cells (`colspan`/`rowspan`, hidden cells left out), cell backgrounds and borders; a table pasted from HTML keeps its cell backgrounds (palette colours by name, white skipped) and column widths (Excel writes them in points).
-- While cells of a table are selected, the browser's text highlight is hidden in that table: it followed the reading order and also painted cells outside the selected rectangle.
-- Deleting the row or column that holds the main cell of a merge lost the merged text while the merge itself stayed: the text and look of the cell now move to the next cell of the merge.
-- Pasting into a table cell hidden by a merge wrote the text into that hidden cell, where it could not be seen; it now goes to the visible cell of the merge.
-- Dragging a block by its handle no longer moves the caret into another block: the caret (or selection) stays where it was in the document, also when its own block is the one moved. Escape during a drag only cancels the drag; it no longer also picks a block.
-- Columns: the handle of the second and later columns could not be grabbed (it vanished on the way to it, and the divider of the columns lay under it): the gap between columns now belongs to the next column, and the divider sits right against it. A block moved out of a column by any move (not only by dragging to a side) no longer leaves an empty column: the columns close up, and with one left they turn into plain blocks.
-- Table selection: Tab and Shift+Tab from a selected range keep the caret on its anchor cell, and the arrows up and down move one row from the selection, not two (the table keymap no longer handles a key the selection already took).
-- Arrow up and down inside a multi-line cell leave the cell only from its first or last line, not from the second one.
-- Pasting tab-separated text into a paragraph is no longer turned into a table larger than the limits (`MAX_TABLE_CELLS`, `MAX_TABLE_COLUMNS`); it stays text.
-- Pasting a table into a cell of another table never writes into the hidden cells of a merge (such a paste goes in as text), and the merges of the pasted table move to the place of the paste.
-- The cell context menu has «Column wider» and «Column narrower» (10 px steps), so a column width can be changed from the keyboard.
-- HTML export: a merge that starts in the header row is cut at the header, so `rowspan` no longer crosses `thead` and `tbody`.
-- Sorting a date column: a bare number («10») is not a date; the `Date.parse` fallback needs a four-digit year.
-- Table styles: «Horizontal lines» and «Hide cell borders» are no longer overridden by the general line colour; a striped table keeps the header column colour.
-- Pasting a single unformatted cell keeps the background and alignment of the cell it lands in.
-- Typing over a cell selection is one undo step: one Ctrl+Z restores the text of the anchor cell.
-- The submenu of the context menu opens on click and stays open (it no longer toggles shut right after hover).
-- The style gallery clears its live preview when it closes with Escape or a click outside.
-- Table handles stay inside the top of the window when the table is close to the top edge.
-- A press on the empty part of a table cell (the lower part of a tall merged cell, the padding) puts the caret into that cell: the browser used to put it at the nearest position on the same line, which is the neighbouring cell because the cells covered by a merge are hidden, so typing went to the wrong cell or nowhere.
-- A nested bottom sheet («Cell background», «Cell borders») has its own backdrop over the parent sheet: a tap beside it closes only the nested panel, and the items of the parent sheet that stayed visible above it are no longer tapped by mistake (the tap used to activate one of them and close the whole menu).
-- A tap on the backdrop of a bottom sheet only closes the menu: it no longer focuses the editor, which put the caret at the start of the document and raised the on-screen keyboard (`onDismiss` of the menu props; `onClose` after a choice still returns the focus).
-- The table corner button (`data-inkbrick-part="table-grip"`, top right of a table) is removed on every device, with its hint and its own «Table» menu: all its items — header row and column, stripes, borders, freeze, reset widths, style gallery, cell borders and background — are in the context menu of a cell (and the command palette). The translation keys `table.handle`, `table.tip.click` and `table.tip.select` are gone. A cell background from the cell menu goes to the selected cells, or to the cell under the menu (the table menu used to paint the whole table).
-- Table properties in the menus are switches, as in Notion: «Header row», «Header column», «Striped rows», «Cell borders», «Freeze first row», «Freeze first column» keep their name, and a switch on the right shows the state (`menuitemcheckbox`, `aria-checked`) instead of a «Make …» / «Remove …» title that changed. `toggle` on `ContextMenuItem` and `BlockMenuAction`; translation keys `table.toggle.*` (the unused `table.row.freezeOn/Off` and `table.column.freezeOn/Off` are gone; the palette keeps its action titles).
-- The cell menu and the column menu are grouped with headings, like the block picker: «Rows», «Columns», «Table», «Design» in the cell menu, «Columns», «Alignment», «Type», «Sort» in the column menu (`group` on `ContextMenuItem` and `BlockMenuAction`, keys `table.group.*`).
-- The size budgets of `@inkbrick/react` (66 → 67 KB gzip) and of the whole editor app (92 → 93 KB) are raised: a copied table now carries its merges, backgrounds and borders to other apps, no-op commands are skipped, and the caret is kept on a drag.
-- The size budget of `@inkbrick/react` (EditorProvider + DocumentView) is raised from 65 to 66 KB gzip: the table menus of this release (switches, group headings, bottom sheets) add English strings and code to the initial load.
-- The block handle of a table is the same as of every other block again («+» and the grip) and stands in the same column; on a narrow screen its compact form goes above the table, over the column pills, instead of onto the first row pill. The handle of every block keeps an 8 px gap from the block (it touched it, and lay on the frames and controls of blocks), and may use up to 32 px of the page margin left of the editor root.
-- The row and column pills of a table have the same thickness (14 px; 20 px for a finger) and both follow the size of their row or column, and they no longer grow on hover.
-- Table cell backgrounds use a saturated palette, like spreadsheet editors, the same in the light and dark themes (tokens `--inkbrick-cell-gray` … `--inkbrick-cell-magenta`); the text on a cell background is black or white, whichever contrasts more (`--inkbrick-cell-text-dark|light`), for a custom colour too. The colour dots of the cell background menu show these colours, and the dots of the border colour menu show the real line colours (they showed the pale highlight shades). The HTML export writes the same background and text colour. Block backgrounds outside tables are unchanged.
-- Custom cell colour: the context menu no longer closes when the system colour picker takes the focus from the page, so the chosen colour is applied (it used to be lost). Table cell backgrounds are opaque: a palette colour is exactly the colour of its dot in the menu, a custom colour exactly the one chosen (both used to be diluted to 35 %); the HTML export writes a custom cell colour without transparency too.
-- Styles: five rules had a pseudo-element inside `:where()` (`:where(x::after)`), which browsers drop entirely: the hover line of the column resize handle, the divider lines between the columns of a «Columns» block and the grab bar of a bottom sheet never showed. The pseudo-element now follows `:where()`, and the styles contract test forbids the old form.
-- The backdrop of a bottom sheet covers the whole width of the screen (it inherited the 16 px narrower maximum width of the context menu).
-- Touch: the row pill is centred between the larger insert markers of its row and no longer touches them; at the top left cell the «insert row above» marker is hidden, as it covered «insert column left» (both stay in the menus).
-- The docked formatting toolbar fits in two rows on a 360 px phone.
-- Cell border colour and style are per side (`borderTopColor`…`borderLeftColor`, `borderTopStyle`…`borderLeftStyle`): a line shared with a neighbour outside the selection is painted in both cells, but the neighbour's other sides stay as they were (the neighbour used to get the colour on all four sides). The cell-wide `borderColor` and `borderStyle` of older documents still render and are spread over the sides on the first change. The editor draws the side colours and styles as an inline style; the attributes `data-border-color` and `data-border-style` are gone (the black and white lines use `--inkbrick-cell-line-black|white`). HTML export and copied ranges carry the sides.
-- Pasting plain text from a spreadsheet (TSV) over several cells keeps their background, borders and alignment; only a fragment that carries cell formatting replaces it.
-- The cell formatting of a pasted table fragment is checked against the cell schema: unknown properties are dropped, and a cell with an invalid value (a forged clipboard) brings no formatting.
-- Changing only the colour or the style of the lines no longer resets the width of a neighbour's shared line to thin.
-- Sorting reads numbers by their own separators («1.234,56», «$1,234.50») in any interface language; the language (via `Intl`) decides only the ambiguous «1.234» / «0,125».
-- The column header role of the cells follows the header switch and the row order right away (screen readers).
-- Arrow up and down reach a cell merged across columns from a column it covers, instead of skipping its row.
-- «Wider» and «Narrower» in the cell menu step from the width of one column, not of a whole merged cell.
-- The remembered border width, style and colour are kept per editor, not shared by all editors on the page.
-- The width slider commits the shown width when the browser takes over the gesture (`pointercancel`).
-- On a phone (a coarse pointer and a window up to 720 px wide) the floating formatting toolbar is docked at the bottom of the screen, full width, above the on-screen keyboard, instead of jumping after the selection (`data-placement="docked"`, `data-sheet`). It still shows only while text or cells are selected; it slides in and out like a bottom sheet, and the colour panels and «Turn into» open above it. The «Turn into» button keeps its chevron on one line.
-- A bottom sheet hides the on-screen keyboard when it opens (the focus leaves the text; a context menu with the text formatting buttons keeps it and stands above it): the keyboard no longer covers half of the menu. Closing, the sheet slides down and its backdrop fades out (token `--inkbrick-sheet-duration`, 220 ms; the opening uses it too) instead of vanishing at once; the table row and column menus and the nested panels now leave with an animation as well. A tap on the backdrop of the row or column menu no longer lets the browser's follow-up mouse press through to the document under it.
-- In a narrow column on a phone the round «insert column» markers are hidden: being larger for a finger, they covered the column pill. Inserting to the left or right stays in the column menu.
-- Column border handles next to merged cells: a border that exists in several stretches of rows (above and below a merge) had a handle only on the longest stretch, so the column could not be resized from the other rows; each stretch has its own handle now.
-- The row and column handles of a table are no longer animated in size: a 0.1 s transition on `width`/`height` made the column handle stretch and catch up with the cell on every width change. Only the insert markers (they grow into a «+» on hover) keep a size transition.
-- The handles of a table follow a column whose width changes while the table keeps its size (the neighbour column changes by the same amount): they watch the cells of the first row, not only the whole table, so the column handle and the markers no longer lag behind a resized column.
-- A tap on an item of a nested panel of the context menu that lies over the menu (phone width) no longer closes the panel before the click arrives: entering the panel was treated as entering its parent item, the panel closed, and the click fell through to the item under it (it could delete a column). The same went for the mouse in a narrow window.
-- On touch screens the items of the context menu and of the block menu are at least 44 px tall.
-- Table handles follow the visible frame of a table that scrolls inside its block (a wide table scrolled sideways, a frozen header row scrolled down): the row handle no longer leaves the table to the left, the column handle no longer jumps to the top of the window.
-- A submenu of the context menu that has no room beside the menu (phone width) lies over the menu instead of going off the screen, opens on click there, and scrolls when it is taller than the window.
-- The block menu (row, column and table menus) keeps its width and position while it scrolls: its width depended on its own `left`, and `left` on its width, so on a phone it grew and shifted on every redraw and its labels wrapped.
-- On a touch screen the larger insert markers sit on the same axis as the row and column handles (they were 4 px and 3 px off centre), the column handle keeps clear of the column markers at the cell edges, and the row handle is at least 24 px tall instead of 32 so it overlaps the markers by 3 px at most (it is drawn above them).
-- Undo after a row was added with Tab puts the caret back in the cell it started from instead of dropping it out of the table (`caretBefore` in a command payload reports where the caret was); after other table commands (insert markers, menu items) it lands in the first cell of the table when the recorded caret points at the table itself.
-
-### Changed
-
-- **Breaking:** `BlockSchema.version` is required — an integer from 1; `registerBlock` and `replaceBlock` throw without it. Every built-in block declares `version: 1`. Add `version: 1` to your own block schemas (`defineBlock`).
-- Every block in a snapshot carries its schema version (`BaseBlock.version`): `serializeDocument` writes it on each block, and loading migrates each block from its own version (then `schemaVersions` of its type, then 1), so blocks of one type saved by different versions migrate correctly. A block of an unknown type keeps the version it came with; a block of a known type has no `version` in the open document. `schemaVersions` is still written for older readers; `validateSnapshot` rejects a block version that is not an integer from 1 or newer than supported.
-
-- The cell context menu has nested menus, as in office editors: «Cell background» (colour dots and a custom colour), «Cell borders» (with line width, style and colour) and «Table style». Context menu items can carry `submenu`, `flyout` and `checked`.
-- Line width, style and colour change the existing lines of the selected cells at once (mode `keep` of `setTableCellsBorders`); they used to be only remembered until a border placement was chosen.
-- New: the line style of cell borders (`borderStyle`: solid, dashed, dotted) and a custom cell background `#rrggbb`.
-- Table handles: a column pill above the columns and a row pill left of the table next to its row (the table is moved 28 px right, so the block handle at the edge of the column does not meet them); the handles appear smoothly, keep up with the table while it scrolls, only the nearest of two tables shows them, the active row does not switch while the pointer is over a pill or a boundary marker, and a table has 20 px above and below.
-- The old «+» buttons on the right and at the bottom of a table are removed: rows and columns are inserted with the round markers on the boundaries (also after the last row and column).
-- A table cannot be stretched wider than the page: the last column grows only while the sum of the widths fits the visible area.
-
-- Table handles: row and column pills with six dots; the round markers at their ends insert a row or a column at that boundary.
-
-- The parser of pasted HTML (Google Docs, Word, browsers; `htmlToFragment`) is a separate chunk loaded right after the editor mounts, so the core of `@inkbrick/react` is about 3.0 KB gzip lighter (63.4 → 60.4 KB) and the chunk is 4.3 KB. A paste of foreign HTML stays synchronous once the chunk is in (it normally is by the first paste); in the first moments after mount it waits for the chunk and lands at the same place. Pasting the editor's own format and plain text never waits. `htmlToFragment` and `embeddedFragment` are still exported for your own code.
-
-- Adding a language to `@inkbrick/locales` is mechanical: a new `src/<code>.ts` plus one line in `localeLoaders`. The package `exports` (`./*`) and the `tsup` entries use a mask, and `pnpm check:i18n` and the package tests walk every language file (same keys and placeholders as English, a loader for every file).
-- Dictionaries moved to the new package `@inkbrick/locales` (`en`, the types `MessageKey`, `Messages`, `PartialMessages`, and the Russian
-  dictionary as `@inkbrick/locales/ru`); `@inkbrick/react` depends on it and still exports `en`, `ru` and the types. English is always bundled
-  (the other languages fall back to it), Russian is a separate chunk loaded when `locale="ru"` asks for it, so the core of
-  `@inkbrick/react` is about 3.8 KB gzip lighter (64.5 → 60.7 KB). `preloadLocale(code)` and `isLocaleLoaded(code)` are new; `getLocales()`
-  lists the languages that load on demand too. Until a language arrives the interface is in English, call `preloadLocale` before the first
-  render to avoid that frame (the sandbox does). A dictionary registered with `registerLocale` is never overwritten by a loaded one.
-- Code and formula blocks load as separate chunks (`LazyCodeBlock`, `LazyFormulaBlock`, like the image block); `CodeBlock` and `FormulaBlock` are still exported
-  for your own component registries. The chunks are requested right after an editable editor mounts (`preloadSoon`), so a block that
-  appears on Enter or `/` normally takes input at once; until then a placeholder stands in (the code as plain text for a code block). The core of
-  `@inkbrick/react` is about 3.3 KB gzip lighter (64.5 → 61.2 KB). Total transfer is the same: the chunks leave the initial bundle, they do not wait for the first use. A code block created within the first moments after mount, before its toolbar chunk has arrived, already takes input (the shell and the text are in the main bundle, only the toolbar, language select and caption come from the chunk); a formula block created that early still shows a placeholder until its chunk arrives.
-- Process: work accumulates in `develop` (pull requests are squashed into it) and goes to `master` in one release pull request
-  merged with a merge commit; CI also runs on pushes to `develop` (`CONTRIBUTING.md`, «Branching»).
-- Repository checks (`scripts/`): `pnpm check:i18n` verifies the dictionaries (same keys in en and ru, `{placeholders}`, no
-  empty or untranslated strings, the German example is a subset, editor and sandbox keys do not overlap); a boundary test and
-  ESLint keep the library from importing the sandbox and the sandbox from reaching into package internals. «Where things live»
-  in `CONTRIBUTING.md` says what belongs to the library and what to the sandbox.
 - Sandbox: the large document (50,000 blocks) has six heading levels (part, section and four deeper levels), quotes and callouts besides paragraphs,
   lists and code, so folding hides from tens to a thousand blocks and the outline is nested.
 - Sandbox: the table editor page has the tools of the document page — edit and read modes, data (sample, random, a large 100 × 12 table, ten more
@@ -408,50 +364,9 @@ The older history follows. The format follows
   (`--inkbrick-gutter`, 56px; none below 640px) instead of relying on the page margin, and the handle lives in the left
   one. The handle is no longer clipped
   by a container with `overflow: hidden` and never leaves the document's left edge.
-- Footnotes: the index no longer walks the whole document after every keystroke. It looks at the changed blocks and
-  walks the document only when an edit touched footnotes or their order (a new or removed reference, a block with a
-  footnote moved, a footnote code changed). A keystroke in a 50 000-block document with footnotes went from 10.5 ms to
-  1.1 ms (the same as without footnotes), in a line with a footnote from 11.8 to 1.3 ms, Enter from 15 to 2.4 ms
-  (`pnpm bench`, scenario «footnotes in a large document»; `BENCH_OUT=file.json` also writes the results to a file).
-- The block handle, the block menu, block moving and the drop line (`BlockHandleLayer`: pointer tracking, handle, menu, drag
-  and drop, drop indicator) load as one separate chunk right after an editable editor mounts: the core of `@inkbrick/react`
-  went from 63.2 to 60.7 KB gzip (the chunk is ~4 KB, read-only documents never load it). The default handle and menu used
-  to be two more chunks nested inside; now they ship in the same one. Typing never waits for it. The exports
-  (`useBlockDrag`, `DefaultBlockHandle`, `DefaultBlockMenu`, `DefaultDropIndicator`) and the `slots` keep working.
 
-### Fixed
+#### Fixed
 
-- Cell context menu with several cells selected: «Insert rows above / below», «Insert columns left / right», «Delete rows» and «Delete columns» apply to all the rows and columns of the selection (the item shows the number), in one undo step; only one used to be inserted or deleted.
-- A table always fits the page: set column widths that together are wider than the page are shown scaled down (the model keeps them), and added columns no longer go past the right edge.
-
-- Cell context menu: without a selected range, background and borders apply to the one cell under the caret, not to the whole table.
-
-- Resizing columns could leave a horizontal scrollbar on a table: widths were rounded to the nearest integer, and with several columns the sum came out a couple of pixels wider than the block. They are rounded down now.
-
-- The block menu does not go past the bottom of the window: when it fits neither below nor above the handle, it moves up and scrolls inside the window.
-
-- Рамка выбора блоков, отпущенная сразу после движения мыши, теряла последние задетые блоки: выбор пересчитывается по последнему положению указателя.
-
-- Цвет выделения, выбранный вручную, больше не режет глаз и скруглён: тон смешивается с фоном, как у заготовленных цветов, углы такие же, как у них.
-- Повторный клик по применённому цвету текста или выделения снимает его.
-- В контекстном меню панель цвета и меню «Преобразовать в» не обрезаются краем меню: раньше верхний ряд палитры, а в нём кнопка сброса цвета, пропадал.
-- Контекстное меню ячейки: секции стилей и границ получили разные идентификаторы, предупреждение React о совпадающем ключе `table-borders` ушло.
-
-- On touch screens the buttons of the table styles and borders are 44 px, and the sandbox leaves room under the document for the example switcher.
-- The table column/row menu and the column option list no longer stay open when the page scrolls: they are `position: fixed`, so after a scroll or a resize they hung where the grip used to be. They close on scroll and resize; scrolling inside the menu itself keeps it open.
-- Small UI fixes: the command palette's query line keeps its 44 px height (it was squeezed by a long list); the «Turn into» button of the formatting toolbar is wider and never wraps its chevron; the block handle of a painted block stands at the column edge like any other handle instead of switching to the compact plate.
-- Выбор блоков больше не тормозит на больших документах (50 000 блоков): рамка мышью искала блоки обходом всей заметки (`querySelector` по каждому из 50 000 id на каждое движение мыши, ~110 мс на кадр) — теперь границы читаются только у нарисованных блоков, бинарным поиском, раз в кадр (`requestAnimationFrame`); отметка `data-picked` ставится одним проходом по нарисованным блокам, а не подпиской и поиском элемента в каждом `BlockRenderer`. Замеры — в описании PR.
-- Повторный Ctrl/Cmd+A больше не выделяет весь документ текстом с первого раза: первое нажатие выделяет текст блока, второе — выбирает все блоки, поэтому Delete после второго нажатия удаляет блоки целиком.
-
-- A formula block no longer swallows what you type before its chunk arrives: the block (`FormulaBlock`) is in the core bundle now and `LazyFormulaBlock` with its empty placeholder is gone, so a new block opens its input field at once and keeps the same element, focus and typed code when the symbol palette (still a separate chunk) and Temml arrive; a filled formula shows its LaTeX source until Temml is in. The core of `@inkbrick/react` grows by about 1.4 KB gzip (61.6 → 63.0 KB).
-
-- Backspace at the start of the block under a folded section and Delete at the end of a folded heading no longer merge text into a block you cannot see: the section unfolds first (one undo step, the caret stays), the next press merges as usual (`docs/heading-folding.md`).
-
-- The caret in a code block no longer jumps to the start of the block when the syntax highlighter chunk arrives (or the language changes) while you type: a redraw that changes no text now keeps the selection. The code block also takes input before its toolbar chunk has loaded: the text field is the same element before and after the toolbar appears.
-
-- Enter in a list item no longer copies `collapsed` to the new item: the new one starts expanded and the nested blocks stay with the first part.
-- Virtual renderer: the nested blocks of a closed toggle (and of a collapsed list item) are no longer counted in the height estimate, so they leave
-  no empty room in the scroll area.
 - Virtual renderer: the limit of the rendered window (`maxRendered`) counted the indexes of blocks hidden by folded headings, so after a few
   folded sections the next heading, which stood on the screen right behind them, was not drawn (an empty gap, later it vanished). The limit now
   counts only the blocks that are drawn.
@@ -469,11 +384,6 @@ The older history follows. The format follows
   held the nested list (`validateSnapshot`: `block:list cannot be placed inside block:paragraph`). Backspace at the
   start of such an item now lifts the nested items too, instead of keeping them inside the paragraph.
 - Backspace in an empty first block removes it when a text block follows, and moves the caret there.
-- Several editors on one page: the tag and find highlights of one editor no longer wipe out the other's, and closing
-  one editor (or its search) keeps the other's highlights. Escape picks a block even while the search or the command
-  palette is open in another editor.
-- `pnpm lint` skips the generated API reference (`docs/api`), so it passes after `pnpm docs:api`.
-- `docs/export.md` lists how toggles, tables of contents, columns, footnotes and block backgrounds are exported.
 
 ## 0.1.0-alpha.0 — 2026-11-01
 
