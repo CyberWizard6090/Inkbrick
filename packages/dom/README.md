@@ -149,7 +149,8 @@ built-in one) and close (button, Escape, a click beside the picture — the wind
 `onClose`). Keys: arrows, `+`, `-`, `0`, Escape.
 
 Both windows are modal: the focus goes in and comes back on close, Tab stays inside, the page does not scroll under
-them. `container` puts a window into another element (default `document.body`), `theme` sets `data-inkbrick-theme`.
+them. `container` puts a window into another element (default `document.body`), `theme` sets `data-inkbrick-theme`
+(`'light'` or `'dark'`).
 Labels are English by default; pass `labels` to translate them.
 
 ### Helpers

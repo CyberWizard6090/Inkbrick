@@ -136,6 +136,15 @@ describe('@inkbrick/styles: стили не конкурируют со стил
     expect(css.indexOf('@layer')).toBeLessThan(css.indexOf('@import'));
   });
 
+  it('предоставляет тёмную палитру с тёмными поверхностями и синим акцентом', () => {
+    const css = read('tokens.css');
+
+    expect(css).toContain(":where([data-inkbrick-theme='dark'])");
+    expect(css).toContain('--inkbrick-bg-3: #080809;');
+    expect(css).toContain('--inkbrick-bg-1: #111214;');
+    expect(css).toContain('--inkbrick-brand-bg: #3478f6;');
+  });
+
   it.each(FILES)('%s: каждый селектор обёрнут в :where() — нулевая специфичность', (file) => {
     const selectors = selectorsOf(read(file)).flatMap(splitSelectorList);
     const offenders = selectors.filter((selector) => !isWrappedInWhere(selector));
