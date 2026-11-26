@@ -100,7 +100,7 @@ test.describe('Styling contract (data attributes)', () => {
     expect(await read()).toBe('#ffffff');
 
     await page.evaluate(() => document.documentElement.setAttribute('data-inkbrick-theme', 'dark'));
-    expect(await read()).toBe('#191919');
+    expect(await read()).toBe('#111214');
   });
 
   test('overlays expose data-inkbrick-ui and parts', async ({ page }) => {

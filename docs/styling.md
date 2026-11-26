@@ -132,8 +132,8 @@ import '@inkbrick/styles'; // стандартный вид; без этого �
 
 Цвета, радиусы, тени, шрифты — переменные `--inkbrick-*` (значения из Fluent 2 / Windows 11).
 
-- Тема по умолчанию следует `prefers-color-scheme`. Принудительно: `data-inkbrick-theme="light"` или `"dark"` на любом
-  элементе, например на `<html>`.
+- Тема по умолчанию следует `prefers-color-scheme`. Принудительно: `data-inkbrick-theme="light"` или `"dark"` на
+  любом элементе, например на `<html>`.
 - Переопределение — обычной переменной: `:root { --inkbrick-brand-bg: #107c10; --inkbrick-radius-surface: 12px; }`.
 
 | Группа                   | Токены                                                                                                                                                                                                                                                                                 |

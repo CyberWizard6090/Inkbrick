@@ -180,34 +180,34 @@
     :where(:root:not([data-inkbrick-theme='light'])) {
       color-scheme: dark;
 
-      --inkbrick-fg-1: rgba(255, 255, 255, 0.81);
-      --inkbrick-fg-2: #bdbdbd;
-      --inkbrick-fg-3: #9b9b9b;
-      --inkbrick-fg-4: #8b8b8b;
-      --inkbrick-fg-disabled: #5a5a5a;
+      --inkbrick-fg-1: #e4e4e7;
+      --inkbrick-fg-2: #b7b7bf;
+      --inkbrick-fg-3: #92929b;
+      --inkbrick-fg-4: #7d7d86;
+      --inkbrick-fg-disabled: #5a5a63;
       --inkbrick-fg-on-brand: #ffffff;
 
-      --inkbrick-bg-1: #191919;
-      --inkbrick-bg-2: #202020;
-      --inkbrick-bg-3: #252525;
-      --inkbrick-bg-4: #2f2f2f;
-      --inkbrick-bg-hover: #2c2c2c;
-      --inkbrick-bg-pressed: #373737;
-      --inkbrick-bg-selected: #333333;
+      --inkbrick-bg-1: #111214;
+      --inkbrick-bg-2: #151518;
+      --inkbrick-bg-3: #080809;
+      --inkbrick-bg-4: #1c1c20;
+      --inkbrick-bg-hover: #222226;
+      --inkbrick-bg-pressed: #2d2d33;
+      --inkbrick-bg-selected: #26262b;
 
-      --inkbrick-stroke-1: #3f3f3f;
-      --inkbrick-stroke-2: #2f2f2f;
-      --inkbrick-stroke-3: #272727;
-      --inkbrick-stroke-accessible: #8b8b8b;
-      --inkbrick-stroke-focus-1: #191919;
-      --inkbrick-stroke-focus-2: #529cca;
+      --inkbrick-stroke-1: #2a2a30;
+      --inkbrick-stroke-2: #202024;
+      --inkbrick-stroke-3: #171719;
+      --inkbrick-stroke-accessible: #92929b;
+      --inkbrick-stroke-focus-1: #111214;
+      --inkbrick-stroke-focus-2: #70a5ff;
 
-      --inkbrick-brand-bg: #2383e2;
-      --inkbrick-brand-bg-hover: #3a92ea;
-      --inkbrick-brand-bg-pressed: #1a73cc;
-      --inkbrick-brand-fg: #529cca;
-      --inkbrick-brand-link: #6ab0e8;
-      --inkbrick-brand-tint: #1c3447;
+      --inkbrick-brand-bg: #3478f6;
+      --inkbrick-brand-bg-hover: #4d8cff;
+      --inkbrick-brand-bg-pressed: #2563eb;
+      --inkbrick-brand-fg: #8bb5ff;
+      --inkbrick-brand-link: #8ab4ff;
+      --inkbrick-brand-tint: #14213a;
 
       --inkbrick-status-info-fg: #9b9b9b;
       --inkbrick-status-info-bg: #252525;
@@ -220,9 +220,6 @@
 
       --inkbrick-shadow-ambient: rgba(0, 0, 0, 0.3);
       --inkbrick-shadow-key: rgba(0, 0, 0, 0.4);
-
-      --inkbrick-tooltip-bg: #3f3f3f;
-      --inkbrick-tooltip-fg: rgba(255, 255, 255, 0.92);
 
       --inkbrick-tooltip-bg: #3f3f3f;
       --inkbrick-tooltip-fg: rgba(255, 255, 255, 0.92);
@@ -280,34 +277,34 @@
   :where([data-inkbrick-theme='dark']) {
     color-scheme: dark;
 
-    --inkbrick-fg-1: rgba(255, 255, 255, 0.81);
-    --inkbrick-fg-2: #bdbdbd;
-    --inkbrick-fg-3: #9b9b9b;
-    --inkbrick-fg-4: #8b8b8b;
-    --inkbrick-fg-disabled: #5a5a5a;
+    --inkbrick-fg-1: #e4e4e7;
+    --inkbrick-fg-2: #b7b7bf;
+    --inkbrick-fg-3: #92929b;
+    --inkbrick-fg-4: #7d7d86;
+    --inkbrick-fg-disabled: #5a5a63;
     --inkbrick-fg-on-brand: #ffffff;
 
-    --inkbrick-bg-1: #191919;
-    --inkbrick-bg-2: #202020;
-    --inkbrick-bg-3: #252525;
-    --inkbrick-bg-4: #2f2f2f;
-    --inkbrick-bg-hover: #2c2c2c;
-    --inkbrick-bg-pressed: #373737;
-    --inkbrick-bg-selected: #333333;
+    --inkbrick-bg-1: #111214;
+    --inkbrick-bg-2: #151518;
+    --inkbrick-bg-3: #080809;
+    --inkbrick-bg-4: #1c1c20;
+    --inkbrick-bg-hover: #222226;
+    --inkbrick-bg-pressed: #2d2d33;
+    --inkbrick-bg-selected: #26262b;
 
-    --inkbrick-stroke-1: #3f3f3f;
-    --inkbrick-stroke-2: #2f2f2f;
-    --inkbrick-stroke-3: #272727;
-    --inkbrick-stroke-accessible: #8b8b8b;
-    --inkbrick-stroke-focus-1: #191919;
-    --inkbrick-stroke-focus-2: #529cca;
+    --inkbrick-stroke-1: #2a2a30;
+    --inkbrick-stroke-2: #202024;
+    --inkbrick-stroke-3: #171719;
+    --inkbrick-stroke-accessible: #92929b;
+    --inkbrick-stroke-focus-1: #111214;
+    --inkbrick-stroke-focus-2: #70a5ff;
 
-    --inkbrick-brand-bg: #2383e2;
-    --inkbrick-brand-bg-hover: #3a92ea;
-    --inkbrick-brand-bg-pressed: #1a73cc;
-    --inkbrick-brand-fg: #529cca;
-    --inkbrick-brand-link: #6ab0e8;
-    --inkbrick-brand-tint: #1c3447;
+    --inkbrick-brand-bg: #3478f6;
+    --inkbrick-brand-bg-hover: #4d8cff;
+    --inkbrick-brand-bg-pressed: #2563eb;
+    --inkbrick-brand-fg: #8bb5ff;
+    --inkbrick-brand-link: #8ab4ff;
+    --inkbrick-brand-tint: #14213a;
 
     --inkbrick-status-info-fg: #9b9b9b;
     --inkbrick-status-info-bg: #252525;
